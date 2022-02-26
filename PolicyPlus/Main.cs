@@ -1,13 +1,13 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using Microsoft.VisualBasic.CompilerServices;
+using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
-using Microsoft.Win32;
 
 namespace PolicyPlus
 {
@@ -125,8 +125,17 @@ namespace PolicyPlus
             // Populate the left categories tree
             CategoriesTree.Nodes.Clear();
             CategoryNodes.Clear();
-            Action<IEnumerable<PolicyPlusCategory>, TreeNodeCollection> addCategory;
-            addCategory = new Action<IEnumerable<PolicyPlusCategory>, TreeNodeCollection>((CategoryList, ParentNode) => { foreach (var category in CategoryList.Where(ShouldShowCategory)) { var newNode = ParentNode.Add(category.UniqueID, category.DisplayName, GetImageIndexForCategory(category)); newNode.SelectedImageIndex = 3; newNode.Tag = category; CategoryNodes.Add(category, newNode); addCategory(category.Children, newNode.Nodes); } }); // "Go" arrow
+            void addCategory(IEnumerable<PolicyPlusCategory> CategoryList, TreeNodeCollection ParentNode)
+            {
+                foreach (var category in CategoryList.Where(ShouldShowCategory)) 
+                {
+                    var newNode = ParentNode.Add(category.UniqueID, category.DisplayName, GetImageIndexForCategory(category)); 
+                    newNode.SelectedImageIndex = 3; 
+                    newNode.Tag = category;
+                    CategoryNodes.Add(category, newNode);
+                    addCategory(category.Children, newNode.Nodes);
+                } 
+            }; // "Go" arrow
             addCategory(AdmxWorkspace.Categories.Values, CategoriesTree.Nodes);
             CategoriesTree.Sort();
             CurrentCategory = null;
@@ -668,8 +677,7 @@ namespace PolicyPlus
                 // Recurse through the Registry branch and create a POL
                 var regRoot = ((RegistryPolicyProxy)Source).EncapsulatedRegistry;
                 var pol = new PolFile();
-                Action<string, RegistryKey> addSubtree;
-                addSubtree = new Action<string, RegistryKey>((PathRoot, Key) =>
+                void addSubtree(string PathRoot, RegistryKey Key)
                 {
                     foreach (var valName in Key.GetValueNames())
                     {
@@ -684,7 +692,7 @@ namespace PolicyPlus
                             addSubtree(PathRoot + @"\" + subkeyName, subkey);
                         }
                     }
-                });
+                }
                 foreach (var policyPath in RegistryPolicyProxy.PolicyKeys)
                 {
                     using (var policyKey = regRoot.OpenSubKey(policyPath, false))

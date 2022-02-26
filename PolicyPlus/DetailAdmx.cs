@@ -17,14 +17,14 @@ namespace PolicyPlus
             TextPath.Text = Admx.SourceFile;
             TextNamespace.Text = Admx.AdmxNamespace;
             TextSupersededAdm.Text = Admx.SupersededAdm;
-            void fillListview(ListView Control, IEnumerable Collection, Func<object, string> IdSelector, Func<object, string> NameSelector)
+            void fillListview<T>(ListView Control, IEnumerable Collection, Func<T, string> IdSelector, Func<T, string> NameSelector) where T : BasePolicyPlus
             {
                 Control.Items.Clear();
                 foreach (var item in Collection)
                 {
-                    var lsvi = Control.Items.Add(IdSelector(item));
+                    var lsvi = Control.Items.Add(IdSelector((T)item));
                     lsvi.Tag = item;
-                    lsvi.SubItems.Add(NameSelector(item));
+                    lsvi.SubItems.Add(NameSelector((T)item));
                 }
 
                 Control.Columns[1].Width = Control.ClientRectangle.Width - Control.Columns[0].Width - SystemInformation.VerticalScrollBarWidth;

@@ -1,8 +1,8 @@
-﻿using System;
-using System.Linq;
-using Microsoft.VisualBasic;
+﻿using Microsoft.VisualBasic;
 using Microsoft.VisualBasic.CompilerServices;
 using Microsoft.Win32;
+using System;
+using System.Linq;
 
 namespace PolicyPlus
 {
@@ -125,7 +125,7 @@ namespace PolicyPlus
                         using (var machHive = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default))
                         {
                             string subkeyName = "PolicyPlusMount:" + Guid.NewGuid().ToString();
-                            PInvoke.RegLoadKeyW(new IntPtr(int.MinValue + 0x00000002), ref subkeyName, ref MainSourcePath); // HKEY_LOCAL_MACHINE
+                            PInvoke.RegLoadKeyW(new IntPtr(int.MinValue + 0x00000002), subkeyName, MainSourcePath); // HKEY_LOCAL_MACHINE
                             MainSourceRegKey = machHive.OpenSubKey(subkeyName, true);
                             if (MainSourceRegKey is null)
                             {
@@ -199,7 +199,7 @@ namespace PolicyPlus
             {
                 string subkeyName = Strings.Split(MainSourceRegKey.Name, @"\", 2)[1]; // Remove the host hive name
                 MainSourceRegKey.Dispose();
-                return PInvoke.RegUnLoadKeyW(new IntPtr(int.MinValue + 0x00000002), ref subkeyName) == 0;
+                return PInvoke.RegUnLoadKeyW(new IntPtr(int.MinValue + 0x00000002), subkeyName) == 0;
             }
 
             return true;

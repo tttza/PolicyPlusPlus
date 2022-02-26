@@ -280,8 +280,13 @@ namespace PolicyPlus
                 }
             }
             // Make SelectedImageIndex always be the same as ImageIndex
-            Action<TreeNodeCollection> normalizeSelIndex;
-            normalizeSelIndex = new Action<TreeNodeCollection>((Nodes) => { foreach (TreeNode node in Nodes) { node.SelectedImageIndex = node.ImageIndex; normalizeSelIndex(node.Nodes); } });
+            void normalizeSelIndex(TreeNodeCollection Nodes)
+            {
+                foreach (TreeNode node in Nodes)
+                {
+                    node.SelectedImageIndex = node.ImageIndex; normalizeSelIndex(node.Nodes);
+                }
+            }
             normalizeSelIndex(InfoTreeview.Nodes);
             ShowDialog();
         }

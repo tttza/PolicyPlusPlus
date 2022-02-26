@@ -20,8 +20,17 @@ namespace PolicyPlus
             CurrentFilter = null;
             ProductNodes = new Dictionary<PolicyPlusProduct, TreeNode>();
             AllowedProductsTreeview.Nodes.Clear();
-            Action<IEnumerable<PolicyPlusProduct>, TreeNodeCollection> addProductsToNodeCollection;
-            addProductsToNodeCollection = new Action<IEnumerable<PolicyPlusProduct>, TreeNodeCollection>((Products, Nodes) => { foreach (var product in Products) { var node = Nodes.Add(product.DisplayName); ProductNodes.Add(product, node); node.Tag = product; if (product.Children is object) addProductsToNodeCollection(product.Children, node.Nodes); } });
+            //Action<IEnumerable<PolicyPlusProduct>, TreeNodeCollection> addProductsToNodeCollection;
+            void addProductsToNodeCollection(IEnumerable<PolicyPlusProduct> Products, TreeNodeCollection Nodes)
+            {
+                foreach (var product in Products)
+                {
+                    var node = Nodes.Add(product.DisplayName);
+                    ProductNodes.Add(product, node);
+                    node.Tag = product;
+                    if (product.Children is object) addProductsToNodeCollection(product.Children, node.Nodes);
+                }
+            }
             addProductsToNodeCollection(Workspace.Products.Values, AllowedProductsTreeview.Nodes); // Recursively add products
             PrepareDialog(Configuration);
             return ShowDialog();
@@ -98,8 +107,15 @@ namespace PolicyPlus
                 AlwaysMatchAnyCheckbox.Checked = Configuration.AlwaysMatchAny;
                 MatchBlankSupportCheckbox.Checked = Configuration.MatchBlankSupport;
                 // Expand to show all products with a different check state than their parent
-                Action<TreeNode> expandIfNecessary;
-                expandIfNecessary = new Action<TreeNode>((Node) => { foreach (TreeNode subnode in Node.Nodes) { expandIfNecessary(subnode); if (subnode.IsExpanded | subnode.Checked != Node.Checked) { Node.Expand(); } } });
+                void expandIfNecessary(TreeNode Node)
+                {
+                    foreach (TreeNode subnode in Node.Nodes)
+                    {
+                        expandIfNecessary(subnode);
+                        if (subnode.IsExpanded | subnode.Checked != Node.Checked) { Node.Expand(); }
+                    }
+
+                }
                 foreach (TreeNode node in AllowedProductsTreeview.Nodes)
                     expandIfNecessary(node);
             }

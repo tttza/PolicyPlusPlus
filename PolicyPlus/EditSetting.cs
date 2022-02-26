@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Microsoft.VisualBasic.CompilerServices;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace PolicyPlus
 {
@@ -149,7 +149,7 @@ namespace PolicyPlus
                                 else
                                 {
                                     var text = new TextBox();
-                                    text.TextChanged += () =>
+                                    text.TextChanged += (o, i) =>
                                     {
                                         int argresult = 0;
                                         if (!int.TryParse(text.Text, out argresult))
@@ -253,7 +253,7 @@ namespace PolicyPlus
                                     UseVisualStyleBackColor = true,
                                     Text = "Edit..."
                                 };
-                                button.Click += () => { if (My.MyProject.Forms.ListEditor.PresentDialog(listPres.Label, button.Tag, list.UserProvidesNames) == DialogResult.OK) button.Tag = My.MyProject.Forms.ListEditor.FinalData; };
+                                button.Click += (o, i) => { if (My.MyProject.Forms.ListEditor.PresentDialog(listPres.Label, button.Tag, list.UserProvidesNames) == DialogResult.OK) button.Tag = My.MyProject.Forms.ListEditor.FinalData; };
                                 addControl(pres.ID, button, listPres.Label);
                                 break;
                             }

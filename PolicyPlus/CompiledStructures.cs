@@ -3,30 +3,37 @@
 namespace PolicyPlus
 {
     // Compiled data, more object-oriented and display-worthy than raw data from ADMX files
-    public class PolicyPlusCategory
+
+    public interface IPolicyPlus
     {
-        public string UniqueID;
+        public string UniqueID { get; set; }
+        public string DisplayName { get; set; }
+    }
+
+    public partial class BasePolicyPlus : IPolicyPlus
+    {
+        public string UniqueID { get; set; }
+        public string DisplayName { get; set; }
+    }
+
+    public class PolicyPlusCategory : BasePolicyPlus
+    {
         public PolicyPlusCategory Parent;
         public List<PolicyPlusCategory> Children = new List<PolicyPlusCategory>();
-        public string DisplayName;
         public string DisplayExplanation;
         public List<PolicyPlusPolicy> Policies = new List<PolicyPlusPolicy>();
         public AdmxCategory RawCategory;
     }
 
-    public class PolicyPlusProduct
+    public class PolicyPlusProduct : BasePolicyPlus
     {
-        public string UniqueID;
         public PolicyPlusProduct Parent;
         public List<PolicyPlusProduct> Children = new List<PolicyPlusProduct>();
-        public string DisplayName;
         public AdmxProduct RawProduct;
     }
 
-    public class PolicyPlusSupport
+    public class PolicyPlusSupport : BasePolicyPlus
     {
-        public string UniqueID;
-        public string DisplayName;
         public List<PolicyPlusSupportEntry> Elements = new List<PolicyPlusSupportEntry>();
         public AdmxSupportDefinition RawSupport;
     }
@@ -38,11 +45,9 @@ namespace PolicyPlus
         public AdmxSupportEntry RawSupportEntry;
     }
 
-    public class PolicyPlusPolicy
+    public class PolicyPlusPolicy : BasePolicyPlus
     {
-        public string UniqueID;
         public PolicyPlusCategory Category;
-        public string DisplayName;
         public string DisplayExplanation;
         public PolicyPlusSupport SupportedOn;
         public Presentation Presentation;

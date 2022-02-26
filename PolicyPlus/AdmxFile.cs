@@ -1,7 +1,6 @@
-﻿using System;
+﻿using Microsoft.VisualBasic.CompilerServices;
 using System.Collections.Generic;
 using System.Xml;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace PolicyPlus
 {
@@ -123,8 +122,28 @@ namespace PolicyPlus
                                 }
                                 else if (supportInfo.LocalName == "products") // Product definitions
                                 {
-                                    Action<XmlNode, string, AdmxProduct> loadProducts;
-                                    loadProducts = new Action<XmlNode, string, AdmxProduct>((Node, ChildTagName, Parent) => { foreach (XmlNode subproductElement in Node.ChildNodes) { if ((subproductElement.LocalName ?? "") != (ChildTagName ?? "")) continue; var product = new AdmxProduct(); product.ID = subproductElement.Attributes["name"].Value; product.DisplayCode = subproductElement.Attributes["displayName"].Value; if (Parent is object) product.Version = Conversions.ToInteger(subproductElement.Attributes["versionIndex"].Value); product.Parent = Parent; product.DefinedIn = admx; admx.Products.Add(product); if (Parent is null) { product.Type = AdmxProductType.Product; loadProducts(subproductElement, "majorVersion", product); } else if (Parent.Parent is null) { product.Type = AdmxProductType.MajorRevision; loadProducts(subproductElement, "minorVersion", product); } else { product.Type = AdmxProductType.MinorRevision; } } });
+                                    void loadProducts(XmlNode Node, string ChildTagName, AdmxProduct Parent)
+                                    {
+                                        foreach (XmlNode subproductElement in Node.ChildNodes)
+                                        {
+                                            if ((subproductElement.LocalName ?? "") != (ChildTagName ?? "")) continue;
+                                            var product = new AdmxProduct();
+                                            product.ID = subproductElement.Attributes["name"].Value; product.DisplayCode = subproductElement.Attributes["displayName"].Value;
+                                            if (Parent is object) product.Version = Conversions.ToInteger(subproductElement.Attributes["versionIndex"].Value); 
+                                            product.Parent = Parent; product.DefinedIn = admx;
+                                            admx.Products.Add(product);
+                                            if (Parent is null) 
+                                            {
+                                                product.Type = AdmxProductType.Product; loadProducts(subproductElement, "majorVersion", product); 
+                                            } 
+                                            else if (Parent.Parent is null) 
+                                            {
+                                                product.Type = AdmxProductType.MajorRevision; loadProducts(subproductElement, "minorVersion", product);
+                                            } else {
+                                                product.Type = AdmxProductType.MinorRevision; 
+                                            }
+                                        }
+                                    }
                                     loadProducts(supportInfo, "product", null); // Start the recursive load
                                 }
                             }

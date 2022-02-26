@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.VisualBasic.CompilerServices;
+using System.Collections.Generic;
 using System.Xml;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace PolicyPlus
 {
@@ -163,7 +163,7 @@ namespace PolicyPlus
                                 {
                                     var dropPart = new DropDownPresentationElement();
                                     dropPart.NoSort = Conversions.ToBoolean(uiElement.AttributeOrDefault("noSort", false));
-                                    dropPart.DefaultItemID = (int?)uiElement.AttributeOrNull("defaultItem");
+                                    dropPart.DefaultItemID = (int.TryParse(uiElement.AttributeOrNull("defaultItem"), out int num)) ? num : null;
                                     dropPart.Label = uiElement.InnerText;
                                     presPart = dropPart;
                                     break;

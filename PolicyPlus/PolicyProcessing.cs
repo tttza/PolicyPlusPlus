@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Microsoft.VisualBasic.CompilerServices;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace PolicyPlus
 {
@@ -659,8 +659,8 @@ namespace PolicyPlus
                 return false;
             };
             var entriesSeen = new List<PolicyPlusSupport>();
-            Func<PolicyPlusSupport, bool> supDefMet;
-            supDefMet = new Func<PolicyPlusSupport, bool>((Support) =>
+
+            bool supDefMet(PolicyPlusSupport Support)
             {
                 if (entriesSeen.Contains(Support))
                     return false; // Cyclic dependencies
@@ -692,7 +692,8 @@ namespace PolicyPlus
                 }
 
                 return requireAll; // If all were required and this function hasn't exited yet, all are matched
-            });
+            }
+
             return supDefMet(Policy.SupportedOn);
         }
     }

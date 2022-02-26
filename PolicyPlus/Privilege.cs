@@ -10,10 +10,10 @@ namespace PolicyPlus
             // Enable the given Win32 privilege
             var luid = default(PInvokeLuid);
             PInvokeTokenPrivileges priv;
-            IntPtr thisProcToken;
+            IntPtr thisProcToken = default(IntPtr);
             PInvoke.OpenProcessToken(PInvoke.GetCurrentProcess(), 0x28U, ref thisProcToken); // 0x28 = TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY
-            string argSystemName = null;
-            PInvoke.LookupPrivilegeValueW(ref argSystemName, ref Name, ref luid);
+            String argSystemName = null;
+            PInvoke.LookupPrivilegeValueW(argSystemName, Name, ref luid);
             priv.Attributes = 2U; // SE_PRIVILEGE_ENABLED
             priv.PrivilegeCount = 1U;
             priv.LUID = luid;

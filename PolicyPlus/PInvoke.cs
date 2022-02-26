@@ -6,27 +6,27 @@ namespace PolicyPlus
     class PInvoke
     {
         [DllImport("user32.dll")]
-        static extern bool ShowScrollBar(IntPtr Handle, int Scrollbar, bool Show);
+        public static extern bool ShowScrollBar(IntPtr Handle, int Scrollbar, bool Show);
         [DllImport("userenv.dll")]
-        static extern bool RefreshPolicyEx(bool IsMachine, uint Options);
+        public static extern bool RefreshPolicyEx(bool IsMachine, uint Options);
         [DllImport("advapi32.dll", CharSet = CharSet.Unicode)]
-        static extern int RegLoadKeyW(IntPtr HiveKey, string Subkey, string File);
+        public static extern int RegLoadKeyW(IntPtr HiveKey, string Subkey, string File);
         [DllImport("advapi32.dll", CharSet = CharSet.Unicode)]
-        static extern int RegUnLoadKeyW(IntPtr HiveKey, string Subkey);
+        public static extern int RegUnLoadKeyW(IntPtr HiveKey, string Subkey);
         [DllImport("kernel32.dll")]
-        static extern IntPtr GetCurrentProcess();
+        public static extern IntPtr GetCurrentProcess();
         [DllImport("advapi32.dll")]
-        static extern bool OpenProcessToken(IntPtr Process, uint Access, ref IntPtr TokenHandle);
+        public static extern bool OpenProcessToken(IntPtr Process, uint Access, ref IntPtr TokenHandle);
         [DllImport("advapi32.dll")]
-        static extern bool AdjustTokenPrivileges(IntPtr Token, bool DisableAll, ref PInvokeTokenPrivileges NewState, uint BufferLength, IntPtr Null, ref uint ReturnLength);
+        public static extern bool AdjustTokenPrivileges(IntPtr Token, bool DisableAll, ref PInvokeTokenPrivileges NewState, uint BufferLength, IntPtr Null, ref uint ReturnLength);
         [DllImport("advapi32.dll", CharSet = CharSet.Unicode)]
-        static extern bool LookupPrivilegeValueW(string SystemName, string Name, ref PInvokeLuid LUID);
+        public static extern bool LookupPrivilegeValueW(string SystemName, string Name, ref PInvokeLuid LUID);
         [DllImport("kernel32.dll")]
-        static extern bool CloseHandle(IntPtr Handle);
+        public static extern bool CloseHandle(IntPtr Handle);
         [DllImport("kernel32.dll")]
-        static extern bool GetProductInfo(int MajorVersion, int MinorVersion, int SPMajor, int SPMinor, ref int EditionCode);
+        public static extern bool GetProductInfo(int MajorVersion, int MinorVersion, int SPMajor, int SPMinor, ref int EditionCode);
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        static extern bool SendNotifyMessageW(IntPtr Handle, int Message, UIntPtr WParam, IntPtr LParam);
+        public static extern bool SendNotifyMessageW(IntPtr Handle, int Message, UIntPtr WParam, IntPtr LParam);
     }
 
     [StructLayout(LayoutKind.Sequential)]

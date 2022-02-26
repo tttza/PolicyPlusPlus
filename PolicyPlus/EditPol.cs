@@ -1,9 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Windows.Forms;
-using Microsoft.VisualBasic;
+﻿using Microsoft.VisualBasic;
 using Microsoft.VisualBasic.CompilerServices;
 using Microsoft.Win32;
+using System;
+using System.Linq;
+using System.Windows.Forms;
 
 namespace PolicyPlus
 {
@@ -25,8 +25,7 @@ namespace PolicyPlus
                 topItemIndex = LsvPol.TopItem.Index;
             LsvPol.BeginUpdate();
             LsvPol.Items.Clear();
-            Action<string, int> addKey;
-            addKey = new Action<string, int>((Prefix, Depth) =>
+            void addKey(string Prefix, int Depth)
             {
                 var subkeys = EditingPol.GetKeyNames(Prefix);
                 subkeys.Sort(StringComparer.InvariantCultureIgnoreCase);
@@ -111,7 +110,7 @@ namespace PolicyPlus
                         addToLsv(value, iconIndex, false).SubItems.Add(text);
                     }
                 }
-            });
+            };
             addKey("", 0);
             LsvPol.EndUpdate();
             if (topItemIndex.HasValue && LsvPol.Items.Count > topItemIndex.Value)
@@ -334,14 +333,13 @@ namespace PolicyPlus
                 string keyPath = Conversions.ToString(tag);
                 if (keyPath.Contains(@"\"))
                     containerKey = keyPath.Remove(keyPath.LastIndexOf('\\'));
-                Action<string> removeKey;
-                removeKey = new Action<string>((Key) =>
+                void removeKey(string Key)
                 {
                     foreach (var subkey in EditingPol.GetKeyNames(Key))
                         removeKey(Key + @"\" + subkey);
                     EditingPol.ClearKey(Key);
                     EditingPol.ForgetKeyClearance(Key);
-                });
+                }
                 removeKey(keyPath);
             }
             else
