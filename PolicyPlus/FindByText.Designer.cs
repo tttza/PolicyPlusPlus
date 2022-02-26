@@ -35,89 +35,111 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            StringTextbox = new TextBox();
-            TitleCheckbox = new CheckBox();
-            DescriptionCheckbox = new CheckBox();
-            CommentCheckbox = new CheckBox();
-            SearchButton = new Button();
-            SearchButton.Click += new EventHandler(SearchButton_Click);
-            SuspendLayout();
+            this.StringTextbox = new System.Windows.Forms.TextBox();
+            this.TitleCheckbox = new System.Windows.Forms.CheckBox();
+            this.DescriptionCheckbox = new System.Windows.Forms.CheckBox();
+            this.CommentCheckbox = new System.Windows.Forms.CheckBox();
+            this.SearchButton = new System.Windows.Forms.Button();
+            this.IdCheckbox = new System.Windows.Forms.CheckBox();
+            this.SuspendLayout();
             // 
             // StringTextbox
             // 
-            StringTextbox.Location = new Point(12, 12);
-            StringTextbox.Name = "StringTextbox";
-            StringTextbox.Size = new Size(352, 20);
-            StringTextbox.TabIndex = 0;
+            this.StringTextbox.Location = new System.Drawing.Point(16, 14);
+            this.StringTextbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.StringTextbox.Name = "StringTextbox";
+            this.StringTextbox.Size = new System.Drawing.Size(468, 22);
+            this.StringTextbox.TabIndex = 0;
             // 
             // TitleCheckbox
             // 
-            TitleCheckbox.AutoSize = true;
-            TitleCheckbox.Checked = true;
-            TitleCheckbox.CheckState = CheckState.Checked;
-            TitleCheckbox.Location = new Point(12, 38);
-            TitleCheckbox.Name = "TitleCheckbox";
-            TitleCheckbox.Size = new Size(54, 17);
-            TitleCheckbox.TabIndex = 1;
-            TitleCheckbox.Text = "In title";
-            TitleCheckbox.UseVisualStyleBackColor = true;
+            this.TitleCheckbox.AutoSize = true;
+            this.TitleCheckbox.Checked = true;
+            this.TitleCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.TitleCheckbox.Location = new System.Drawing.Point(16, 44);
+            this.TitleCheckbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.TitleCheckbox.Name = "TitleCheckbox";
+            this.TitleCheckbox.Size = new System.Drawing.Size(70, 19);
+            this.TitleCheckbox.TabIndex = 1;
+            this.TitleCheckbox.Text = "In title";
+            this.TitleCheckbox.UseVisualStyleBackColor = true;
             // 
             // DescriptionCheckbox
             // 
-            DescriptionCheckbox.AutoSize = true;
-            DescriptionCheckbox.Checked = true;
-            DescriptionCheckbox.CheckState = CheckState.Checked;
-            DescriptionCheckbox.Location = new Point(72, 38);
-            DescriptionCheckbox.Name = "DescriptionCheckbox";
-            DescriptionCheckbox.Size = new Size(89, 17);
-            DescriptionCheckbox.TabIndex = 2;
-            DescriptionCheckbox.Text = "In description";
-            DescriptionCheckbox.UseVisualStyleBackColor = true;
+            this.DescriptionCheckbox.AutoSize = true;
+            this.DescriptionCheckbox.Checked = true;
+            this.DescriptionCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.DescriptionCheckbox.Location = new System.Drawing.Point(96, 44);
+            this.DescriptionCheckbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.DescriptionCheckbox.Name = "DescriptionCheckbox";
+            this.DescriptionCheckbox.Size = new System.Drawing.Size(115, 19);
+            this.DescriptionCheckbox.TabIndex = 2;
+            this.DescriptionCheckbox.Text = "In description";
+            this.DescriptionCheckbox.UseVisualStyleBackColor = true;
             // 
             // CommentCheckbox
             // 
-            CommentCheckbox.AutoSize = true;
-            CommentCheckbox.Checked = true;
-            CommentCheckbox.CheckState = CheckState.Checked;
-            CommentCheckbox.Location = new Point(167, 38);
-            CommentCheckbox.Name = "CommentCheckbox";
-            CommentCheckbox.Size = new Size(81, 17);
-            CommentCheckbox.TabIndex = 3;
-            CommentCheckbox.Text = "In comment";
-            CommentCheckbox.UseVisualStyleBackColor = true;
+            this.CommentCheckbox.AutoSize = true;
+            this.CommentCheckbox.Checked = true;
+            this.CommentCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.CommentCheckbox.Location = new System.Drawing.Point(223, 44);
+            this.CommentCheckbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.CommentCheckbox.Name = "CommentCheckbox";
+            this.CommentCheckbox.Size = new System.Drawing.Size(105, 19);
+            this.CommentCheckbox.TabIndex = 3;
+            this.CommentCheckbox.Text = "In comment";
+            this.CommentCheckbox.UseVisualStyleBackColor = true;
             // 
             // SearchButton
             // 
-            SearchButton.Location = new Point(289, 61);
-            SearchButton.Name = "SearchButton";
-            SearchButton.Size = new Size(75, 23);
-            SearchButton.TabIndex = 4;
-            SearchButton.Text = "Search";
-            SearchButton.UseVisualStyleBackColor = true;
+            this.SearchButton.Location = new System.Drawing.Point(385, 70);
+            this.SearchButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.SearchButton.Name = "SearchButton";
+            this.SearchButton.Size = new System.Drawing.Size(100, 27);
+            this.SearchButton.TabIndex = 4;
+            this.SearchButton.Text = "Search";
+            this.SearchButton.UseVisualStyleBackColor = true;
+            this.SearchButton.Click += new System.EventHandler(this.SearchButton_Click);
+            // 
+            // IdCheckbox
+            // 
+            this.IdCheckbox.AutoSize = true;
+            this.IdCheckbox.Checked = true;
+            this.IdCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.IdCheckbox.Location = new System.Drawing.Point(337, 44);
+            this.IdCheckbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.IdCheckbox.Name = "IdCheckbox";
+            this.IdCheckbox.Size = new System.Drawing.Size(60, 19);
+            this.IdCheckbox.TabIndex = 5;
+            this.IdCheckbox.Text = "In ID";
+            this.IdCheckbox.UseVisualStyleBackColor = true;
             // 
             // FindByText
             // 
-            AcceptButton = SearchButton;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(376, 96);
-            Controls.Add(SearchButton);
-            Controls.Add(CommentCheckbox);
-            Controls.Add(DescriptionCheckbox);
-            Controls.Add(TitleCheckbox);
-            Controls.Add(StringTextbox);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            KeyPreview = true;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "FindByText";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Find by Text";
-            KeyUp += new KeyEventHandler(FindByText_KeyUp);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.SearchButton;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(501, 111);
+            this.Controls.Add(this.IdCheckbox);
+            this.Controls.Add(this.SearchButton);
+            this.Controls.Add(this.CommentCheckbox);
+            this.Controls.Add(this.DescriptionCheckbox);
+            this.Controls.Add(this.TitleCheckbox);
+            this.Controls.Add(this.StringTextbox);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.KeyPreview = true;
+            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "FindByText";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Find by Text";
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.FindByText_KeyUp);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal TextBox StringTextbox;
@@ -125,5 +147,6 @@ namespace PolicyPlus
         internal CheckBox DescriptionCheckbox;
         internal CheckBox CommentCheckbox;
         internal Button SearchButton;
+        internal CheckBox IdCheckbox;
     }
 }

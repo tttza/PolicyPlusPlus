@@ -41,7 +41,8 @@ namespace PolicyPlus
             bool checkTitle = TitleCheckbox.Checked;
             bool checkDesc = DescriptionCheckbox.Checked;
             bool checkComment = CommentCheckbox.Checked;
-            if (!(checkTitle | checkDesc | checkComment))
+            bool checkId = IdCheckbox.Checked;
+            if (!(checkTitle | checkDesc | checkComment | checkId))
             {
                 Interaction.MsgBox("At least one attribute must be searched. Check one of the boxes and try again.", MsgBoxStyle.Exclamation);
                 return;
@@ -111,9 +112,16 @@ namespace PolicyPlus
                         return true;
                 }
 
+                if (checkId)
+                {
+                    if (isStringAHit(Policy.UniqueID.Split(':')[1]))
+                        return true;
+                }
+
                 return false;
             });
             DialogResult = DialogResult.OK;
         }
+
     }
 }
