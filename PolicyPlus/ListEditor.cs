@@ -53,6 +53,7 @@ namespace PolicyPlus
                     if (row.IsNewRow)
                         continue;
                     string key = Conversions.ToString(row.Cells[0].Value);
+                    if (key is null) continue;
                     if (dict.ContainsKey(key))
                     {
                         Interaction.MsgBox("Multiple entries are named \"" + key + "\"! Remove or rename all but one.", MsgBoxStyle.Exclamation);

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace PolicyPlus
 {
@@ -61,7 +62,7 @@ namespace PolicyPlus
                     int charCode = Stream.ReadUInt16();
                     if (charCode == 0)
                         break;
-                    sb.Append(charCode);
+                    sb.Append(Char.ConvertFromUtf32(charCode));
                 }
                 while (true);
                 return sb.ToString();
@@ -347,7 +348,7 @@ namespace PolicyPlus
                     int charCode = Data[x * 2] + (Data[x * 2 + 1] << 8);
                     if (charCode == 0)
                         break;
-                    sb.Append(charCode);
+                    sb.Append(Char.ConvertFromUtf32(charCode));
                 }
 
                 return sb.ToString();
@@ -358,6 +359,7 @@ namespace PolicyPlus
                 var ped = new PolEntryData() { Kind = RegistryValueKind.String };
                 if (Expand)
                     ped.Kind = RegistryValueKind.ExpandString;
+                if (Text is null) Text = "";
                 var data = new byte[Text.Length * 2 + 1 + 1];
                 for (int x = 0, loopTo = Text.Length - 1; x <= loopTo; x++)
                 {
