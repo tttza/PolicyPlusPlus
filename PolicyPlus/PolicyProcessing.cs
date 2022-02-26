@@ -310,7 +310,11 @@ namespace PolicyPlus
         private static bool GetRegistryListState(IPolicySource PolicySource, PolicyRegistryList RegList, string DefaultKey, string DefaultValueName)
         {
             // Whether a list of Registry values is present
-            bool isListAllPresent(PolicyRegistrySingleList l) => ValueListPresent(l, PolicySource, DefaultKey, DefaultValueName);
+            bool isListAllPresent(PolicyRegistrySingleList l)
+            {
+                return ValueListPresent(l, PolicySource, DefaultKey, DefaultValueName);
+            }
+
             if (RegList.OnValue is object)
             {
                 if (ValuePresent(RegList.OnValue, PolicySource, DefaultKey, DefaultValueName))
@@ -716,7 +720,10 @@ namespace PolicyPlus
             return other.Key.Equals(Key, StringComparison.InvariantCultureIgnoreCase) & other.Value.Equals(Value, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        public bool EqualsRKVP(RegistryKeyValuePair other) => ((IEquatable<RegistryKeyValuePair>)this).Equals(other);
+        public bool EqualsRKVP(RegistryKeyValuePair other)
+        {
+            return ((IEquatable<RegistryKeyValuePair>)this).Equals(other);
+        }
 
         public override bool Equals(object obj)
         {

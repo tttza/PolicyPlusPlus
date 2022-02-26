@@ -38,7 +38,7 @@ namespace PolicyPlus
                         if (reg.HasDefaultValues())
                             Interaction.MsgBox("This REG file contains data for default values, which cannot be applied to all policy sources.", MsgBoxStyle.Exclamation);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         Interaction.MsgBox("An error occurred while trying to guess the prefix.", MsgBoxStyle.Exclamation);
                     }
@@ -72,7 +72,7 @@ namespace PolicyPlus
                 reg.Apply(PolicySource);
                 DialogResult = DialogResult.OK;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Interaction.MsgBox("Failed to import the REG file.", MsgBoxStyle.Exclamation);
             }

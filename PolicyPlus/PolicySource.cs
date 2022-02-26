@@ -650,21 +650,10 @@ namespace PolicyPlus
             // Does nothing
         }
 
-        public RegistryKey EncapsulatedRegistry
-        {
-            get
-            {
-                return RootKey;
-            }
-        }
+        public RegistryKey EncapsulatedRegistry => RootKey;
 
-        public static IEnumerable<string> PolicyKeys
-        {
-            get
-            {
+        public static IEnumerable<string> PolicyKeys =>
                 // Values outside these branches are not tracked by PolFile.ApplyDifference
-                return new[] { @"software\policies", @"software\microsoft\windows\currentversion\policies", @"system\currentcontrolset\policies" };
-            }
-        }
+                new[] { @"software\policies", @"software\microsoft\windows\currentversion\policies", @"system\currentcontrolset\policies" };
     }
 }

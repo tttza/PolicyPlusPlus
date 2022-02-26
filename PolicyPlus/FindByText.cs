@@ -49,7 +49,10 @@ namespace PolicyPlus
 
             Searcher = new Func<PolicyPlusPolicy, bool>((Policy) =>
             {
-                string cleanupStr(string RawText) => new string(Strings.Trim(RawText.ToLowerInvariant()).Where(c => !".,'\";/!(){}[]".Contains(Conversions.ToString(c))).ToArray());
+                string cleanupStr(string RawText)
+                {
+                    return new string(Strings.Trim(RawText.ToLowerInvariant()).Where(c => !".,'\";/!(){}[]".Contains(Conversions.ToString(c))).ToArray());
+                }
                 // Parse the query string for wildcards or quoted strings
                 var rawSplitted = Strings.Split(text);
                 var simpleWords = new List<string>();

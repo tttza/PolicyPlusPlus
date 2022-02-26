@@ -103,7 +103,14 @@ namespace PolicyPlus
             }
         }
 
-        private void UpdateMajorList(object sender, EventArgs e) => UpdateMajorList();
-        private void UpdateMinorList(object sender, EventArgs e) => UpdateMinorList();
+        private void UpdateMajorList(object sender, EventArgs e)
+        {
+            UpdateMajorList();
+        }
+
+        private void UpdateMinorList(object sender, EventArgs e)
+        {
+            UpdateMinorList();
+        }
     }
 }

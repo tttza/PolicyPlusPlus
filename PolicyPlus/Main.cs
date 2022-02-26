@@ -46,7 +46,7 @@ namespace PolicyPlus
             {
                 OpenPolicyLoaders(new PolicyLoader(userLoaderType, Conversions.ToString(userLoaderData), true), new PolicyLoader(compLoaderType, Conversions.ToString(compLoaderData), false), true);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Interaction.MsgBox("The previous policy sources are not accessible. The defaults will be loaded.", MsgBoxStyle.Exclamation);
                 Configuration.SetValue("CompSourceType", (int)PolicyLoaderSource.LocalGpo);
@@ -127,14 +127,14 @@ namespace PolicyPlus
             CategoryNodes.Clear();
             void addCategory(IEnumerable<PolicyPlusCategory> CategoryList, TreeNodeCollection ParentNode)
             {
-                foreach (var category in CategoryList.Where(ShouldShowCategory)) 
+                foreach (var category in CategoryList.Where(ShouldShowCategory))
                 {
-                    var newNode = ParentNode.Add(category.UniqueID, category.DisplayName, GetImageIndexForCategory(category)); 
-                    newNode.SelectedImageIndex = 3; 
+                    var newNode = ParentNode.Add(category.UniqueID, category.DisplayName, GetImageIndexForCategory(category));
+                    newNode.SelectedImageIndex = 3;
                     newNode.Tag = category;
                     CategoryNodes.Add(category, newNode);
                     addCategory(category.Children, newNode.Nodes);
-                } 
+                }
             }; // "Go" arrow
             addCategory(AdmxWorkspace.Categories.Values, CategoriesTree.Nodes);
             CategoriesTree.Sort();
@@ -503,7 +503,7 @@ namespace PolicyPlus
                             return new Dictionary<string, string>();
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         return null;
                     }
@@ -939,7 +939,7 @@ namespace PolicyPlus
         {
             // Save policy state and comments to disk
             // Doesn't matter, it's just comments
-            void saveComments(Dictionary<string, string> Comments, PolicyLoader Loader) { try { if (Comments is object) CmtxFile.FromCommentTable(Comments).Save(Loader.GetCmtxPath()); } catch (Exception ex) { } };
+            void saveComments(Dictionary<string, string> Comments, PolicyLoader Loader) { try { if (Comments is object) CmtxFile.FromCommentTable(Comments).Save(Loader.GetCmtxPath()); } catch (Exception) { } };
             saveComments(UserComments, UserPolicyLoader);
             saveComments(CompComments, CompPolicyLoader);
             try
@@ -1093,7 +1093,7 @@ namespace PolicyPlus
                     {
                         pol = PolFile.Load(ofd.FileName);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         Interaction.MsgBox("The POL file could not be loaded.", MsgBoxStyle.Exclamation);
                         return;
@@ -1124,7 +1124,7 @@ namespace PolicyPlus
                         GetOrCreatePolFromPolicySource(section).Save(sfd.FileName);
                         Interaction.MsgBox("POL exported successfully.", MsgBoxStyle.Information);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         Interaction.MsgBox("The POL file could not be saved.", MsgBoxStyle.Exclamation);
                     }

@@ -33,15 +33,15 @@ namespace PolicyPlus
                         access = canMountHives ? "Yes" : "No (unprivileged)";
                     }
                 }
-                catch (UnauthorizedAccessException ex)
+                catch (UnauthorizedAccessException)
                 {
                     access = "No";
                 }
-                catch (System.IO.FileNotFoundException ex)
+                catch (System.IO.FileNotFoundException)
                 {
                     access = "";
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     access = "No (in use)";
                 }

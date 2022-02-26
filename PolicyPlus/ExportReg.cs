@@ -56,7 +56,7 @@ namespace PolicyPlus
                 Interaction.MsgBox("REG exported successfully.", MsgBoxStyle.Information);
                 DialogResult = DialogResult.OK;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Interaction.MsgBox("Failed to export REG!", MsgBoxStyle.Exclamation);
             }

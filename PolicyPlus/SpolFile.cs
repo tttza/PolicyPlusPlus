@@ -36,8 +36,16 @@ namespace PolicyPlus
                 line = allLines[ParserLine - 1]; // For human-readability in errors
                 return line;
             };
-            bool atEnd() => ParserLine >= allLines.Length;
-            string peekLine() => allLines[ParserLine]; // +1 for next, -1 for array
+            bool atEnd()
+            {
+                return ParserLine >= allLines.Length;
+            }
+
+            string peekLine()
+            {
+                return allLines[ParserLine]; // +1 for next, -1 for array
+            }
+
             List<string> getAllStrings(string Splittable, char Delimiter)
             {
                 var list = new List<string>();
@@ -246,7 +254,11 @@ namespace PolicyPlus
                     }
             }
 
-            string doubleQuoteString(string Text) => "\"" + Text.Replace("\"", "\"\"") + "\"";
+            string doubleQuoteString(string Text)
+            {
+                return "\"" + Text.Replace("\"", "\"\"") + "\"";
+            }
+
             if (State.BasicState == PolicyState.Enabled & State.ExtraOptions is object)
             {
                 foreach (var kv in State.ExtraOptions)
@@ -342,7 +354,7 @@ namespace PolicyPlus
                         policy.Apply(UserSource, AdmxWorkspace, UserComments);
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     failures += 1;
                 }

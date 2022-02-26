@@ -31,7 +31,7 @@ namespace PolicyPlus
             {
                 compDomain = Domain.GetComputerDomain();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Not domain-joined, or no domain controller is available
             }

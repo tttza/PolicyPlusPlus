@@ -13,7 +13,7 @@ namespace PolicyPlus
             {
                 ConfigKey = RegistryKey.OpenBaseKey(RegistryBase, RegistryView.Default).CreateSubKey(Subkey);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // The key couldn't be created
             }

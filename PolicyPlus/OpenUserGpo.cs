@@ -23,7 +23,7 @@ namespace PolicyPlus
                 SecurityIdentifier sid = (SecurityIdentifier)userAccount.Translate(typeof(SecurityIdentifier));
                 SidTextbox.Text = sid.ToString();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Interaction.MsgBox("The name could not be translated to a SID.", MsgBoxStyle.Exclamation);
             }
@@ -44,7 +44,7 @@ namespace PolicyPlus
                 // Make sure the SID is valid
                 var sid = new SecurityIdentifier(SidTextbox.Text);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Interaction.MsgBox("The SID is not valid. Enter a SID in the lower box, or enter a username in the top box and press Search to translate.", MsgBoxStyle.Exclamation);
                 return;

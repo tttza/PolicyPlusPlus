@@ -73,11 +73,11 @@ namespace PolicyPlus
                 if (!string.IsNullOrEmpty(Text))
                     Value = ulong.Parse(Text, System.Globalization.NumberStyles.HexNumber);
             }
-            catch (ArgumentOutOfRangeException ex)
+            catch (ArgumentOutOfRangeException)
             {
                 Value = Maximum;
             }
-            catch (OverflowException ex)
+            catch (OverflowException)
             {
                 if (!string.IsNullOrEmpty(Text))
                 {
@@ -91,7 +91,7 @@ namespace PolicyPlus
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
             }
             // Do nothing

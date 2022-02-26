@@ -121,9 +121,20 @@ namespace PolicyPlus
             var productIds = new Dictionary<string, PolicyPlusProduct>();
             var supIds = new Dictionary<string, PolicyPlusSupport>();
             var polIds = new Dictionary<string, PolicyPlusPolicy>();
-            PolicyPlusCategory findCatById(string UID) => FindInTempOrFlat(UID, catIds, FlatCategories);
-            PolicyPlusSupport findSupById(string UID) => FindInTempOrFlat(UID, supIds, SupportDefinitions);
-            PolicyPlusProduct findProductById(string UID) => FindInTempOrFlat(UID, productIds, FlatProducts);
+            PolicyPlusCategory findCatById(string UID)
+            {
+                return FindInTempOrFlat(UID, catIds, FlatCategories);
+            }
+
+            PolicyPlusSupport findSupById(string UID)
+            {
+                return FindInTempOrFlat(UID, supIds, SupportDefinitions);
+            }
+
+            PolicyPlusProduct findProductById(string UID)
+            {
+                return FindInTempOrFlat(UID, productIds, FlatProducts);
+            }
             // First pass: Build the structures without resolving references
             foreach (var rawCat in RawCategories)
             {
@@ -321,13 +332,7 @@ namespace PolicyPlus
             }
         }
 
-        public IReadOnlyDictionary<AdmxFile, AdmlFile> Sources
-        {
-            get
-            {
-                return SourceFiles;
-            }
-        }
+        public IReadOnlyDictionary<AdmxFile, AdmlFile> Sources => SourceFiles;
     }
 
     public enum AdmxLoadFailType

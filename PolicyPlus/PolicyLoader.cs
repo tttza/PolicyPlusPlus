@@ -107,7 +107,7 @@ namespace PolicyPlus
                             regPol.DeleteValue(@"Software\Policies", "_PolicyPlusSecCheck");
                             Writable = true;
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             Writable = false;
                         }
@@ -161,7 +161,7 @@ namespace PolicyPlus
                                     Writable = true;
                                 }
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
                                 Writable = false;
                             }
@@ -179,7 +179,7 @@ namespace PolicyPlus
                                 SourceObject = pol;
                                 Writable = true;
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
                                 SourceObject = new PolFile();
                                 Writable = false;
@@ -358,21 +358,9 @@ namespace PolicyPlus
             }
         }
 
-        public PolicyLoaderSource Source
-        {
-            get
-            {
-                return SourceType;
-            }
-        }
+        public PolicyLoaderSource Source => SourceType;
 
-        public string LoaderData
-        {
-            get
-            {
-                return OriginalArgument;
-            }
-        }
+        public string LoaderData => OriginalArgument;
 
         public string GetDisplayInfo()
         {

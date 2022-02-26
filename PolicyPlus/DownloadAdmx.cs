@@ -58,7 +58,11 @@ namespace PolicyPlus
 
         private void ButtonStart_Click(object sender, EventArgs e)
         {
-            void setProgress(string Progress) => Invoke(new Action(() => LabelProgress.Text = Progress));
+            void setProgress(string Progress)
+            {
+                Invoke(new Action(() => LabelProgress.Text = Progress));
+            }
+
             LabelProgress.Text = "";
             SetIsBusy(true);
             string destination = TextDestFolder.Text;
@@ -173,7 +177,7 @@ namespace PolicyPlus
                         DialogResult = DialogResult.OK;
                     }));
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     Invoke(new Action(() =>
                     {
