@@ -178,6 +178,7 @@ namespace PolicyPlus
                     listItem.ImageIndex = GetImageIndexForSetting(policy);
                     listItem.SubItems.Add(GetPolicyState(policy));
                     listItem.SubItems.Add(GetPolicyCommentText(policy));
+                    listItem.SubItems.Add(GetPolicyID(policy));
                     if (ReferenceEquals(policy, CurrentSetting)) // Keep the current policy selected
                     {
                         listItem.Selected = true;
@@ -401,6 +402,10 @@ namespace PolicyPlus
                         return "Unknown";
                     }
             }
+        }
+        public string GetPolicyID(PolicyPlusPolicy Policy)
+        {
+            return Policy.UniqueID.Split(':')[1];
         }
 
         public string GetPolicyCommentText(PolicyPlusPolicy Policy)
