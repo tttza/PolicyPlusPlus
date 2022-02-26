@@ -1281,6 +1281,10 @@ namespace PolicyPlus
                     My.MyProject.Forms.DetailPolicy.PresentDialog((PolicyPlusPolicy)polObject);
                 }
             }
+            else if (ReferenceEquals(e.ClickedItem, CmeAllDetailsFormatted))
+            {
+                My.MyProject.Forms.DetailPolicyFormatted.PresentDialog((PolicyPlusPolicy)polObject, GetPreferredLanguageCode());
+            }
             else if (ReferenceEquals(e.ClickedItem, CmePolInspectElements))
             {
                 My.MyProject.Forms.InspectPolicyElements.PresentDialog((PolicyPlusPolicy)polObject, PolicyIcons, AdmxWorkspace);

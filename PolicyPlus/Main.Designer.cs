@@ -105,6 +105,7 @@ namespace PolicyPlus
             this.ComputerSourceLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.UserSourceLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.ChSettingID = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.CmeAllDetailsFormatted = new System.Windows.Forms.ToolStripMenuItem();
             ChSettingEnabled = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             ChSettingCommented = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             ToolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
@@ -516,7 +517,7 @@ namespace PolicyPlus
             this.CategoriesTree.Name = "CategoriesTree";
             this.CategoriesTree.SelectedImageIndex = 0;
             this.CategoriesTree.ShowNodeToolTips = true;
-            this.CategoriesTree.Size = new System.Drawing.Size(399, 739);
+            this.CategoriesTree.Size = new System.Drawing.Size(399, 711);
             this.CategoriesTree.TabIndex = 2;
             this.CategoriesTree.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.CategoriesTree_AfterSelect);
             this.CategoriesTree.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.CategoriesTree_NodeMouseClick);
@@ -528,10 +529,11 @@ namespace PolicyPlus
             this.CmeCatOpen,
             this.CmePolEdit,
             this.CmeAllDetails,
+            this.CmeAllDetailsFormatted,
             this.CmePolInspectElements,
             this.CmePolSpolFragment});
             this.PolicyObjectContext.Name = "PolicyObjectContext";
-            this.PolicyObjectContext.Size = new System.Drawing.Size(249, 124);
+            this.PolicyObjectContext.Size = new System.Drawing.Size(249, 148);
             this.PolicyObjectContext.Opening += new System.ComponentModel.CancelEventHandler(this.PolicyObjectContext_Opening);
             this.PolicyObjectContext.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.PolicyObjectContext_ItemClicked);
             // 
@@ -556,6 +558,12 @@ namespace PolicyPlus
             this.CmeAllDetails.Name = "CmeAllDetails";
             this.CmeAllDetails.Size = new System.Drawing.Size(248, 24);
             this.CmeAllDetails.Text = "Details";
+            // 
+            // CmeAllDetailsFormatted
+            // 
+            this.CmeAllDetailsFormatted.Name = "CmeAllDetailsFormatted";
+            this.CmeAllDetailsFormatted.Size = new System.Drawing.Size(248, 24);
+            this.CmeAllDetailsFormatted.Text = "Details - Formatted";
             // 
             // CmePolInspectElements
             // 
@@ -662,7 +670,7 @@ namespace PolicyPlus
             this.SettingInfoPanel.Location = new System.Drawing.Point(802, 3);
             this.SettingInfoPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.SettingInfoPanel.Name = "SettingInfoPanel";
-            this.SettingInfoPanel.Size = new System.Drawing.Size(273, 761);
+            this.SettingInfoPanel.Size = new System.Drawing.Size(273, 733);
             this.SettingInfoPanel.TabIndex = 0;
             this.SettingInfoPanel.ClientSizeChanged += new System.EventHandler(this.SettingInfoPanel_ClientSizeChanged);
             this.SettingInfoPanel.SizeChanged += new System.EventHandler(this.SettingInfoPanel_ClientSizeChanged);
@@ -794,6 +802,7 @@ namespace PolicyPlus
             this.ChSettingID.DisplayIndex = 2;
             this.ChSettingID.Text = "ID";
             this.ChSettingID.Width = 130;
+
             // 
             // Main
             // 
@@ -891,5 +900,6 @@ namespace PolicyPlus
         internal PictureBox PictureBox1;
         internal Label PolicyIsPrefLabel;
         private ColumnHeader ChSettingID;
+        private ToolStripMenuItem CmeAllDetailsFormatted;
     }
 }

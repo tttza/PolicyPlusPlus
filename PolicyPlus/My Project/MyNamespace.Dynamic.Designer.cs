@@ -78,6 +78,29 @@ namespace PolicyPlus.My
             }
 
             [EditorBrowsable(EditorBrowsableState.Never)]
+            public DetailPolicyFormatted m_DetailPolicyFormatted;
+
+            public DetailPolicyFormatted DetailPolicyFormatted
+            {
+                [DebuggerHidden]
+                get
+                {
+                    m_DetailPolicyFormatted = Create__Instance__(m_DetailPolicyFormatted);
+                    return m_DetailPolicyFormatted;
+                }
+
+                [DebuggerHidden]
+                set
+                {
+                    if (ReferenceEquals(value, m_DetailPolicy))
+                        return;
+                    if (value is object)
+                        throw new ArgumentException("Property can only be set to Nothing");
+                    Dispose__Instance__(ref m_DetailPolicy);
+                }
+            }
+
+            [EditorBrowsable(EditorBrowsableState.Never)]
             public DetailProduct m_DetailProduct;
 
             public DetailProduct DetailProduct
