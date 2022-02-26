@@ -129,6 +129,7 @@ namespace PolicyPlus
             this.FormattedPathBox.ReadOnly = true;
             this.FormattedPathBox.Size = new System.Drawing.Size(505, 166);
             this.FormattedPathBox.TabIndex = 6;
+            this.FormattedPathBox.Tag = "Path";
             this.FormattedPathBox.TextChanged += new System.EventHandler(this.SectionTextbox_TextChanged);
             // 
             // CloseButton
@@ -152,8 +153,9 @@ namespace PolicyPlus
             this.PathCopyButton.Name = "PathCopyButton";
             this.PathCopyButton.Size = new System.Drawing.Size(36, 38);
             this.PathCopyButton.TabIndex = 20;
+            this.PathCopyButton.Tag = "Path";
             this.PathCopyButton.UseVisualStyleBackColor = true;
-            this.PathCopyButton.Click += new System.EventHandler(this.PathCopyButton_Click);
+            this.PathCopyButton.Click += new System.EventHandler(this.CopyToClipboard);
             // 
             // DetailPolicyFormatted
             // 

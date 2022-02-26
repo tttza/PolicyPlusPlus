@@ -119,9 +119,13 @@ namespace PolicyPlus
 
         }
 
-        private void PathCopyButton_Click(object sender, EventArgs e)
+        private void CopyToClipboard(object sender, EventArgs e)
         {
-            Clipboard.SetText(FormattedPathBox.Text);
+            var tag = (string)((Button)sender).Tag;
+            if (tag == "Path")
+            {
+                Clipboard.SetText(FormattedPathBox.Text);
+            }
         }
     }
 }
