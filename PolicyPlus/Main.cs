@@ -1225,6 +1225,58 @@ namespace PolicyPlus
             }
         }
 
+        private void PolicyObjectContext_DropdownOpening(object sender, EventArgs e)
+        {
+            //// When the right-click menu is opened
+            //bool showingForCategory = false;
+            //if (ReferenceEquals(PolicyObjectContext.SourceControl, CategoriesTree))
+            //{
+            //    showingForCategory = true;
+            //    PolicyObjectContext.Tag = CategoriesTree.SelectedNode.Tag;
+            //}
+            //else if (PoliciesList.SelectedItems.Count > 0) // Shown from the main view
+            //{
+            //    var selEntryTag = PoliciesList.SelectedItems[0].Tag;
+            //    showingForCategory = selEntryTag is PolicyPlusCategory;
+            //    PolicyObjectContext.Tag = selEntryTag;
+            //}
+
+            //var section = AdmxPolicySection.Both;
+            //if (PolicyObjectContext.Tag is PolicyPlusPolicy)
+            //{
+            //    section = ((PolicyPlusPolicy)PolicyObjectContext.Tag).RawPolicy.Section;
+            //}
+            //else { section = 0; }
+            //// Items are tagged in the designer for the objects they apply to
+            //foreach (var item in PolicyObjectContext.Items.OfType<ToolStripMenuItem>())
+            //{
+            //    bool ok = true;
+            //    if (item.HasDropDownItems)
+            //    {
+            //       foreach (var item2 in item.DropDownItems.OfType<ToolStripDropDownItem>())
+            //        {
+            //            if (Conversions.ToString(item2.Tag) == "P" & showingForCategory)
+            //                ok = false;
+            //            if (Conversions.ToString(item2.Tag) == "C" & !showingForCategory)
+            //                ok = false;
+            //            if (ok & Conversions.ToString(item2.Tag) == "P-LM" & showingForCategory & section == AdmxPolicySection.User)
+            //                ok = false;
+            //            if (ok & Conversions.ToString(item2.Tag) == "P-CU" & showingForCategory & section == AdmxPolicySection.Machine)
+            //                ok = false;
+            //        }
+            //    }
+            //    if (Conversions.ToString(item.Tag) == "P" & showingForCategory)
+            //        ok = false;
+            //    if (Conversions.ToString(item.Tag) == "C" & !showingForCategory)
+            //        ok = false;
+            //    if (ok & Conversions.ToString(item.Tag) == "P-LM" & showingForCategory & section == AdmxPolicySection.User)
+            //        ok = false;
+            //    if (ok & Conversions.ToString(item.Tag) == "P-CU" & showingForCategory & section == AdmxPolicySection.Machine)
+            //        ok = false;
+            //    item.Visible = ok;
+            //}
+        }
+
         private void PolicyObjectContext_Opening(object sender, CancelEventArgs e)
         {
             // When the right-click menu is opened
@@ -1245,13 +1297,40 @@ namespace PolicyPlus
                 e.Cancel = true;
                 return;
             }
+
+            var section = AdmxPolicySection.Both;
+            if (PolicyObjectContext.Tag is PolicyPlusPolicy)
+            {
+                section = ((PolicyPlusPolicy)PolicyObjectContext.Tag).RawPolicy.Section;
+            }
+            else { section = 0; }
             // Items are tagged in the designer for the objects they apply to
             foreach (var item in PolicyObjectContext.Items.OfType<ToolStripMenuItem>())
             {
+                if (item.HasDropDownItems)
+                {
+                    foreach (var item2 in item.DropDownItems.OfType<ToolStripDropDownItem>())
+                    {
+                        bool ok2 = true;
+                        if (Conversions.ToString(item2.Tag) == "P" & showingForCategory)
+                            ok2 = false;
+                        if (Conversions.ToString(item2.Tag) == "C" & !showingForCategory)
+                            ok2 = false;
+                        if (ok2 & Conversions.ToString(item2.Tag) == "P-LM" & section == AdmxPolicySection.User)
+                            ok2 = false;
+                        if (ok2 & Conversions.ToString(item2.Tag) == "P-CU" & section == AdmxPolicySection.Machine)
+                            ok2 = false;
+                        item2.Visible = ok2;
+                    }
+                }
                 bool ok = true;
                 if (Conversions.ToString(item.Tag) == "P" & showingForCategory)
                     ok = false;
                 if (Conversions.ToString(item.Tag) == "C" & !showingForCategory)
+                    ok = false;
+                if (ok & Conversions.ToString(item.Tag) == "P-LM" & showingForCategory & section == AdmxPolicySection.User)
+                    ok = false;
+                if (ok & Conversions.ToString(item.Tag) == "P-CU" & showingForCategory & section == AdmxPolicySection.Machine)
                     ok = false;
                 item.Visible = ok;
             }
@@ -1292,6 +1371,44 @@ namespace PolicyPlus
             else if (ReferenceEquals(e.ClickedItem, CmePolSpolFragment))
             {
                 My.MyProject.Forms.InspectSpolFragment.PresentDialog((PolicyPlusPolicy)polObject, AdmxWorkspace, CompPolicySource, UserPolicySource, CompComments, UserComments);
+            }
+            else
+            {
+                CopyToClipboard(polObject, e);
+            }
+        }
+
+        private void CopyToClipboard(object polObject, ToolStripItemClickedEventArgs e)
+        {
+            if (polObject is PolicyPlusPolicy) {
+                if (ReferenceEquals(e.ClickedItem, Cme2CopyId) | ReferenceEquals(e.ClickedItem, CmeCopyToClipboard))
+                {
+                    Clipboard.SetText(((PolicyPlusPolicy)polObject).UniqueID.Split(':')[1]);
+                }
+                else if (ReferenceEquals(e.ClickedItem, Cme2CopyName))
+                {
+                    Clipboard.SetText(((PolicyPlusPolicy)polObject).DisplayName);
+                }
+                else if (ReferenceEquals(e.ClickedItem, Cme2CopyRegPathLC))
+                {
+                    var rawPolicy = ((PolicyPlusPolicy)polObject).RawPolicy;
+                    var text = @"HKEY_LOCAL_MACHINE\" + rawPolicy.RegistryKey;
+                    if (rawPolicy.RegistryValue != null)
+                    {
+                        text += @"\" + rawPolicy.RegistryValue;
+                    }
+                    Clipboard.SetText(text);
+                }
+                else if (ReferenceEquals(e.ClickedItem, Cme2CopyRegPathCU))
+                {
+                    var rawPolicy = ((PolicyPlusPolicy)polObject).RawPolicy;
+                    var text = @"HKEY_CURRENT_USER\" + rawPolicy.RegistryKey;
+                    if (rawPolicy.RegistryValue != null)
+                    {
+                        text += @"\" + rawPolicy.RegistryValue;
+                    }
+                    Clipboard.SetText(text);
+                }
             }
         }
 

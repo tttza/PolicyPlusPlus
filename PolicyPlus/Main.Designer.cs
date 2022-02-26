@@ -55,6 +55,7 @@ namespace PolicyPlus
             this.SetADMLLanguageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.CloseADMXWorkspaceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.OpenPolicyResourcesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.SavePoliciesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.EditRawPOLToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ExitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -85,6 +86,11 @@ namespace PolicyPlus
             this.ComboAppliesTo = new System.Windows.Forms.ComboBox();
             this.CategoriesTree = new System.Windows.Forms.TreeView();
             this.PolicyObjectContext = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.CmeCopyToClipboard = new System.Windows.Forms.ToolStripMenuItem();
+            this.Cme2CopyId = new System.Windows.Forms.ToolStripMenuItem();
+            this.Cme2CopyName = new System.Windows.Forms.ToolStripMenuItem();
+            this.Cme2CopyRegPathLC = new System.Windows.Forms.ToolStripMenuItem();
+            this.Cme2CopyRegPathCU = new System.Windows.Forms.ToolStripMenuItem();
             this.CmeCatOpen = new System.Windows.Forms.ToolStripMenuItem();
             this.CmePolEdit = new System.Windows.Forms.ToolStripMenuItem();
             this.CmeAllDetails = new System.Windows.Forms.ToolStripMenuItem();
@@ -207,6 +213,7 @@ namespace PolicyPlus
             this.CloseADMXWorkspaceToolStripMenuItem,
             ToolStripSeparator2,
             this.OpenPolicyResourcesToolStripMenuItem,
+            this.toolStripSeparator7,
             this.SavePoliciesToolStripMenuItem,
             this.EditRawPOLToolStripMenuItem,
             ToolStripSeparator3,
@@ -250,6 +257,11 @@ namespace PolicyPlus
             this.OpenPolicyResourcesToolStripMenuItem.Size = new System.Drawing.Size(294, 26);
             this.OpenPolicyResourcesToolStripMenuItem.Text = "Open Policy Resources";
             this.OpenPolicyResourcesToolStripMenuItem.Click += new System.EventHandler(this.OpenPolicyResourcesToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator7
+            // 
+            this.toolStripSeparator7.Name = "toolStripSeparator7";
+            this.toolStripSeparator7.Size = new System.Drawing.Size(291, 6);
             // 
             // SavePoliciesToolStripMenuItem
             // 
@@ -526,6 +538,7 @@ namespace PolicyPlus
             // 
             this.PolicyObjectContext.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.PolicyObjectContext.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.CmeCopyToClipboard,
             this.CmeCatOpen,
             this.CmePolEdit,
             this.CmeAllDetails,
@@ -533,9 +546,49 @@ namespace PolicyPlus
             this.CmePolInspectElements,
             this.CmePolSpolFragment});
             this.PolicyObjectContext.Name = "PolicyObjectContext";
-            this.PolicyObjectContext.Size = new System.Drawing.Size(249, 148);
+            this.PolicyObjectContext.Size = new System.Drawing.Size(249, 172);
             this.PolicyObjectContext.Opening += new System.ComponentModel.CancelEventHandler(this.PolicyObjectContext_Opening);
             this.PolicyObjectContext.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.PolicyObjectContext_ItemClicked);
+            // 
+            // CmeCopyToClipboard
+            // 
+            this.CmeCopyToClipboard.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.Cme2CopyId,
+            this.Cme2CopyName,
+            this.Cme2CopyRegPathLC,
+            this.Cme2CopyRegPathCU});
+            this.CmeCopyToClipboard.Name = "CmeCopyToClipboard";
+            this.CmeCopyToClipboard.Size = new System.Drawing.Size(248, 24);
+            this.CmeCopyToClipboard.Tag = "P";
+            this.CmeCopyToClipboard.Text = "Copy value";
+            this.CmeCopyToClipboard.DropDownOpening += new System.EventHandler(this.PolicyObjectContext_DropdownOpening);
+            this.CmeCopyToClipboard.DropDownItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.PolicyObjectContext_ItemClicked);
+            // 
+            // Cme2CopyId
+            // 
+            this.Cme2CopyId.Name = "Cme2CopyId";
+            this.Cme2CopyId.Size = new System.Drawing.Size(211, 26);
+            this.Cme2CopyId.Text = "ID";
+            // 
+            // Cme2CopyName
+            // 
+            this.Cme2CopyName.Name = "Cme2CopyName";
+            this.Cme2CopyName.Size = new System.Drawing.Size(211, 26);
+            this.Cme2CopyName.Text = "Name";
+            // 
+            // Cme2CopyRegPathLC
+            // 
+            this.Cme2CopyRegPathLC.Name = "Cme2CopyRegPathLC";
+            this.Cme2CopyRegPathLC.Size = new System.Drawing.Size(211, 26);
+            this.Cme2CopyRegPathLC.Tag = "P-LM";
+            this.Cme2CopyRegPathLC.Text = "Registry Path - LM";
+            // 
+            // Cme2CopyRegPathCU
+            // 
+            this.Cme2CopyRegPathCU.Name = "Cme2CopyRegPathCU";
+            this.Cme2CopyRegPathCU.Size = new System.Drawing.Size(211, 26);
+            this.Cme2CopyRegPathCU.Tag = "P-CU";
+            this.Cme2CopyRegPathCU.Text = "Registry Path - CU";
             // 
             // CmeCatOpen
             // 
@@ -901,5 +954,11 @@ namespace PolicyPlus
         internal Label PolicyIsPrefLabel;
         private ColumnHeader ChSettingID;
         internal ToolStripMenuItem CmeAllDetailsFormatted;
+        private ToolStripSeparator toolStripSeparator7;
+        internal ToolStripMenuItem CmeCopyToClipboard;
+        internal ToolStripMenuItem Cme2CopyId;
+        internal ToolStripMenuItem Cme2CopyName;
+        internal ToolStripMenuItem Cme2CopyRegPathLC;
+        internal ToolStripMenuItem Cme2CopyRegPathCU;
     }
 }
