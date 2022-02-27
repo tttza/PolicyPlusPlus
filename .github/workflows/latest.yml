@@ -35,5 +35,6 @@ jobs:
           file: PolicyPlus\bin\Release\Policy Plus.exe
           asset_name: PolicyPlusMod.exe
           tag: ${{ github.ref }}
+          overwrite: true
           body: "Tagged build"
  
