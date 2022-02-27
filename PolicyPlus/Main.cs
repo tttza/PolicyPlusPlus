@@ -970,9 +970,9 @@ namespace PolicyPlus
         private void AboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Show author and version information if it was compiled into the program
-            string about = $"Policy Plus by Ben Nordick.{Constants.vbCrLf}{Constants.vbCrLf}Available on GitHub: Fleex255/PolicyPlus.";
+            string about = $"Policy Plus by Ben Nordick.{System.Environment.NewLine}Modded by tttza.{System.Environment.NewLine}{System.Environment.NewLine}Available on GitHub: tttza/PolicyPlus.";
             if (!string.IsNullOrEmpty(VersionHolder.Version.Trim()))
-                about += $" Version: {VersionHolder.Version.Trim()}.";
+                about += $"{System.Environment.NewLine} Version: {VersionHolder.Version.Trim()}";
             Interaction.MsgBox(about, MsgBoxStyle.Information);
         }
 

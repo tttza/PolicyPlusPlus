@@ -1,9 +1,24 @@
-﻿
-namespace PolicyPlus
+using System;
+using System.IO;
+using System.Reflection;
+
+namespace PolicyPlus 
 {
-    // DO NOT MODIFY THIS FILE. It will be overwritten by version.bat.
     static class VersionHolder
     {
-        public const string Version = "";
+        public static string Version
+        {
+            get
+            {
+                string gitVersion = String.Empty;
+                using (Stream stream = Assembly.GetExecutingAssembly()
+                        .GetManifestResourceStream("PolicyPlus." + "version.txt"))
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    gitVersion = reader.ReadToEnd();
+                }
+                return gitVersion;
+            }
+        }
     }
 }
