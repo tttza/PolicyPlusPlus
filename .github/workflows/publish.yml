@@ -1,8 +1,9 @@
-name: Build Latest
+name: Publish
 
 on:
   push:
-    branches: [ master ]
+    tags:
+      - '*'
 
 jobs:
   BuildLatest:
@@ -44,9 +45,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: PolicyPlus\bin\Release\Policy Plus.exe
           asset_name: PolicyPlusMod.exe
-          tag: ${{ steps.read_release.outputs.RELEASE_BODY }}-alpha
-          preleleas: true
+          tag: ${{ github.ref }}
           overwrite: true
           body: |
-            Alpha release. ${{ steps.read_release.outputs.RELEASE_BODY }}
+            ${{ steps.read_release.outputs.RELEASE_BODY }}
   
