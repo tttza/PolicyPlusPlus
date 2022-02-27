@@ -10,7 +10,8 @@ Converted to C# and adding features that I use.
 
 - Convert VB to C#
 - ID Columns added in View.
-- Copy Name, ID, Registry path to clipboard
+- Copy Name, ID, Registry path to clipboard.
+- Search by partially ID.
 - Copy formatted Group Policy template path. (See below.)
 
 ```txt
