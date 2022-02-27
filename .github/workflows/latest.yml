@@ -46,7 +46,7 @@ jobs:
           asset_name: PolicyPlusMod.exe
           tag:  ${{ github.ref }}
           release_name: ${{ steps.read_release.outputs.RELEASE_BODY }}-alpha
-          preleleas: true
+          prereleas: true
           overwrite: true
           body: |
             Alpha release. ${{ steps.read_release.outputs.RELEASE_BODY }}
