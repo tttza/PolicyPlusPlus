@@ -44,7 +44,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: PolicyPlus\bin\Release\Policy Plus.exe
           asset_name: PolicyPlusMod.exe
-          tag: ${{ steps.read_release.outputs.RELEASE_BODY }}-alpha
+          tag:  ${{ github.ref }}
+          release_name: ${{ steps.read_release.outputs.RELEASE_BODY }}-alpha
           preleleas: true
           overwrite: true
           body: |
