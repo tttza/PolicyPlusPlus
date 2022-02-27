@@ -33,18 +33,8 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: PolicyPlus\bin\Release\Policy Plus.exe
-          asset_name: PolicyPlusMod
+          asset_name: PolicyPlusMod.exe
           tag: ${{ github.ref }}
           overwrite: true
           body: "Tagged build"
  
-
-      - name: Upload to S3
-        uses: stcalica/s3-upload@0.0.1
-        with:
-          bucket: ${{ secrets.AWS_S3_BUCKET }}
-          package: PolicyPlus\bin\Release\Policy Plus.exe
-          key: PolicyPlusLatest.exe
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_SECRET_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
