@@ -22,8 +22,9 @@ Computer
          Maximum Foreground Download Bandwidth (percentage)
 ```
 
-I'm not sure about that it converted from VB to C# as I expected. Be careful when you use.
-I have confirmed that reading and writing to the registry is working.
+!!! MAKE SURE YOU MADE a System Restore Point BEFORE YOU USE. !!!
+I'm not sure about that it converted from VB to C# as expected, so be careful when you use.  
+I've confirmed that reading and writing to the registry hive works fine.
 
 ## Goals
 
