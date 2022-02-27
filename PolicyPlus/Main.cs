@@ -1227,54 +1227,7 @@ namespace PolicyPlus
 
         private void PolicyObjectContext_DropdownOpening(object sender, EventArgs e)
         {
-            //// When the right-click menu is opened
-            //bool showingForCategory = false;
-            //if (ReferenceEquals(PolicyObjectContext.SourceControl, CategoriesTree))
-            //{
-            //    showingForCategory = true;
-            //    PolicyObjectContext.Tag = CategoriesTree.SelectedNode.Tag;
-            //}
-            //else if (PoliciesList.SelectedItems.Count > 0) // Shown from the main view
-            //{
-            //    var selEntryTag = PoliciesList.SelectedItems[0].Tag;
-            //    showingForCategory = selEntryTag is PolicyPlusCategory;
-            //    PolicyObjectContext.Tag = selEntryTag;
-            //}
 
-            //var section = AdmxPolicySection.Both;
-            //if (PolicyObjectContext.Tag is PolicyPlusPolicy)
-            //{
-            //    section = ((PolicyPlusPolicy)PolicyObjectContext.Tag).RawPolicy.Section;
-            //}
-            //else { section = 0; }
-            //// Items are tagged in the designer for the objects they apply to
-            //foreach (var item in PolicyObjectContext.Items.OfType<ToolStripMenuItem>())
-            //{
-            //    bool ok = true;
-            //    if (item.HasDropDownItems)
-            //    {
-            //       foreach (var item2 in item.DropDownItems.OfType<ToolStripDropDownItem>())
-            //        {
-            //            if (Conversions.ToString(item2.Tag) == "P" & showingForCategory)
-            //                ok = false;
-            //            if (Conversions.ToString(item2.Tag) == "C" & !showingForCategory)
-            //                ok = false;
-            //            if (ok & Conversions.ToString(item2.Tag) == "P-LM" & showingForCategory & section == AdmxPolicySection.User)
-            //                ok = false;
-            //            if (ok & Conversions.ToString(item2.Tag) == "P-CU" & showingForCategory & section == AdmxPolicySection.Machine)
-            //                ok = false;
-            //        }
-            //    }
-            //    if (Conversions.ToString(item.Tag) == "P" & showingForCategory)
-            //        ok = false;
-            //    if (Conversions.ToString(item.Tag) == "C" & !showingForCategory)
-            //        ok = false;
-            //    if (ok & Conversions.ToString(item.Tag) == "P-LM" & showingForCategory & section == AdmxPolicySection.User)
-            //        ok = false;
-            //    if (ok & Conversions.ToString(item.Tag) == "P-CU" & showingForCategory & section == AdmxPolicySection.Machine)
-            //        ok = false;
-            //    item.Visible = ok;
-            //}
         }
 
         private void PolicyObjectContext_Opening(object sender, CancelEventArgs e)
