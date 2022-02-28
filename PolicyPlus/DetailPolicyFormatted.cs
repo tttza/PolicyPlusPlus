@@ -79,7 +79,7 @@ namespace PolicyPlus
             }
             if (languageCode == "ja-JP")
             {
-                FormattedPathBox.Text += System.Environment.NewLine + "  + 管理者用テンプレート";
+                FormattedPathBox.Text += System.Environment.NewLine + "  + 管理用テンプレート";
             }
             else
             {
