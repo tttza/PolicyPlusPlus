@@ -36,120 +36,132 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            SearchProgress = new ProgressBar();
-            ResultsListview = new ListView();
-            ResultsListview.SizeChanged += new EventHandler(ResultsListview_SizeChanged);
-            ResultsListview.DoubleClick += new EventHandler(GoClicked);
-            ChTitle = new ColumnHeader();
-            ChCategory = new ColumnHeader();
-            ProgressLabel = new Label();
-            CloseButton = new Button();
-            GoButton = new Button();
-            GoButton.Click += new EventHandler(GoClicked);
-            StopButton = new Button();
-            StopButton.Click += new EventHandler(StopButton_Click);
-            SuspendLayout();
+            this.SearchProgress = new System.Windows.Forms.ProgressBar();
+            this.ResultsListview = new System.Windows.Forms.ListView();
+            this.ChTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChCategory = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ProgressLabel = new System.Windows.Forms.Label();
+            this.CloseButton = new System.Windows.Forms.Button();
+            this.GoButton = new System.Windows.Forms.Button();
+            this.StopButton = new System.Windows.Forms.Button();
+            this.SuspendLayout();
             // 
             // SearchProgress
             // 
-            SearchProgress.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            SearchProgress.Location = new Point(12, 25);
-            SearchProgress.Name = "SearchProgress";
-            SearchProgress.Size = new Size(295, 23);
-            SearchProgress.Style = ProgressBarStyle.Continuous;
-            SearchProgress.TabIndex = 0;
+            this.SearchProgress.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.SearchProgress.Location = new System.Drawing.Point(16, 29);
+            this.SearchProgress.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.SearchProgress.Name = "SearchProgress";
+            this.SearchProgress.Size = new System.Drawing.Size(633, 27);
+            this.SearchProgress.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+            this.SearchProgress.TabIndex = 0;
             // 
             // ResultsListview
             // 
-            ResultsListview.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-
-            ResultsListview.Columns.AddRange(new ColumnHeader[] { ChTitle, ChCategory });
-            ResultsListview.FullRowSelect = true;
-            ResultsListview.HideSelection = false;
-            ResultsListview.Location = new Point(12, 54);
-            ResultsListview.MultiSelect = false;
-            ResultsListview.Name = "ResultsListview";
-            ResultsListview.ShowItemToolTips = true;
-            ResultsListview.Size = new Size(351, 105);
-            ResultsListview.TabIndex = 1;
-            ResultsListview.UseCompatibleStateImageBehavior = false;
-            ResultsListview.View = View.Details;
+            this.ResultsListview.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.ResultsListview.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.ChTitle,
+            this.ChCategory});
+            this.ResultsListview.FullRowSelect = true;
+            this.ResultsListview.HideSelection = false;
+            this.ResultsListview.Location = new System.Drawing.Point(16, 62);
+            this.ResultsListview.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.ResultsListview.MultiSelect = false;
+            this.ResultsListview.Name = "ResultsListview";
+            this.ResultsListview.ShowItemToolTips = true;
+            this.ResultsListview.Size = new System.Drawing.Size(707, 295);
+            this.ResultsListview.TabIndex = 1;
+            this.ResultsListview.UseCompatibleStateImageBehavior = false;
+            this.ResultsListview.View = System.Windows.Forms.View.Details;
+            this.ResultsListview.SizeChanged += new System.EventHandler(this.ResultsListview_SizeChanged);
+            this.ResultsListview.DoubleClick += new System.EventHandler(this.GoClicked);
             // 
             // ChTitle
             // 
-            ChTitle.Text = "Title";
-            ChTitle.Width = 222;
+            this.ChTitle.Text = "Title";
+            this.ChTitle.Width = 435;
             // 
             // ChCategory
             // 
-            ChCategory.Text = "Category";
-            ChCategory.Width = 99;
+            this.ChCategory.Text = "Category";
+            this.ChCategory.Width = 259;
             // 
             // ProgressLabel
             // 
-            ProgressLabel.AutoSize = true;
-            ProgressLabel.Location = new Point(12, 9);
-            ProgressLabel.Name = "ProgressLabel";
-            ProgressLabel.Size = new Size(109, 13);
-            ProgressLabel.TabIndex = 2;
-            ProgressLabel.Text = "Results: 0 (searching)";
+            this.ProgressLabel.AutoSize = true;
+            this.ProgressLabel.Location = new System.Drawing.Point(16, 10);
+            this.ProgressLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.ProgressLabel.Name = "ProgressLabel";
+            this.ProgressLabel.Size = new System.Drawing.Size(146, 15);
+            this.ProgressLabel.TabIndex = 2;
+            this.ProgressLabel.Text = "Results: 0 (searching)";
             // 
             // CloseButton
             // 
-            CloseButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            CloseButton.DialogResult = DialogResult.Cancel;
-            CloseButton.Location = new Point(288, 165);
-            CloseButton.Name = "CloseButton";
-            CloseButton.Size = new Size(75, 23);
-            CloseButton.TabIndex = 4;
-            CloseButton.Text = "Close";
-            CloseButton.UseVisualStyleBackColor = true;
+            this.CloseButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.CloseButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.CloseButton.Location = new System.Drawing.Point(624, 364);
+            this.CloseButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.CloseButton.Name = "CloseButton";
+            this.CloseButton.Size = new System.Drawing.Size(100, 27);
+            this.CloseButton.TabIndex = 4;
+            this.CloseButton.Text = "Close";
+            this.CloseButton.UseVisualStyleBackColor = true;
             // 
             // GoButton
             // 
-            GoButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            GoButton.Location = new Point(207, 165);
-            GoButton.Name = "GoButton";
-            GoButton.Size = new Size(75, 23);
-            GoButton.TabIndex = 3;
-            GoButton.Text = "Go";
-            GoButton.UseVisualStyleBackColor = true;
+            this.GoButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.GoButton.Location = new System.Drawing.Point(516, 364);
+            this.GoButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.GoButton.Name = "GoButton";
+            this.GoButton.Size = new System.Drawing.Size(100, 27);
+            this.GoButton.TabIndex = 3;
+            this.GoButton.Text = "Go";
+            this.GoButton.UseVisualStyleBackColor = true;
+            this.GoButton.Click += new System.EventHandler(this.GoClicked);
             // 
             // StopButton
             // 
-            StopButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            StopButton.Location = new Point(313, 25);
-            StopButton.Name = "StopButton";
-            StopButton.Size = new Size(50, 23);
-            StopButton.TabIndex = 0;
-            StopButton.Text = "Stop";
-            StopButton.UseVisualStyleBackColor = true;
+            this.StopButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.StopButton.Location = new System.Drawing.Point(657, 29);
+            this.StopButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.StopButton.Name = "StopButton";
+            this.StopButton.Size = new System.Drawing.Size(67, 27);
+            this.StopButton.TabIndex = 0;
+            this.StopButton.Text = "Stop";
+            this.StopButton.UseVisualStyleBackColor = true;
+            this.StopButton.Click += new System.EventHandler(this.StopButton_Click);
             // 
             // FindResults
             // 
-            AcceptButton = GoButton;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            CancelButton = CloseButton;
-            ClientSize = new Size(375, 200);
-            Controls.Add(StopButton);
-            Controls.Add(GoButton);
-            Controls.Add(CloseButton);
-            Controls.Add(ProgressLabel);
-            Controls.Add(ResultsListview);
-            Controls.Add(SearchProgress);
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "FindResults";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Search Results";
-            Shown += new EventHandler(FindResults_Shown);
-            Closing += new System.ComponentModel.CancelEventHandler(FindResults_Closing);
-            Load += new EventHandler(FindResults_Load);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.GoButton;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.CancelButton = this.CloseButton;
+            this.ClientSize = new System.Drawing.Size(740, 405);
+            this.Controls.Add(this.StopButton);
+            this.Controls.Add(this.GoButton);
+            this.Controls.Add(this.CloseButton);
+            this.Controls.Add(this.ProgressLabel);
+            this.Controls.Add(this.ResultsListview);
+            this.Controls.Add(this.SearchProgress);
+            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "FindResults";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Search Results";
+            this.Closing += new System.ComponentModel.CancelEventHandler(this.FindResults_Closing);
+            this.Load += new System.EventHandler(this.FindResults_Load);
+            this.Shown += new System.EventHandler(this.FindResults_Shown);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal ProgressBar SearchProgress;
