@@ -13,16 +13,40 @@ namespace PolicyPlus
 
         private PolicyPlusPolicy SelectedPolicy;
 
-        public void PresentDialog(PolicyPlusPolicy Policy, string languageCode)
-        {
+        private Dictionary<String, Dictionary<String, String>> wordDict = new Dictionary<string, Dictionary<string, string>>()
+            {
+                {"ja-jp",
+                    new Dictionary<string, string>
+                    {
+                      {"User or computer", "コンピューターの構成 または ユーザーの構成" },
+                      {"Computer", "コンピューターの構成" },
+                      {"User", "ユーザーの構成"},
+                      {"Administrative Templates", "管理用テンプレート"}
+                    }
+                }
 
+            };
+
+        private string TranslateWords(string keyword, string lang)
+        {
+            var convK = keyword;
+            var dic = new Dictionary<string, string>();
+            if (wordDict.TryGetValue(lang.ToLower(), out dic))
+            {
+                dic.TryGetValue(keyword, out convK);
+            };
+            return convK;
+        }
+
+        private void UpdatePolPathBox(PolicyPlusPolicy Policy, string languageCode)
+        {
             List<string> GetParentNames(PolicyPlusCategory category, List<string> namesList = null)
             {
                 if (namesList == null)
                 {
                     namesList = new List<string>();
                 }
-                
+
                 if (category.Parent is not null)
                 {
                     namesList = GetParentNames(category.Parent, namesList);
@@ -41,62 +65,46 @@ namespace PolicyPlus
             {
                 case AdmxPolicySection.Both:
                     {
-                        if (languageCode == "ja-JP")
-                        {
-                            FormattedPathBox.Text = "コンピューターの構成 または ユーザーの構成";
-                        }
-                        else
-                        {
-                            FormattedPathBox.Text = "User or computer";
-                        }
+                        FormattedPolPathBox.Text = TranslateWords("User or computer", languageCode);
                         break;
                     }
 
                 case AdmxPolicySection.Machine:
                     {
-                        if (languageCode == "ja-JP")
-                        {
-                            FormattedPathBox.Text = "コンピューターの構成";
-                        }
-                        else
-                        {
-                            FormattedPathBox.Text = "Computer";
-                        }
+                        FormattedPolPathBox.Text = TranslateWords("Computer", languageCode);
                         break;
                     }
 
                 case AdmxPolicySection.User:
-                    {
-                        if (languageCode == "ja-JP")
-                        {
-                            FormattedPathBox.Text = "ユーザーの構成";
-                        }
-                        else
-                        {
-                            FormattedPathBox.Text = "User";
-                        }
+                    { 
+                        FormattedPolPathBox.Text = TranslateWords("User", languageCode);
                         break;
                     }
             }
-            if (languageCode == "ja-JP")
-            {
-                FormattedPathBox.Text += System.Environment.NewLine + "  + 管理用テンプレート";
-            }
-            else
-            {
-                FormattedPathBox.Text += System.Environment.NewLine + "  + Administrative Templates";
-            }
 
-                var parentNames = GetParentNames(Policy.Category);
+            FormattedPolPathBox.Text += System.Environment.NewLine + "  + " + TranslateWords("Administrative Templates", languageCode);
+
+
+            var parentNames = GetParentNames(Policy.Category);
 
             var depth_count = 2;
             foreach (var name in parentNames)
             {
-                FormattedPathBox.Text += String.Concat(System.Environment.NewLine, new String(' ', 2*depth_count), "+ ", name);
+                FormattedPolPathBox.Text += String.Concat(System.Environment.NewLine, new String(' ', 2*depth_count), "+ ", name);
                 depth_count++;
             }
-            FormattedPathBox.Text += String.Concat(System.Environment.NewLine, new String(' ', 2*depth_count), " ", Policy.DisplayName);
+            FormattedPolPathBox.Text += String.Concat(System.Environment.NewLine, new String(' ', 2*depth_count), " ", Policy.DisplayName);
 
+        }
+
+        private void UpdateRegPathBox(PolicyPlusPolicy Policy, string languageCode)
+        {
+
+        }
+
+        public void PresentDialog(PolicyPlusPolicy Policy, string languageCode)
+        {
+            UpdatePolPathBox(Policy, languageCode);
             ShowDialog();
         }
 
@@ -125,7 +133,7 @@ namespace PolicyPlus
             var tag = (string)((Button)sender).Tag;
             if (tag == "Path")
             {
-                Clipboard.SetText(FormattedPathBox.Text);
+                Clipboard.SetText(FormattedPolPathBox.Text);
             }
         }
 

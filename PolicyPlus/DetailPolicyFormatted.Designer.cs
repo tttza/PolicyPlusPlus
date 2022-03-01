@@ -40,16 +40,20 @@ namespace PolicyPlus
             System.Windows.Forms.Label DefinedLabel;
             System.Windows.Forms.Label FormattedPath;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DetailPolicyFormatted));
+            System.Windows.Forms.Label label1;
             this.NameTextbox = new System.Windows.Forms.TextBox();
             this.IdTextbox = new System.Windows.Forms.TextBox();
             this.DefinedTextbox = new System.Windows.Forms.TextBox();
-            this.FormattedPathBox = new System.Windows.Forms.TextBox();
+            this.FormattedPolPathBox = new System.Windows.Forms.TextBox();
             this.CloseButton = new System.Windows.Forms.Button();
-            this.PathCopyButton = new System.Windows.Forms.Button();
+            this.PolPathCopyButton = new System.Windows.Forms.Button();
+            this.FormattedRegPathBox = new System.Windows.Forms.TextBox();
+            this.RegPathCopyButton = new System.Windows.Forms.Button();
             NameLabel = new System.Windows.Forms.Label();
             IdLabel = new System.Windows.Forms.Label();
             DefinedLabel = new System.Windows.Forms.Label();
             FormattedPath = new System.Windows.Forms.Label();
+            label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // NameLabel
@@ -88,9 +92,9 @@ namespace PolicyPlus
             FormattedPath.Location = new System.Drawing.Point(16, 116);
             FormattedPath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             FormattedPath.Name = "FormattedPath";
-            FormattedPath.Size = new System.Drawing.Size(36, 15);
+            FormattedPath.Size = new System.Drawing.Size(79, 15);
             FormattedPath.TabIndex = 15;
-            FormattedPath.Text = "Path";
+            FormattedPath.Text = "Policy Path";
             FormattedPath.Click += new System.EventHandler(this.SectionLabel_Click);
             // 
             // NameTextbox
@@ -120,22 +124,22 @@ namespace PolicyPlus
             this.DefinedTextbox.Size = new System.Drawing.Size(505, 22);
             this.DefinedTextbox.TabIndex = 2;
             // 
-            // FormattedPathBox
+            // FormattedPolPathBox
             // 
-            this.FormattedPathBox.Location = new System.Drawing.Point(148, 113);
-            this.FormattedPathBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.FormattedPathBox.Multiline = true;
-            this.FormattedPathBox.Name = "FormattedPathBox";
-            this.FormattedPathBox.ReadOnly = true;
-            this.FormattedPathBox.Size = new System.Drawing.Size(505, 166);
-            this.FormattedPathBox.TabIndex = 6;
-            this.FormattedPathBox.Tag = "Path";
-            this.FormattedPathBox.TextChanged += new System.EventHandler(this.SectionTextbox_TextChanged);
+            this.FormattedPolPathBox.Location = new System.Drawing.Point(148, 113);
+            this.FormattedPolPathBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.FormattedPolPathBox.Multiline = true;
+            this.FormattedPolPathBox.Name = "FormattedPolPathBox";
+            this.FormattedPolPathBox.ReadOnly = true;
+            this.FormattedPolPathBox.Size = new System.Drawing.Size(505, 166);
+            this.FormattedPolPathBox.TabIndex = 6;
+            this.FormattedPolPathBox.Tag = "Path";
+            this.FormattedPolPathBox.TextChanged += new System.EventHandler(this.SectionTextbox_TextChanged);
             // 
             // CloseButton
             // 
             this.CloseButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.CloseButton.Location = new System.Drawing.Point(553, 286);
+            this.CloseButton.Location = new System.Drawing.Point(553, 472);
             this.CloseButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.CloseButton.Name = "CloseButton";
             this.CloseButton.Size = new System.Drawing.Size(100, 27);
@@ -143,19 +147,53 @@ namespace PolicyPlus
             this.CloseButton.Text = "Close";
             this.CloseButton.UseVisualStyleBackColor = true;
             // 
-            // PathCopyButton
+            // PolPathCopyButton
             // 
-            this.PathCopyButton.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("PathCopyButton.BackgroundImage")));
-            this.PathCopyButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.PathCopyButton.FlatAppearance.BorderSize = 0;
-            this.PathCopyButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.PathCopyButton.Location = new System.Drawing.Point(660, 113);
-            this.PathCopyButton.Name = "PathCopyButton";
-            this.PathCopyButton.Size = new System.Drawing.Size(36, 38);
-            this.PathCopyButton.TabIndex = 20;
-            this.PathCopyButton.Tag = "Path";
-            this.PathCopyButton.UseVisualStyleBackColor = true;
-            this.PathCopyButton.Click += new System.EventHandler(this.CopyToClipboard);
+            this.PolPathCopyButton.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("PolPathCopyButton.BackgroundImage")));
+            this.PolPathCopyButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+            this.PolPathCopyButton.FlatAppearance.BorderSize = 0;
+            this.PolPathCopyButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.PolPathCopyButton.Location = new System.Drawing.Point(660, 113);
+            this.PolPathCopyButton.Name = "PolPathCopyButton";
+            this.PolPathCopyButton.Size = new System.Drawing.Size(36, 38);
+            this.PolPathCopyButton.TabIndex = 20;
+            this.PolPathCopyButton.Tag = "Path";
+            this.PolPathCopyButton.UseVisualStyleBackColor = true;
+            this.PolPathCopyButton.Click += new System.EventHandler(this.CopyToClipboard);
+            // 
+            // FormattedRegPathBox
+            // 
+            this.FormattedRegPathBox.Location = new System.Drawing.Point(148, 300);
+            this.FormattedRegPathBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.FormattedRegPathBox.Multiline = true;
+            this.FormattedRegPathBox.Name = "FormattedRegPathBox";
+            this.FormattedRegPathBox.ReadOnly = true;
+            this.FormattedRegPathBox.Size = new System.Drawing.Size(505, 166);
+            this.FormattedRegPathBox.TabIndex = 21;
+            this.FormattedRegPathBox.Tag = "Path";
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new System.Drawing.Point(13, 300);
+            label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            label1.Name = "label1";
+            label1.Size = new System.Drawing.Size(92, 15);
+            label1.TabIndex = 23;
+            label1.Text = "Registry Path";
+            // 
+            // RegPathCopyButton
+            // 
+            this.RegPathCopyButton.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("RegPathCopyButton.BackgroundImage")));
+            this.RegPathCopyButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+            this.RegPathCopyButton.FlatAppearance.BorderSize = 0;
+            this.RegPathCopyButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.RegPathCopyButton.Location = new System.Drawing.Point(660, 300);
+            this.RegPathCopyButton.Name = "RegPathCopyButton";
+            this.RegPathCopyButton.Size = new System.Drawing.Size(36, 38);
+            this.RegPathCopyButton.TabIndex = 22;
+            this.RegPathCopyButton.Tag = "Path";
+            this.RegPathCopyButton.UseVisualStyleBackColor = true;
             // 
             // DetailPolicyFormatted
             // 
@@ -163,14 +201,17 @@ namespace PolicyPlus
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CloseButton;
-            this.ClientSize = new System.Drawing.Size(704, 325);
-            this.Controls.Add(this.PathCopyButton);
+            this.ClientSize = new System.Drawing.Size(704, 511);
+            this.Controls.Add(label1);
+            this.Controls.Add(this.RegPathCopyButton);
+            this.Controls.Add(this.FormattedRegPathBox);
+            this.Controls.Add(this.PolPathCopyButton);
             this.Controls.Add(this.CloseButton);
             this.Controls.Add(FormattedPath);
             this.Controls.Add(DefinedLabel);
             this.Controls.Add(IdLabel);
             this.Controls.Add(NameLabel);
-            this.Controls.Add(this.FormattedPathBox);
+            this.Controls.Add(this.FormattedPolPathBox);
             this.Controls.Add(this.DefinedTextbox);
             this.Controls.Add(this.IdTextbox);
             this.Controls.Add(this.NameTextbox);
@@ -192,8 +233,10 @@ namespace PolicyPlus
         internal TextBox NameTextbox;
         internal TextBox IdTextbox;
         internal TextBox DefinedTextbox;
-        internal TextBox FormattedPathBox;
+        internal TextBox FormattedPolPathBox;
         internal Button CloseButton;
-        private Button PathCopyButton;
+        private Button PolPathCopyButton;
+        internal TextBox FormattedRegPathBox;
+        private Button RegPathCopyButton;
     }
 }
