@@ -22,11 +22,12 @@ namespace PolicyPlus
                 {
                     namesList = new List<string>();
                 }
-                namesList.Add(category.DisplayName);
+                
                 if (category.Parent is not null)
                 {
                     namesList = GetParentNames(category.Parent, namesList);
                 }
+                namesList.Add(category.DisplayName);
                 return namesList;
             }
 
@@ -126,6 +127,11 @@ namespace PolicyPlus
             {
                 Clipboard.SetText(FormattedPathBox.Text);
             }
+        }
+
+        private void DetailPolicyFormatted_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }
