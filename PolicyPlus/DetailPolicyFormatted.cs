@@ -21,7 +21,11 @@ namespace PolicyPlus
                       {"User or computer", "コンピューターの構成 または ユーザーの構成" },
                       {"Computer", "コンピューターの構成" },
                       {"User", "ユーザーの構成"},
-                      {"Administrative Templates", "管理用テンプレート"}
+                      {"Administrative Templates", "管理用テンプレート"},
+                      {"Key", "キー"},
+                      {"Name", "名前"},
+                      {"Type", "種類"},
+                      {"Value", "値"}
                     }
                 }
 
@@ -55,12 +59,6 @@ namespace PolicyPlus
                 return namesList;
             }
 
-            SelectedPolicy = Policy;
-            NameTextbox.Text = Policy.DisplayName;
-            IdTextbox.Text = Policy.UniqueID;
-            DefinedTextbox.Text = Policy.RawPolicy.DefinedIn.SourceFile;
-
-            if (languageCode == null) { languageCode = "en-US"; }
             switch (Policy.RawPolicy.Section)
             {
                 case AdmxPolicySection.Both:
@@ -99,12 +97,32 @@ namespace PolicyPlus
 
         private void UpdateRegPathBox(PolicyPlusPolicy Policy, string languageCode)
         {
+            var nl = System.Environment.NewLine;
+            FormattedRegPathBox.Text = "";
+            FormattedRegPathBox.Text += $"{TranslateWords("Key", languageCode)}: {Policy.RawPolicy.RegistryKey}{nl}";
+            if (Policy.RawPolicy.RegistryValue != null)
+            {
+                FormattedRegPathBox.Text += $"{TranslateWords("Name", languageCode)}: {Policy.RawPolicy.RegistryValue}{nl}";
+            }
+            if (Policy.RawPolicy.RegistryValue != null)
+            {
+                FormattedRegPathBox.Text += $"{TranslateWords("Name", languageCode)}: {Policy.RawPolicy}{nl}";
+            }
+            FormattedPolPathBox.Text += System.Environment.NewLine + "  + " + TranslateWords("Administrative Templates", languageCode);
 
         }
 
         public void PresentDialog(PolicyPlusPolicy Policy, string languageCode)
         {
+            SelectedPolicy = Policy;
+            NameTextbox.Text = Policy.DisplayName;
+            IdTextbox.Text = Policy.UniqueID;
+            DefinedTextbox.Text = Policy.RawPolicy.DefinedIn.SourceFile;
+
+            if (languageCode == null) { languageCode = "en-US"; }
+
             UpdatePolPathBox(Policy, languageCode);
+            UpdateRegPathBox(Policy, languageCode);
             ShowDialog();
         }
 
