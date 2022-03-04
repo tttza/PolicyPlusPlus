@@ -1315,7 +1315,7 @@ namespace PolicyPlus
             }
             else if (ReferenceEquals(e.ClickedItem, CmeAllDetailsFormatted))
             {
-                My.MyProject.Forms.DetailPolicyFormatted.PresentDialog((PolicyPlusPolicy)polObject, GetPreferredLanguageCode());
+                My.MyProject.Forms.DetailPolicyFormatted.PresentDialog((PolicyPlusPolicy)polObject, CompPolicySource, UserPolicySource, GetPreferredLanguageCode());
             }
             else if (ReferenceEquals(e.ClickedItem, CmePolInspectElements))
             {
@@ -1333,7 +1333,8 @@ namespace PolicyPlus
 
         private void CopyToClipboard(object polObject, ToolStripItemClickedEventArgs e)
         {
-            if (polObject is PolicyPlusPolicy) {
+            if (polObject is PolicyPlusPolicy)
+            {
                 if (ReferenceEquals(e.ClickedItem, Cme2CopyId) | ReferenceEquals(e.ClickedItem, CmeCopyToClipboard))
                 {
                     Clipboard.SetText(((PolicyPlusPolicy)polObject).UniqueID.Split(':')[1]);

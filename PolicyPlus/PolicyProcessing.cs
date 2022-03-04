@@ -737,4 +737,9 @@ namespace PolicyPlus
             return Key.ToLowerInvariant().GetHashCode() ^ Value.ToLowerInvariant().GetHashCode();
         }
     }
+
+    public class Registry : RegistryKeyValuePair
+    {
+        public string Type;
+    }
 }

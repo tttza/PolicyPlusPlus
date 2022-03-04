@@ -39,8 +39,8 @@ namespace PolicyPlus
             System.Windows.Forms.Label IdLabel;
             System.Windows.Forms.Label DefinedLabel;
             System.Windows.Forms.Label FormattedPath;
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DetailPolicyFormatted));
             System.Windows.Forms.Label label1;
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DetailPolicyFormatted));
             this.NameTextbox = new System.Windows.Forms.TextBox();
             this.IdTextbox = new System.Windows.Forms.TextBox();
             this.DefinedTextbox = new System.Windows.Forms.TextBox();
@@ -96,6 +96,16 @@ namespace PolicyPlus
             FormattedPath.TabIndex = 15;
             FormattedPath.Text = "Policy Path";
             FormattedPath.Click += new System.EventHandler(this.SectionLabel_Click);
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new System.Drawing.Point(13, 300);
+            label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            label1.Name = "label1";
+            label1.Size = new System.Drawing.Size(92, 15);
+            label1.TabIndex = 23;
+            label1.Text = "Registry Path";
             // 
             // NameTextbox
             // 
@@ -157,7 +167,7 @@ namespace PolicyPlus
             this.PolPathCopyButton.Name = "PolPathCopyButton";
             this.PolPathCopyButton.Size = new System.Drawing.Size(36, 38);
             this.PolPathCopyButton.TabIndex = 20;
-            this.PolPathCopyButton.Tag = "Path";
+            this.PolPathCopyButton.Tag = "PolPath";
             this.PolPathCopyButton.UseVisualStyleBackColor = true;
             this.PolPathCopyButton.Click += new System.EventHandler(this.CopyToClipboard);
             // 
@@ -172,16 +182,6 @@ namespace PolicyPlus
             this.FormattedRegPathBox.TabIndex = 21;
             this.FormattedRegPathBox.Tag = "Path";
             // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Location = new System.Drawing.Point(13, 300);
-            label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            label1.Name = "label1";
-            label1.Size = new System.Drawing.Size(92, 15);
-            label1.TabIndex = 23;
-            label1.Text = "Registry Path";
-            // 
             // RegPathCopyButton
             // 
             this.RegPathCopyButton.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("RegPathCopyButton.BackgroundImage")));
@@ -192,8 +192,9 @@ namespace PolicyPlus
             this.RegPathCopyButton.Name = "RegPathCopyButton";
             this.RegPathCopyButton.Size = new System.Drawing.Size(36, 38);
             this.RegPathCopyButton.TabIndex = 22;
-            this.RegPathCopyButton.Tag = "Path";
+            this.RegPathCopyButton.Tag = "RegPath";
             this.RegPathCopyButton.UseVisualStyleBackColor = true;
+            this.RegPathCopyButton.Click += new System.EventHandler(this.CopyToClipboard);
             // 
             // DetailPolicyFormatted
             // 

@@ -129,11 +129,14 @@
   <metadata name="FormattedPath.GenerateMember" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>False</value>
   </metadata>
+  <metadata name="label1.GenerateMember" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>False</value>
+  </metadata>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="PolPathCopyButton.BackgroundImage" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAL
-        EAAACxABrSO9dQAAAnNJREFUeF7tm7uKFFEQhifwindFTFTEWF9CTAWNvKBg6OUd9AU0EEQUFPEdRAUF
+        DwAACw8BkvkDpQAAAnNJREFUeF7tm7uKFFEQhifwindFTFTEWF9CTAWNvKBg6OUd9AU0EEQUFPEdRAUF
         A028oT6AmIqYGCiogX4FM1D+nN4+s1M9e9ipDz5Ytk6fqvl7urcXZkZJkiRzZi1ewjf4c+xrvIBWW9Xs
         wJf4t8MXuB1XLY+w9MK9D7F59uHBHnej5yiWXnDJI+ixvUo9vDbT4FzGb1gaWr2Pnlvo6x/wEB7Gj+Pf
         TbyJHtvL17u02ez+MgjnsNS0y3voeYK+fhInnEJfe4we28vX+zyL4dgZKzXr8iJ6nqOvX8EJV9HXbK3H
@@ -147,13 +150,10 @@
         gg==
 </value>
   </data>
-  <metadata name="label1.GenerateMember" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>False</value>
-  </metadata>
   <data name="RegPathCopyButton.BackgroundImage" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAL
-        DQAACw0B7QfALAAAAnNJREFUeF7tm7uKFFEQhifwindFTFTEWF9CTAWNvKBg6OUd9AU0EEQUFPEdRAUF
+        DAAACwwBP0AiyAAAAnNJREFUeF7tm7uKFFEQhifwindFTFTEWF9CTAWNvKBg6OUd9AU0EEQUFPEdRAUF
         A028oT6AmIqYGCiogX4FM1D+nN4+s1M9e9ipDz5Ytk6fqvl7urcXZkZJkiRzZi1ewjf4c+xrvIBWW9Xs
         wJf4t8MXuB1XLY+w9MK9D7F59uHBHnej5yiWXnDJI+ixvUo9vDbT4FzGb1gaWr2Pnlvo6x/wEB7Gj+Pf
         TbyJHtvL17u02ez+MgjnsNS0y3voeYK+fhInnEJfe4we28vX+zyL4dgZKzXr8iJ6nqOvX8EJV9HXbK3H

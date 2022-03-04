@@ -378,68 +378,7 @@ namespace PolicyPlus
             PolicyProcessing.ForgetPolicy(CurrentSource, CurrentSetting);
             if (EnabledOption.Checked)
             {
-                var options = new Dictionary<string, object>();
-                if (CurrentSetting.RawPolicy.Elements is object)
-                {
-                    foreach (var elem in CurrentSetting.RawPolicy.Elements)
-                    {
-                        var uiControl = ElementControls[elem.ID];
-                        switch (elem.ElementType ?? "")
-                        {
-                            case "decimal":
-                                {
-                                    if (uiControl is TextBox)
-                                    {
-                                        options.Add(elem.ID, Conversions.ToUInteger(((TextBox)uiControl).Text));
-                                    }
-                                    else
-                                    {
-                                        options.Add(elem.ID, (uint)Math.Round(((NumericUpDown)uiControl).Value));
-                                    }
-
-                                    break;
-                                }
-
-                            case "text":
-                                {
-                                    if (uiControl is ComboBox)
-                                    {
-                                        options.Add(elem.ID, ((ComboBox)uiControl).Text);
-                                    }
-                                    else
-                                    {
-                                        options.Add(elem.ID, ((TextBox)uiControl).Text);
-                                    }
-
-                                    break;
-                                }
-
-                            case "boolean":
-                                {
-                                    options.Add(elem.ID, ((CheckBox)uiControl).Checked);
-                                    break;
-                                }
-
-                            case "enum":
-                                {
-                                    options.Add(elem.ID, ((DropdownPresentationMap)((ComboBox)uiControl).SelectedItem).ID);
-                                    break;
-                                }
-
-                            case "list":
-                                {
-                                    options.Add(elem.ID, uiControl.Tag);
-                                    break;
-                                }
-
-                            case "multiText":
-                                {
-                                    options.Add(elem.ID, ((TextBox)uiControl).Lines);
-                                    break;
-                                }
-                        }
-                    }
-                }
+                Dictionary<string, object> options = GetOptions(CurrentSetting);
 
                 PolicyProcessing.SetPolicyState(CurrentSource, CurrentSetting, PolicyState.Enabled, options);
             }
@@ -460,6 +399,74 @@ namespace PolicyPlus
                 else
                     CurrentComments.Add(CurrentSetting.UniqueID, CommentTextbox.Text);
             }
+        }
+
+        private Dictionary<string, object> GetOptions(PolicyPlusPolicy currentSetting)
+        {
+            var options = new Dictionary<string, object>();
+            if (currentSetting.RawPolicy.Elements is object)
+            {
+                foreach (var elem in currentSetting.RawPolicy.Elements)
+                {
+                    var uiControl = ElementControls[elem.ID];
+                    switch (elem.ElementType ?? "")
+                    {
+                        case "decimal":
+                            {
+                                if (uiControl is TextBox)
+                                {
+                                    options.Add(elem.ID, Conversions.ToUInteger(((TextBox)uiControl).Text));
+                                }
+                                else
+                                {
+                                    options.Add(elem.ID, (uint)Math.Round(((NumericUpDown)uiControl).Value));
+                                }
+
+                                break;
+                            }
+
+                        case "text":
+                            {
+                                if (uiControl is ComboBox)
+                                {
+                                    options.Add(elem.ID, ((ComboBox)uiControl).Text);
+                                }
+                                else
+                                {
+                                    options.Add(elem.ID, ((TextBox)uiControl).Text);
+                                }
+
+                                break;
+                            }
+
+                        case "boolean":
+                            {
+                                options.Add(elem.ID, ((CheckBox)uiControl).Checked);
+                                break;
+                            }
+
+                        case "enum":
+                            {
+                                options.Add(elem.ID, ((DropdownPresentationMap)((ComboBox)uiControl).SelectedItem).ID);
+                                break;
+                            }
+
+                        case "list":
+                            {
+                                options.Add(elem.ID, uiControl.Tag);
+                                break;
+                            }
+
+                        case "multiText":
+                            {
+                                options.Add(elem.ID, ((TextBox)uiControl).Lines);
+                                break;
+                            }
+                    }
+                }
+            }
+
+            return options;
         }
 
         public DialogResult PresentDialog(PolicyPlusPolicy Policy, AdmxPolicySection Section, AdmxBundle Workspace, IPolicySource CompPolSource, IPolicySource UserPolSource, PolicyLoader CompPolLoader, PolicyLoader UserPolLoader, Dictionary<string, string> CompComments, Dictionary<string, string> UserComments)

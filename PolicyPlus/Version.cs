@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 
-namespace PolicyPlus 
+namespace PolicyPlus
 {
     static class VersionHolder
     {
