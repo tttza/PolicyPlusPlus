@@ -3,6 +3,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
@@ -306,11 +307,45 @@ namespace PolicyPlus
             reg.SetPrefix(isUser ? "HKEY_CURRENT_USER" : "HKEY_LOCAL_MACHINE");
             reg.SetSourceBranch(policy.RawPolicy.RegistryKey);
             var Source = GetOrCreatePolFromPolicySource(source);
+
+            var filter = new List<string[]>();
+            var rawpol = policy.RawPolicy;
+            if (rawpol.RegistryValue != null)
+            {
+                filter.Add(new string[2] { rawpol.RegistryKey, rawpol.RegistryValue });
+            }
+            if (rawpol.Elements is object) // Write the elements' states
+            {
+                foreach (var elem in rawpol.Elements)
+                {
+                    string elemKey = string.IsNullOrEmpty(elem.RegistryKey) ? rawpol.RegistryKey : elem.RegistryKey;
+                    filter.Add(new string[] { elemKey, elem.RegistryValue });
+                }
+            }
+
+            var filteredKeys = new List<PolicyPlus.RegFile.RegFileKey>() { };
+
             try
             {
+                Source.Apply(reg);
+                // Filter registries relate to current policy.
+                reg.Keys.ForEach(k =>
+                {
+                    var filteredKey = new RegFile.RegFileKey() { };
+                    filteredKey.IsDeleter = k.IsDeleter;
+                    filteredKey.Name = k.Name;
+                    var rawName = k.Name.Remove(0, k.Name.IndexOf("\\")).Substring(1).ToLower();
+                    var filter2 = filter.Where(f => f[0].ToLower() == rawName);
+                    filteredKey.Values = k.Values.Where(v => (filter2.Where(f => f[1].ToLower() == v.Name.ToLower()).Any())).ToList();
+                    if (filteredKey.Values.Count > 0)
+                    {
+                        filteredKeys.Add(filteredKey);
+                    }
+                });
+                reg.Keys = filteredKeys;                
+
                 var sb = new StringBuilder();
                 var sw = new StringWriter(sb);
-                Source.Apply(reg);
                 reg.Save(sw);
                 return sw.ToString();
 
