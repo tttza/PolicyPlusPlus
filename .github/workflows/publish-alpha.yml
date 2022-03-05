@@ -1,0 +1,33 @@
+name: Publish Alpha
+
+on:
+  push:
+    tags:
+      - '*.*.*-alpha'
+
+jobs:
+  BuildLatest:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v1.0.2
+        
+      - name: Compile
+        run: msbuild.exe $env:GITHUB_WORKSPACE\PolicyPlus\PolicyPlus.sln /p:platform="Any CPU" /p:configuration="Release"
+      
+      - name: Rename
+        run: Move-Item -Path "$env:GITHUB_WORKSPACE\PolicyPlus\bin\Release\Policy Plus.exe" `
+          -Destination "PolicyPlusMod.exe" 
+
+      - name: GH Release
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          files: |
+            PolicyPlusMod.exe
+
+
+  

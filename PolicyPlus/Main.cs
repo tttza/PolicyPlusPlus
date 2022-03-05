@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 
@@ -16,6 +17,9 @@ namespace PolicyPlus
         public Main()
         {
             InitializeComponent();
+            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            if (!string.IsNullOrEmpty(version))
+                AppVersion.Text = $"Version: {version}";
         }
 
         private ConfigurationStorage Configuration;
@@ -975,8 +979,9 @@ namespace PolicyPlus
         {
             // Show author and version information if it was compiled into the program
             string about = $"Policy Plus by Ben Nordick.{System.Environment.NewLine}Modded by tttza.{System.Environment.NewLine}{System.Environment.NewLine}Available on GitHub: tttza/PolicyPlus.";
-            if (!string.IsNullOrEmpty(VersionHolder.Version.Trim()))
-                about += $"{System.Environment.NewLine} Version: {VersionHolder.Version.Trim()}";
+            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            if (!string.IsNullOrEmpty(version))
+                about += $"{System.Environment.NewLine} Version: {version}";
             Interaction.MsgBox(about, MsgBoxStyle.Information);
         }
 
