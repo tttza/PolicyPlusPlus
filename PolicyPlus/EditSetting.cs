@@ -535,6 +535,11 @@ namespace PolicyPlus
             My.MyProject.Forms.DetailPolicyFormatted.PresentDialog(CurrentSetting, CompPolSource, UserPolSource, this.languageCode);
         }
 
+        private void SupportedLabel_Click(object sender, EventArgs e)
+        {
+
+        }
+
         private void EditSetting_Resize(object sender, EventArgs e)
         {
             // Share the extra width between the two halves of the form
