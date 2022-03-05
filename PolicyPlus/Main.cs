@@ -17,7 +17,7 @@ namespace PolicyPlus
         public Main()
         {
             InitializeComponent();
-            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString().Substring(0, 5);
             if (!string.IsNullOrEmpty(version))
                 AppVersion.Text = $"Version: {version}";
         }
