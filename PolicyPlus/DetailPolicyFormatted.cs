@@ -102,15 +102,6 @@ namespace PolicyPlus
         {
             var nl = System.Environment.NewLine;
             FormattedRegPathBox.Text = "";
-            //FormattedRegPathBox.Text += $"{TranslateWords("Key", languageCode)}: {Policy.RawPolicy.RegistryKey}{nl}";
-            //if (Policy.RawPolicy.RegistryValue != null)
-            //{
-            //    FormattedRegPathBox.Text += $"{TranslateWords("Name", languageCode)}: {Policy.RawPolicy.RegistryValue}{nl}";
-            //}
-            //if (Policy.RawPolicy.RegistryValue != null)
-            //{
-            //    FormattedRegPathBox.Text += $"{TranslateWords("Name", languageCode)}: {Policy.RawPolicy}{nl}";
-            //}
 
             var compState = PolicyProcessing.GetPolicyState(compPolSource, Policy);
             var userState = PolicyProcessing.GetPolicyState(userPolSource, Policy);
@@ -140,7 +131,7 @@ namespace PolicyPlus
                 }
             }
 
-            FormattedRegPathBox.Text += $"{nl}{GetRegistryString(source, state, Policy, isUser, languageCode)}";
+            FormattedRegPathBox.Text += $"{GetRegistryString(source, state, Policy, isUser, languageCode)}";
         }
 
         private string GetRegPathString(string regKey, string languageCode, bool isUser)
@@ -523,8 +514,8 @@ namespace PolicyPlus
                                     else
                                     {
                                         //PolicySource.DeleteValue(elemKey, elem.RegistryValue);
-                                        regStr += $"{GetRegPathString(rawpol.RegistryKey, languageCode, isUser)}{nl}";
-                                        regStr += $"{GetRegKeyString(rawpol.RegistryValue, languageCode)}{nl}";
+                                        regStr += $"{GetRegPathString(elemKey, languageCode, isUser)}{nl}";
+                                        regStr += $"{GetRegKeyString(elem.RegistryValue, languageCode)}{nl}";
                                         regStr += $"Delete the value.{nl}";
                                         regStr += $"{nl}";
                                     }
@@ -532,8 +523,8 @@ namespace PolicyPlus
                                 else
                                 {
                                     //PolicySource.DeleteValue(elemKey, elem.RegistryValue);
-                                    regStr += $"{GetRegPathString(rawpol.RegistryKey, languageCode, isUser)}{nl}";
-                                    regStr += $"{GetRegKeyString(rawpol.RegistryValue, languageCode)}{nl}";
+                                    regStr += $"{GetRegPathString(elemKey, languageCode, isUser)}{nl}";
+                                    regStr += $"{GetRegKeyString(elem.RegistryValue, languageCode)}{nl}";
                                     regStr += $"Delete the value.{nl}";
                                     regStr += $"{nl}";
                                 }
@@ -641,17 +632,6 @@ namespace PolicyPlus
                                         regStr += $"{nl}";
                                     }
                                 }
-                                //else if (elem.ElementType == "enum")
-                                //{
-                                //    if (!options.ContainsKey(elem.ID))
-                                //        continue;
-                                //    var optionData = options[elem.ID];
-                                //    EnumPolicyElement enumElem = (EnumPolicyElement)elem;
-                                //    var selItem = enumElem.Items[(int)(optionData)];
-                                //    setValue(elemKey, elem.RegistryValue, selItem.Value);
-                                //    setSingleList(selItem.ValueList, elemKey);
-                                //    break;
-                                //}
                                 else
                                 {
                                     //PolicySource.DeleteValue(elemKey, elem.RegistryValue);
