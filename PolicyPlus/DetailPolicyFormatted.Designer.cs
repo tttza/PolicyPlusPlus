@@ -41,6 +41,8 @@ namespace PolicyPlus
             System.Windows.Forms.Label FormattedPath;
             System.Windows.Forms.Label label1;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DetailPolicyFormatted));
+            System.Windows.Forms.Label label2;
+            System.Windows.Forms.Label label3;
             this.NameTextbox = new System.Windows.Forms.TextBox();
             this.IdTextbox = new System.Windows.Forms.TextBox();
             this.DefinedTextbox = new System.Windows.Forms.TextBox();
@@ -49,11 +51,14 @@ namespace PolicyPlus
             this.PolPathCopyButton = new System.Windows.Forms.Button();
             this.FormattedRegPathBox = new System.Windows.Forms.TextBox();
             this.RegPathCopyButton = new System.Windows.Forms.Button();
+            this.ToggleRegViewBtn = new System.Windows.Forms.Button();
             NameLabel = new System.Windows.Forms.Label();
             IdLabel = new System.Windows.Forms.Label();
             DefinedLabel = new System.Windows.Forms.Label();
             FormattedPath = new System.Windows.Forms.Label();
             label1 = new System.Windows.Forms.Label();
+            label2 = new System.Windows.Forms.Label();
+            label3 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // NameLabel
@@ -103,9 +108,9 @@ namespace PolicyPlus
             label1.Location = new System.Drawing.Point(13, 300);
             label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label1.Name = "label1";
-            label1.Size = new System.Drawing.Size(92, 15);
+            label1.Size = new System.Drawing.Size(98, 15);
             label1.TabIndex = 23;
-            label1.Text = "Registry Path";
+            label1.Text = "Registry Value";
             // 
             // NameTextbox
             // 
@@ -198,6 +203,39 @@ namespace PolicyPlus
             this.RegPathCopyButton.UseVisualStyleBackColor = true;
             this.RegPathCopyButton.Click += new System.EventHandler(this.CopyToClipboard);
             // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new System.Drawing.Point(13, 323);
+            label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            label2.Name = "label2";
+            label2.Size = new System.Drawing.Size(97, 15);
+            label2.TabIndex = 24;
+            label2.Text = "(Experimental)";
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new System.Drawing.Point(13, 136);
+            label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            label3.Name = "label3";
+            label3.Size = new System.Drawing.Size(97, 15);
+            label3.TabIndex = 25;
+            label3.Text = "(Experimental)";
+            // 
+            // ToggleRegViewBtn
+            // 
+            this.ToggleRegViewBtn.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("ToggleRegViewBtn.BackgroundImage")));
+            this.ToggleRegViewBtn.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
+            this.ToggleRegViewBtn.FlatAppearance.BorderSize = 0;
+            this.ToggleRegViewBtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.ToggleRegViewBtn.Location = new System.Drawing.Point(660, 344);
+            this.ToggleRegViewBtn.Name = "ToggleRegViewBtn";
+            this.ToggleRegViewBtn.Size = new System.Drawing.Size(36, 30);
+            this.ToggleRegViewBtn.TabIndex = 26;
+            this.ToggleRegViewBtn.UseVisualStyleBackColor = true;
+            this.ToggleRegViewBtn.Click += new System.EventHandler(this.ToggleRegViewBtn_Click);
+            // 
             // DetailPolicyFormatted
             // 
             this.AcceptButton = this.CloseButton;
@@ -205,6 +243,9 @@ namespace PolicyPlus
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CloseButton;
             this.ClientSize = new System.Drawing.Size(704, 511);
+            this.Controls.Add(this.ToggleRegViewBtn);
+            this.Controls.Add(label3);
+            this.Controls.Add(label2);
             this.Controls.Add(label1);
             this.Controls.Add(this.RegPathCopyButton);
             this.Controls.Add(this.FormattedRegPathBox);
@@ -241,5 +282,6 @@ namespace PolicyPlus
         private Button PolPathCopyButton;
         internal TextBox FormattedRegPathBox;
         private Button RegPathCopyButton;
+        private Button ToggleRegViewBtn;
     }
 }

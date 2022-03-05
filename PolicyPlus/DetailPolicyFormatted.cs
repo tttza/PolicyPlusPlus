@@ -1,5 +1,9 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Windows.Forms;
 
 namespace PolicyPlus
@@ -7,6 +11,9 @@ namespace PolicyPlus
     public partial class DetailPolicyFormatted
     {
         private IPolicySource CompPolSource, UserPolSource;
+        private string RegString;
+        private string RegFileString;
+        private bool isRegFileStringShowing;
         public DetailPolicyFormatted()
         {
             InitializeComponent();
@@ -100,9 +107,6 @@ namespace PolicyPlus
 
         private void UpdateRegPathBox(PolicyPlusPolicy Policy, IPolicySource compPolSource, IPolicySource userPolSource, string languageCode)
         {
-            var nl = System.Environment.NewLine;
-            FormattedRegPathBox.Text = "";
-
             var compState = PolicyProcessing.GetPolicyState(compPolSource, Policy);
             var userState = PolicyProcessing.GetPolicyState(userPolSource, Policy);
             var state = PolicyState.NotConfigured;
@@ -131,7 +135,10 @@ namespace PolicyPlus
                 }
             }
 
-            FormattedRegPathBox.Text += $"{GetRegistryString(source, state, Policy, isUser, languageCode)}";
+            RegString = $"{GetRegistryString(source, state, Policy, isUser, languageCode)}";
+            RegFileString = $"{GetRegFileString(source, state, Policy, isUser)}";
+            FormattedRegPathBox.Text = RegString;
+            isRegFileStringShowing = false;
         }
 
         private string GetRegPathString(string regKey, string languageCode, bool isUser)
@@ -246,6 +253,87 @@ namespace PolicyPlus
         private void DetailPolicyFormatted_Load(object sender, EventArgs e)
         {
 
+        }
+
+
+        public PolFile GetOrCreatePolFromPolicySource(IPolicySource Source)
+        {
+            if (Source is PolFile)
+            {
+                // If it's already a POL, just save it
+                return (PolFile)Source;
+            }
+            else if (Source is RegistryPolicyProxy)
+            {
+                // Recurse through the Registry branch and create a POL
+                var regRoot = ((RegistryPolicyProxy)Source).EncapsulatedRegistry;
+                var pol = new PolFile();
+                void addSubtree(string PathRoot, RegistryKey Key)
+                {
+                    foreach (var valName in Key.GetValueNames())
+                    {
+                        var valData = Key.GetValue(valName, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                        pol.SetValue(PathRoot, valName, valData, Key.GetValueKind(valName));
+                    }
+
+                    foreach (var subkeyName in Key.GetSubKeyNames())
+                    {
+                        using (var subkey = Key.OpenSubKey(subkeyName, false))
+                        {
+                            addSubtree(PathRoot + @"\" + subkeyName, subkey);
+                        }
+                    }
+                }
+                foreach (var policyPath in RegistryPolicyProxy.PolicyKeys)
+                {
+                    using (var policyKey = regRoot.OpenSubKey(policyPath, false))
+                    {
+                        addSubtree(policyPath, policyKey);
+                    }
+                }
+
+                return pol;
+            }
+            else
+            {
+                throw new InvalidOperationException("Policy source type not supported");
+            }
+        }
+
+        private string GetRegFileString(IPolicySource source, PolicyState policyState, PolicyPlusPolicy policy, bool isUser)
+        {
+            var reg = new RegFile();
+            reg.SetPrefix(isUser ? "HKEY_CURRENT_USER" : "HKEY_LOCAL_MACHINE");
+            reg.SetSourceBranch(policy.RawPolicy.RegistryKey);
+            var Source = GetOrCreatePolFromPolicySource(source);
+            try
+            {
+                var sb = new StringBuilder();
+                var sw = new StringWriter(sb);
+                Source.Apply(reg);
+                reg.Save(sw);
+                return sw.ToString();
+
+            }
+            catch (Exception)
+            {
+                Interaction.MsgBox("Failed to read REG!", MsgBoxStyle.Exclamation);
+            }
+            return "";
+        }
+
+        private void ToggleRegViewBtn_Click(object sender, EventArgs e)
+        {
+            if (isRegFileStringShowing)
+            {
+                FormattedRegPathBox.Text = RegString;
+                isRegFileStringShowing = false;
+            }
+            else
+            {
+                FormattedRegPathBox.Text = RegFileString;
+                isRegFileStringShowing = true;
+            }
         }
 
         String GetRegistryString(IPolicySource source, PolicyState policyState, PolicyPlusPolicy policy, bool isUser, string languageCode)

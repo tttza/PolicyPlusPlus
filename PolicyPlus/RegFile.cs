@@ -179,7 +179,7 @@ namespace PolicyPlus
             }
         }
 
-        public void Save(StreamWriter Writer)
+        public void Save(TextWriter Writer)
         {
             Writer.WriteLine(RegSignature);
             Writer.WriteLine();

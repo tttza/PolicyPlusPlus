@@ -979,7 +979,7 @@ namespace PolicyPlus
         {
             // Show author and version information if it was compiled into the program
             string about = $"Policy Plus by Ben Nordick.{System.Environment.NewLine}Modded by tttza.{System.Environment.NewLine}{System.Environment.NewLine}Available on GitHub: tttza/PolicyPlus.";
-            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString().Substring(0, 5);
             if (!string.IsNullOrEmpty(version))
                 about += $"{System.Environment.NewLine} Version: {version}";
             Interaction.MsgBox(about, MsgBoxStyle.Information);
