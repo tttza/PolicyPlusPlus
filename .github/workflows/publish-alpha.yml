@@ -17,10 +17,11 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
         
       - name: Compile
-        run: msbuild.exe -t:build -restore -p:RestorePackagesConfig=true $env:GITHUB_WORKSPACE\PolicyPlus\PolicyPlus.sln /p:platform="Any CPU" /p:configuration="Release" 
+        working-directory: ./PolicyPlus
+        run: msbuild.exe -t:build -restore -p:RestorePackagesConfig=true PolicyPlus.sln /p:platform="Any CPU" /p:configuration="Release" 
       
       - name: Rename
-        run: Move-Item -Path "$env:GITHUB_WORKSPACE\PolicyPlus\bin\Release\Policy Plus.exe" `
+        run: Move-Item -Path "PolicyPlus\bin\Release\Policy Plus.exe" `
           -Destination "PolicyPlusMod.exe" 
 
       - name: GH Release
