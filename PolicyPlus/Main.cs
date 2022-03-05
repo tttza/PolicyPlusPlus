@@ -556,7 +556,7 @@ namespace PolicyPlus
             }
         }
 
-        public void ShowSearchDialog(Func<PolicyPlusPolicy, bool> Searcher)
+        public bool ShowSearchDialog(Func<PolicyPlusPolicy, bool> Searcher)
         {
             // Show the search dialog and make it start a search if appropriate
             DialogResult result;
@@ -574,7 +574,11 @@ namespace PolicyPlus
                 var selPol = My.MyProject.Forms.FindResults.SelectedPolicy;
                 ShowSettingEditor(selPol, ViewPolicyTypes);
                 FocusPolicy(selPol);
+                return true;
+            } else if (result == DialogResult.Retry) {
+                return false;
             }
+            return true;
         }
 
         public void ClearAdmxWorkspace()
@@ -978,10 +982,17 @@ namespace PolicyPlus
 
         private void ByTextToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Show the Find By Text window and start the search
-            if (My.MyProject.Forms.FindByText.PresentDialog(UserComments, CompComments) == DialogResult.OK)
-            {
-                ShowSearchDialog(My.MyProject.Forms.FindByText.Searcher);
+            var shouldClose = false;
+            while (!shouldClose){
+                // Show the Find By Text window and start the search
+                if (My.MyProject.Forms.FindByText.PresentDialog(UserComments, CompComments) == DialogResult.OK)
+                {
+                    shouldClose = ShowSearchDialog(My.MyProject.Forms.FindByText.Searcher);
+                }
+                else
+                {
+                    break;
+                }
             }
         }
 
@@ -1013,9 +1024,19 @@ namespace PolicyPlus
 
         private void ByRegistryToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Show the Find By Registry window and start the search
-            if (My.MyProject.Forms.FindByRegistry.ShowDialog() == DialogResult.OK)
-                ShowSearchDialog(My.MyProject.Forms.FindByRegistry.Searcher);
+            var shouldClose = false;
+            while (!shouldClose)
+            {
+                // Show the Find By Registry window and start the search
+                if (My.MyProject.Forms.FindByRegistry.ShowDialog() == DialogResult.OK)
+                {
+                    shouldClose = ShowSearchDialog(My.MyProject.Forms.FindByRegistry.Searcher);
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
 
         private void SettingInfoPanel_ClientSizeChanged(object sender, EventArgs e)

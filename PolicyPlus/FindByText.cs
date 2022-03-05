@@ -14,7 +14,7 @@ namespace PolicyPlus
             InitializeComponent();
         }
 
-        private Dictionary<string, string>[] CommentSources;
+        private Dictionary<string, string>[] CommentSources = new Dictionary<string, string>[] {};
         public Func<PolicyPlusPolicy, bool> Searcher;
 
         public DialogResult PresentDialog(params Dictionary<string, string>[] CommentDicts)
@@ -122,6 +122,5 @@ namespace PolicyPlus
             });
             DialogResult = DialogResult.OK;
         }
-
     }
 }
