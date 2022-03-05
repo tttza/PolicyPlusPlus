@@ -234,7 +234,7 @@ namespace PolicyPlus
                                         if (width > maxWidth)
                                             maxWidth = (int)Math.Round(width);
                                         combobox.Items.Add(map);
-                                        if (itemId == dropdownPres.DefaultItemID.GetValueOrDefault(-1))
+                                        if (itemId == dropdownPres.DefaultItemID.GetValueOrDefault(0))
                                             combobox.SelectedItem = map;
                                         itemId += 1;
                                     }
