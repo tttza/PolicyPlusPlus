@@ -460,7 +460,7 @@ namespace PolicyPlus
         public void ShowSettingEditor(PolicyPlusPolicy Policy, AdmxPolicySection Section)
         {
             // Show the Edit Policy Setting dialog for a policy and reload if changes were made
-            if (My.MyProject.Forms.EditSetting.PresentDialog(Policy, Section, AdmxWorkspace, CompPolicySource, UserPolicySource, CompPolicyLoader, UserPolicyLoader, CompComments, UserComments) == DialogResult.OK)
+            if (My.MyProject.Forms.EditSetting.PresentDialog(Policy, Section, AdmxWorkspace, CompPolicySource, UserPolicySource, CompPolicyLoader, UserPolicyLoader, CompComments, UserComments, GetPreferredLanguageCode()) == DialogResult.OK)
             {
                 // Keep the selection where it is if possible
                 if (CurrentCategory is null || ShouldShowCategory(CurrentCategory))

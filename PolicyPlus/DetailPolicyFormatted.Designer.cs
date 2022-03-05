@@ -141,6 +141,7 @@ namespace PolicyPlus
             this.FormattedPolPathBox.Multiline = true;
             this.FormattedPolPathBox.Name = "FormattedPolPathBox";
             this.FormattedPolPathBox.ReadOnly = true;
+            this.FormattedPolPathBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.FormattedPolPathBox.Size = new System.Drawing.Size(505, 166);
             this.FormattedPolPathBox.TabIndex = 6;
             this.FormattedPolPathBox.Tag = "Path";
@@ -178,6 +179,7 @@ namespace PolicyPlus
             this.FormattedRegPathBox.Multiline = true;
             this.FormattedRegPathBox.Name = "FormattedRegPathBox";
             this.FormattedRegPathBox.ReadOnly = true;
+            this.FormattedRegPathBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.FormattedRegPathBox.Size = new System.Drawing.Size(505, 166);
             this.FormattedRegPathBox.TabIndex = 21;
             this.FormattedRegPathBox.Tag = "Path";

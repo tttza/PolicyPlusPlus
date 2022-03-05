@@ -36,238 +36,273 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label SectionLabel;
-            CommentLabel = new Label();
-            SupportedLabel = new Label();
-            SettingNameLabel = new Label();
-            CommentTextbox = new TextBox();
-            SupportedTextbox = new TextBox();
-            NotConfiguredOption = new RadioButton();
-            NotConfiguredOption.CheckedChanged += new EventHandler(StateRadiosChanged);
-            EnabledOption = new RadioButton();
-            EnabledOption.CheckedChanged += new EventHandler(StateRadiosChanged);
-            DisabledOption = new RadioButton();
-            DisabledOption.CheckedChanged += new EventHandler(StateRadiosChanged);
-            ExtraOptionsPanel = new Panel();
-            ExtraOptionsTable = new TableLayoutPanel();
-            CloseButton = new Button();
-            CloseButton.Click += new EventHandler(CancelButton_Click);
-            OkButton = new Button();
-            OkButton.Click += new EventHandler(OkButton_Click);
-            HelpTextbox = new TextBox();
-            SectionDropdown = new ComboBox();
-            SectionDropdown.SelectedIndexChanged += new EventHandler(SectionDropdown_SelectedIndexChanged);
-            ApplyButton = new Button();
-            ApplyButton.Click += new EventHandler(ApplyButton_Click);
-            SectionLabel = new Label();
-            ExtraOptionsPanel.SuspendLayout();
-            SuspendLayout();
-            // 
-            // CommentLabel
-            // 
-            CommentLabel.AutoSize = true;
-            CommentLabel.Location = new Point(260, 28);
-            CommentLabel.Name = "CommentLabel";
-            CommentLabel.Size = new Size(51, 13);
-            CommentLabel.TabIndex = 2;
-            CommentLabel.Text = "Comment";
-            // 
-            // SupportedLabel
-            // 
-            SupportedLabel.AutoSize = true;
-            SupportedLabel.Location = new Point(240, 103);
-            SupportedLabel.Name = "SupportedLabel";
-            SupportedLabel.Size = new Size(71, 13);
-            SupportedLabel.TabIndex = 4;
-            SupportedLabel.Text = "Supported on";
+            System.Windows.Forms.Label SectionLabel;
+            this.CommentLabel = new System.Windows.Forms.Label();
+            this.SupportedLabel = new System.Windows.Forms.Label();
+            this.SettingNameLabel = new System.Windows.Forms.Label();
+            this.CommentTextbox = new System.Windows.Forms.TextBox();
+            this.SupportedTextbox = new System.Windows.Forms.TextBox();
+            this.NotConfiguredOption = new System.Windows.Forms.RadioButton();
+            this.EnabledOption = new System.Windows.Forms.RadioButton();
+            this.DisabledOption = new System.Windows.Forms.RadioButton();
+            this.ExtraOptionsPanel = new System.Windows.Forms.Panel();
+            this.ExtraOptionsTable = new System.Windows.Forms.TableLayoutPanel();
+            this.CloseButton = new System.Windows.Forms.Button();
+            this.OkButton = new System.Windows.Forms.Button();
+            this.HelpTextbox = new System.Windows.Forms.TextBox();
+            this.SectionDropdown = new System.Windows.Forms.ComboBox();
+            this.ApplyButton = new System.Windows.Forms.Button();
+            this.ViewDetailFormattedBtn = new System.Windows.Forms.Button();
+            SectionLabel = new System.Windows.Forms.Label();
+            this.ExtraOptionsPanel.SuspendLayout();
+            this.SuspendLayout();
             // 
             // SectionLabel
             // 
             SectionLabel.AutoSize = true;
-            SectionLabel.Location = new Point(12, 28);
+            SectionLabel.Location = new System.Drawing.Point(16, 32);
+            SectionLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             SectionLabel.Name = "SectionLabel";
-            SectionLabel.Size = new Size(54, 13);
+            SectionLabel.Size = new System.Drawing.Size(71, 15);
             SectionLabel.TabIndex = 12;
             SectionLabel.Text = "Editing for";
             // 
+            // CommentLabel
+            // 
+            this.CommentLabel.AutoSize = true;
+            this.CommentLabel.Location = new System.Drawing.Point(347, 32);
+            this.CommentLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.CommentLabel.Name = "CommentLabel";
+            this.CommentLabel.Size = new System.Drawing.Size(68, 15);
+            this.CommentLabel.TabIndex = 2;
+            this.CommentLabel.Text = "Comment";
+            // 
+            // SupportedLabel
+            // 
+            this.SupportedLabel.AutoSize = true;
+            this.SupportedLabel.Location = new System.Drawing.Point(320, 119);
+            this.SupportedLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.SupportedLabel.Name = "SupportedLabel";
+            this.SupportedLabel.Size = new System.Drawing.Size(92, 15);
+            this.SupportedLabel.TabIndex = 4;
+            this.SupportedLabel.Text = "Supported on";
+            // 
             // SettingNameLabel
             // 
-            SettingNameLabel.AutoEllipsis = true;
-            SettingNameLabel.Location = new Point(12, 9);
-            SettingNameLabel.Name = "SettingNameLabel";
-            SettingNameLabel.Size = new Size(614, 13);
-            SettingNameLabel.TabIndex = 0;
-            SettingNameLabel.Text = "Policy name";
+            this.SettingNameLabel.AutoEllipsis = true;
+            this.SettingNameLabel.Location = new System.Drawing.Point(16, 10);
+            this.SettingNameLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.SettingNameLabel.Name = "SettingNameLabel";
+            this.SettingNameLabel.Size = new System.Drawing.Size(819, 15);
+            this.SettingNameLabel.TabIndex = 0;
+            this.SettingNameLabel.Text = "Policy name";
             // 
             // CommentTextbox
             // 
-            CommentTextbox.AcceptsReturn = true;
-            CommentTextbox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            CommentTextbox.Location = new Point(317, 25);
-            CommentTextbox.Multiline = true;
-            CommentTextbox.Name = "CommentTextbox";
-            CommentTextbox.Size = new Size(309, 69);
-            CommentTextbox.TabIndex = 100;
+            this.CommentTextbox.AcceptsReturn = true;
+            this.CommentTextbox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.CommentTextbox.Location = new System.Drawing.Point(423, 29);
+            this.CommentTextbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.CommentTextbox.Multiline = true;
+            this.CommentTextbox.Name = "CommentTextbox";
+            this.CommentTextbox.Size = new System.Drawing.Size(411, 79);
+            this.CommentTextbox.TabIndex = 100;
             // 
             // SupportedTextbox
             // 
-            SupportedTextbox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            SupportedTextbox.Location = new Point(317, 100);
-            SupportedTextbox.Multiline = true;
-            SupportedTextbox.Name = "SupportedTextbox";
-            SupportedTextbox.ReadOnly = true;
-            SupportedTextbox.Size = new Size(309, 44);
-            SupportedTextbox.TabIndex = 101;
+            this.SupportedTextbox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.SupportedTextbox.Location = new System.Drawing.Point(423, 115);
+            this.SupportedTextbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.SupportedTextbox.Multiline = true;
+            this.SupportedTextbox.Name = "SupportedTextbox";
+            this.SupportedTextbox.ReadOnly = true;
+            this.SupportedTextbox.Size = new System.Drawing.Size(411, 50);
+            this.SupportedTextbox.TabIndex = 101;
             // 
             // NotConfiguredOption
             // 
-            NotConfiguredOption.AutoSize = true;
-            NotConfiguredOption.Location = new Point(12, 52);
-            NotConfiguredOption.Name = "NotConfiguredOption";
-            NotConfiguredOption.Size = new Size(96, 17);
-            NotConfiguredOption.TabIndex = 1;
-            NotConfiguredOption.TabStop = true;
-            NotConfiguredOption.Text = "Not Configured";
-            NotConfiguredOption.UseVisualStyleBackColor = true;
+            this.NotConfiguredOption.AutoSize = true;
+            this.NotConfiguredOption.Location = new System.Drawing.Point(16, 60);
+            this.NotConfiguredOption.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.NotConfiguredOption.Name = "NotConfiguredOption";
+            this.NotConfiguredOption.Size = new System.Drawing.Size(125, 19);
+            this.NotConfiguredOption.TabIndex = 1;
+            this.NotConfiguredOption.TabStop = true;
+            this.NotConfiguredOption.Text = "Not Configured";
+            this.NotConfiguredOption.UseVisualStyleBackColor = true;
+            this.NotConfiguredOption.CheckedChanged += new System.EventHandler(this.StateRadiosChanged);
             // 
             // EnabledOption
             // 
-            EnabledOption.AutoSize = true;
-            EnabledOption.Location = new Point(12, 75);
-            EnabledOption.Name = "EnabledOption";
-            EnabledOption.Size = new Size(64, 17);
-            EnabledOption.TabIndex = 2;
-            EnabledOption.TabStop = true;
-            EnabledOption.Text = "Enabled";
-            EnabledOption.UseVisualStyleBackColor = true;
+            this.EnabledOption.AutoSize = true;
+            this.EnabledOption.Location = new System.Drawing.Point(16, 87);
+            this.EnabledOption.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.EnabledOption.Name = "EnabledOption";
+            this.EnabledOption.Size = new System.Drawing.Size(76, 19);
+            this.EnabledOption.TabIndex = 2;
+            this.EnabledOption.TabStop = true;
+            this.EnabledOption.Text = "Enabled";
+            this.EnabledOption.UseVisualStyleBackColor = true;
+            this.EnabledOption.CheckedChanged += new System.EventHandler(this.StateRadiosChanged);
             // 
             // DisabledOption
             // 
-            DisabledOption.AutoSize = true;
-            DisabledOption.Location = new Point(12, 98);
-            DisabledOption.Name = "DisabledOption";
-            DisabledOption.Size = new Size(66, 17);
-            DisabledOption.TabIndex = 3;
-            DisabledOption.TabStop = true;
-            DisabledOption.Text = "Disabled";
-            DisabledOption.UseVisualStyleBackColor = true;
+            this.DisabledOption.AutoSize = true;
+            this.DisabledOption.Location = new System.Drawing.Point(16, 113);
+            this.DisabledOption.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.DisabledOption.Name = "DisabledOption";
+            this.DisabledOption.Size = new System.Drawing.Size(80, 19);
+            this.DisabledOption.TabIndex = 3;
+            this.DisabledOption.TabStop = true;
+            this.DisabledOption.Text = "Disabled";
+            this.DisabledOption.UseVisualStyleBackColor = true;
+            this.DisabledOption.CheckedChanged += new System.EventHandler(this.StateRadiosChanged);
             // 
             // ExtraOptionsPanel
             // 
-            ExtraOptionsPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
-            ExtraOptionsPanel.BackColor = Color.White;
-            ExtraOptionsPanel.BorderStyle = BorderStyle.FixedSingle;
-            ExtraOptionsPanel.Controls.Add(ExtraOptionsTable);
-            ExtraOptionsPanel.Location = new Point(12, 150);
-            ExtraOptionsPanel.Name = "ExtraOptionsPanel";
-            ExtraOptionsPanel.Size = new Size(299, 244);
-            ExtraOptionsPanel.TabIndex = 8;
+            this.ExtraOptionsPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.ExtraOptionsPanel.BackColor = System.Drawing.Color.White;
+            this.ExtraOptionsPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.ExtraOptionsPanel.Controls.Add(this.ExtraOptionsTable);
+            this.ExtraOptionsPanel.Location = new System.Drawing.Point(16, 173);
+            this.ExtraOptionsPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.ExtraOptionsPanel.Name = "ExtraOptionsPanel";
+            this.ExtraOptionsPanel.Size = new System.Drawing.Size(398, 281);
+            this.ExtraOptionsPanel.TabIndex = 8;
             // 
             // ExtraOptionsTable
             // 
-            ExtraOptionsTable.AutoSize = true;
-            ExtraOptionsTable.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            ExtraOptionsTable.ColumnCount = 1;
-            ExtraOptionsTable.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 298.0f));
-            ExtraOptionsTable.Location = new Point(0, 0);
-            ExtraOptionsTable.Margin = new Padding(0);
-            ExtraOptionsTable.MaximumSize = new Size(297, 0);
-            ExtraOptionsTable.MinimumSize = new Size(297, 0);
-            ExtraOptionsTable.Name = "ExtraOptionsTable";
-            ExtraOptionsTable.RowCount = 1;
-            ExtraOptionsTable.RowStyles.Add(new RowStyle(SizeType.Absolute, 20.0f));
-            ExtraOptionsTable.Size = new Size(297, 20);
-            ExtraOptionsTable.TabIndex = 0;
+            this.ExtraOptionsTable.AutoSize = true;
+            this.ExtraOptionsTable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.ExtraOptionsTable.ColumnCount = 1;
+            this.ExtraOptionsTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 397F));
+            this.ExtraOptionsTable.Location = new System.Drawing.Point(0, 0);
+            this.ExtraOptionsTable.Margin = new System.Windows.Forms.Padding(0);
+            this.ExtraOptionsTable.MaximumSize = new System.Drawing.Size(396, 0);
+            this.ExtraOptionsTable.MinimumSize = new System.Drawing.Size(396, 0);
+            this.ExtraOptionsTable.Name = "ExtraOptionsTable";
+            this.ExtraOptionsTable.RowCount = 1;
+            this.ExtraOptionsTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 23F));
+            this.ExtraOptionsTable.Size = new System.Drawing.Size(396, 23);
+            this.ExtraOptionsTable.TabIndex = 0;
             // 
             // CloseButton
             // 
-            CloseButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            CloseButton.DialogResult = DialogResult.Cancel;
-            CloseButton.Location = new Point(470, 400);
-            CloseButton.Name = "CloseButton";
-            CloseButton.Size = new Size(75, 23);
-            CloseButton.TabIndex = 104;
-            CloseButton.Text = "Cancel";
-            CloseButton.UseVisualStyleBackColor = true;
+            this.CloseButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.CloseButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.CloseButton.Location = new System.Drawing.Point(627, 462);
+            this.CloseButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.CloseButton.Name = "CloseButton";
+            this.CloseButton.Size = new System.Drawing.Size(100, 27);
+            this.CloseButton.TabIndex = 104;
+            this.CloseButton.Text = "Cancel";
+            this.CloseButton.UseVisualStyleBackColor = true;
+            this.CloseButton.Click += new System.EventHandler(this.CancelButton_Click);
             // 
             // OkButton
             // 
-            OkButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            OkButton.Location = new Point(389, 400);
-            OkButton.Name = "OkButton";
-            OkButton.Size = new Size(75, 23);
-            OkButton.TabIndex = 103;
-            OkButton.Text = "OK";
-            OkButton.UseVisualStyleBackColor = true;
+            this.OkButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.OkButton.Location = new System.Drawing.Point(519, 462);
+            this.OkButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.OkButton.Name = "OkButton";
+            this.OkButton.Size = new System.Drawing.Size(100, 27);
+            this.OkButton.TabIndex = 103;
+            this.OkButton.Text = "OK";
+            this.OkButton.UseVisualStyleBackColor = true;
+            this.OkButton.Click += new System.EventHandler(this.OkButton_Click);
             // 
             // HelpTextbox
             // 
-            HelpTextbox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
-            HelpTextbox.Location = new Point(317, 150);
-            HelpTextbox.Multiline = true;
-            HelpTextbox.Name = "HelpTextbox";
-            HelpTextbox.ReadOnly = true;
-            HelpTextbox.ScrollBars = ScrollBars.Both;
-            HelpTextbox.Size = new Size(309, 244);
-            HelpTextbox.TabIndex = 102;
+            this.HelpTextbox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.HelpTextbox.Location = new System.Drawing.Point(423, 173);
+            this.HelpTextbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.HelpTextbox.Multiline = true;
+            this.HelpTextbox.Name = "HelpTextbox";
+            this.HelpTextbox.ReadOnly = true;
+            this.HelpTextbox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.HelpTextbox.Size = new System.Drawing.Size(411, 281);
+            this.HelpTextbox.TabIndex = 102;
             // 
             // SectionDropdown
             // 
-            SectionDropdown.DropDownStyle = ComboBoxStyle.DropDownList;
-            SectionDropdown.FormattingEnabled = true;
-            SectionDropdown.Items.AddRange(new object[] { "User", "Computer" });
-            SectionDropdown.Location = new Point(72, 25);
-            SectionDropdown.Name = "SectionDropdown";
-            SectionDropdown.Size = new Size(112, 21);
-            SectionDropdown.TabIndex = 4;
+            this.SectionDropdown.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.SectionDropdown.FormattingEnabled = true;
+            this.SectionDropdown.Items.AddRange(new object[] {
+            "User",
+            "Computer"});
+            this.SectionDropdown.Location = new System.Drawing.Point(96, 29);
+            this.SectionDropdown.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.SectionDropdown.Name = "SectionDropdown";
+            this.SectionDropdown.Size = new System.Drawing.Size(148, 23);
+            this.SectionDropdown.TabIndex = 4;
+            this.SectionDropdown.SelectedIndexChanged += new System.EventHandler(this.SectionDropdown_SelectedIndexChanged);
             // 
             // ApplyButton
             // 
-            ApplyButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            ApplyButton.Location = new Point(551, 400);
-            ApplyButton.Name = "ApplyButton";
-            ApplyButton.Size = new Size(75, 23);
-            ApplyButton.TabIndex = 105;
-            ApplyButton.Text = "Apply";
-            ApplyButton.UseVisualStyleBackColor = true;
+            this.ApplyButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ApplyButton.Location = new System.Drawing.Point(735, 462);
+            this.ApplyButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.ApplyButton.Name = "ApplyButton";
+            this.ApplyButton.Size = new System.Drawing.Size(100, 27);
+            this.ApplyButton.TabIndex = 105;
+            this.ApplyButton.Text = "Apply";
+            this.ApplyButton.UseVisualStyleBackColor = true;
+            this.ApplyButton.Click += new System.EventHandler(this.ApplyButton_Click);
+            // 
+            // ViewDetailFormattedBtn
+            // 
+            this.ViewDetailFormattedBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ViewDetailFormattedBtn.Location = new System.Drawing.Point(13, 461);
+            this.ViewDetailFormattedBtn.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.ViewDetailFormattedBtn.Name = "ViewDetailFormattedBtn";
+            this.ViewDetailFormattedBtn.Size = new System.Drawing.Size(152, 27);
+            this.ViewDetailFormattedBtn.TabIndex = 106;
+            this.ViewDetailFormattedBtn.Text = "View Detail (Apply)";
+            this.ViewDetailFormattedBtn.UseVisualStyleBackColor = true;
+            this.ViewDetailFormattedBtn.Click += new System.EventHandler(this.ViewDetailFormattedBtn_Click);
             // 
             // EditSetting
             // 
-            AcceptButton = OkButton;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            CancelButton = CloseButton;
-            ClientSize = new Size(638, 435);
-            Controls.Add(ApplyButton);
-            Controls.Add(SectionLabel);
-            Controls.Add(SectionDropdown);
-            Controls.Add(HelpTextbox);
-            Controls.Add(OkButton);
-            Controls.Add(CloseButton);
-            Controls.Add(ExtraOptionsPanel);
-            Controls.Add(DisabledOption);
-            Controls.Add(EnabledOption);
-            Controls.Add(NotConfiguredOption);
-            Controls.Add(SupportedLabel);
-            Controls.Add(SupportedTextbox);
-            Controls.Add(CommentLabel);
-            Controls.Add(CommentTextbox);
-            Controls.Add(SettingNameLabel);
-            MaximizeBox = false;
-            MinimizeBox = false;
-            MinimumSize = new Size(654, 474);
-            Name = "EditSetting";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Edit Policy Setting";
-            ExtraOptionsPanel.ResumeLayout(false);
-            ExtraOptionsPanel.PerformLayout();
-            Shown += new EventHandler(EditSetting_Shown);
-            Resize += new EventHandler(EditSetting_Resize);
-            FormClosed += new FormClosedEventHandler(EditSetting_FormClosed);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.OkButton;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.CancelButton = this.CloseButton;
+            this.ClientSize = new System.Drawing.Size(851, 502);
+            this.Controls.Add(this.ViewDetailFormattedBtn);
+            this.Controls.Add(this.ApplyButton);
+            this.Controls.Add(SectionLabel);
+            this.Controls.Add(this.SectionDropdown);
+            this.Controls.Add(this.HelpTextbox);
+            this.Controls.Add(this.OkButton);
+            this.Controls.Add(this.CloseButton);
+            this.Controls.Add(this.ExtraOptionsPanel);
+            this.Controls.Add(this.DisabledOption);
+            this.Controls.Add(this.EnabledOption);
+            this.Controls.Add(this.NotConfiguredOption);
+            this.Controls.Add(this.SupportedLabel);
+            this.Controls.Add(this.SupportedTextbox);
+            this.Controls.Add(this.CommentLabel);
+            this.Controls.Add(this.CommentTextbox);
+            this.Controls.Add(this.SettingNameLabel);
+            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.MinimumSize = new System.Drawing.Size(866, 540);
+            this.Name = "EditSetting";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Edit Policy Setting";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.EditSetting_FormClosed);
+            this.Shown += new System.EventHandler(this.EditSetting_Shown);
+            this.Resize += new System.EventHandler(this.EditSetting_Resize);
+            this.ExtraOptionsPanel.ResumeLayout(false);
+            this.ExtraOptionsPanel.PerformLayout();
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal Label SettingNameLabel;
@@ -285,5 +320,6 @@ namespace PolicyPlus
         internal Button ApplyButton;
         internal Label CommentLabel;
         internal Label SupportedLabel;
+        internal Button ViewDetailFormattedBtn;
     }
 }

@@ -20,6 +20,8 @@ namespace PolicyPlus
         private IPolicySource CompPolSource, UserPolSource;
         private PolicyLoader CompPolLoader, UserPolLoader;
         private Dictionary<string, string> CompComments, UserComments;
+        private string languageCode;
+
         // Above: passed in; below: internal state
         private Dictionary<string, Control> ElementControls;
         private List<Control> ResizableControls;
@@ -469,7 +471,7 @@ namespace PolicyPlus
             return options;
         }
 
-        public DialogResult PresentDialog(PolicyPlusPolicy Policy, AdmxPolicySection Section, AdmxBundle Workspace, IPolicySource CompPolSource, IPolicySource UserPolSource, PolicyLoader CompPolLoader, PolicyLoader UserPolLoader, Dictionary<string, string> CompComments, Dictionary<string, string> UserComments)
+        public DialogResult PresentDialog(PolicyPlusPolicy Policy, AdmxPolicySection Section, AdmxBundle Workspace, IPolicySource CompPolSource, IPolicySource UserPolSource, PolicyLoader CompPolLoader, PolicyLoader UserPolLoader, Dictionary<string, string> CompComments, Dictionary<string, string> UserComments, string languageCode)
         {
             CurrentSetting = Policy;
             CurrentSection = Section;
@@ -480,6 +482,7 @@ namespace PolicyPlus
             this.UserPolLoader = UserPolLoader;
             this.CompComments = CompComments;
             this.UserComments = UserComments;
+            this.languageCode = languageCode;
             ChangesMade = false;
             return ShowDialog();
         }
@@ -523,6 +526,13 @@ namespace PolicyPlus
             ExtraOptionsTable.MinimumSize = ExtraOptionsTable.MaximumSize;
             foreach (var ctl in ResizableControls)
                 ctl.MaximumSize = new Size(ExtraOptionsPanel.ClientSize.Width, 0);
+        }
+
+        private void ViewDetailFormattedBtn_Click(object sender, EventArgs e)
+        {
+            ApplyToPolicySource();
+            ChangesMade = true;
+            My.MyProject.Forms.DetailPolicyFormatted.PresentDialog(CurrentSetting, CompPolSource, UserPolSource, this.languageCode);
         }
 
         private void EditSetting_Resize(object sender, EventArgs e)
