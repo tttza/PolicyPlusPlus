@@ -136,7 +136,8 @@ namespace PolicyPlus
                 if (ResultsListview.Items.Count == 0)
                 {
                     BackToRegSearchBtn.Focus();
-                } else
+                } 
+                else
                 {
                     ResultsListview.Items[0].Focused = true;
                     ResultsListview.Items[0].Selected= true;
