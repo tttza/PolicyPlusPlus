@@ -14,7 +14,7 @@ namespace PolicyPlus
             InitializeComponent();
         }
 
-        private Dictionary<string, string>[] CommentSources;
+        private Dictionary<string, string>[] CommentSources = new Dictionary<string, string>[] {};
         public Func<PolicyPlusPolicy, bool> Searcher;
 
         public DialogResult PresentDialog(params Dictionary<string, string>[] CommentDicts)
@@ -42,6 +42,7 @@ namespace PolicyPlus
             bool checkDesc = DescriptionCheckbox.Checked;
             bool checkComment = CommentCheckbox.Checked;
             bool checkId = IdCheckbox.Checked;
+            bool checkPartial = partialCheckbox.Checked;
             if (!(checkTitle | checkDesc | checkComment | checkId))
             {
                 Interaction.MsgBox("At least one attribute must be searched. Check one of the boxes and try again.", MsgBoxStyle.Exclamation);
@@ -52,7 +53,7 @@ namespace PolicyPlus
             {
                 string cleanupStr(string RawText)
                 {
-                    return new string(Strings.Trim(RawText.ToLowerInvariant()).Where(c => !".,'\";/!(){}[]".Contains(Conversions.ToString(c))).ToArray());
+                    return new string(Strings.Trim(RawText.ToLowerInvariant()).Where(c => !".,'\";/!(){}[] ".Contains(Conversions.ToString(c))).ToArray());
                 }
                 // Parse the query string for wildcards or quoted strings
                 var rawSplitted = Strings.Split(text);
@@ -63,6 +64,10 @@ namespace PolicyPlus
                 for (int n = 0, loopTo = rawSplitted.Length - 1; n <= loopTo; n++)
                 {
                     string curString = rawSplitted[n];
+                    if (checkPartial)
+                    {
+                        curString = $"*{curString}*";
+                    }
                     if (!string.IsNullOrEmpty(partialQuotedString))
                     {
                         partialQuotedString += curString + " ";
@@ -122,6 +127,5 @@ namespace PolicyPlus
             });
             DialogResult = DialogResult.OK;
         }
-
     }
 }

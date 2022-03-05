@@ -20,6 +20,8 @@ namespace PolicyPlus
         private IPolicySource CompPolSource, UserPolSource;
         private PolicyLoader CompPolLoader, UserPolLoader;
         private Dictionary<string, string> CompComments, UserComments;
+        private string languageCode;
+
         // Above: passed in; below: internal state
         private Dictionary<string, Control> ElementControls;
         private List<Control> ResizableControls;
@@ -232,7 +234,7 @@ namespace PolicyPlus
                                         if (width > maxWidth)
                                             maxWidth = (int)Math.Round(width);
                                         combobox.Items.Add(map);
-                                        if (itemId == dropdownPres.DefaultItemID.GetValueOrDefault(-1))
+                                        if (itemId == dropdownPres.DefaultItemID.GetValueOrDefault(0))
                                             combobox.SelectedItem = map;
                                         itemId += 1;
                                     }
@@ -378,68 +380,7 @@ namespace PolicyPlus
             PolicyProcessing.ForgetPolicy(CurrentSource, CurrentSetting);
             if (EnabledOption.Checked)
             {
-                var options = new Dictionary<string, object>();
-                if (CurrentSetting.RawPolicy.Elements is object)
-                {
-                    foreach (var elem in CurrentSetting.RawPolicy.Elements)
-                    {
-                        var uiControl = ElementControls[elem.ID];
-                        switch (elem.ElementType ?? "")
-                        {
-                            case "decimal":
-                                {
-                                    if (uiControl is TextBox)
-                                    {
-                                        options.Add(elem.ID, Conversions.ToUInteger(((TextBox)uiControl).Text));
-                                    }
-                                    else
-                                    {
-                                        options.Add(elem.ID, (uint)Math.Round(((NumericUpDown)uiControl).Value));
-                                    }
-
-                                    break;
-                                }
-
-                            case "text":
-                                {
-                                    if (uiControl is ComboBox)
-                                    {
-                                        options.Add(elem.ID, ((ComboBox)uiControl).Text);
-                                    }
-                                    else
-                                    {
-                                        options.Add(elem.ID, ((TextBox)uiControl).Text);
-                                    }
-
-                                    break;
-                                }
-
-                            case "boolean":
-                                {
-                                    options.Add(elem.ID, ((CheckBox)uiControl).Checked);
-                                    break;
-                                }
-
-                            case "enum":
-                                {
-                                    options.Add(elem.ID, ((DropdownPresentationMap)((ComboBox)uiControl).SelectedItem).ID);
-                                    break;
-                                }
-
-                            case "list":
-                                {
-                                    options.Add(elem.ID, uiControl.Tag);
-                                    break;
-                                }
-
-                            case "multiText":
-                                {
-                                    options.Add(elem.ID, ((TextBox)uiControl).Lines);
-                                    break;
-                                }
-                        }
-                    }
-                }
+                Dictionary<string, object> options = GetOptions(CurrentSetting);
 
                 PolicyProcessing.SetPolicyState(CurrentSource, CurrentSetting, PolicyState.Enabled, options);
             }
@@ -462,7 +403,75 @@ namespace PolicyPlus
             }
         }
 
-        public DialogResult PresentDialog(PolicyPlusPolicy Policy, AdmxPolicySection Section, AdmxBundle Workspace, IPolicySource CompPolSource, IPolicySource UserPolSource, PolicyLoader CompPolLoader, PolicyLoader UserPolLoader, Dictionary<string, string> CompComments, Dictionary<string, string> UserComments)
+        private Dictionary<string, object> GetOptions(PolicyPlusPolicy currentSetting)
+        {
+            var options = new Dictionary<string, object>();
+            if (currentSetting.RawPolicy.Elements is object)
+            {
+                foreach (var elem in currentSetting.RawPolicy.Elements)
+                {
+                    var uiControl = ElementControls[elem.ID];
+                    switch (elem.ElementType ?? "")
+                    {
+                        case "decimal":
+                            {
+                                if (uiControl is TextBox)
+                                {
+                                    options.Add(elem.ID, Conversions.ToUInteger(((TextBox)uiControl).Text));
+                                }
+                                else
+                                {
+                                    options.Add(elem.ID, (uint)Math.Round(((NumericUpDown)uiControl).Value));
+                                }
+
+                                break;
+                            }
+
+                        case "text":
+                            {
+                                if (uiControl is ComboBox)
+                                {
+                                    options.Add(elem.ID, ((ComboBox)uiControl).Text);
+                                }
+                                else
+                                {
+                                    options.Add(elem.ID, ((TextBox)uiControl).Text);
+                                }
+
+                                break;
+                            }
+
+                        case "boolean":
+                            {
+                                options.Add(elem.ID, ((CheckBox)uiControl).Checked);
+                                break;
+                            }
+
+                        case "enum":
+                            {
+                                options.Add(elem.ID, ((DropdownPresentationMap)((ComboBox)uiControl).SelectedItem).ID);
+                                break;
+                            }
+
+                        case "list":
+                            {
+                                options.Add(elem.ID, uiControl.Tag);
+                                break;
+                            }
+
+                        case "multiText":
+                            {
+                                options.Add(elem.ID, ((TextBox)uiControl).Lines);
+                                break;
+                            }
+                    }
+                }
+            }
+
+            return options;
+        }
+
+        public DialogResult PresentDialog(PolicyPlusPolicy Policy, AdmxPolicySection Section, AdmxBundle Workspace, IPolicySource CompPolSource, IPolicySource UserPolSource, PolicyLoader CompPolLoader, PolicyLoader UserPolLoader, Dictionary<string, string> CompComments, Dictionary<string, string> UserComments, string languageCode)
         {
             CurrentSetting = Policy;
             CurrentSection = Section;
@@ -473,6 +482,7 @@ namespace PolicyPlus
             this.UserPolLoader = UserPolLoader;
             this.CompComments = CompComments;
             this.UserComments = UserComments;
+            this.languageCode = languageCode;
             ChangesMade = false;
             return ShowDialog();
         }
@@ -516,6 +526,18 @@ namespace PolicyPlus
             ExtraOptionsTable.MinimumSize = ExtraOptionsTable.MaximumSize;
             foreach (var ctl in ResizableControls)
                 ctl.MaximumSize = new Size(ExtraOptionsPanel.ClientSize.Width, 0);
+        }
+
+        private void ViewDetailFormattedBtn_Click(object sender, EventArgs e)
+        {
+            ApplyToPolicySource();
+            ChangesMade = true;
+            My.MyProject.Forms.DetailPolicyFormatted.PresentDialog(CurrentSetting, CompPolSource, UserPolSource, this.languageCode);
+        }
+
+        private void SupportedLabel_Click(object sender, EventArgs e)
+        {
+
         }
 
         private void EditSetting_Resize(object sender, EventArgs e)

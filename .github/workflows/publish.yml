@@ -3,50 +3,34 @@ name: Publish
 on:
   push:
     tags:
-      - '*'
+      - 'v*.*.*'
 
 jobs:
   BuildLatest:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout master
+      - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-        
-      - name: Embed version
-        run: |
-          cd $env:GITHUB_WORKSPACE
-          cmd /c version.bat
 
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v1.0.2
         
       - name: Compile
-        run: msbuild.exe $env:GITHUB_WORKSPACE\PolicyPlus\PolicyPlus.sln /p:platform="Any CPU" /p:configuration="Release"
+        working-directory: ./PolicyPlus
+        run: msbuild.exe -t:build -restore -p:RestorePackagesConfig=true PolicyPlus.sln /p:platform="Any CPU" /p:configuration="Release" 
+      
+      - name: Rename
+        run: Move-Item -Path "PolicyPlus\bin\Release\Policy Plus.exe" `
+          -Destination "PolicyPlusMod.exe" 
 
-      - name: Compute hash
-        run: Get-FileHash "$env:GITHUB_WORKSPACE\PolicyPlus\bin\Release\Policy Plus.exe"
-
-      - name: Read release.md and use it as a body of new release
-        id: read_release
-        shell: bash
-        run: |
-          r=$(cat PolicyPlus/version.txt)           
-          r="${r//'%'/'%25'}"                      
-          r="${r//$'\n'/'%0A'}"                   
-          r="${r//$'\r'/'%0D'}"                  
-          echo "::set-output name=RELEASE_BODY::$r"
-
-      - name: Upload to Release
-        uses: svenstaro/upload-release-action@v2
+      - name: GH Release
+        uses: softprops/action-gh-release@v0.1.14
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: PolicyPlus\bin\Release\Policy Plus.exe
-          asset_name: PolicyPlusMod.exe
-          tag: ${{ github.ref }}
-          overwrite: true
-          body: |
-            ${{ steps.read_release.outputs.RELEASE_BODY }}
+          files: |
+            PolicyPlusMod.exe
+
+
   

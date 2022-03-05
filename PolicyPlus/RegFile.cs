@@ -15,7 +15,7 @@ namespace PolicyPlus
         private const string RegSignature = "Windows Registry Editor Version 5.00";
         private string Prefix; // REG files require fully-rooted key paths, while other policy sources disallow them
         private string SourceSubtree; // Accept only writes under this policy path (not needed if only going to use Apply)
-        private List<RegFileKey> Keys = new List<RegFileKey>();
+        public List<RegFileKey> Keys = new List<RegFileKey>();
 
         private static string EscapeValue(string Text)
         {
@@ -179,7 +179,7 @@ namespace PolicyPlus
             }
         }
 
-        public void Save(StreamWriter Writer)
+        public void Save(TextWriter Writer)
         {
             Writer.WriteLine(RegSignature);
             Writer.WriteLine();
@@ -471,7 +471,7 @@ namespace PolicyPlus
             return Keys.Any(k => k.Values.Any(v => string.IsNullOrEmpty(v.Name)));
         }
 
-        private class RegFileKey
+        public class RegFileKey
         {
             public string Name;
             public bool IsDeleter;
@@ -483,7 +483,7 @@ namespace PolicyPlus
             }
         }
 
-        private class RegFileValue
+        public class RegFileValue
         {
             public string Name;
             public object Data;

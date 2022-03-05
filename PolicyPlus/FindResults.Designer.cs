@@ -44,6 +44,7 @@ namespace PolicyPlus
             this.CloseButton = new System.Windows.Forms.Button();
             this.GoButton = new System.Windows.Forms.Button();
             this.StopButton = new System.Windows.Forms.Button();
+            this.BackToRegSearchBtn = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // SearchProgress
@@ -76,6 +77,7 @@ namespace PolicyPlus
             this.ResultsListview.TabIndex = 1;
             this.ResultsListview.UseCompatibleStateImageBehavior = false;
             this.ResultsListview.View = System.Windows.Forms.View.Details;
+            this.ResultsListview.SelectedIndexChanged += new System.EventHandler(this.ResultsListview_SelectedIndexChanged);
             this.ResultsListview.SizeChanged += new System.EventHandler(this.ResultsListview_SizeChanged);
             this.ResultsListview.DoubleClick += new System.EventHandler(this.GoClicked);
             // 
@@ -135,6 +137,18 @@ namespace PolicyPlus
             this.StopButton.UseVisualStyleBackColor = true;
             this.StopButton.Click += new System.EventHandler(this.StopButton_Click);
             // 
+            // BackToRegSearchBtn
+            // 
+            this.BackToRegSearchBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.BackToRegSearchBtn.DialogResult = System.Windows.Forms.DialogResult.Retry;
+            this.BackToRegSearchBtn.Location = new System.Drawing.Point(13, 364);
+            this.BackToRegSearchBtn.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.BackToRegSearchBtn.Name = "BackToRegSearchBtn";
+            this.BackToRegSearchBtn.Size = new System.Drawing.Size(128, 27);
+            this.BackToRegSearchBtn.TabIndex = 5;
+            this.BackToRegSearchBtn.Text = "Back";
+            this.BackToRegSearchBtn.UseVisualStyleBackColor = true;
+            // 
             // FindResults
             // 
             this.AcceptButton = this.GoButton;
@@ -142,6 +156,7 @@ namespace PolicyPlus
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CloseButton;
             this.ClientSize = new System.Drawing.Size(740, 405);
+            this.Controls.Add(this.BackToRegSearchBtn);
             this.Controls.Add(this.StopButton);
             this.Controls.Add(this.GoButton);
             this.Controls.Add(this.CloseButton);
@@ -172,5 +187,6 @@ namespace PolicyPlus
         internal Button CloseButton;
         internal Button GoButton;
         internal Button StopButton;
+        internal Button BackToRegSearchBtn;
     }
 }

@@ -41,6 +41,7 @@ namespace PolicyPlus
             this.CommentCheckbox = new System.Windows.Forms.CheckBox();
             this.SearchButton = new System.Windows.Forms.Button();
             this.IdCheckbox = new System.Windows.Forms.CheckBox();
+            this.partialCheckbox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // StringTextbox
@@ -114,12 +115,26 @@ namespace PolicyPlus
             this.IdCheckbox.Text = "In ID";
             this.IdCheckbox.UseVisualStyleBackColor = true;
             // 
+            // partialCheckbox
+            // 
+            this.partialCheckbox.AutoSize = true;
+            this.partialCheckbox.Checked = true;
+            this.partialCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.partialCheckbox.Location = new System.Drawing.Point(16, 75);
+            this.partialCheckbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.partialCheckbox.Name = "partialCheckbox";
+            this.partialCheckbox.Size = new System.Drawing.Size(117, 19);
+            this.partialCheckbox.TabIndex = 6;
+            this.partialCheckbox.Text = "Partial Match ";
+            this.partialCheckbox.UseVisualStyleBackColor = true;
+            // 
             // FindByText
             // 
             this.AcceptButton = this.SearchButton;
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(501, 111);
+            this.Controls.Add(this.partialCheckbox);
             this.Controls.Add(this.IdCheckbox);
             this.Controls.Add(this.SearchButton);
             this.Controls.Add(this.CommentCheckbox);
@@ -148,5 +163,6 @@ namespace PolicyPlus
         internal CheckBox CommentCheckbox;
         internal Button SearchButton;
         internal CheckBox IdCheckbox;
+        internal CheckBox partialCheckbox;
     }
 }

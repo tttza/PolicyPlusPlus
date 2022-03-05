@@ -39,6 +39,7 @@ namespace PolicyPlus
             SearchPending = true;
             HasSearched = true;
             LastSelectedIndex = -1;
+            GoButton.Enabled = false;
             return ShowDialog();
         }
 
@@ -132,6 +133,20 @@ namespace PolicyPlus
                 ProgressLabel.Text = status + ": checked " + searchedSoFar + " policies, found " + results + " hits";
                 SearchProgress.Value = SearchProgress.Maximum;
                 StopButton.Enabled = false;
+                if (ResultsListview.Items.Count == 0)
+                {
+                    BackToRegSearchBtn.Focus();
+                } 
+                else
+                {
+                    ResultsListview.Items[0].Focused = true;
+                    ResultsListview.Items[0].Selected= true;
+                    if (ResultsListview.Items.Count == 1)
+                    {
+                        GoButton.Enabled = true;
+                        GoButton.Focus();
+                    }
+                }
             }));
         }
 
@@ -194,6 +209,17 @@ namespace PolicyPlus
             // Enable double-buffering for the results view
             var doubleBufferProp = typeof(Control).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             doubleBufferProp.SetValue(ResultsListview, true);
+        }
+
+        private void ResultsListview_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (ResultsListview.SelectedItems.Count == 0)
+            {
+                GoButton.Enabled = false;
+            } else
+            {
+                GoButton.Enabled = true;
+            }
         }
     }
 }

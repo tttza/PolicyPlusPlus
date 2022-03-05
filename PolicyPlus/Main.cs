@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 
@@ -16,6 +17,9 @@ namespace PolicyPlus
         public Main()
         {
             InitializeComponent();
+            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString().Substring(0, 5);
+            if (!string.IsNullOrEmpty(version))
+                AppVersion.Text = $"Version: {version}";
         }
 
         private ConfigurationStorage Configuration;
@@ -460,7 +464,7 @@ namespace PolicyPlus
         public void ShowSettingEditor(PolicyPlusPolicy Policy, AdmxPolicySection Section)
         {
             // Show the Edit Policy Setting dialog for a policy and reload if changes were made
-            if (My.MyProject.Forms.EditSetting.PresentDialog(Policy, Section, AdmxWorkspace, CompPolicySource, UserPolicySource, CompPolicyLoader, UserPolicyLoader, CompComments, UserComments) == DialogResult.OK)
+            if (My.MyProject.Forms.EditSetting.PresentDialog(Policy, Section, AdmxWorkspace, CompPolicySource, UserPolicySource, CompPolicyLoader, UserPolicyLoader, CompComments, UserComments, GetPreferredLanguageCode()) == DialogResult.OK)
             {
                 // Keep the selection where it is if possible
                 if (CurrentCategory is null || ShouldShowCategory(CurrentCategory))
@@ -556,7 +560,7 @@ namespace PolicyPlus
             }
         }
 
-        public void ShowSearchDialog(Func<PolicyPlusPolicy, bool> Searcher)
+        public bool ShowSearchDialog(Func<PolicyPlusPolicy, bool> Searcher)
         {
             // Show the search dialog and make it start a search if appropriate
             DialogResult result;
@@ -574,7 +578,11 @@ namespace PolicyPlus
                 var selPol = My.MyProject.Forms.FindResults.SelectedPolicy;
                 ShowSettingEditor(selPol, ViewPolicyTypes);
                 FocusPolicy(selPol);
+                return true;
+            } else if (result == DialogResult.Retry) {
+                return false;
             }
+            return true;
         }
 
         public void ClearAdmxWorkspace()
@@ -971,17 +979,25 @@ namespace PolicyPlus
         {
             // Show author and version information if it was compiled into the program
             string about = $"Policy Plus by Ben Nordick.{System.Environment.NewLine}Modded by tttza.{System.Environment.NewLine}{System.Environment.NewLine}Available on GitHub: tttza/PolicyPlus.";
-            if (!string.IsNullOrEmpty(VersionHolder.Version.Trim()))
-                about += $"{System.Environment.NewLine} Version: {VersionHolder.Version.Trim()}";
+            var version = Assembly.GetExecutingAssembly().GetName().Version.ToString().Substring(0, 5);
+            if (!string.IsNullOrEmpty(version))
+                about += $"{System.Environment.NewLine} Version: {version}";
             Interaction.MsgBox(about, MsgBoxStyle.Information);
         }
 
         private void ByTextToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Show the Find By Text window and start the search
-            if (My.MyProject.Forms.FindByText.PresentDialog(UserComments, CompComments) == DialogResult.OK)
-            {
-                ShowSearchDialog(My.MyProject.Forms.FindByText.Searcher);
+            var shouldClose = false;
+            while (!shouldClose){
+                // Show the Find By Text window and start the search
+                if (My.MyProject.Forms.FindByText.PresentDialog(UserComments, CompComments) == DialogResult.OK)
+                {
+                    shouldClose = ShowSearchDialog(My.MyProject.Forms.FindByText.Searcher);
+                }
+                else
+                {
+                    break;
+                }
             }
         }
 
@@ -1013,9 +1029,19 @@ namespace PolicyPlus
 
         private void ByRegistryToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Show the Find By Registry window and start the search
-            if (My.MyProject.Forms.FindByRegistry.ShowDialog() == DialogResult.OK)
-                ShowSearchDialog(My.MyProject.Forms.FindByRegistry.Searcher);
+            var shouldClose = false;
+            while (!shouldClose)
+            {
+                // Show the Find By Registry window and start the search
+                if (My.MyProject.Forms.FindByRegistry.ShowDialog() == DialogResult.OK)
+                {
+                    shouldClose = ShowSearchDialog(My.MyProject.Forms.FindByRegistry.Searcher);
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
 
         private void SettingInfoPanel_ClientSizeChanged(object sender, EventArgs e)
@@ -1315,7 +1341,7 @@ namespace PolicyPlus
             }
             else if (ReferenceEquals(e.ClickedItem, CmeAllDetailsFormatted))
             {
-                My.MyProject.Forms.DetailPolicyFormatted.PresentDialog((PolicyPlusPolicy)polObject, GetPreferredLanguageCode());
+                My.MyProject.Forms.DetailPolicyFormatted.PresentDialog((PolicyPlusPolicy)polObject, CompPolicySource, UserPolicySource, GetPreferredLanguageCode());
             }
             else if (ReferenceEquals(e.ClickedItem, CmePolInspectElements))
             {
@@ -1333,7 +1359,8 @@ namespace PolicyPlus
 
         private void CopyToClipboard(object polObject, ToolStripItemClickedEventArgs e)
         {
-            if (polObject is PolicyPlusPolicy) {
+            if (polObject is PolicyPlusPolicy)
+            {
                 if (ReferenceEquals(e.ClickedItem, Cme2CopyId) | ReferenceEquals(e.ClickedItem, CmeCopyToClipboard))
                 {
                     Clipboard.SetText(((PolicyPlusPolicy)polObject).UniqueID.Split(':')[1]);
