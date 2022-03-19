@@ -555,11 +555,19 @@ namespace PolicyPlus
 
         public void DeleteValue(string Key, string Value)
         {
+            var isEmpty = false;
             using (var regKey = RootKey.OpenSubKey(Key, true))
             {
                 if (regKey is null)
                     return;
                 regKey.DeleteValue(Value, false);
+
+                if (regKey.SubKeyCount == 0 & regKey.ValueCount == 0)
+                    isEmpty = true;
+            }
+            if (isEmpty)
+            {
+                RootKey.DeleteSubKey(Key, false);
             }
         }
 

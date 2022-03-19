@@ -2,7 +2,7 @@
 
 Local Group Policy Editor plus more, for all Windows editions.
 
-[![Build Latest](https://github.com/tttza/PolicyPlus/actions/workflows/latest.yml/badge.svg)](https://github.com/tttza/PolicyPlus/actions/workflows/latest.yml)
+[![Build Latest](https://github.com/tttza/PolicyPlus/actions/workflows/publish.yml/badge.svg)](https://github.com/tttza/PolicyPlus/actions/workflows/latest.yml)
 
 ## Modified from original
 

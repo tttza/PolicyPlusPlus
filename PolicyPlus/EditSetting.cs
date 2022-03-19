@@ -455,7 +455,7 @@ namespace PolicyPlus
 
                         case "list":
                             {
-                                options.Add(elem.ID, uiControl.Tag);
+                                options.Add(elem.ID, ((List<string>)uiControl.Tag)?.Where(t => !string.IsNullOrWhiteSpace(t)).ToList());
                                 break;
                             }
 
