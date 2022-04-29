@@ -45,10 +45,10 @@ namespace PolicyPlus
             // 
             this.OptUser.AutoSize = true;
             this.OptUser.Checked = true;
-            this.OptUser.Location = new System.Drawing.Point(16, 14);
-            this.OptUser.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.OptUser.Location = new System.Drawing.Point(12, 11);
+            this.OptUser.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.OptUser.Name = "OptUser";
-            this.OptUser.Size = new System.Drawing.Size(58, 19);
+            this.OptUser.Size = new System.Drawing.Size(47, 16);
             this.OptUser.TabIndex = 0;
             this.OptUser.TabStop = true;
             this.OptUser.Text = "User";
@@ -57,20 +57,20 @@ namespace PolicyPlus
             // OptComputer
             // 
             this.OptComputer.AutoSize = true;
-            this.OptComputer.Location = new System.Drawing.Point(16, 40);
-            this.OptComputer.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.OptComputer.Location = new System.Drawing.Point(12, 32);
+            this.OptComputer.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.OptComputer.Name = "OptComputer";
-            this.OptComputer.Size = new System.Drawing.Size(90, 19);
+            this.OptComputer.Size = new System.Drawing.Size(72, 16);
             this.OptComputer.TabIndex = 1;
             this.OptComputer.Text = "Computer";
             this.OptComputer.UseVisualStyleBackColor = true;
             // 
             // ButtonOK
             // 
-            this.ButtonOK.Location = new System.Drawing.Point(96, 67);
-            this.ButtonOK.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.ButtonOK.Location = new System.Drawing.Point(72, 54);
+            this.ButtonOK.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.ButtonOK.Name = "ButtonOK";
-            this.ButtonOK.Size = new System.Drawing.Size(104, 27);
+            this.ButtonOK.Size = new System.Drawing.Size(78, 22);
             this.ButtonOK.TabIndex = 2;
             this.ButtonOK.Text = "OK";
             this.ButtonOK.UseVisualStyleBackColor = true;
@@ -79,10 +79,10 @@ namespace PolicyPlus
             // ButtonCancel
             // 
             this.ButtonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.ButtonCancel.Location = new System.Drawing.Point(16, 67);
-            this.ButtonCancel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.ButtonCancel.Location = new System.Drawing.Point(12, 54);
+            this.ButtonCancel.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.ButtonCancel.Name = "ButtonCancel";
-            this.ButtonCancel.Size = new System.Drawing.Size(72, 27);
+            this.ButtonCancel.Size = new System.Drawing.Size(54, 22);
             this.ButtonCancel.TabIndex = 3;
             this.ButtonCancel.Text = "Cancel";
             this.ButtonCancel.UseVisualStyleBackColor = true;
@@ -90,17 +90,17 @@ namespace PolicyPlus
             // OpenSection
             // 
             this.AcceptButton = this.ButtonOK;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.ButtonCancel;
-            this.ClientSize = new System.Drawing.Size(216, 105);
+            this.ClientSize = new System.Drawing.Size(162, 84);
             this.Controls.Add(this.ButtonCancel);
             this.Controls.Add(this.ButtonOK);
             this.Controls.Add(this.OptComputer);
             this.Controls.Add(this.OptUser);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.KeyPreview = true;
-            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "OpenSection";

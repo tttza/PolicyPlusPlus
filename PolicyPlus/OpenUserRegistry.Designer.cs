@@ -36,64 +36,68 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            SubfoldersListview = new ListView();
-            ChUsername = new ColumnHeader();
-            ChAccess = new ColumnHeader();
-            OkButton = new Button();
-            OkButton.Click += new EventHandler(OkButton_Click);
-            SuspendLayout();
+            this.SubfoldersListview = new System.Windows.Forms.ListView();
+            this.ChUsername = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChAccess = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.OkButton = new System.Windows.Forms.Button();
+            this.SuspendLayout();
             // 
             // SubfoldersListview
             // 
-            SubfoldersListview.Columns.AddRange(new ColumnHeader[] { ChUsername, ChAccess });
-            SubfoldersListview.FullRowSelect = true;
-            SubfoldersListview.Location = new Point(12, 12);
-            SubfoldersListview.MultiSelect = false;
-            SubfoldersListview.Name = "SubfoldersListview";
-            SubfoldersListview.Size = new Size(314, 111);
-            SubfoldersListview.TabIndex = 0;
-            SubfoldersListview.UseCompatibleStateImageBehavior = false;
-            SubfoldersListview.View = View.Details;
+            this.SubfoldersListview.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.ChUsername,
+            this.ChAccess});
+            this.SubfoldersListview.FullRowSelect = true;
+            this.SubfoldersListview.HideSelection = false;
+            this.SubfoldersListview.Location = new System.Drawing.Point(12, 11);
+            this.SubfoldersListview.MultiSelect = false;
+            this.SubfoldersListview.Name = "SubfoldersListview";
+            this.SubfoldersListview.Size = new System.Drawing.Size(314, 103);
+            this.SubfoldersListview.TabIndex = 0;
+            this.SubfoldersListview.UseCompatibleStateImageBehavior = false;
+            this.SubfoldersListview.View = System.Windows.Forms.View.Details;
             // 
             // ChUsername
             // 
-            ChUsername.Text = "Folder Name";
-            ChUsername.Width = 196;
+            this.ChUsername.Text = "Folder Name";
+            this.ChUsername.Width = 196;
             // 
             // ChAccess
             // 
-            ChAccess.Text = "Accessible";
-            ChAccess.Width = 95;
+            this.ChAccess.Text = "Accessible";
+            this.ChAccess.Width = 95;
             // 
             // OkButton
             // 
-            OkButton.Location = new Point(251, 129);
-            OkButton.Name = "OkButton";
-            OkButton.Size = new Size(75, 23);
-            OkButton.TabIndex = 1;
-            OkButton.Text = "OK";
-            OkButton.UseVisualStyleBackColor = true;
+            this.OkButton.Location = new System.Drawing.Point(251, 119);
+            this.OkButton.Name = "OkButton";
+            this.OkButton.Size = new System.Drawing.Size(75, 21);
+            this.OkButton.TabIndex = 1;
+            this.OkButton.Text = "OK";
+            this.OkButton.UseVisualStyleBackColor = true;
+            this.OkButton.Click += new System.EventHandler(this.OkButton_Click);
             // 
             // OpenUserRegistry
             // 
-            AcceptButton = OkButton;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(338, 164);
-            Controls.Add(OkButton);
-            Controls.Add(SubfoldersListview);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            KeyPreview = true;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "OpenUserRegistry";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Open User Hive";
-            Shown += new EventHandler(OpenUserRegistry_Shown);
-            KeyUp += new KeyEventHandler(OpenUserRegistry_KeyUp);
-            ResumeLayout(false);
+            this.AcceptButton = this.OkButton;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(338, 151);
+            this.Controls.Add(this.OkButton);
+            this.Controls.Add(this.SubfoldersListview);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.KeyPreview = true;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "OpenUserRegistry";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Open User Hive";
+            this.Shown += new System.EventHandler(this.OpenUserRegistry_Shown);
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OpenUserRegistry_KeyUp);
+            this.ResumeLayout(false);
+
         }
 
         internal ListView SubfoldersListview;

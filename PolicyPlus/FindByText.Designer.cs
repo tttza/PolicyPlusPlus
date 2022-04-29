@@ -46,10 +46,10 @@ namespace PolicyPlus
             // 
             // StringTextbox
             // 
-            this.StringTextbox.Location = new System.Drawing.Point(16, 14);
-            this.StringTextbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.StringTextbox.Location = new System.Drawing.Point(12, 11);
+            this.StringTextbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.StringTextbox.Name = "StringTextbox";
-            this.StringTextbox.Size = new System.Drawing.Size(468, 22);
+            this.StringTextbox.Size = new System.Drawing.Size(352, 19);
             this.StringTextbox.TabIndex = 0;
             // 
             // TitleCheckbox
@@ -57,10 +57,10 @@ namespace PolicyPlus
             this.TitleCheckbox.AutoSize = true;
             this.TitleCheckbox.Checked = true;
             this.TitleCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.TitleCheckbox.Location = new System.Drawing.Point(16, 44);
-            this.TitleCheckbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.TitleCheckbox.Location = new System.Drawing.Point(12, 35);
+            this.TitleCheckbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.TitleCheckbox.Name = "TitleCheckbox";
-            this.TitleCheckbox.Size = new System.Drawing.Size(70, 19);
+            this.TitleCheckbox.Size = new System.Drawing.Size(57, 16);
             this.TitleCheckbox.TabIndex = 1;
             this.TitleCheckbox.Text = "In title";
             this.TitleCheckbox.UseVisualStyleBackColor = true;
@@ -70,10 +70,10 @@ namespace PolicyPlus
             this.DescriptionCheckbox.AutoSize = true;
             this.DescriptionCheckbox.Checked = true;
             this.DescriptionCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.DescriptionCheckbox.Location = new System.Drawing.Point(96, 44);
-            this.DescriptionCheckbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.DescriptionCheckbox.Location = new System.Drawing.Point(72, 35);
+            this.DescriptionCheckbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.DescriptionCheckbox.Name = "DescriptionCheckbox";
-            this.DescriptionCheckbox.Size = new System.Drawing.Size(115, 19);
+            this.DescriptionCheckbox.Size = new System.Drawing.Size(93, 16);
             this.DescriptionCheckbox.TabIndex = 2;
             this.DescriptionCheckbox.Text = "In description";
             this.DescriptionCheckbox.UseVisualStyleBackColor = true;
@@ -83,20 +83,20 @@ namespace PolicyPlus
             this.CommentCheckbox.AutoSize = true;
             this.CommentCheckbox.Checked = true;
             this.CommentCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.CommentCheckbox.Location = new System.Drawing.Point(223, 44);
-            this.CommentCheckbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.CommentCheckbox.Location = new System.Drawing.Point(167, 35);
+            this.CommentCheckbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.CommentCheckbox.Name = "CommentCheckbox";
-            this.CommentCheckbox.Size = new System.Drawing.Size(105, 19);
+            this.CommentCheckbox.Size = new System.Drawing.Size(83, 16);
             this.CommentCheckbox.TabIndex = 3;
             this.CommentCheckbox.Text = "In comment";
             this.CommentCheckbox.UseVisualStyleBackColor = true;
             // 
             // SearchButton
             // 
-            this.SearchButton.Location = new System.Drawing.Point(385, 70);
-            this.SearchButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.SearchButton.Location = new System.Drawing.Point(289, 56);
+            this.SearchButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.SearchButton.Name = "SearchButton";
-            this.SearchButton.Size = new System.Drawing.Size(100, 27);
+            this.SearchButton.Size = new System.Drawing.Size(75, 22);
             this.SearchButton.TabIndex = 4;
             this.SearchButton.Text = "Search";
             this.SearchButton.UseVisualStyleBackColor = true;
@@ -107,10 +107,10 @@ namespace PolicyPlus
             this.IdCheckbox.AutoSize = true;
             this.IdCheckbox.Checked = true;
             this.IdCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.IdCheckbox.Location = new System.Drawing.Point(337, 44);
-            this.IdCheckbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.IdCheckbox.Location = new System.Drawing.Point(253, 35);
+            this.IdCheckbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.IdCheckbox.Name = "IdCheckbox";
-            this.IdCheckbox.Size = new System.Drawing.Size(60, 19);
+            this.IdCheckbox.Size = new System.Drawing.Size(48, 16);
             this.IdCheckbox.TabIndex = 5;
             this.IdCheckbox.Text = "In ID";
             this.IdCheckbox.UseVisualStyleBackColor = true;
@@ -120,10 +120,10 @@ namespace PolicyPlus
             this.partialCheckbox.AutoSize = true;
             this.partialCheckbox.Checked = true;
             this.partialCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.partialCheckbox.Location = new System.Drawing.Point(16, 75);
-            this.partialCheckbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.partialCheckbox.Location = new System.Drawing.Point(12, 60);
+            this.partialCheckbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.partialCheckbox.Name = "partialCheckbox";
-            this.partialCheckbox.Size = new System.Drawing.Size(117, 19);
+            this.partialCheckbox.Size = new System.Drawing.Size(96, 16);
             this.partialCheckbox.TabIndex = 6;
             this.partialCheckbox.Text = "Partial Match ";
             this.partialCheckbox.UseVisualStyleBackColor = true;
@@ -131,9 +131,9 @@ namespace PolicyPlus
             // FindByText
             // 
             this.AcceptButton = this.SearchButton;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(501, 111);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(376, 89);
             this.Controls.Add(this.partialCheckbox);
             this.Controls.Add(this.IdCheckbox);
             this.Controls.Add(this.SearchButton);
@@ -143,7 +143,7 @@ namespace PolicyPlus
             this.Controls.Add(this.StringTextbox);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.KeyPreview = true;
-            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "FindByText";

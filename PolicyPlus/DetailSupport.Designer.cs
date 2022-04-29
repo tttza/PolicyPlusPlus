@@ -36,196 +36,200 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label NameLabel;
-            Label IdLabel;
-            Label DefinedLabel;
-            Label DisplayCodeLabel;
-            Label LogicLabel;
-            Label ProductsLabel;
-            NameTextbox = new TextBox();
-            IdTextbox = new TextBox();
-            DefinedTextbox = new TextBox();
-            DisplayCodeTextbox = new TextBox();
-            LogicTextbox = new TextBox();
-            EntriesListview = new ListView();
-            EntriesListview.ClientSizeChanged += new EventHandler(EntriesListview_ClientSizeChanged);
-            EntriesListview.DoubleClick += new EventHandler(EntriesListview_DoubleClick);
-            ChName = new ColumnHeader();
-            ChMinVer = new ColumnHeader();
-            ChMaxVer = new ColumnHeader();
-            CloseButton = new Button();
-            NameLabel = new Label();
-            IdLabel = new Label();
-            DefinedLabel = new Label();
-            DisplayCodeLabel = new Label();
-            LogicLabel = new Label();
-            ProductsLabel = new Label();
-            SuspendLayout();
+            System.Windows.Forms.Label NameLabel;
+            System.Windows.Forms.Label IdLabel;
+            System.Windows.Forms.Label DefinedLabel;
+            System.Windows.Forms.Label DisplayCodeLabel;
+            System.Windows.Forms.Label LogicLabel;
+            System.Windows.Forms.Label ProductsLabel;
+            this.NameTextbox = new System.Windows.Forms.TextBox();
+            this.IdTextbox = new System.Windows.Forms.TextBox();
+            this.DefinedTextbox = new System.Windows.Forms.TextBox();
+            this.DisplayCodeTextbox = new System.Windows.Forms.TextBox();
+            this.LogicTextbox = new System.Windows.Forms.TextBox();
+            this.EntriesListview = new System.Windows.Forms.ListView();
+            this.ChName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChMinVer = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChMaxVer = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.CloseButton = new System.Windows.Forms.Button();
+            NameLabel = new System.Windows.Forms.Label();
+            IdLabel = new System.Windows.Forms.Label();
+            DefinedLabel = new System.Windows.Forms.Label();
+            DisplayCodeLabel = new System.Windows.Forms.Label();
+            LogicLabel = new System.Windows.Forms.Label();
+            ProductsLabel = new System.Windows.Forms.Label();
+            this.SuspendLayout();
             // 
             // NameLabel
             // 
             NameLabel.AutoSize = true;
-            NameLabel.Location = new Point(12, 15);
+            NameLabel.Location = new System.Drawing.Point(12, 14);
             NameLabel.Name = "NameLabel";
-            NameLabel.Size = new Size(35, 13);
+            NameLabel.Size = new System.Drawing.Size(34, 12);
             NameLabel.TabIndex = 5;
             NameLabel.Text = "Name";
             // 
             // IdLabel
             // 
             IdLabel.AutoSize = true;
-            IdLabel.Location = new Point(12, 41);
+            IdLabel.Location = new System.Drawing.Point(12, 38);
             IdLabel.Name = "IdLabel";
-            IdLabel.Size = new Size(55, 13);
+            IdLabel.Size = new System.Drawing.Size(55, 12);
             IdLabel.TabIndex = 6;
             IdLabel.Text = "Unique ID";
             // 
             // DefinedLabel
             // 
             DefinedLabel.AutoSize = true;
-            DefinedLabel.Location = new Point(12, 67);
+            DefinedLabel.Location = new System.Drawing.Point(12, 62);
             DefinedLabel.Name = "DefinedLabel";
-            DefinedLabel.Size = new Size(55, 13);
+            DefinedLabel.Size = new System.Drawing.Size(57, 12);
             DefinedLabel.TabIndex = 7;
             DefinedLabel.Text = "Defined in";
             // 
             // DisplayCodeLabel
             // 
             DisplayCodeLabel.AutoSize = true;
-            DisplayCodeLabel.Location = new Point(12, 93);
+            DisplayCodeLabel.Location = new System.Drawing.Point(12, 86);
             DisplayCodeLabel.Name = "DisplayCodeLabel";
-            DisplayCodeLabel.Size = new Size(68, 13);
+            DisplayCodeLabel.Size = new System.Drawing.Size(71, 12);
             DisplayCodeLabel.TabIndex = 8;
             DisplayCodeLabel.Text = "Display code";
             // 
             // LogicLabel
             // 
             LogicLabel.AutoSize = true;
-            LogicLabel.Location = new Point(12, 119);
+            LogicLabel.Location = new System.Drawing.Point(12, 110);
             LogicLabel.Name = "LogicLabel";
-            LogicLabel.Size = new Size(64, 13);
+            LogicLabel.Size = new System.Drawing.Size(68, 12);
             LogicLabel.TabIndex = 9;
             LogicLabel.Text = "Composition";
             // 
             // ProductsLabel
             // 
             ProductsLabel.AutoSize = true;
-            ProductsLabel.Location = new Point(12, 145);
+            ProductsLabel.Location = new System.Drawing.Point(12, 134);
             ProductsLabel.Name = "ProductsLabel";
-            ProductsLabel.Size = new Size(49, 13);
+            ProductsLabel.Size = new System.Drawing.Size(50, 12);
             ProductsLabel.TabIndex = 11;
             ProductsLabel.Text = "Products";
             // 
             // NameTextbox
             // 
-            NameTextbox.Location = new Point(86, 12);
-            NameTextbox.Name = "NameTextbox";
-            NameTextbox.ReadOnly = true;
-            NameTextbox.Size = new Size(268, 20);
-            NameTextbox.TabIndex = 0;
+            this.NameTextbox.Location = new System.Drawing.Point(86, 11);
+            this.NameTextbox.Name = "NameTextbox";
+            this.NameTextbox.ReadOnly = true;
+            this.NameTextbox.Size = new System.Drawing.Size(268, 19);
+            this.NameTextbox.TabIndex = 0;
             // 
             // IdTextbox
             // 
-            IdTextbox.Location = new Point(86, 38);
-            IdTextbox.Name = "IdTextbox";
-            IdTextbox.ReadOnly = true;
-            IdTextbox.Size = new Size(268, 20);
-            IdTextbox.TabIndex = 1;
+            this.IdTextbox.Location = new System.Drawing.Point(86, 35);
+            this.IdTextbox.Name = "IdTextbox";
+            this.IdTextbox.ReadOnly = true;
+            this.IdTextbox.Size = new System.Drawing.Size(268, 19);
+            this.IdTextbox.TabIndex = 1;
             // 
             // DefinedTextbox
             // 
-            DefinedTextbox.Location = new Point(86, 64);
-            DefinedTextbox.Name = "DefinedTextbox";
-            DefinedTextbox.ReadOnly = true;
-            DefinedTextbox.Size = new Size(268, 20);
-            DefinedTextbox.TabIndex = 2;
+            this.DefinedTextbox.Location = new System.Drawing.Point(86, 59);
+            this.DefinedTextbox.Name = "DefinedTextbox";
+            this.DefinedTextbox.ReadOnly = true;
+            this.DefinedTextbox.Size = new System.Drawing.Size(268, 19);
+            this.DefinedTextbox.TabIndex = 2;
             // 
             // DisplayCodeTextbox
             // 
-            DisplayCodeTextbox.Location = new Point(86, 90);
-            DisplayCodeTextbox.Name = "DisplayCodeTextbox";
-            DisplayCodeTextbox.ReadOnly = true;
-            DisplayCodeTextbox.Size = new Size(268, 20);
-            DisplayCodeTextbox.TabIndex = 3;
+            this.DisplayCodeTextbox.Location = new System.Drawing.Point(86, 83);
+            this.DisplayCodeTextbox.Name = "DisplayCodeTextbox";
+            this.DisplayCodeTextbox.ReadOnly = true;
+            this.DisplayCodeTextbox.Size = new System.Drawing.Size(268, 19);
+            this.DisplayCodeTextbox.TabIndex = 3;
             // 
             // LogicTextbox
             // 
-            LogicTextbox.Location = new Point(86, 116);
-            LogicTextbox.Name = "LogicTextbox";
-            LogicTextbox.ReadOnly = true;
-            LogicTextbox.Size = new Size(268, 20);
-            LogicTextbox.TabIndex = 4;
+            this.LogicTextbox.Location = new System.Drawing.Point(86, 107);
+            this.LogicTextbox.Name = "LogicTextbox";
+            this.LogicTextbox.ReadOnly = true;
+            this.LogicTextbox.Size = new System.Drawing.Size(268, 19);
+            this.LogicTextbox.TabIndex = 4;
             // 
             // EntriesListview
             // 
-            EntriesListview.Columns.AddRange(new ColumnHeader[] { ChName, ChMinVer, ChMaxVer });
-            EntriesListview.FullRowSelect = true;
-            EntriesListview.HideSelection = false;
-            EntriesListview.Location = new Point(86, 142);
-            EntriesListview.MultiSelect = false;
-            EntriesListview.Name = "EntriesListview";
-            EntriesListview.ShowItemToolTips = true;
-            EntriesListview.Size = new Size(268, 87);
-            EntriesListview.TabIndex = 12;
-            EntriesListview.UseCompatibleStateImageBehavior = false;
-            EntriesListview.View = View.Details;
+            this.EntriesListview.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.ChName,
+            this.ChMinVer,
+            this.ChMaxVer});
+            this.EntriesListview.FullRowSelect = true;
+            this.EntriesListview.HideSelection = false;
+            this.EntriesListview.Location = new System.Drawing.Point(86, 131);
+            this.EntriesListview.MultiSelect = false;
+            this.EntriesListview.Name = "EntriesListview";
+            this.EntriesListview.ShowItemToolTips = true;
+            this.EntriesListview.Size = new System.Drawing.Size(268, 81);
+            this.EntriesListview.TabIndex = 12;
+            this.EntriesListview.UseCompatibleStateImageBehavior = false;
+            this.EntriesListview.View = System.Windows.Forms.View.Details;
+            this.EntriesListview.ClientSizeChanged += new System.EventHandler(this.EntriesListview_ClientSizeChanged);
+            this.EntriesListview.DoubleClick += new System.EventHandler(this.EntriesListview_DoubleClick);
             // 
             // ChName
             // 
-            ChName.Text = "Name";
-            ChName.Width = 158;
+            this.ChName.Text = "Name";
+            this.ChName.Width = 158;
             // 
             // ChMinVer
             // 
-            ChMinVer.Text = "Min";
-            ChMinVer.Width = 40;
+            this.ChMinVer.Text = "Min";
+            this.ChMinVer.Width = 40;
             // 
             // ChMaxVer
             // 
-            ChMaxVer.Text = "Max";
-            ChMaxVer.Width = 40;
+            this.ChMaxVer.Text = "Max";
+            this.ChMaxVer.Width = 40;
             // 
             // CloseButton
             // 
-            CloseButton.DialogResult = DialogResult.OK;
-            CloseButton.Location = new Point(279, 235);
-            CloseButton.Name = "CloseButton";
-            CloseButton.Size = new Size(75, 23);
-            CloseButton.TabIndex = 13;
-            CloseButton.Text = "Close";
-            CloseButton.UseVisualStyleBackColor = true;
+            this.CloseButton.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.CloseButton.Location = new System.Drawing.Point(279, 217);
+            this.CloseButton.Name = "CloseButton";
+            this.CloseButton.Size = new System.Drawing.Size(75, 21);
+            this.CloseButton.TabIndex = 13;
+            this.CloseButton.Text = "Close";
+            this.CloseButton.UseVisualStyleBackColor = true;
             // 
             // DetailSupport
             // 
-            AcceptButton = CloseButton;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            CancelButton = CloseButton;
-            ClientSize = new Size(366, 270);
-            Controls.Add(CloseButton);
-            Controls.Add(EntriesListview);
-            Controls.Add(ProductsLabel);
-            Controls.Add(LogicLabel);
-            Controls.Add(DisplayCodeLabel);
-            Controls.Add(DefinedLabel);
-            Controls.Add(IdLabel);
-            Controls.Add(NameLabel);
-            Controls.Add(LogicTextbox);
-            Controls.Add(DisplayCodeTextbox);
-            Controls.Add(DefinedTextbox);
-            Controls.Add(IdTextbox);
-            Controls.Add(NameTextbox);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "DetailSupport";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Support Details";
-            Shown += new EventHandler(EntriesListview_ClientSizeChanged);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.CloseButton;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.CancelButton = this.CloseButton;
+            this.ClientSize = new System.Drawing.Size(366, 249);
+            this.Controls.Add(this.CloseButton);
+            this.Controls.Add(this.EntriesListview);
+            this.Controls.Add(ProductsLabel);
+            this.Controls.Add(LogicLabel);
+            this.Controls.Add(DisplayCodeLabel);
+            this.Controls.Add(DefinedLabel);
+            this.Controls.Add(IdLabel);
+            this.Controls.Add(NameLabel);
+            this.Controls.Add(this.LogicTextbox);
+            this.Controls.Add(this.DisplayCodeTextbox);
+            this.Controls.Add(this.DefinedTextbox);
+            this.Controls.Add(this.IdTextbox);
+            this.Controls.Add(this.NameTextbox);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "DetailSupport";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Support Details";
+            this.Shown += new System.EventHandler(this.EntriesListview_ClientSizeChanged);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal TextBox NameTextbox;

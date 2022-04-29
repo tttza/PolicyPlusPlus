@@ -35,80 +35,81 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label KeyPathLabel;
-            Label ValueLabel;
-            KeyTextbox = new TextBox();
-            ValueTextbox = new TextBox();
-            SearchButton = new Button();
-            SearchButton.Click += new EventHandler(SearchButton_Click);
-            KeyPathLabel = new Label();
-            ValueLabel = new Label();
-            SuspendLayout();
+            System.Windows.Forms.Label KeyPathLabel;
+            System.Windows.Forms.Label ValueLabel;
+            this.KeyTextbox = new System.Windows.Forms.TextBox();
+            this.ValueTextbox = new System.Windows.Forms.TextBox();
+            this.SearchButton = new System.Windows.Forms.Button();
+            KeyPathLabel = new System.Windows.Forms.Label();
+            ValueLabel = new System.Windows.Forms.Label();
+            this.SuspendLayout();
             // 
             // KeyPathLabel
             // 
             KeyPathLabel.AutoSize = true;
-            KeyPathLabel.Location = new Point(12, 15);
+            KeyPathLabel.Location = new System.Drawing.Point(12, 14);
             KeyPathLabel.Name = "KeyPathLabel";
-            KeyPathLabel.Size = new Size(90, 13);
+            KeyPathLabel.Size = new System.Drawing.Size(95, 12);
             KeyPathLabel.TabIndex = 0;
             KeyPathLabel.Text = "Key path or name";
             // 
             // ValueLabel
             // 
             ValueLabel.AutoSize = true;
-            ValueLabel.Location = new Point(12, 41);
+            ValueLabel.Location = new System.Drawing.Point(12, 38);
             ValueLabel.Name = "ValueLabel";
-            ValueLabel.Size = new Size(63, 13);
+            ValueLabel.Size = new System.Drawing.Size(65, 12);
             ValueLabel.TabIndex = 2;
             ValueLabel.Text = "Value name";
             // 
             // KeyTextbox
             // 
-            KeyTextbox.Location = new Point(108, 12);
-            KeyTextbox.Name = "KeyTextbox";
-            KeyTextbox.Size = new Size(260, 20);
-            KeyTextbox.TabIndex = 1;
+            this.KeyTextbox.Location = new System.Drawing.Point(108, 11);
+            this.KeyTextbox.Name = "KeyTextbox";
+            this.KeyTextbox.Size = new System.Drawing.Size(260, 19);
+            this.KeyTextbox.TabIndex = 1;
             // 
             // ValueTextbox
             // 
-            ValueTextbox.Location = new Point(108, 38);
-            ValueTextbox.Name = "ValueTextbox";
-            ValueTextbox.Size = new Size(260, 20);
-            ValueTextbox.TabIndex = 2;
+            this.ValueTextbox.Location = new System.Drawing.Point(108, 35);
+            this.ValueTextbox.Name = "ValueTextbox";
+            this.ValueTextbox.Size = new System.Drawing.Size(260, 19);
+            this.ValueTextbox.TabIndex = 2;
             // 
             // SearchButton
             // 
-            SearchButton.Location = new Point(293, 64);
-            SearchButton.Name = "SearchButton";
-            SearchButton.Size = new Size(75, 23);
-            SearchButton.TabIndex = 3;
-            SearchButton.Text = "Search";
-            SearchButton.UseVisualStyleBackColor = true;
+            this.SearchButton.Location = new System.Drawing.Point(293, 59);
+            this.SearchButton.Name = "SearchButton";
+            this.SearchButton.Size = new System.Drawing.Size(75, 21);
+            this.SearchButton.TabIndex = 3;
+            this.SearchButton.Text = "Search";
+            this.SearchButton.UseVisualStyleBackColor = true;
+            this.SearchButton.Click += new System.EventHandler(this.SearchButton_Click);
             // 
             // FindByRegistry
             // 
-            AcceptButton = SearchButton;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(380, 99);
-            Controls.Add(SearchButton);
-            Controls.Add(ValueLabel);
-            Controls.Add(ValueTextbox);
-            Controls.Add(KeyTextbox);
-            Controls.Add(KeyPathLabel);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            KeyPreview = true;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "FindByRegistry";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Find by Registry";
-            KeyUp += new KeyEventHandler(FindByRegistry_KeyUp);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.SearchButton;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(380, 91);
+            this.Controls.Add(this.SearchButton);
+            this.Controls.Add(ValueLabel);
+            this.Controls.Add(this.ValueTextbox);
+            this.Controls.Add(this.KeyTextbox);
+            this.Controls.Add(KeyPathLabel);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.KeyPreview = true;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "FindByRegistry";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Find by Registry";
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.FindByRegistry_KeyUp);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal TextBox KeyTextbox;

@@ -36,105 +36,107 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            ButtonOpenFile = new Button();
-            ButtonOpenFile.Click += new EventHandler(ButtonOpenFile_Click);
-            Label1 = new Label();
-            ButtonApply = new Button();
-            ButtonApply.Click += new EventHandler(ButtonApply_Click);
-            TextSpol = new TextBox();
-            TextSpol.KeyDown += new KeyEventHandler(TextSpol_KeyDown);
-            ButtonVerify = new Button();
-            ButtonVerify.Click += new EventHandler(ButtonVerify_Click);
-            ButtonReset = new Button();
-            ButtonReset.Click += new EventHandler(ButtonReset_Click);
-            SuspendLayout();
+            this.ButtonOpenFile = new System.Windows.Forms.Button();
+            this.Label1 = new System.Windows.Forms.Label();
+            this.ButtonApply = new System.Windows.Forms.Button();
+            this.TextSpol = new System.Windows.Forms.TextBox();
+            this.ButtonVerify = new System.Windows.Forms.Button();
+            this.ButtonReset = new System.Windows.Forms.Button();
+            this.SuspendLayout();
             // 
             // ButtonOpenFile
             // 
-            ButtonOpenFile.Location = new Point(157, 12);
-            ButtonOpenFile.Name = "ButtonOpenFile";
-            ButtonOpenFile.Size = new Size(75, 23);
-            ButtonOpenFile.TabIndex = 0;
-            ButtonOpenFile.Text = "Open File";
-            ButtonOpenFile.UseVisualStyleBackColor = true;
+            this.ButtonOpenFile.Location = new System.Drawing.Point(157, 11);
+            this.ButtonOpenFile.Name = "ButtonOpenFile";
+            this.ButtonOpenFile.Size = new System.Drawing.Size(75, 21);
+            this.ButtonOpenFile.TabIndex = 0;
+            this.ButtonOpenFile.Text = "Open File";
+            this.ButtonOpenFile.UseVisualStyleBackColor = true;
+            this.ButtonOpenFile.Click += new System.EventHandler(this.ButtonOpenFile_Click);
             // 
             // Label1
             // 
-            Label1.AutoSize = true;
-            Label1.Location = new Point(12, 17);
-            Label1.Name = "Label1";
-            Label1.Size = new Size(139, 13);
-            Label1.TabIndex = 1;
-            Label1.Text = "Semantic Policy (SPOL) text";
+            this.Label1.AutoSize = true;
+            this.Label1.Location = new System.Drawing.Point(12, 16);
+            this.Label1.Name = "Label1";
+            this.Label1.Size = new System.Drawing.Size(151, 12);
+            this.Label1.TabIndex = 1;
+            this.Label1.Text = "Semantic Policy (SPOL) text";
             // 
             // ButtonApply
             // 
-            ButtonApply.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            ButtonApply.Location = new Point(303, 219);
-            ButtonApply.Name = "ButtonApply";
-            ButtonApply.Size = new Size(75, 23);
-            ButtonApply.TabIndex = 4;
-            ButtonApply.Text = "Apply";
-            ButtonApply.UseVisualStyleBackColor = true;
+            this.ButtonApply.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ButtonApply.Location = new System.Drawing.Point(303, 202);
+            this.ButtonApply.Name = "ButtonApply";
+            this.ButtonApply.Size = new System.Drawing.Size(75, 21);
+            this.ButtonApply.TabIndex = 4;
+            this.ButtonApply.Text = "Apply";
+            this.ButtonApply.UseVisualStyleBackColor = true;
+            this.ButtonApply.Click += new System.EventHandler(this.ButtonApply_Click);
             // 
             // TextSpol
             // 
-            TextSpol.AcceptsReturn = true;
-            TextSpol.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-
-            TextSpol.Font = new Font("Consolas", 8.25f, FontStyle.Regular, GraphicsUnit.Point, Conversions.ToByte(0));
-            TextSpol.Location = new Point(12, 41);
-            TextSpol.Multiline = true;
-            TextSpol.Name = "TextSpol";
-            TextSpol.ScrollBars = ScrollBars.Both;
-            TextSpol.Size = new Size(366, 172);
-            TextSpol.TabIndex = 2;
-            TextSpol.Text = "Policy Plus Semantic Policy" + '\r' + '\n' + '\r' + '\n';
-            TextSpol.WordWrap = false;
+            this.TextSpol.AcceptsReturn = true;
+            this.TextSpol.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.TextSpol.Font = new System.Drawing.Font("Consolas", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.TextSpol.Location = new System.Drawing.Point(12, 38);
+            this.TextSpol.Multiline = true;
+            this.TextSpol.Name = "TextSpol";
+            this.TextSpol.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.TextSpol.Size = new System.Drawing.Size(366, 159);
+            this.TextSpol.TabIndex = 2;
+            this.TextSpol.Text = "Policy Plus Semantic Policy\r\n\r\n";
+            this.TextSpol.WordWrap = false;
+            this.TextSpol.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TextSpol_KeyDown);
             // 
             // ButtonVerify
             // 
-            ButtonVerify.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            ButtonVerify.Location = new Point(222, 219);
-            ButtonVerify.Name = "ButtonVerify";
-            ButtonVerify.Size = new Size(75, 23);
-            ButtonVerify.TabIndex = 3;
-            ButtonVerify.Text = "Verify";
-            ButtonVerify.UseVisualStyleBackColor = true;
+            this.ButtonVerify.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ButtonVerify.Location = new System.Drawing.Point(222, 202);
+            this.ButtonVerify.Name = "ButtonVerify";
+            this.ButtonVerify.Size = new System.Drawing.Size(75, 21);
+            this.ButtonVerify.TabIndex = 3;
+            this.ButtonVerify.Text = "Verify";
+            this.ButtonVerify.UseVisualStyleBackColor = true;
+            this.ButtonVerify.Click += new System.EventHandler(this.ButtonVerify_Click);
             // 
             // ButtonReset
             // 
-            ButtonReset.Location = new Point(238, 12);
-            ButtonReset.Name = "ButtonReset";
-            ButtonReset.Size = new Size(75, 23);
-            ButtonReset.TabIndex = 1;
-            ButtonReset.Text = "Reset";
-            ButtonReset.UseVisualStyleBackColor = true;
+            this.ButtonReset.Location = new System.Drawing.Point(238, 11);
+            this.ButtonReset.Name = "ButtonReset";
+            this.ButtonReset.Size = new System.Drawing.Size(75, 21);
+            this.ButtonReset.TabIndex = 1;
+            this.ButtonReset.Text = "Reset";
+            this.ButtonReset.UseVisualStyleBackColor = true;
+            this.ButtonReset.Click += new System.EventHandler(this.ButtonReset_Click);
             // 
             // ImportSpol
             // 
-            AcceptButton = ButtonApply;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(390, 254);
-            Controls.Add(ButtonReset);
-            Controls.Add(ButtonVerify);
-            Controls.Add(TextSpol);
-            Controls.Add(ButtonApply);
-            Controls.Add(Label1);
-            Controls.Add(ButtonOpenFile);
-            KeyPreview = true;
-            MinimizeBox = false;
-            MinimumSize = new Size(373, 266);
-            Name = "ImportSpol";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Import Semantic Policy";
-            Shown += new EventHandler(ImportSpol_Shown);
-            KeyUp += new KeyEventHandler(ImportSpol_KeyUp);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.ButtonApply;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(390, 234);
+            this.Controls.Add(this.ButtonReset);
+            this.Controls.Add(this.ButtonVerify);
+            this.Controls.Add(this.TextSpol);
+            this.Controls.Add(this.ButtonApply);
+            this.Controls.Add(this.Label1);
+            this.Controls.Add(this.ButtonOpenFile);
+            this.KeyPreview = true;
+            this.MinimizeBox = false;
+            this.MinimumSize = new System.Drawing.Size(373, 249);
+            this.Name = "ImportSpol";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Import Semantic Policy";
+            this.Shown += new System.EventHandler(this.ImportSpol_Shown);
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.ImportSpol_KeyUp);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal Button ButtonOpenFile;

@@ -36,196 +36,211 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label PolicyTypeLabel;
-            Label PolicyStateLabel;
-            Label CommentedLabel;
-            PolicyTypeCombobox = new ComboBox();
-            PolicyStateCombobox = new ComboBox();
-            CommentedCombobox = new ComboBox();
-            OkButton = new Button();
-            OkButton.Click += new EventHandler(OkButton_Click);
-            ResetButton = new Button();
-            ResetButton.Click += new EventHandler(ResetButton_Click);
-            RequirementsBox = new GroupBox();
-            AllowedProductsTreeview = new DoubleClickIgnoringTreeView();
-            AllowedProductsTreeview.EnabledChanged += new EventHandler(AllowedProductsTreeview_EnabledChanged);
-            AllowedProductsTreeview.AfterCheck += new TreeViewEventHandler(AllowedProductsTreeview_AfterCheck);
-            MatchBlankSupportCheckbox = new CheckBox();
-            AlwaysMatchAnyCheckbox = new CheckBox();
-            SupportedCheckbox = new CheckBox();
-            SupportedCheckbox.CheckedChanged += new EventHandler(SupportedCheckbox_CheckedChanged);
-            PolicyTypeLabel = new Label();
-            PolicyStateLabel = new Label();
-            CommentedLabel = new Label();
-            RequirementsBox.SuspendLayout();
-            SuspendLayout();
+            System.Windows.Forms.Label PolicyTypeLabel;
+            System.Windows.Forms.Label PolicyStateLabel;
+            System.Windows.Forms.Label CommentedLabel;
+            this.PolicyTypeCombobox = new System.Windows.Forms.ComboBox();
+            this.PolicyStateCombobox = new System.Windows.Forms.ComboBox();
+            this.CommentedCombobox = new System.Windows.Forms.ComboBox();
+            this.OkButton = new System.Windows.Forms.Button();
+            this.ResetButton = new System.Windows.Forms.Button();
+            this.RequirementsBox = new System.Windows.Forms.GroupBox();
+            this.AllowedProductsTreeview = new PolicyPlus.DoubleClickIgnoringTreeView();
+            this.MatchBlankSupportCheckbox = new System.Windows.Forms.CheckBox();
+            this.AlwaysMatchAnyCheckbox = new System.Windows.Forms.CheckBox();
+            this.SupportedCheckbox = new System.Windows.Forms.CheckBox();
+            PolicyTypeLabel = new System.Windows.Forms.Label();
+            PolicyStateLabel = new System.Windows.Forms.Label();
+            CommentedLabel = new System.Windows.Forms.Label();
+            this.RequirementsBox.SuspendLayout();
+            this.SuspendLayout();
             // 
             // PolicyTypeLabel
             // 
             PolicyTypeLabel.AutoSize = true;
-            PolicyTypeLabel.Location = new Point(12, 9);
+            PolicyTypeLabel.Location = new System.Drawing.Point(12, 8);
             PolicyTypeLabel.Name = "PolicyTypeLabel";
-            PolicyTypeLabel.Size = new Size(58, 13);
+            PolicyTypeLabel.Size = new System.Drawing.Size(62, 12);
             PolicyTypeLabel.TabIndex = 1;
             PolicyTypeLabel.Text = "Policy type";
             // 
             // PolicyStateLabel
             // 
             PolicyStateLabel.AutoSize = true;
-            PolicyStateLabel.Location = new Point(121, 9);
+            PolicyStateLabel.Location = new System.Drawing.Point(121, 8);
             PolicyStateLabel.Name = "PolicyStateLabel";
-            PolicyStateLabel.Size = new Size(67, 13);
+            PolicyStateLabel.Size = new System.Drawing.Size(73, 12);
             PolicyStateLabel.TabIndex = 3;
             PolicyStateLabel.Text = "Current state";
             // 
             // CommentedLabel
             // 
             CommentedLabel.AutoSize = true;
-            CommentedLabel.Location = new Point(230, 9);
+            CommentedLabel.Location = new System.Drawing.Point(230, 8);
             CommentedLabel.Name = "CommentedLabel";
-            CommentedLabel.Size = new Size(63, 13);
+            CommentedLabel.Size = new System.Drawing.Size(65, 12);
             CommentedLabel.TabIndex = 5;
             CommentedLabel.Text = "Commented";
             // 
             // PolicyTypeCombobox
             // 
-            PolicyTypeCombobox.DropDownStyle = ComboBoxStyle.DropDownList;
-            PolicyTypeCombobox.FormattingEnabled = true;
-            PolicyTypeCombobox.Items.AddRange(new object[] { "Any", "Policy", "Preference" });
-            PolicyTypeCombobox.Location = new Point(12, 25);
-            PolicyTypeCombobox.Name = "PolicyTypeCombobox";
-            PolicyTypeCombobox.Size = new Size(103, 21);
-            PolicyTypeCombobox.TabIndex = 0;
+            this.PolicyTypeCombobox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.PolicyTypeCombobox.FormattingEnabled = true;
+            this.PolicyTypeCombobox.Items.AddRange(new object[] {
+            "Any",
+            "Policy",
+            "Preference"});
+            this.PolicyTypeCombobox.Location = new System.Drawing.Point(12, 23);
+            this.PolicyTypeCombobox.Name = "PolicyTypeCombobox";
+            this.PolicyTypeCombobox.Size = new System.Drawing.Size(103, 20);
+            this.PolicyTypeCombobox.TabIndex = 0;
             // 
             // PolicyStateCombobox
             // 
-            PolicyStateCombobox.DropDownStyle = ComboBoxStyle.DropDownList;
-            PolicyStateCombobox.FormattingEnabled = true;
-            PolicyStateCombobox.Items.AddRange(new object[] { "Any", "Not Configured", "Configured", "Enabled", "Disabled" });
-            PolicyStateCombobox.Location = new Point(121, 25);
-            PolicyStateCombobox.Name = "PolicyStateCombobox";
-            PolicyStateCombobox.Size = new Size(103, 21);
-            PolicyStateCombobox.TabIndex = 2;
+            this.PolicyStateCombobox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.PolicyStateCombobox.FormattingEnabled = true;
+            this.PolicyStateCombobox.Items.AddRange(new object[] {
+            "Any",
+            "Not Configured",
+            "Configured",
+            "Enabled",
+            "Disabled"});
+            this.PolicyStateCombobox.Location = new System.Drawing.Point(121, 23);
+            this.PolicyStateCombobox.Name = "PolicyStateCombobox";
+            this.PolicyStateCombobox.Size = new System.Drawing.Size(103, 20);
+            this.PolicyStateCombobox.TabIndex = 2;
             // 
             // CommentedCombobox
             // 
-            CommentedCombobox.DropDownStyle = ComboBoxStyle.DropDownList;
-            CommentedCombobox.FormattingEnabled = true;
-            CommentedCombobox.Items.AddRange(new object[] { "Any", "Yes", "No" });
-            CommentedCombobox.Location = new Point(230, 25);
-            CommentedCombobox.Name = "CommentedCombobox";
-            CommentedCombobox.Size = new Size(103, 21);
-            CommentedCombobox.TabIndex = 4;
+            this.CommentedCombobox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.CommentedCombobox.FormattingEnabled = true;
+            this.CommentedCombobox.Items.AddRange(new object[] {
+            "Any",
+            "Yes",
+            "No"});
+            this.CommentedCombobox.Location = new System.Drawing.Point(230, 23);
+            this.CommentedCombobox.Name = "CommentedCombobox";
+            this.CommentedCombobox.Size = new System.Drawing.Size(103, 20);
+            this.CommentedCombobox.TabIndex = 4;
             // 
             // OkButton
             // 
-            OkButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            OkButton.Location = new Point(258, 311);
-            OkButton.Name = "OkButton";
-            OkButton.Size = new Size(75, 23);
-            OkButton.TabIndex = 6;
-            OkButton.Text = "OK";
-            OkButton.UseVisualStyleBackColor = true;
+            this.OkButton.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.OkButton.Location = new System.Drawing.Point(258, 287);
+            this.OkButton.Name = "OkButton";
+            this.OkButton.Size = new System.Drawing.Size(75, 21);
+            this.OkButton.TabIndex = 6;
+            this.OkButton.Text = "OK";
+            this.OkButton.UseVisualStyleBackColor = true;
+            this.OkButton.Click += new System.EventHandler(this.OkButton_Click);
             // 
             // ResetButton
             // 
-            ResetButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            ResetButton.Location = new Point(12, 311);
-            ResetButton.Name = "ResetButton";
-            ResetButton.Size = new Size(75, 23);
-            ResetButton.TabIndex = 7;
-            ResetButton.Text = "Reset";
-            ResetButton.UseVisualStyleBackColor = true;
+            this.ResetButton.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.ResetButton.Location = new System.Drawing.Point(12, 287);
+            this.ResetButton.Name = "ResetButton";
+            this.ResetButton.Size = new System.Drawing.Size(75, 21);
+            this.ResetButton.TabIndex = 7;
+            this.ResetButton.Text = "Reset";
+            this.ResetButton.UseVisualStyleBackColor = true;
+            this.ResetButton.Click += new System.EventHandler(this.ResetButton_Click);
             // 
             // RequirementsBox
             // 
-            RequirementsBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-
-            RequirementsBox.Controls.Add(AllowedProductsTreeview);
-            RequirementsBox.Controls.Add(MatchBlankSupportCheckbox);
-            RequirementsBox.Controls.Add(AlwaysMatchAnyCheckbox);
-            RequirementsBox.Enabled = false;
-            RequirementsBox.Location = new Point(12, 52);
-            RequirementsBox.Name = "RequirementsBox";
-            RequirementsBox.Size = new Size(321, 253);
-            RequirementsBox.TabIndex = 8;
-            RequirementsBox.TabStop = false;
+            this.RequirementsBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.RequirementsBox.Controls.Add(this.AllowedProductsTreeview);
+            this.RequirementsBox.Controls.Add(this.MatchBlankSupportCheckbox);
+            this.RequirementsBox.Controls.Add(this.AlwaysMatchAnyCheckbox);
+            this.RequirementsBox.Enabled = false;
+            this.RequirementsBox.Location = new System.Drawing.Point(12, 48);
+            this.RequirementsBox.Name = "RequirementsBox";
+            this.RequirementsBox.Size = new System.Drawing.Size(321, 234);
+            this.RequirementsBox.TabIndex = 8;
+            this.RequirementsBox.TabStop = false;
             // 
             // AllowedProductsTreeview
             // 
-            AllowedProductsTreeview.CheckBoxes = true;
-            AllowedProductsTreeview.FullRowSelect = true;
-            AllowedProductsTreeview.HideSelection = false;
-            AllowedProductsTreeview.Location = new Point(6, 69);
-            AllowedProductsTreeview.Name = "AllowedProductsTreeview";
-            AllowedProductsTreeview.ShowNodeToolTips = true;
-            AllowedProductsTreeview.Size = new Size(309, 178);
-            AllowedProductsTreeview.TabIndex = 10;
+            this.AllowedProductsTreeview.CheckBoxes = true;
+            this.AllowedProductsTreeview.FullRowSelect = true;
+            this.AllowedProductsTreeview.HideSelection = false;
+            this.AllowedProductsTreeview.Location = new System.Drawing.Point(6, 64);
+            this.AllowedProductsTreeview.Name = "AllowedProductsTreeview";
+            this.AllowedProductsTreeview.ShowNodeToolTips = true;
+            this.AllowedProductsTreeview.Size = new System.Drawing.Size(309, 165);
+            this.AllowedProductsTreeview.TabIndex = 10;
+            this.AllowedProductsTreeview.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.AllowedProductsTreeview_AfterCheck);
+            this.AllowedProductsTreeview.EnabledChanged += new System.EventHandler(this.AllowedProductsTreeview_EnabledChanged);
             // 
             // MatchBlankSupportCheckbox
             // 
-            MatchBlankSupportCheckbox.AutoSize = true;
-            MatchBlankSupportCheckbox.Checked = true;
-            MatchBlankSupportCheckbox.CheckState = CheckState.Checked;
-            MatchBlankSupportCheckbox.Location = new Point(6, 46);
-            MatchBlankSupportCheckbox.Name = "MatchBlankSupportCheckbox";
-            MatchBlankSupportCheckbox.Size = new Size(282, 17);
-            MatchBlankSupportCheckbox.TabIndex = 0;
-            MatchBlankSupportCheckbox.Text = "Match policies with missing or blank support definitions";
-            MatchBlankSupportCheckbox.UseVisualStyleBackColor = true;
+            this.MatchBlankSupportCheckbox.AutoSize = true;
+            this.MatchBlankSupportCheckbox.Checked = true;
+            this.MatchBlankSupportCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.MatchBlankSupportCheckbox.Location = new System.Drawing.Point(6, 42);
+            this.MatchBlankSupportCheckbox.Name = "MatchBlankSupportCheckbox";
+            this.MatchBlankSupportCheckbox.Size = new System.Drawing.Size(310, 16);
+            this.MatchBlankSupportCheckbox.TabIndex = 0;
+            this.MatchBlankSupportCheckbox.Text = "Match policies with missing or blank support definitions";
+            this.MatchBlankSupportCheckbox.UseVisualStyleBackColor = true;
             // 
             // AlwaysMatchAnyCheckbox
             // 
-            AlwaysMatchAnyCheckbox.AutoSize = true;
-            AlwaysMatchAnyCheckbox.Checked = true;
-            AlwaysMatchAnyCheckbox.CheckState = CheckState.Checked;
-            AlwaysMatchAnyCheckbox.Location = new Point(6, 23);
-            AlwaysMatchAnyCheckbox.Name = "AlwaysMatchAnyCheckbox";
-            AlwaysMatchAnyCheckbox.Size = new Size(303, 17);
-            AlwaysMatchAnyCheckbox.TabIndex = 0;
-            AlwaysMatchAnyCheckbox.Text = "Match a policy if at least one selected product is supported";
-            AlwaysMatchAnyCheckbox.UseVisualStyleBackColor = true;
+            this.AlwaysMatchAnyCheckbox.AutoSize = true;
+            this.AlwaysMatchAnyCheckbox.Checked = true;
+            this.AlwaysMatchAnyCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.AlwaysMatchAnyCheckbox.Location = new System.Drawing.Point(6, 21);
+            this.AlwaysMatchAnyCheckbox.Name = "AlwaysMatchAnyCheckbox";
+            this.AlwaysMatchAnyCheckbox.Size = new System.Drawing.Size(331, 16);
+            this.AlwaysMatchAnyCheckbox.TabIndex = 0;
+            this.AlwaysMatchAnyCheckbox.Text = "Match a policy if at least one selected product is supported";
+            this.AlwaysMatchAnyCheckbox.UseVisualStyleBackColor = true;
             // 
             // SupportedCheckbox
             // 
-            SupportedCheckbox.AutoSize = true;
-            SupportedCheckbox.Location = new Point(18, 52);
-            SupportedCheckbox.Name = "SupportedCheckbox";
-            SupportedCheckbox.Size = new Size(90, 17);
-            SupportedCheckbox.TabIndex = 9;
-            SupportedCheckbox.Text = "Supported on";
-            SupportedCheckbox.UseVisualStyleBackColor = true;
+            this.SupportedCheckbox.AutoSize = true;
+            this.SupportedCheckbox.Location = new System.Drawing.Point(18, 48);
+            this.SupportedCheckbox.Name = "SupportedCheckbox";
+            this.SupportedCheckbox.Size = new System.Drawing.Size(91, 16);
+            this.SupportedCheckbox.TabIndex = 9;
+            this.SupportedCheckbox.Text = "Supported on";
+            this.SupportedCheckbox.UseVisualStyleBackColor = true;
+            this.SupportedCheckbox.CheckedChanged += new System.EventHandler(this.SupportedCheckbox_CheckedChanged);
             // 
             // FilterOptions
             // 
-            AcceptButton = OkButton;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(345, 346);
-            Controls.Add(SupportedCheckbox);
-            Controls.Add(RequirementsBox);
-            Controls.Add(ResetButton);
-            Controls.Add(OkButton);
-            Controls.Add(CommentedLabel);
-            Controls.Add(CommentedCombobox);
-            Controls.Add(PolicyStateLabel);
-            Controls.Add(PolicyStateCombobox);
-            Controls.Add(PolicyTypeLabel);
-            Controls.Add(PolicyTypeCombobox);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            KeyPreview = true;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "FilterOptions";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Filter Options";
-            RequirementsBox.ResumeLayout(false);
-            RequirementsBox.PerformLayout();
-            KeyDown += new KeyEventHandler(FilterOptions_KeyDown);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.OkButton;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(345, 319);
+            this.Controls.Add(this.SupportedCheckbox);
+            this.Controls.Add(this.RequirementsBox);
+            this.Controls.Add(this.ResetButton);
+            this.Controls.Add(this.OkButton);
+            this.Controls.Add(CommentedLabel);
+            this.Controls.Add(this.CommentedCombobox);
+            this.Controls.Add(PolicyStateLabel);
+            this.Controls.Add(this.PolicyStateCombobox);
+            this.Controls.Add(PolicyTypeLabel);
+            this.Controls.Add(this.PolicyTypeCombobox);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.KeyPreview = true;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "FilterOptions";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Filter Options";
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.FilterOptions_KeyDown);
+            this.RequirementsBox.ResumeLayout(false);
+            this.RequirementsBox.PerformLayout();
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal ComboBox PolicyTypeCombobox;
@@ -235,8 +250,8 @@ namespace PolicyPlus
         internal Button ResetButton;
         internal GroupBox RequirementsBox;
         internal CheckBox SupportedCheckbox;
-        internal TreeView AllowedProductsTreeview;
         internal CheckBox MatchBlankSupportCheckbox;
         internal CheckBox AlwaysMatchAnyCheckbox;
+        internal DoubleClickIgnoringTreeView AllowedProductsTreeview;
     }
 }

@@ -35,116 +35,117 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label LabelWhatsThis;
-            Label LabelDestFolder;
-            TextDestFolder = new TextBox();
-            ButtonBrowse = new Button();
-            ButtonBrowse.Click += new EventHandler(ButtonBrowse_Click);
-            ProgressSpinner = new ProgressBar();
-            LabelProgress = new Label();
-            ButtonStart = new Button();
-            ButtonStart.Click += new EventHandler(ButtonStart_Click);
-            ButtonClose = new Button();
-            LabelWhatsThis = new Label();
-            LabelDestFolder = new Label();
-            SuspendLayout();
+            System.Windows.Forms.Label LabelWhatsThis;
+            System.Windows.Forms.Label LabelDestFolder;
+            this.TextDestFolder = new System.Windows.Forms.TextBox();
+            this.ButtonBrowse = new System.Windows.Forms.Button();
+            this.ProgressSpinner = new System.Windows.Forms.ProgressBar();
+            this.LabelProgress = new System.Windows.Forms.Label();
+            this.ButtonStart = new System.Windows.Forms.Button();
+            this.ButtonClose = new System.Windows.Forms.Button();
+            LabelWhatsThis = new System.Windows.Forms.Label();
+            LabelDestFolder = new System.Windows.Forms.Label();
+            this.SuspendLayout();
             // 
             // LabelWhatsThis
             // 
             LabelWhatsThis.AutoSize = true;
-            LabelWhatsThis.Location = new Point(12, 9);
+            LabelWhatsThis.Location = new System.Drawing.Point(12, 8);
             LabelWhatsThis.Name = "LabelWhatsThis";
-            LabelWhatsThis.Size = new Size(331, 13);
+            LabelWhatsThis.Size = new System.Drawing.Size(370, 12);
             LabelWhatsThis.TabIndex = 0;
             LabelWhatsThis.Text = "Download the full set of policy definitions (ADMX files) from Microsoft.";
             // 
             // LabelDestFolder
             // 
             LabelDestFolder.AutoSize = true;
-            LabelDestFolder.Location = new Point(12, 30);
+            LabelDestFolder.Location = new System.Drawing.Point(12, 28);
             LabelDestFolder.Name = "LabelDestFolder";
-            LabelDestFolder.Size = new Size(89, 13);
+            LabelDestFolder.Size = new System.Drawing.Size(96, 12);
             LabelDestFolder.TabIndex = 3;
             LabelDestFolder.Text = "Destination folder";
             // 
             // TextDestFolder
             // 
-            TextDestFolder.Location = new Point(107, 27);
-            TextDestFolder.Name = "TextDestFolder";
-            TextDestFolder.Size = new Size(184, 20);
-            TextDestFolder.TabIndex = 1;
+            this.TextDestFolder.Location = new System.Drawing.Point(107, 25);
+            this.TextDestFolder.Name = "TextDestFolder";
+            this.TextDestFolder.Size = new System.Drawing.Size(184, 19);
+            this.TextDestFolder.TabIndex = 1;
             // 
             // ButtonBrowse
             // 
-            ButtonBrowse.Location = new Point(297, 25);
-            ButtonBrowse.Name = "ButtonBrowse";
-            ButtonBrowse.Size = new Size(75, 23);
-            ButtonBrowse.TabIndex = 2;
-            ButtonBrowse.Text = "Browse";
-            ButtonBrowse.UseVisualStyleBackColor = true;
+            this.ButtonBrowse.Location = new System.Drawing.Point(297, 23);
+            this.ButtonBrowse.Name = "ButtonBrowse";
+            this.ButtonBrowse.Size = new System.Drawing.Size(75, 21);
+            this.ButtonBrowse.TabIndex = 2;
+            this.ButtonBrowse.Text = "Browse";
+            this.ButtonBrowse.UseVisualStyleBackColor = true;
+            this.ButtonBrowse.Click += new System.EventHandler(this.ButtonBrowse_Click);
             // 
             // ProgressSpinner
             // 
-            ProgressSpinner.Location = new Point(12, 53);
-            ProgressSpinner.Name = "ProgressSpinner";
-            ProgressSpinner.Size = new Size(360, 23);
-            ProgressSpinner.Style = ProgressBarStyle.Marquee;
-            ProgressSpinner.TabIndex = 4;
+            this.ProgressSpinner.Location = new System.Drawing.Point(12, 49);
+            this.ProgressSpinner.Name = "ProgressSpinner";
+            this.ProgressSpinner.Size = new System.Drawing.Size(360, 21);
+            this.ProgressSpinner.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
+            this.ProgressSpinner.TabIndex = 4;
             // 
             // LabelProgress
             // 
-            LabelProgress.AutoSize = true;
-            LabelProgress.Location = new Point(12, 87);
-            LabelProgress.Name = "LabelProgress";
-            LabelProgress.Size = new Size(48, 13);
-            LabelProgress.TabIndex = 5;
-            LabelProgress.Text = "Progress";
-            LabelProgress.Visible = false;
+            this.LabelProgress.AutoSize = true;
+            this.LabelProgress.Location = new System.Drawing.Point(12, 80);
+            this.LabelProgress.Name = "LabelProgress";
+            this.LabelProgress.Size = new System.Drawing.Size(50, 12);
+            this.LabelProgress.TabIndex = 5;
+            this.LabelProgress.Text = "Progress";
+            this.LabelProgress.Visible = false;
             // 
             // ButtonStart
             // 
-            ButtonStart.Location = new Point(297, 82);
-            ButtonStart.Name = "ButtonStart";
-            ButtonStart.Size = new Size(75, 23);
-            ButtonStart.TabIndex = 6;
-            ButtonStart.Text = "Begin";
-            ButtonStart.UseVisualStyleBackColor = true;
+            this.ButtonStart.Location = new System.Drawing.Point(297, 76);
+            this.ButtonStart.Name = "ButtonStart";
+            this.ButtonStart.Size = new System.Drawing.Size(75, 21);
+            this.ButtonStart.TabIndex = 6;
+            this.ButtonStart.Text = "Begin";
+            this.ButtonStart.UseVisualStyleBackColor = true;
+            this.ButtonStart.Click += new System.EventHandler(this.ButtonStart_Click);
             // 
             // ButtonClose
             // 
-            ButtonClose.DialogResult = DialogResult.Cancel;
-            ButtonClose.Location = new Point(216, 82);
-            ButtonClose.Name = "ButtonClose";
-            ButtonClose.Size = new Size(75, 23);
-            ButtonClose.TabIndex = 7;
-            ButtonClose.Text = "Close";
-            ButtonClose.UseVisualStyleBackColor = true;
+            this.ButtonClose.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.ButtonClose.Location = new System.Drawing.Point(216, 76);
+            this.ButtonClose.Name = "ButtonClose";
+            this.ButtonClose.Size = new System.Drawing.Size(75, 21);
+            this.ButtonClose.TabIndex = 7;
+            this.ButtonClose.Text = "Close";
+            this.ButtonClose.UseVisualStyleBackColor = true;
             // 
             // DownloadAdmx
             // 
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(384, 117);
-            Controls.Add(ButtonClose);
-            Controls.Add(ButtonStart);
-            Controls.Add(LabelProgress);
-            Controls.Add(ProgressSpinner);
-            Controls.Add(LabelDestFolder);
-            Controls.Add(ButtonBrowse);
-            Controls.Add(TextDestFolder);
-            Controls.Add(LabelWhatsThis);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "DownloadAdmx";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Acquire ADMX Files";
-            Closing += new System.ComponentModel.CancelEventHandler(DownloadAdmx_Closing);
-            Shown += new EventHandler(DownloadAdmx_Shown);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(384, 108);
+            this.Controls.Add(this.ButtonClose);
+            this.Controls.Add(this.ButtonStart);
+            this.Controls.Add(this.LabelProgress);
+            this.Controls.Add(this.ProgressSpinner);
+            this.Controls.Add(LabelDestFolder);
+            this.Controls.Add(this.ButtonBrowse);
+            this.Controls.Add(this.TextDestFolder);
+            this.Controls.Add(LabelWhatsThis);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "DownloadAdmx";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Acquire ADMX Files";
+            this.Closing += new System.ComponentModel.CancelEventHandler(this.DownloadAdmx_Closing);
+            this.Shown += new System.EventHandler(this.DownloadAdmx_Shown);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal TextBox TextDestFolder;

@@ -49,7 +49,7 @@ namespace PolicyPlus
             if (CurrentSetting.RawPolicy.Section == AdmxPolicySection.Both)
             {
                 SectionDropdown.Enabled = true;
-                CurrentSection = CurrentSection == AdmxPolicySection.Both ? AdmxPolicySection.Machine : CurrentSection;
+                CurrentSection = CurrentSection == AdmxPolicySection.Both ? AdmxPolicySection.User : CurrentSection;
             }
             else
             {

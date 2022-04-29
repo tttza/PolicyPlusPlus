@@ -36,74 +36,79 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            LsvAdmx = new ListView();
-            LsvAdmx.DoubleClick += new EventHandler(LsvAdmx_DoubleClick);
-            LsvAdmx.KeyDown += new KeyEventHandler(LsvAdmx_KeyDown);
-            ChFileTitle = new ColumnHeader();
-            ChFolder = new ColumnHeader();
-            ChNamespace = new ColumnHeader();
-            ButtonClose = new Button();
-            SuspendLayout();
+            this.LsvAdmx = new System.Windows.Forms.ListView();
+            this.ChFileTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChFolder = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChNamespace = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ButtonClose = new System.Windows.Forms.Button();
+            this.SuspendLayout();
             // 
             // LsvAdmx
             // 
-            LsvAdmx.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-
-            LsvAdmx.Columns.AddRange(new ColumnHeader[] { ChFileTitle, ChFolder, ChNamespace });
-            LsvAdmx.FullRowSelect = true;
-            LsvAdmx.HideSelection = false;
-            LsvAdmx.Location = new Point(12, 12);
-            LsvAdmx.MultiSelect = false;
-            LsvAdmx.Name = "LsvAdmx";
-            LsvAdmx.ShowItemToolTips = true;
-            LsvAdmx.Size = new Size(487, 233);
-            LsvAdmx.TabIndex = 0;
-            LsvAdmx.UseCompatibleStateImageBehavior = false;
-            LsvAdmx.View = View.Details;
+            this.LsvAdmx.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.LsvAdmx.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.ChFileTitle,
+            this.ChFolder,
+            this.ChNamespace});
+            this.LsvAdmx.FullRowSelect = true;
+            this.LsvAdmx.HideSelection = false;
+            this.LsvAdmx.Location = new System.Drawing.Point(12, 11);
+            this.LsvAdmx.MultiSelect = false;
+            this.LsvAdmx.Name = "LsvAdmx";
+            this.LsvAdmx.ShowItemToolTips = true;
+            this.LsvAdmx.Size = new System.Drawing.Size(487, 215);
+            this.LsvAdmx.TabIndex = 0;
+            this.LsvAdmx.UseCompatibleStateImageBehavior = false;
+            this.LsvAdmx.View = System.Windows.Forms.View.Details;
+            this.LsvAdmx.DoubleClick += new System.EventHandler(this.LsvAdmx_DoubleClick);
+            this.LsvAdmx.KeyDown += new System.Windows.Forms.KeyEventHandler(this.LsvAdmx_KeyDown);
             // 
             // ChFileTitle
             // 
-            ChFileTitle.Text = "File";
-            ChFileTitle.Width = 88;
+            this.ChFileTitle.Text = "File";
+            this.ChFileTitle.Width = 88;
             // 
             // ChFolder
             // 
-            ChFolder.Text = "Folder";
-            ChFolder.Width = 203;
+            this.ChFolder.Text = "Folder";
+            this.ChFolder.Width = 203;
             // 
             // ChNamespace
             // 
-            ChNamespace.Text = "Namespace";
-            ChNamespace.Width = 172;
+            this.ChNamespace.Text = "Namespace";
+            this.ChNamespace.Width = 172;
             // 
             // ButtonClose
             // 
-            ButtonClose.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            ButtonClose.DialogResult = DialogResult.OK;
-            ButtonClose.Location = new Point(424, 251);
-            ButtonClose.Name = "ButtonClose";
-            ButtonClose.Size = new Size(75, 23);
-            ButtonClose.TabIndex = 1;
-            ButtonClose.Text = "Close";
-            ButtonClose.UseVisualStyleBackColor = true;
+            this.ButtonClose.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ButtonClose.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.ButtonClose.Location = new System.Drawing.Point(424, 232);
+            this.ButtonClose.Name = "ButtonClose";
+            this.ButtonClose.Size = new System.Drawing.Size(75, 21);
+            this.ButtonClose.TabIndex = 1;
+            this.ButtonClose.Text = "Close";
+            this.ButtonClose.UseVisualStyleBackColor = true;
             // 
             // LoadedAdmx
             // 
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            CancelButton = ButtonClose;
-            ClientSize = new Size(511, 286);
-            Controls.Add(ButtonClose);
-            Controls.Add(LsvAdmx);
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "LoadedAdmx";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Loaded ADMX Files";
-            SizeChanged += new EventHandler(LoadedAdmx_SizeChanged);
-            ResumeLayout(false);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.CancelButton = this.ButtonClose;
+            this.ClientSize = new System.Drawing.Size(511, 264);
+            this.Controls.Add(this.ButtonClose);
+            this.Controls.Add(this.LsvAdmx);
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "LoadedAdmx";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Loaded ADMX Files";
+            this.SizeChanged += new System.EventHandler(this.LoadedAdmx_SizeChanged);
+            this.ResumeLayout(false);
+
         }
 
         internal ListView LsvAdmx;

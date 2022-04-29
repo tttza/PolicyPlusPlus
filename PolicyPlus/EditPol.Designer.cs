@@ -36,154 +36,158 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            LsvPol = new ListView();
-            LsvPol.SelectedIndexChanged += new EventHandler(LsvPol_SelectedIndexChanged);
-            ChItem = new ColumnHeader();
-            ChValue = new ColumnHeader();
-            ButtonSave = new Button();
-            ButtonSave.Click += new EventHandler(ButtonSave_Click);
-            ButtonAddKey = new Button();
-            ButtonAddKey.Click += new EventHandler(ButtonAddKey_Click);
-            ButtonAddValue = new Button();
-            ButtonAddValue.Click += new EventHandler(ButtonAddValue_Click);
-            ButtonDeleteValue = new Button();
-            ButtonDeleteValue.Click += new EventHandler(ButtonDeleteValue_Click);
-            ButtonForget = new Button();
-            ButtonForget.Click += new EventHandler(ButtonForget_Click);
-            ButtonEdit = new Button();
-            ButtonEdit.Click += new EventHandler(ButtonEdit_Click);
-            ButtonImport = new Button();
-            ButtonImport.Click += new EventHandler(ButtonImport_Click);
-            ButtonExport = new Button();
-            ButtonExport.Click += new EventHandler(ButtonExport_Click);
-            SuspendLayout();
+            this.LsvPol = new System.Windows.Forms.ListView();
+            this.ChItem = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChValue = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ButtonSave = new System.Windows.Forms.Button();
+            this.ButtonAddKey = new System.Windows.Forms.Button();
+            this.ButtonAddValue = new System.Windows.Forms.Button();
+            this.ButtonDeleteValue = new System.Windows.Forms.Button();
+            this.ButtonForget = new System.Windows.Forms.Button();
+            this.ButtonEdit = new System.Windows.Forms.Button();
+            this.ButtonImport = new System.Windows.Forms.Button();
+            this.ButtonExport = new System.Windows.Forms.Button();
+            this.SuspendLayout();
             // 
             // LsvPol
             // 
-            LsvPol.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-
-            LsvPol.Columns.AddRange(new ColumnHeader[] { ChItem, ChValue });
-            LsvPol.FullRowSelect = true;
-            LsvPol.HideSelection = false;
-            LsvPol.Location = new Point(12, 41);
-            LsvPol.MultiSelect = false;
-            LsvPol.Name = "LsvPol";
-            LsvPol.ShowItemToolTips = true;
-            LsvPol.Size = new Size(555, 235);
-            LsvPol.TabIndex = 0;
-            LsvPol.UseCompatibleStateImageBehavior = false;
-            LsvPol.View = View.Details;
+            this.LsvPol.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.LsvPol.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.ChItem,
+            this.ChValue});
+            this.LsvPol.FullRowSelect = true;
+            this.LsvPol.HideSelection = false;
+            this.LsvPol.Location = new System.Drawing.Point(12, 38);
+            this.LsvPol.MultiSelect = false;
+            this.LsvPol.Name = "LsvPol";
+            this.LsvPol.ShowItemToolTips = true;
+            this.LsvPol.Size = new System.Drawing.Size(555, 217);
+            this.LsvPol.TabIndex = 0;
+            this.LsvPol.UseCompatibleStateImageBehavior = false;
+            this.LsvPol.View = System.Windows.Forms.View.Details;
+            this.LsvPol.SelectedIndexChanged += new System.EventHandler(this.LsvPol_SelectedIndexChanged);
             // 
             // ChItem
             // 
-            ChItem.Text = "Name";
-            ChItem.Width = 377;
+            this.ChItem.Text = "Name";
+            this.ChItem.Width = 377;
             // 
             // ChValue
             // 
-            ChValue.Text = "Value";
-            ChValue.Width = 160;
+            this.ChValue.Text = "Value";
+            this.ChValue.Width = 160;
             // 
             // ButtonSave
             // 
-            ButtonSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            ButtonSave.Location = new Point(492, 282);
-            ButtonSave.Name = "ButtonSave";
-            ButtonSave.Size = new Size(75, 23);
-            ButtonSave.TabIndex = 11;
-            ButtonSave.Text = "Done";
-            ButtonSave.UseVisualStyleBackColor = true;
+            this.ButtonSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ButtonSave.Location = new System.Drawing.Point(492, 260);
+            this.ButtonSave.Name = "ButtonSave";
+            this.ButtonSave.Size = new System.Drawing.Size(75, 21);
+            this.ButtonSave.TabIndex = 11;
+            this.ButtonSave.Text = "Done";
+            this.ButtonSave.UseVisualStyleBackColor = true;
+            this.ButtonSave.Click += new System.EventHandler(this.ButtonSave_Click);
             // 
             // ButtonAddKey
             // 
-            ButtonAddKey.Location = new Point(12, 12);
-            ButtonAddKey.Name = "ButtonAddKey";
-            ButtonAddKey.Size = new Size(75, 23);
-            ButtonAddKey.TabIndex = 3;
-            ButtonAddKey.Text = "Add Key";
-            ButtonAddKey.UseVisualStyleBackColor = true;
+            this.ButtonAddKey.Location = new System.Drawing.Point(12, 11);
+            this.ButtonAddKey.Name = "ButtonAddKey";
+            this.ButtonAddKey.Size = new System.Drawing.Size(75, 21);
+            this.ButtonAddKey.TabIndex = 3;
+            this.ButtonAddKey.Text = "Add Key";
+            this.ButtonAddKey.UseVisualStyleBackColor = true;
+            this.ButtonAddKey.Click += new System.EventHandler(this.ButtonAddKey_Click);
             // 
             // ButtonAddValue
             // 
-            ButtonAddValue.Location = new Point(93, 12);
-            ButtonAddValue.Name = "ButtonAddValue";
-            ButtonAddValue.Size = new Size(87, 23);
-            ButtonAddValue.TabIndex = 4;
-            ButtonAddValue.Text = "Add Value";
-            ButtonAddValue.UseVisualStyleBackColor = true;
+            this.ButtonAddValue.Location = new System.Drawing.Point(93, 11);
+            this.ButtonAddValue.Name = "ButtonAddValue";
+            this.ButtonAddValue.Size = new System.Drawing.Size(87, 21);
+            this.ButtonAddValue.TabIndex = 4;
+            this.ButtonAddValue.Text = "Add Value";
+            this.ButtonAddValue.UseVisualStyleBackColor = true;
+            this.ButtonAddValue.Click += new System.EventHandler(this.ButtonAddValue_Click);
             // 
             // ButtonDeleteValue
             // 
-            ButtonDeleteValue.Location = new Point(186, 12);
-            ButtonDeleteValue.Name = "ButtonDeleteValue";
-            ButtonDeleteValue.Size = new Size(100, 23);
-            ButtonDeleteValue.TabIndex = 5;
-            ButtonDeleteValue.Text = "Delete Value(s)";
-            ButtonDeleteValue.UseVisualStyleBackColor = true;
+            this.ButtonDeleteValue.Location = new System.Drawing.Point(186, 11);
+            this.ButtonDeleteValue.Name = "ButtonDeleteValue";
+            this.ButtonDeleteValue.Size = new System.Drawing.Size(100, 21);
+            this.ButtonDeleteValue.TabIndex = 5;
+            this.ButtonDeleteValue.Text = "Delete Value(s)";
+            this.ButtonDeleteValue.UseVisualStyleBackColor = true;
+            this.ButtonDeleteValue.Click += new System.EventHandler(this.ButtonDeleteValue_Click);
             // 
             // ButtonForget
             // 
-            ButtonForget.Location = new Point(292, 12);
-            ButtonForget.Name = "ButtonForget";
-            ButtonForget.Size = new Size(75, 23);
-            ButtonForget.TabIndex = 6;
-            ButtonForget.Text = "Forget";
-            ButtonForget.UseVisualStyleBackColor = true;
+            this.ButtonForget.Location = new System.Drawing.Point(292, 11);
+            this.ButtonForget.Name = "ButtonForget";
+            this.ButtonForget.Size = new System.Drawing.Size(75, 21);
+            this.ButtonForget.TabIndex = 6;
+            this.ButtonForget.Text = "Forget";
+            this.ButtonForget.UseVisualStyleBackColor = true;
+            this.ButtonForget.Click += new System.EventHandler(this.ButtonForget_Click);
             // 
             // ButtonEdit
             // 
-            ButtonEdit.Location = new Point(373, 12);
-            ButtonEdit.Name = "ButtonEdit";
-            ButtonEdit.Size = new Size(75, 23);
-            ButtonEdit.TabIndex = 7;
-            ButtonEdit.Text = "Edit";
-            ButtonEdit.UseVisualStyleBackColor = true;
+            this.ButtonEdit.Location = new System.Drawing.Point(373, 11);
+            this.ButtonEdit.Name = "ButtonEdit";
+            this.ButtonEdit.Size = new System.Drawing.Size(75, 21);
+            this.ButtonEdit.TabIndex = 7;
+            this.ButtonEdit.Text = "Edit";
+            this.ButtonEdit.UseVisualStyleBackColor = true;
+            this.ButtonEdit.Click += new System.EventHandler(this.ButtonEdit_Click);
             // 
             // ButtonImport
             // 
-            ButtonImport.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            ButtonImport.Location = new Point(12, 282);
-            ButtonImport.Name = "ButtonImport";
-            ButtonImport.Size = new Size(75, 23);
-            ButtonImport.TabIndex = 9;
-            ButtonImport.Text = "Import REG";
-            ButtonImport.UseVisualStyleBackColor = true;
+            this.ButtonImport.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.ButtonImport.Location = new System.Drawing.Point(12, 260);
+            this.ButtonImport.Name = "ButtonImport";
+            this.ButtonImport.Size = new System.Drawing.Size(75, 21);
+            this.ButtonImport.TabIndex = 9;
+            this.ButtonImport.Text = "Import REG";
+            this.ButtonImport.UseVisualStyleBackColor = true;
+            this.ButtonImport.Click += new System.EventHandler(this.ButtonImport_Click);
             // 
             // ButtonExport
             // 
-            ButtonExport.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            ButtonExport.Location = new Point(93, 282);
-            ButtonExport.Name = "ButtonExport";
-            ButtonExport.Size = new Size(75, 23);
-            ButtonExport.TabIndex = 10;
-            ButtonExport.Text = "Export REG";
-            ButtonExport.UseVisualStyleBackColor = true;
+            this.ButtonExport.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.ButtonExport.Location = new System.Drawing.Point(93, 260);
+            this.ButtonExport.Name = "ButtonExport";
+            this.ButtonExport.Size = new System.Drawing.Size(75, 21);
+            this.ButtonExport.TabIndex = 10;
+            this.ButtonExport.Text = "Export REG";
+            this.ButtonExport.UseVisualStyleBackColor = true;
+            this.ButtonExport.Click += new System.EventHandler(this.ButtonExport_Click);
             // 
             // EditPol
             // 
-            AcceptButton = ButtonSave;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(579, 317);
-            Controls.Add(ButtonExport);
-            Controls.Add(ButtonImport);
-            Controls.Add(ButtonEdit);
-            Controls.Add(ButtonForget);
-            Controls.Add(ButtonDeleteValue);
-            Controls.Add(ButtonAddValue);
-            Controls.Add(ButtonAddKey);
-            Controls.Add(ButtonSave);
-            Controls.Add(LsvPol);
-            KeyPreview = true;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "EditPol";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Edit Raw POL";
-            KeyDown += new KeyEventHandler(EditPol_KeyDown);
-            ResumeLayout(false);
+            this.AcceptButton = this.ButtonSave;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(579, 293);
+            this.Controls.Add(this.ButtonExport);
+            this.Controls.Add(this.ButtonImport);
+            this.Controls.Add(this.ButtonEdit);
+            this.Controls.Add(this.ButtonForget);
+            this.Controls.Add(this.ButtonDeleteValue);
+            this.Controls.Add(this.ButtonAddValue);
+            this.Controls.Add(this.ButtonAddKey);
+            this.Controls.Add(this.ButtonSave);
+            this.Controls.Add(this.LsvPol);
+            this.KeyPreview = true;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "EditPol";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Edit Raw POL";
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.EditPol_KeyDown);
+            this.ResumeLayout(false);
+
         }
 
         internal ListView LsvPol;

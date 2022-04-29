@@ -17,6 +17,8 @@ namespace PolicyPlus
     {
         public Main()
         {
+            Application.EnableVisualStyles();
+            //Application.SetCompatibleTextRenderingDefault(false);
             InitializeComponent();
             var version = Assembly.GetExecutingAssembly().GetName().Version.ToString().Substring(0, 5);
             if (!string.IsNullOrEmpty(version))
@@ -146,15 +148,34 @@ namespace PolicyPlus
             UpdatePolicyInfo();
         }
 
+        private void ChangeColumnsAutoSize(bool shouldEnable)
+        {
+            var columnsList = new List<string>() { "State", "Icon" };
+            if (shouldEnable)
+            {
+                columnsList.ForEach(column =>
+                {
+                    PoliciesGrid.Columns[column].AutoSizeMode = (DataGridViewAutoSizeColumnMode)DataGridViewAutoSizeColumnsMode.AllCells;
+                });
+            }
+            else
+            {
+                columnsList.ForEach(column =>
+                {
+                    PoliciesGrid.Columns[column].AutoSizeMode = (DataGridViewAutoSizeColumnMode)DataGridViewAutoSizeColumnsMode.None;
+                });
+            }
+        }
+
         public void UpdateCategoryListing()
         {
             // Update the right pane to include the current category's children
             bool inSameCategory = false;
             var topItemIndex = PoliciesGrid.FirstDisplayedScrollingRowIndex;
+            ChangeColumnsAutoSize(false);
             PoliciesGrid.Rows.Clear();
 
             PoliciesGrid.Columns["Icon"].DefaultCellStyle.NullValue = null;
-
             if (CurrentCategory is object)
             {
                 if (CurrentSetting is object && ReferenceEquals(CurrentSetting.Category, CurrentCategory))
@@ -201,22 +222,18 @@ namespace PolicyPlus
                     row.Tag = policy;
                 }
 
-                if (inSameCategory) // Minimize the list view's jumping around when refreshing
-                {
-                    if (PoliciesGrid.Rows.Count > topItemIndex)
-                        PoliciesGrid.FirstDisplayedScrollingRowIndex = topItemIndex;
-                }
 
                 if (CategoriesTree.SelectedNode is null || !ReferenceEquals(CategoriesTree.SelectedNode.Tag, CurrentCategory)) // Update the tree view
                 {
                     CategoriesTree.SelectedNode = CategoryNodes[CurrentCategory];
                 }
             }
-        }
-
-        private void BindData(DataTable data)
-        {
-            PoliciesGrid.DataSource = data;
+            ChangeColumnsAutoSize(true);
+            if (inSameCategory) // Minimize the list view's jumping around when refreshing
+            {
+                if (PoliciesGrid.Rows.Count > topItemIndex)
+                    PoliciesGrid.FirstDisplayedScrollingRowIndex = topItemIndex;
+            }
         }
 
         public void UpdatePolicyInfo()
