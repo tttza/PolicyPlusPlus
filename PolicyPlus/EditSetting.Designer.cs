@@ -115,7 +115,7 @@ namespace PolicyPlus
             this.CommentLabel.Location = new System.Drawing.Point(0, 0);
             this.CommentLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.CommentLabel.Name = "CommentLabel";
-            this.CommentLabel.Size = new System.Drawing.Size(100, 59);
+            this.CommentLabel.Size = new System.Drawing.Size(100, 58);
             this.CommentLabel.TabIndex = 2;
             this.CommentLabel.Text = "Comment";
             this.CommentLabel.TextAlign = System.Drawing.ContentAlignment.TopRight;
@@ -126,7 +126,7 @@ namespace PolicyPlus
             this.SupportedLabel.Location = new System.Drawing.Point(0, 0);
             this.SupportedLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.SupportedLabel.Name = "SupportedLabel";
-            this.SupportedLabel.Size = new System.Drawing.Size(100, 70);
+            this.SupportedLabel.Size = new System.Drawing.Size(100, 71);
             this.SupportedLabel.TabIndex = 4;
             this.SupportedLabel.Text = "Supported on";
             this.SupportedLabel.TextAlign = System.Drawing.ContentAlignment.TopRight;
@@ -151,7 +151,7 @@ namespace PolicyPlus
             this.CommentTextbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.CommentTextbox.Multiline = true;
             this.CommentTextbox.Name = "CommentTextbox";
-            this.CommentTextbox.Size = new System.Drawing.Size(448, 59);
+            this.CommentTextbox.Size = new System.Drawing.Size(448, 58);
             this.CommentTextbox.TabIndex = 100;
             this.CommentTextbox.TabStop = false;
             // 
@@ -163,7 +163,7 @@ namespace PolicyPlus
             this.SupportedTextbox.Multiline = true;
             this.SupportedTextbox.Name = "SupportedTextbox";
             this.SupportedTextbox.ReadOnly = true;
-            this.SupportedTextbox.Size = new System.Drawing.Size(448, 70);
+            this.SupportedTextbox.Size = new System.Drawing.Size(448, 71);
             this.SupportedTextbox.TabIndex = 101;
             this.SupportedTextbox.TabStop = false;
             // 
@@ -233,6 +233,7 @@ namespace PolicyPlus
             this.ExtraOptionsTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 23F));
             this.ExtraOptionsTable.Size = new System.Drawing.Size(396, 23);
             this.ExtraOptionsTable.TabIndex = 0;
+            this.ExtraOptionsTable.DoubleClick += new System.EventHandler(this.CopyToClipboard);
             // 
             // CloseButton
             // 
@@ -347,7 +348,7 @@ namespace PolicyPlus
             this.splitContainer4.Panel2.Controls.Add(this.panel3);
             this.splitContainer4.Panel2MinSize = 70;
             this.splitContainer4.Size = new System.Drawing.Size(552, 133);
-            this.splitContainer4.SplitterDistance = 59;
+            this.splitContainer4.SplitterDistance = 58;
             this.splitContainer4.TabIndex = 104;
             // 
             // panel4
@@ -358,7 +359,7 @@ namespace PolicyPlus
             this.panel4.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel4.Location = new System.Drawing.Point(0, 0);
             this.panel4.Name = "panel4";
-            this.panel4.Size = new System.Drawing.Size(552, 59);
+            this.panel4.Size = new System.Drawing.Size(552, 58);
             this.panel4.TabIndex = 103;
             // 
             // splitContainer5
@@ -375,7 +376,7 @@ namespace PolicyPlus
             // splitContainer5.Panel2
             // 
             this.splitContainer5.Panel2.Controls.Add(this.CommentTextbox);
-            this.splitContainer5.Size = new System.Drawing.Size(552, 59);
+            this.splitContainer5.Size = new System.Drawing.Size(552, 58);
             this.splitContainer5.SplitterDistance = 100;
             this.splitContainer5.TabIndex = 102;
             // 
@@ -385,7 +386,7 @@ namespace PolicyPlus
             this.panel6.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel6.Location = new System.Drawing.Point(0, 0);
             this.panel6.Name = "panel6";
-            this.panel6.Size = new System.Drawing.Size(100, 59);
+            this.panel6.Size = new System.Drawing.Size(100, 58);
             this.panel6.TabIndex = 101;
             // 
             // panel3
@@ -394,7 +395,7 @@ namespace PolicyPlus
             this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel3.Location = new System.Drawing.Point(0, 0);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(552, 70);
+            this.panel3.Size = new System.Drawing.Size(552, 71);
             this.panel3.TabIndex = 102;
             // 
             // splitContainer6
@@ -411,7 +412,7 @@ namespace PolicyPlus
             // splitContainer6.Panel2
             // 
             this.splitContainer6.Panel2.Controls.Add(this.SupportedTextbox);
-            this.splitContainer6.Size = new System.Drawing.Size(552, 70);
+            this.splitContainer6.Size = new System.Drawing.Size(552, 71);
             this.splitContainer6.SplitterDistance = 100;
             this.splitContainer6.TabIndex = 5;
             // 
@@ -421,7 +422,7 @@ namespace PolicyPlus
             this.panel5.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel5.Location = new System.Drawing.Point(0, 0);
             this.panel5.Name = "panel5";
-            this.panel5.Size = new System.Drawing.Size(100, 70);
+            this.panel5.Size = new System.Drawing.Size(100, 71);
             this.panel5.TabIndex = 102;
             // 
             // splitContainer1

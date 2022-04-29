@@ -581,5 +581,11 @@ namespace PolicyPlus
                 return DisplayName;
             }
         }
+
+        private void CopyToClipboard(object sender, EventArgs e)
+        {
+            var tag = (string)((Button)sender).Tag;
+            Clipboard.SetText(tag);
+        }
     }
 }
