@@ -37,8 +37,6 @@ namespace PolicyPlus
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.ColumnHeader ChSettingEnabled;
-            System.Windows.Forms.ColumnHeader ChSettingCommented;
             System.Windows.Forms.ToolStripSeparator ToolStripSeparator1;
             System.Windows.Forms.ToolStripSeparator ToolStripSeparator2;
             System.Windows.Forms.ToolStripSeparator ToolStripSeparator3;
@@ -48,6 +46,7 @@ namespace PolicyPlus
             System.Windows.Forms.ToolStripStatusLabel ToolStripStatusLabel2;
             System.Windows.Forms.ToolStripSeparator ToolStripSeparator6;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.MainMenu = new System.Windows.Forms.MenuStrip();
             this.FileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -103,9 +102,6 @@ namespace PolicyPlus
             this.ComboAppliesTo = new System.Windows.Forms.ComboBox();
             this.panel1 = new System.Windows.Forms.Panel();
             this.PoliciesGrid = new System.Windows.Forms.DataGridView();
-            this.PoliciesList = new System.Windows.Forms.ListView();
-            this.ChSettingName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.ChSettingID = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.SettingInfoPanel = new System.Windows.Forms.Panel();
             this.PolicyInfoTable = new System.Windows.Forms.TableLayoutPanel();
             this.PolicyTitleLabel = new System.Windows.Forms.Label();
@@ -123,8 +119,6 @@ namespace PolicyPlus
             this._Name = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.ID = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Comment = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            ChSettingEnabled = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            ChSettingCommented = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             ToolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             ToolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             ToolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
@@ -149,19 +143,6 @@ namespace PolicyPlus
             ((System.ComponentModel.ISupportInitialize)(this.PictureBox1)).BeginInit();
             this.InfoStrip.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // ChSettingEnabled
-            // 
-            ChSettingEnabled.DisplayIndex = 0;
-            ChSettingEnabled.Text = "State";
-            ChSettingEnabled.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            ChSettingEnabled.Width = 140;
-            // 
-            // ChSettingCommented
-            // 
-            ChSettingCommented.DisplayIndex = 3;
-            ChSettingCommented.Text = "Comment";
-            ChSettingCommented.Width = 200;
             // 
             // ToolStripSeparator1
             // 
@@ -724,7 +705,6 @@ namespace PolicyPlus
             this.panel1.AutoSize = true;
             this.panel1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.panel1.Controls.Add(this.PoliciesGrid);
-            this.panel1.Controls.Add(this.PoliciesList);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
@@ -737,6 +717,7 @@ namespace PolicyPlus
             this.PoliciesGrid.AllowUserToDeleteRows = false;
             this.PoliciesGrid.AllowUserToResizeRows = false;
             this.PoliciesGrid.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.PoliciesGrid.BackgroundColor = System.Drawing.SystemColors.Window;
             this.PoliciesGrid.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.PoliciesGrid.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.None;
             this.PoliciesGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
@@ -747,59 +728,21 @@ namespace PolicyPlus
             this.ID,
             this.Comment});
             this.PoliciesGrid.ContextMenuStrip = this.PolicyObjectContext;
-            this.PoliciesGrid.Location = new System.Drawing.Point(116, 507);
+            this.PoliciesGrid.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.PoliciesGrid.Location = new System.Drawing.Point(0, 0);
             this.PoliciesGrid.MultiSelect = false;
             this.PoliciesGrid.Name = "PoliciesGrid";
             this.PoliciesGrid.ReadOnly = true;
             this.PoliciesGrid.RowHeadersVisible = false;
             this.PoliciesGrid.RowHeadersWidth = 51;
             this.PoliciesGrid.RowHeadersWidthSizeMode = System.Windows.Forms.DataGridViewRowHeadersWidthSizeMode.DisableResizing;
-            this.PoliciesGrid.RowTemplate.Height = 24;
+            this.PoliciesGrid.RowTemplate.Height = 20;
             this.PoliciesGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.PoliciesGrid.Size = new System.Drawing.Size(732, 150);
+            this.PoliciesGrid.Size = new System.Drawing.Size(878, 732);
             this.PoliciesGrid.TabIndex = 4;
             this.PoliciesGrid.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.PoliciesGrid_CellContentClick);
             this.PoliciesGrid.CellContentDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.PoliciesGrid_CellContentDoubleClick);
             this.PoliciesGrid.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.PoliciesGrid_CellContentDoubleClick);
-            // 
-            // PoliciesList
-            // 
-            this.PoliciesList.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.PoliciesList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.ChSettingName,
-            ChSettingEnabled,
-            ChSettingCommented,
-            this.ChSettingID});
-            this.PoliciesList.ContextMenuStrip = this.PolicyObjectContext;
-            this.PoliciesList.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PoliciesList.FullRowSelect = true;
-            this.PoliciesList.HideSelection = false;
-            this.PoliciesList.Location = new System.Drawing.Point(0, 0);
-            this.PoliciesList.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.PoliciesList.MultiSelect = false;
-            this.PoliciesList.Name = "PoliciesList";
-            this.PoliciesList.ShowItemToolTips = true;
-            this.PoliciesList.Size = new System.Drawing.Size(878, 732);
-            this.PoliciesList.SmallImageList = this.PolicyIcons;
-            this.PoliciesList.TabIndex = 3;
-            this.PoliciesList.UseCompatibleStateImageBehavior = false;
-            this.PoliciesList.View = System.Windows.Forms.View.Details;
-            this.PoliciesList.SelectedIndexChanged += new System.EventHandler(this.PoliciesList_SelectedIndexChanged);
-            this.PoliciesList.SizeChanged += new System.EventHandler(this.ResizePolicyNameColumn);
-            this.PoliciesList.DoubleClick += new System.EventHandler(this.PoliciesList_DoubleClick);
-            this.PoliciesList.KeyDown += new System.Windows.Forms.KeyEventHandler(this.PoliciesList_KeyDown);
-            // 
-            // ChSettingName
-            // 
-            this.ChSettingName.DisplayIndex = 1;
-            this.ChSettingName.Text = "Name";
-            this.ChSettingName.Width = 346;
-            // 
-            // ChSettingID
-            // 
-            this.ChSettingID.DisplayIndex = 2;
-            this.ChSettingID.Text = "ID";
-            this.ChSettingID.Width = 130;
             // 
             // SettingInfoPanel
             // 
@@ -948,8 +891,12 @@ namespace PolicyPlus
             // 
             // State
             // 
-            this.State.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.State.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
             this.State.ContextMenuStrip = this.PolicyObjectContext;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle1.Padding = new System.Windows.Forms.Padding(5, 0, 5, 0);
+            this.State.DefaultCellStyle = dataGridViewCellStyle1;
+            this.State.Frozen = true;
             this.State.HeaderText = "State";
             this.State.MinimumWidth = 6;
             this.State.Name = "State";
@@ -958,7 +905,7 @@ namespace PolicyPlus
             // 
             // Icon
             // 
-            this.Icon.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.Icon.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
             this.Icon.ContextMenuStrip = this.PolicyObjectContext;
             dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
             dataGridViewCellStyle2.NullValue = "null";
@@ -976,6 +923,7 @@ namespace PolicyPlus
             // 
             this._Name.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
             this._Name.ContextMenuStrip = this.PolicyObjectContext;
+            this._Name.FillWeight = 26.31579F;
             this._Name.HeaderText = "Name";
             this._Name.MinimumWidth = 6;
             this._Name.Name = "_Name";
@@ -985,7 +933,7 @@ namespace PolicyPlus
             // 
             this.ID.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
             this.ID.ContextMenuStrip = this.PolicyObjectContext;
-            this.ID.FillWeight = 50F;
+            this.ID.FillWeight = 13.15789F;
             this.ID.HeaderText = "ID";
             this.ID.MinimumWidth = 6;
             this.ID.Name = "ID";
@@ -993,11 +941,14 @@ namespace PolicyPlus
             // 
             // Comment
             // 
+            this.Comment.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             this.Comment.ContextMenuStrip = this.PolicyObjectContext;
+            this.Comment.FillWeight = 210.5263F;
             this.Comment.HeaderText = "Comment";
             this.Comment.MinimumWidth = 6;
             this.Comment.Name = "Comment";
             this.Comment.ReadOnly = true;
+            this.Comment.Visible = false;
             // 
             // Main
             // 
@@ -1016,7 +967,6 @@ namespace PolicyPlus
             this.Closed += new System.EventHandler(this.Main_Closed);
             this.Load += new System.EventHandler(this.Main_Load);
             this.Shown += new System.EventHandler(this.Main_Shown);
-            this.SizeChanged += new System.EventHandler(this.ResizePolicyNameColumn);
             this.MainMenu.ResumeLayout(false);
             this.MainMenu.PerformLayout();
             this.SplitContainer.Panel1.ResumeLayout(false);
@@ -1052,14 +1002,12 @@ namespace PolicyPlus
         internal ToolStripMenuItem ExitToolStripMenuItem;
         internal SplitContainer SplitContainer;
         internal TreeView CategoriesTree;
-        internal ListView PoliciesList;
         internal Panel SettingInfoPanel;
         internal ImageList PolicyIcons;
         internal TableLayoutPanel PolicyInfoTable;
         internal Label PolicyTitleLabel;
         internal Label PolicySupportedLabel;
         internal Label PolicyDescLabel;
-        internal ColumnHeader ChSettingName;
         internal ToolStripMenuItem ViewToolStripMenuItem;
         internal ToolStripMenuItem EmptyCategoriesToolStripMenuItem;
         internal ComboBox ComboAppliesTo;
@@ -1100,7 +1048,6 @@ namespace PolicyPlus
         internal TableLayoutPanel PolicyIsPrefTable;
         internal PictureBox PictureBox1;
         internal Label PolicyIsPrefLabel;
-        private ColumnHeader ChSettingID;
         internal ToolStripMenuItem CmeAllDetailsFormatted;
         private ToolStripSeparator toolStripSeparator7;
         internal ToolStripMenuItem CmeCopyToClipboard;
