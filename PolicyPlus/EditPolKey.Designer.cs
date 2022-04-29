@@ -35,60 +35,61 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label Label1;
-            TextName = new TextBox();
-            ButtonOK = new Button();
-            Label1 = new Label();
-            SuspendLayout();
+            System.Windows.Forms.Label Label1;
+            this.TextName = new System.Windows.Forms.TextBox();
+            this.ButtonOK = new System.Windows.Forms.Button();
+            Label1 = new System.Windows.Forms.Label();
+            this.SuspendLayout();
             // 
             // Label1
             // 
             Label1.AutoSize = true;
-            Label1.Location = new Point(12, 15);
+            Label1.Location = new System.Drawing.Point(12, 14);
             Label1.Name = "Label1";
-            Label1.Size = new Size(35, 13);
+            Label1.Size = new System.Drawing.Size(34, 12);
             Label1.TabIndex = 0;
             Label1.Text = "Name";
             // 
             // TextName
             // 
-            TextName.Location = new Point(53, 12);
-            TextName.Name = "TextName";
-            TextName.Size = new Size(223, 20);
-            TextName.TabIndex = 1;
+            this.TextName.Location = new System.Drawing.Point(53, 11);
+            this.TextName.Name = "TextName";
+            this.TextName.Size = new System.Drawing.Size(223, 19);
+            this.TextName.TabIndex = 1;
             // 
             // ButtonOK
             // 
-            ButtonOK.DialogResult = DialogResult.OK;
-            ButtonOK.Location = new Point(201, 38);
-            ButtonOK.Name = "ButtonOK";
-            ButtonOK.Size = new Size(75, 23);
-            ButtonOK.TabIndex = 2;
-            ButtonOK.Text = "OK";
-            ButtonOK.UseVisualStyleBackColor = true;
+            this.ButtonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.ButtonOK.Location = new System.Drawing.Point(201, 35);
+            this.ButtonOK.Name = "ButtonOK";
+            this.ButtonOK.Size = new System.Drawing.Size(75, 21);
+            this.ButtonOK.TabIndex = 2;
+            this.ButtonOK.Text = "OK";
+            this.ButtonOK.UseVisualStyleBackColor = true;
             // 
             // EditPolKey
             // 
-            AcceptButton = ButtonOK;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(288, 73);
-            Controls.Add(ButtonOK);
-            Controls.Add(TextName);
-            Controls.Add(Label1);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            KeyPreview = true;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "EditPolKey";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "New Key";
-            KeyDown += new KeyEventHandler(EditPolKey_KeyDown);
-            Shown += new EventHandler(EditPolKey_Shown);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.ButtonOK;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(288, 67);
+            this.Controls.Add(this.ButtonOK);
+            this.Controls.Add(this.TextName);
+            this.Controls.Add(Label1);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.KeyPreview = true;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "EditPolKey";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "New Key";
+            this.Shown += new System.EventHandler(this.EditPolKey_Shown);
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.EditPolKey_KeyDown);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal TextBox TextName;

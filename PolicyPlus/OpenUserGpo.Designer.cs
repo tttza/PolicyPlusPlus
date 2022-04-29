@@ -35,93 +35,94 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label Label1;
-            Label Label2;
-            UsernameTextbox = new TextBox();
-            SearchButton = new Button();
-            SearchButton.Click += new EventHandler(SearchButton_Click);
-            SidTextbox = new TextBox();
-            OkButton = new Button();
-            OkButton.Click += new EventHandler(OkButton_Click);
-            Label1 = new Label();
-            Label2 = new Label();
-            SuspendLayout();
+            System.Windows.Forms.Label Label1;
+            System.Windows.Forms.Label Label2;
+            this.UsernameTextbox = new System.Windows.Forms.TextBox();
+            this.SearchButton = new System.Windows.Forms.Button();
+            this.SidTextbox = new System.Windows.Forms.TextBox();
+            this.OkButton = new System.Windows.Forms.Button();
+            Label1 = new System.Windows.Forms.Label();
+            Label2 = new System.Windows.Forms.Label();
+            this.SuspendLayout();
             // 
             // Label1
             // 
             Label1.AutoSize = true;
-            Label1.Location = new Point(12, 15);
+            Label1.Location = new System.Drawing.Point(12, 14);
             Label1.Name = "Label1";
-            Label1.Size = new Size(95, 13);
+            Label1.Size = new System.Drawing.Size(98, 12);
             Label1.TabIndex = 0;
             Label1.Text = "Look up username";
             // 
             // Label2
             // 
             Label2.AutoSize = true;
-            Label2.Location = new Point(12, 41);
+            Label2.Location = new System.Drawing.Point(12, 38);
             Label2.Name = "Label2";
-            Label2.Size = new Size(25, 13);
+            Label2.Size = new System.Drawing.Size(23, 12);
             Label2.TabIndex = 3;
             Label2.Text = "SID";
             // 
             // UsernameTextbox
             // 
-            UsernameTextbox.Location = new Point(113, 12);
-            UsernameTextbox.Name = "UsernameTextbox";
-            UsernameTextbox.Size = new Size(153, 20);
-            UsernameTextbox.TabIndex = 1;
+            this.UsernameTextbox.Location = new System.Drawing.Point(113, 11);
+            this.UsernameTextbox.Name = "UsernameTextbox";
+            this.UsernameTextbox.Size = new System.Drawing.Size(153, 19);
+            this.UsernameTextbox.TabIndex = 1;
             // 
             // SearchButton
             // 
-            SearchButton.Location = new Point(272, 10);
-            SearchButton.Name = "SearchButton";
-            SearchButton.Size = new Size(57, 23);
-            SearchButton.TabIndex = 2;
-            SearchButton.Text = "Search";
-            SearchButton.UseVisualStyleBackColor = true;
+            this.SearchButton.Location = new System.Drawing.Point(272, 9);
+            this.SearchButton.Name = "SearchButton";
+            this.SearchButton.Size = new System.Drawing.Size(57, 21);
+            this.SearchButton.TabIndex = 2;
+            this.SearchButton.Text = "Search";
+            this.SearchButton.UseVisualStyleBackColor = true;
+            this.SearchButton.Click += new System.EventHandler(this.SearchButton_Click);
             // 
             // SidTextbox
             // 
-            SidTextbox.Location = new Point(43, 38);
-            SidTextbox.Name = "SidTextbox";
-            SidTextbox.Size = new Size(286, 20);
-            SidTextbox.TabIndex = 3;
+            this.SidTextbox.Location = new System.Drawing.Point(43, 35);
+            this.SidTextbox.Name = "SidTextbox";
+            this.SidTextbox.Size = new System.Drawing.Size(286, 19);
+            this.SidTextbox.TabIndex = 3;
             // 
             // OkButton
             // 
-            OkButton.Location = new Point(254, 64);
-            OkButton.Name = "OkButton";
-            OkButton.Size = new Size(75, 23);
-            OkButton.TabIndex = 4;
-            OkButton.Text = "OK";
-            OkButton.UseVisualStyleBackColor = true;
+            this.OkButton.Location = new System.Drawing.Point(254, 59);
+            this.OkButton.Name = "OkButton";
+            this.OkButton.Size = new System.Drawing.Size(75, 21);
+            this.OkButton.TabIndex = 4;
+            this.OkButton.Text = "OK";
+            this.OkButton.UseVisualStyleBackColor = true;
+            this.OkButton.Click += new System.EventHandler(this.OkButton_Click);
             // 
             // OpenUserGpo
             // 
-            AcceptButton = OkButton;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(341, 99);
-            Controls.Add(OkButton);
-            Controls.Add(SidTextbox);
-            Controls.Add(Label2);
-            Controls.Add(SearchButton);
-            Controls.Add(UsernameTextbox);
-            Controls.Add(Label1);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            KeyPreview = true;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "OpenUserGpo";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Select User SID";
-            Shown += new EventHandler(OpenUserGpo_Shown);
-            KeyUp += new KeyEventHandler(OpenUserGpo_KeyUp);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.OkButton;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(341, 91);
+            this.Controls.Add(this.OkButton);
+            this.Controls.Add(this.SidTextbox);
+            this.Controls.Add(Label2);
+            this.Controls.Add(this.SearchButton);
+            this.Controls.Add(this.UsernameTextbox);
+            this.Controls.Add(Label1);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.KeyPreview = true;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "OpenUserGpo";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Select User SID";
+            this.Shown += new System.EventHandler(this.OpenUserGpo_Shown);
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OpenUserGpo_KeyUp);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal TextBox UsernameTextbox;

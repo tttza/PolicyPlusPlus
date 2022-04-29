@@ -35,128 +35,129 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label LabelFromWhere;
-            OptLocalFolder = new RadioButton();
-            OptLocalFolder.CheckedChanged += new EventHandler(Options_CheckedChanged);
-            OptSysvol = new RadioButton();
-            OptSysvol.CheckedChanged += new EventHandler(Options_CheckedChanged);
-            OptCustomFolder = new RadioButton();
-            OptCustomFolder.CheckedChanged += new EventHandler(Options_CheckedChanged);
-            TextFolder = new TextBox();
-            ButtonOK = new Button();
-            ButtonOK.Click += new EventHandler(ButtonOK_Click);
-            ButtonBrowse = new Button();
-            ButtonBrowse.Click += new EventHandler(ButtonBrowse_Click);
-            ClearWorkspaceCheckbox = new CheckBox();
-            LabelFromWhere = new Label();
-            SuspendLayout();
+            System.Windows.Forms.Label LabelFromWhere;
+            this.OptLocalFolder = new System.Windows.Forms.RadioButton();
+            this.OptSysvol = new System.Windows.Forms.RadioButton();
+            this.OptCustomFolder = new System.Windows.Forms.RadioButton();
+            this.TextFolder = new System.Windows.Forms.TextBox();
+            this.ButtonOK = new System.Windows.Forms.Button();
+            this.ButtonBrowse = new System.Windows.Forms.Button();
+            this.ClearWorkspaceCheckbox = new System.Windows.Forms.CheckBox();
+            LabelFromWhere = new System.Windows.Forms.Label();
+            this.SuspendLayout();
             // 
             // LabelFromWhere
             // 
             LabelFromWhere.AutoSize = true;
-            LabelFromWhere.Location = new Point(12, 9);
+            LabelFromWhere.Location = new System.Drawing.Point(12, 8);
             LabelFromWhere.Name = "LabelFromWhere";
-            LabelFromWhere.Size = new Size(228, 13);
+            LabelFromWhere.Size = new System.Drawing.Size(246, 12);
             LabelFromWhere.TabIndex = 0;
             LabelFromWhere.Text = "Where would you like to load ADMX files from?";
             // 
             // OptLocalFolder
             // 
-            OptLocalFolder.AutoSize = true;
-            OptLocalFolder.Location = new Point(15, 25);
-            OptLocalFolder.Name = "OptLocalFolder";
-            OptLocalFolder.Size = new Size(196, 17);
-            OptLocalFolder.TabIndex = 1;
-            OptLocalFolder.TabStop = true;
-            OptLocalFolder.Text = "This system's PolicyDefinitions folder";
-            OptLocalFolder.UseVisualStyleBackColor = true;
+            this.OptLocalFolder.AutoSize = true;
+            this.OptLocalFolder.Location = new System.Drawing.Point(15, 23);
+            this.OptLocalFolder.Name = "OptLocalFolder";
+            this.OptLocalFolder.Size = new System.Drawing.Size(217, 16);
+            this.OptLocalFolder.TabIndex = 1;
+            this.OptLocalFolder.TabStop = true;
+            this.OptLocalFolder.Text = "This system\'s PolicyDefinitions folder";
+            this.OptLocalFolder.UseVisualStyleBackColor = true;
+            this.OptLocalFolder.CheckedChanged += new System.EventHandler(this.Options_CheckedChanged);
             // 
             // OptSysvol
             // 
-            OptSysvol.AutoSize = true;
-            OptSysvol.Location = new Point(15, 48);
-            OptSysvol.Name = "OptSysvol";
-            OptSysvol.Size = new Size(133, 17);
-            OptSysvol.TabIndex = 2;
-            OptSysvol.TabStop = true;
-            OptSysvol.Text = "The domain's SYSVOL";
-            OptSysvol.UseVisualStyleBackColor = true;
+            this.OptSysvol.AutoSize = true;
+            this.OptSysvol.Location = new System.Drawing.Point(15, 44);
+            this.OptSysvol.Name = "OptSysvol";
+            this.OptSysvol.Size = new System.Drawing.Size(137, 16);
+            this.OptSysvol.TabIndex = 2;
+            this.OptSysvol.TabStop = true;
+            this.OptSysvol.Text = "The domain\'s SYSVOL";
+            this.OptSysvol.UseVisualStyleBackColor = true;
+            this.OptSysvol.CheckedChanged += new System.EventHandler(this.Options_CheckedChanged);
             // 
             // OptCustomFolder
             // 
-            OptCustomFolder.AutoSize = true;
-            OptCustomFolder.Location = new Point(15, 71);
-            OptCustomFolder.Name = "OptCustomFolder";
-            OptCustomFolder.Size = new Size(77, 17);
-            OptCustomFolder.TabIndex = 3;
-            OptCustomFolder.TabStop = true;
-            OptCustomFolder.Text = "This folder:";
-            OptCustomFolder.UseVisualStyleBackColor = true;
+            this.OptCustomFolder.AutoSize = true;
+            this.OptCustomFolder.Location = new System.Drawing.Point(15, 66);
+            this.OptCustomFolder.Name = "OptCustomFolder";
+            this.OptCustomFolder.Size = new System.Drawing.Size(80, 16);
+            this.OptCustomFolder.TabIndex = 3;
+            this.OptCustomFolder.TabStop = true;
+            this.OptCustomFolder.Text = "This folder:";
+            this.OptCustomFolder.UseVisualStyleBackColor = true;
+            this.OptCustomFolder.CheckedChanged += new System.EventHandler(this.Options_CheckedChanged);
             // 
             // TextFolder
             // 
-            TextFolder.Location = new Point(98, 70);
-            TextFolder.Name = "TextFolder";
-            TextFolder.Size = new Size(265, 20);
-            TextFolder.TabIndex = 4;
+            this.TextFolder.Location = new System.Drawing.Point(98, 65);
+            this.TextFolder.Name = "TextFolder";
+            this.TextFolder.Size = new System.Drawing.Size(265, 19);
+            this.TextFolder.TabIndex = 4;
             // 
             // ButtonOK
             // 
-            ButtonOK.Location = new Point(354, 96);
-            ButtonOK.Name = "ButtonOK";
-            ButtonOK.Size = new Size(75, 23);
-            ButtonOK.TabIndex = 7;
-            ButtonOK.Text = "OK";
-            ButtonOK.UseVisualStyleBackColor = true;
+            this.ButtonOK.Location = new System.Drawing.Point(354, 89);
+            this.ButtonOK.Name = "ButtonOK";
+            this.ButtonOK.Size = new System.Drawing.Size(75, 21);
+            this.ButtonOK.TabIndex = 7;
+            this.ButtonOK.Text = "OK";
+            this.ButtonOK.UseVisualStyleBackColor = true;
+            this.ButtonOK.Click += new System.EventHandler(this.ButtonOK_Click);
             // 
             // ButtonBrowse
             // 
-            ButtonBrowse.Location = new Point(369, 68);
-            ButtonBrowse.Name = "ButtonBrowse";
-            ButtonBrowse.Size = new Size(60, 23);
-            ButtonBrowse.TabIndex = 5;
-            ButtonBrowse.Text = "Browse";
-            ButtonBrowse.UseVisualStyleBackColor = true;
+            this.ButtonBrowse.Location = new System.Drawing.Point(369, 63);
+            this.ButtonBrowse.Name = "ButtonBrowse";
+            this.ButtonBrowse.Size = new System.Drawing.Size(60, 21);
+            this.ButtonBrowse.TabIndex = 5;
+            this.ButtonBrowse.Text = "Browse";
+            this.ButtonBrowse.UseVisualStyleBackColor = true;
+            this.ButtonBrowse.Click += new System.EventHandler(this.ButtonBrowse_Click);
             // 
             // ClearWorkspaceCheckbox
             // 
-            ClearWorkspaceCheckbox.AutoSize = true;
-            ClearWorkspaceCheckbox.Checked = true;
-            ClearWorkspaceCheckbox.CheckState = CheckState.Checked;
-            ClearWorkspaceCheckbox.Location = new Point(15, 100);
-            ClearWorkspaceCheckbox.Name = "ClearWorkspaceCheckbox";
-            ClearWorkspaceCheckbox.Size = new Size(239, 17);
-            ClearWorkspaceCheckbox.TabIndex = 6;
-            ClearWorkspaceCheckbox.Text = "Clear the workspace before adding this folder";
-            ClearWorkspaceCheckbox.UseVisualStyleBackColor = true;
+            this.ClearWorkspaceCheckbox.AutoSize = true;
+            this.ClearWorkspaceCheckbox.Checked = true;
+            this.ClearWorkspaceCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.ClearWorkspaceCheckbox.Location = new System.Drawing.Point(15, 92);
+            this.ClearWorkspaceCheckbox.Name = "ClearWorkspaceCheckbox";
+            this.ClearWorkspaceCheckbox.Size = new System.Drawing.Size(258, 16);
+            this.ClearWorkspaceCheckbox.TabIndex = 6;
+            this.ClearWorkspaceCheckbox.Text = "Clear the workspace before adding this folder";
+            this.ClearWorkspaceCheckbox.UseVisualStyleBackColor = true;
             // 
             // OpenAdmxFolder
             // 
-            AcceptButton = ButtonOK;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(441, 131);
-            Controls.Add(ClearWorkspaceCheckbox);
-            Controls.Add(ButtonBrowse);
-            Controls.Add(ButtonOK);
-            Controls.Add(TextFolder);
-            Controls.Add(OptCustomFolder);
-            Controls.Add(OptSysvol);
-            Controls.Add(OptLocalFolder);
-            Controls.Add(LabelFromWhere);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            KeyPreview = true;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "OpenAdmxFolder";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Open ADMX Folder";
-            Shown += new EventHandler(OpenAdmxFolder_Shown);
-            KeyUp += new KeyEventHandler(OpenAdmxFolder_KeyUp);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.ButtonOK;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(441, 121);
+            this.Controls.Add(this.ClearWorkspaceCheckbox);
+            this.Controls.Add(this.ButtonBrowse);
+            this.Controls.Add(this.ButtonOK);
+            this.Controls.Add(this.TextFolder);
+            this.Controls.Add(this.OptCustomFolder);
+            this.Controls.Add(this.OptSysvol);
+            this.Controls.Add(this.OptLocalFolder);
+            this.Controls.Add(LabelFromWhere);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.KeyPreview = true;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "OpenAdmxFolder";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Open ADMX Folder";
+            this.Shown += new System.EventHandler(this.OpenAdmxFolder_Shown);
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.OpenAdmxFolder_KeyUp);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal RadioButton OptLocalFolder;

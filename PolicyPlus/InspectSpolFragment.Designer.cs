@@ -36,103 +36,106 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            TextPolicyName = new TextBox();
-            LabelPolicy = new Label();
-            TextSpol = new TextBox();
-            TextSpol.KeyDown += new KeyEventHandler(TextSpol_KeyDown);
-            ButtonClose = new Button();
-            ButtonCopy = new Button();
-            ButtonCopy.Click += new EventHandler(ButtonCopy_Click);
-            CheckHeader = new CheckBox();
-            CheckHeader.CheckedChanged += new EventHandler(CheckHeader_CheckedChanged);
-            SuspendLayout();
+            this.TextPolicyName = new System.Windows.Forms.TextBox();
+            this.LabelPolicy = new System.Windows.Forms.Label();
+            this.TextSpol = new System.Windows.Forms.TextBox();
+            this.ButtonClose = new System.Windows.Forms.Button();
+            this.ButtonCopy = new System.Windows.Forms.Button();
+            this.CheckHeader = new System.Windows.Forms.CheckBox();
+            this.SuspendLayout();
             // 
             // TextPolicyName
             // 
-            TextPolicyName.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            TextPolicyName.Location = new Point(53, 12);
-            TextPolicyName.Name = "TextPolicyName";
-            TextPolicyName.ReadOnly = true;
-            TextPolicyName.Size = new Size(266, 20);
-            TextPolicyName.TabIndex = 0;
+            this.TextPolicyName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.TextPolicyName.Location = new System.Drawing.Point(53, 11);
+            this.TextPolicyName.Name = "TextPolicyName";
+            this.TextPolicyName.ReadOnly = true;
+            this.TextPolicyName.Size = new System.Drawing.Size(266, 19);
+            this.TextPolicyName.TabIndex = 0;
             // 
             // LabelPolicy
             // 
-            LabelPolicy.AutoSize = true;
-            LabelPolicy.Location = new Point(12, 15);
-            LabelPolicy.Name = "LabelPolicy";
-            LabelPolicy.Size = new Size(35, 13);
-            LabelPolicy.TabIndex = 1;
-            LabelPolicy.Text = "Policy";
+            this.LabelPolicy.AutoSize = true;
+            this.LabelPolicy.Location = new System.Drawing.Point(12, 14);
+            this.LabelPolicy.Name = "LabelPolicy";
+            this.LabelPolicy.Size = new System.Drawing.Size(36, 12);
+            this.LabelPolicy.TabIndex = 1;
+            this.LabelPolicy.Text = "Policy";
             // 
             // TextSpol
             // 
-            TextSpol.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-
-            TextSpol.Font = new Font("Consolas", 8.25f, FontStyle.Regular, GraphicsUnit.Point, Conversions.ToByte(0));
-            TextSpol.Location = new Point(12, 38);
-            TextSpol.Multiline = true;
-            TextSpol.Name = "TextSpol";
-            TextSpol.ReadOnly = true;
-            TextSpol.ScrollBars = ScrollBars.Both;
-            TextSpol.Size = new Size(307, 172);
-            TextSpol.TabIndex = 1;
-            TextSpol.WordWrap = false;
+            this.TextSpol.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.TextSpol.Font = new System.Drawing.Font("Consolas", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.TextSpol.Location = new System.Drawing.Point(12, 35);
+            this.TextSpol.Multiline = true;
+            this.TextSpol.Name = "TextSpol";
+            this.TextSpol.ReadOnly = true;
+            this.TextSpol.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+            this.TextSpol.Size = new System.Drawing.Size(307, 159);
+            this.TextSpol.TabIndex = 1;
+            this.TextSpol.WordWrap = false;
+            this.TextSpol.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TextSpol_KeyDown);
             // 
             // ButtonClose
             // 
-            ButtonClose.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            ButtonClose.DialogResult = DialogResult.OK;
-            ButtonClose.Location = new Point(244, 216);
-            ButtonClose.Name = "ButtonClose";
-            ButtonClose.Size = new Size(75, 23);
-            ButtonClose.TabIndex = 4;
-            ButtonClose.Text = "Close";
-            ButtonClose.UseVisualStyleBackColor = true;
+            this.ButtonClose.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ButtonClose.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.ButtonClose.Location = new System.Drawing.Point(244, 199);
+            this.ButtonClose.Name = "ButtonClose";
+            this.ButtonClose.Size = new System.Drawing.Size(75, 21);
+            this.ButtonClose.TabIndex = 4;
+            this.ButtonClose.Text = "Close";
+            this.ButtonClose.UseVisualStyleBackColor = true;
             // 
             // ButtonCopy
             // 
-            ButtonCopy.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            ButtonCopy.Location = new Point(163, 216);
-            ButtonCopy.Name = "ButtonCopy";
-            ButtonCopy.Size = new Size(75, 23);
-            ButtonCopy.TabIndex = 3;
-            ButtonCopy.Text = "Copy";
-            ButtonCopy.UseVisualStyleBackColor = true;
+            this.ButtonCopy.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ButtonCopy.Location = new System.Drawing.Point(163, 199);
+            this.ButtonCopy.Name = "ButtonCopy";
+            this.ButtonCopy.Size = new System.Drawing.Size(75, 21);
+            this.ButtonCopy.TabIndex = 3;
+            this.ButtonCopy.Text = "Copy";
+            this.ButtonCopy.UseVisualStyleBackColor = true;
+            this.ButtonCopy.Click += new System.EventHandler(this.ButtonCopy_Click);
             // 
             // CheckHeader
             // 
-            CheckHeader.AutoSize = true;
-            CheckHeader.Location = new Point(12, 220);
-            CheckHeader.Name = "CheckHeader";
-            CheckHeader.Size = new Size(128, 17);
-            CheckHeader.TabIndex = 2;
-            CheckHeader.Text = "Include SPOL header";
-            CheckHeader.UseVisualStyleBackColor = true;
+            this.CheckHeader.AutoSize = true;
+            this.CheckHeader.Location = new System.Drawing.Point(12, 203);
+            this.CheckHeader.Name = "CheckHeader";
+            this.CheckHeader.Size = new System.Drawing.Size(130, 16);
+            this.CheckHeader.TabIndex = 2;
+            this.CheckHeader.Text = "Include SPOL header";
+            this.CheckHeader.UseVisualStyleBackColor = true;
+            this.CheckHeader.CheckedChanged += new System.EventHandler(this.CheckHeader_CheckedChanged);
             // 
             // InspectSpolFragment
             // 
-            AcceptButton = ButtonClose;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            CancelButton = ButtonClose;
-            ClientSize = new Size(331, 251);
-            Controls.Add(CheckHeader);
-            Controls.Add(ButtonCopy);
-            Controls.Add(ButtonClose);
-            Controls.Add(TextSpol);
-            Controls.Add(LabelPolicy);
-            Controls.Add(TextPolicyName);
-            MinimizeBox = false;
-            MinimumSize = new Size(347, 290);
-            Name = "InspectSpolFragment";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Semantic Policy Fragment";
-            Shown += new EventHandler(InspectSpolFragment_Shown);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.ButtonClose;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.CancelButton = this.ButtonClose;
+            this.ClientSize = new System.Drawing.Size(331, 232);
+            this.Controls.Add(this.CheckHeader);
+            this.Controls.Add(this.ButtonCopy);
+            this.Controls.Add(this.ButtonClose);
+            this.Controls.Add(this.TextSpol);
+            this.Controls.Add(this.LabelPolicy);
+            this.Controls.Add(this.TextPolicyName);
+            this.MinimizeBox = false;
+            this.MinimumSize = new System.Drawing.Size(347, 271);
+            this.Name = "InspectSpolFragment";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Semantic Policy Fragment";
+            this.Shown += new System.EventHandler(this.InspectSpolFragment_Shown);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal TextBox TextPolicyName;

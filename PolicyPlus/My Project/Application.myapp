@@ -5,6 +5,7 @@
   <SingleInstance>false</SingleInstance>
   <ShutdownMode>0</ShutdownMode>
   <EnableVisualStyles>true</EnableVisualStyles>
+  <SetCompatibleTextRenderingDefault>false</SetCompatibleTextRenderingDefault>
   <AuthenticationMode>0</AuthenticationMode>
   <SaveMySettingsOnExit>true</SaveMySettingsOnExit>
 </MyApplicationData>

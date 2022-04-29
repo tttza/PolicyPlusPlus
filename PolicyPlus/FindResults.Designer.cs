@@ -45,16 +45,17 @@ namespace PolicyPlus
             this.GoButton = new System.Windows.Forms.Button();
             this.StopButton = new System.Windows.Forms.Button();
             this.BackToRegSearchBtn = new System.Windows.Forms.Button();
+            this.ChDirectory = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.SuspendLayout();
             // 
             // SearchProgress
             // 
             this.SearchProgress.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.SearchProgress.Location = new System.Drawing.Point(16, 29);
-            this.SearchProgress.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.SearchProgress.Location = new System.Drawing.Point(15, 29);
+            this.SearchProgress.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.SearchProgress.Name = "SearchProgress";
-            this.SearchProgress.Size = new System.Drawing.Size(633, 27);
+            this.SearchProgress.Size = new System.Drawing.Size(789, 28);
             this.SearchProgress.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.SearchProgress.TabIndex = 0;
             // 
@@ -65,15 +66,16 @@ namespace PolicyPlus
             | System.Windows.Forms.AnchorStyles.Right)));
             this.ResultsListview.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.ChTitle,
-            this.ChCategory});
+            this.ChCategory,
+            this.ChDirectory});
             this.ResultsListview.FullRowSelect = true;
             this.ResultsListview.HideSelection = false;
-            this.ResultsListview.Location = new System.Drawing.Point(16, 62);
-            this.ResultsListview.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.ResultsListview.Location = new System.Drawing.Point(13, 61);
+            this.ResultsListview.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.ResultsListview.MultiSelect = false;
             this.ResultsListview.Name = "ResultsListview";
             this.ResultsListview.ShowItemToolTips = true;
-            this.ResultsListview.Size = new System.Drawing.Size(707, 295);
+            this.ResultsListview.Size = new System.Drawing.Size(858, 295);
             this.ResultsListview.TabIndex = 1;
             this.ResultsListview.UseCompatibleStateImageBehavior = false;
             this.ResultsListview.View = System.Windows.Forms.View.Details;
@@ -89,12 +91,12 @@ namespace PolicyPlus
             // ChCategory
             // 
             this.ChCategory.Text = "Category";
-            this.ChCategory.Width = 259;
+            this.ChCategory.Width = 174;
             // 
             // ProgressLabel
             // 
             this.ProgressLabel.AutoSize = true;
-            this.ProgressLabel.Location = new System.Drawing.Point(16, 10);
+            this.ProgressLabel.Location = new System.Drawing.Point(15, 10);
             this.ProgressLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ProgressLabel.Name = "ProgressLabel";
             this.ProgressLabel.Size = new System.Drawing.Size(146, 15);
@@ -105,10 +107,10 @@ namespace PolicyPlus
             // 
             this.CloseButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.CloseButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CloseButton.Location = new System.Drawing.Point(624, 364);
-            this.CloseButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.CloseButton.Location = new System.Drawing.Point(780, 364);
+            this.CloseButton.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.CloseButton.Name = "CloseButton";
-            this.CloseButton.Size = new System.Drawing.Size(100, 27);
+            this.CloseButton.Size = new System.Drawing.Size(94, 28);
             this.CloseButton.TabIndex = 4;
             this.CloseButton.Text = "Close";
             this.CloseButton.UseVisualStyleBackColor = true;
@@ -116,10 +118,10 @@ namespace PolicyPlus
             // GoButton
             // 
             this.GoButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.GoButton.Location = new System.Drawing.Point(516, 364);
-            this.GoButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.GoButton.Location = new System.Drawing.Point(679, 364);
+            this.GoButton.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.GoButton.Name = "GoButton";
-            this.GoButton.Size = new System.Drawing.Size(100, 27);
+            this.GoButton.Size = new System.Drawing.Size(94, 28);
             this.GoButton.TabIndex = 3;
             this.GoButton.Text = "Go";
             this.GoButton.UseVisualStyleBackColor = true;
@@ -128,10 +130,10 @@ namespace PolicyPlus
             // StopButton
             // 
             this.StopButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.StopButton.Location = new System.Drawing.Point(657, 29);
-            this.StopButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.StopButton.Location = new System.Drawing.Point(811, 29);
+            this.StopButton.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.StopButton.Name = "StopButton";
-            this.StopButton.Size = new System.Drawing.Size(67, 27);
+            this.StopButton.Size = new System.Drawing.Size(62, 28);
             this.StopButton.TabIndex = 0;
             this.StopButton.Text = "Stop";
             this.StopButton.UseVisualStyleBackColor = true;
@@ -142,20 +144,25 @@ namespace PolicyPlus
             this.BackToRegSearchBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.BackToRegSearchBtn.DialogResult = System.Windows.Forms.DialogResult.Retry;
             this.BackToRegSearchBtn.Location = new System.Drawing.Point(13, 364);
-            this.BackToRegSearchBtn.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.BackToRegSearchBtn.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.BackToRegSearchBtn.Name = "BackToRegSearchBtn";
-            this.BackToRegSearchBtn.Size = new System.Drawing.Size(128, 27);
+            this.BackToRegSearchBtn.Size = new System.Drawing.Size(120, 28);
             this.BackToRegSearchBtn.TabIndex = 5;
             this.BackToRegSearchBtn.Text = "Back";
             this.BackToRegSearchBtn.UseVisualStyleBackColor = true;
             // 
+            // ChDirectory
+            // 
+            this.ChDirectory.Text = "Directory";
+            this.ChDirectory.Width = 640;
+            // 
             // FindResults
             // 
             this.AcceptButton = this.GoButton;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.CloseButton;
-            this.ClientSize = new System.Drawing.Size(740, 405);
+            this.ClientSize = new System.Drawing.Size(889, 405);
             this.Controls.Add(this.BackToRegSearchBtn);
             this.Controls.Add(this.StopButton);
             this.Controls.Add(this.GoButton);
@@ -163,7 +170,7 @@ namespace PolicyPlus
             this.Controls.Add(this.ProgressLabel);
             this.Controls.Add(this.ResultsListview);
             this.Controls.Add(this.SearchProgress);
-            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "FindResults";
@@ -188,5 +195,6 @@ namespace PolicyPlus
         internal Button GoButton;
         internal Button StopButton;
         internal Button BackToRegSearchBtn;
+        private ColumnHeader ChDirectory;
     }
 }

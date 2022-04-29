@@ -35,111 +35,112 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label Label1;
-            TextKey = new TextBox();
-            OptPurge = new RadioButton();
-            OptPurge.CheckedChanged += new EventHandler(ChoiceChanged);
-            OptClearFirst = new RadioButton();
-            OptClearFirst.CheckedChanged += new EventHandler(ChoiceChanged);
-            OptDeleteOne = new RadioButton();
-            OptDeleteOne.CheckedChanged += new EventHandler(ChoiceChanged);
-            TextValueName = new TextBox();
-            ButtonOK = new Button();
-            ButtonOK.Click += new EventHandler(ButtonOK_Click);
-            Label1 = new Label();
-            SuspendLayout();
+            System.Windows.Forms.Label Label1;
+            this.TextKey = new System.Windows.Forms.TextBox();
+            this.OptPurge = new System.Windows.Forms.RadioButton();
+            this.OptClearFirst = new System.Windows.Forms.RadioButton();
+            this.OptDeleteOne = new System.Windows.Forms.RadioButton();
+            this.TextValueName = new System.Windows.Forms.TextBox();
+            this.ButtonOK = new System.Windows.Forms.Button();
+            Label1 = new System.Windows.Forms.Label();
+            this.SuspendLayout();
             // 
             // Label1
             // 
             Label1.AutoSize = true;
-            Label1.Location = new Point(12, 15);
+            Label1.Location = new System.Drawing.Point(12, 14);
             Label1.Name = "Label1";
-            Label1.Size = new Size(72, 13);
+            Label1.Size = new System.Drawing.Size(76, 12);
             Label1.TabIndex = 1;
             Label1.Text = "Container key";
             // 
             // TextKey
             // 
-            TextKey.Location = new Point(90, 12);
-            TextKey.Name = "TextKey";
-            TextKey.ReadOnly = true;
-            TextKey.Size = new Size(179, 20);
-            TextKey.TabIndex = 0;
+            this.TextKey.Location = new System.Drawing.Point(90, 11);
+            this.TextKey.Name = "TextKey";
+            this.TextKey.ReadOnly = true;
+            this.TextKey.Size = new System.Drawing.Size(179, 19);
+            this.TextKey.TabIndex = 0;
             // 
             // OptPurge
             // 
-            OptPurge.AutoSize = true;
-            OptPurge.Location = new Point(15, 38);
-            OptPurge.Name = "OptPurge";
-            OptPurge.Size = new Size(189, 17);
-            OptPurge.TabIndex = 2;
-            OptPurge.TabStop = true;
-            OptPurge.Text = "Delete all the values under the key";
-            OptPurge.UseVisualStyleBackColor = true;
+            this.OptPurge.AutoSize = true;
+            this.OptPurge.Location = new System.Drawing.Point(15, 35);
+            this.OptPurge.Name = "OptPurge";
+            this.OptPurge.Size = new System.Drawing.Size(203, 16);
+            this.OptPurge.TabIndex = 2;
+            this.OptPurge.TabStop = true;
+            this.OptPurge.Text = "Delete all the values under the key";
+            this.OptPurge.UseVisualStyleBackColor = true;
+            this.OptPurge.CheckedChanged += new System.EventHandler(this.ChoiceChanged);
             // 
             // OptClearFirst
             // 
-            OptClearFirst.AutoSize = true;
-            OptClearFirst.Location = new Point(15, 61);
-            OptClearFirst.Name = "OptClearFirst";
-            OptClearFirst.Size = new Size(189, 17);
-            OptClearFirst.TabIndex = 3;
-            OptClearFirst.TabStop = true;
-            OptClearFirst.Text = "Clear the key before adding values";
-            OptClearFirst.UseVisualStyleBackColor = true;
+            this.OptClearFirst.AutoSize = true;
+            this.OptClearFirst.Location = new System.Drawing.Point(15, 56);
+            this.OptClearFirst.Name = "OptClearFirst";
+            this.OptClearFirst.Size = new System.Drawing.Size(202, 16);
+            this.OptClearFirst.TabIndex = 3;
+            this.OptClearFirst.TabStop = true;
+            this.OptClearFirst.Text = "Clear the key before adding values";
+            this.OptClearFirst.UseVisualStyleBackColor = true;
+            this.OptClearFirst.CheckedChanged += new System.EventHandler(this.ChoiceChanged);
             // 
             // OptDeleteOne
             // 
-            OptDeleteOne.AutoSize = true;
-            OptDeleteOne.Location = new Point(15, 84);
-            OptDeleteOne.Name = "OptDeleteOne";
-            OptDeleteOne.Size = new Size(107, 17);
-            OptDeleteOne.TabIndex = 4;
-            OptDeleteOne.TabStop = true;
-            OptDeleteOne.Text = "Delete this value:";
-            OptDeleteOne.UseVisualStyleBackColor = true;
+            this.OptDeleteOne.AutoSize = true;
+            this.OptDeleteOne.Location = new System.Drawing.Point(15, 78);
+            this.OptDeleteOne.Name = "OptDeleteOne";
+            this.OptDeleteOne.Size = new System.Drawing.Size(112, 16);
+            this.OptDeleteOne.TabIndex = 4;
+            this.OptDeleteOne.TabStop = true;
+            this.OptDeleteOne.Text = "Delete this value:";
+            this.OptDeleteOne.UseVisualStyleBackColor = true;
+            this.OptDeleteOne.CheckedChanged += new System.EventHandler(this.ChoiceChanged);
             // 
             // TextValueName
             // 
-            TextValueName.Enabled = false;
-            TextValueName.Location = new Point(128, 83);
-            TextValueName.Name = "TextValueName";
-            TextValueName.Size = new Size(141, 20);
-            TextValueName.TabIndex = 5;
+            this.TextValueName.Enabled = false;
+            this.TextValueName.Location = new System.Drawing.Point(128, 77);
+            this.TextValueName.Name = "TextValueName";
+            this.TextValueName.Size = new System.Drawing.Size(141, 19);
+            this.TextValueName.TabIndex = 5;
             // 
             // ButtonOK
             // 
-            ButtonOK.Location = new Point(194, 109);
-            ButtonOK.Name = "ButtonOK";
-            ButtonOK.Size = new Size(75, 23);
-            ButtonOK.TabIndex = 6;
-            ButtonOK.Text = "OK";
-            ButtonOK.UseVisualStyleBackColor = true;
+            this.ButtonOK.Location = new System.Drawing.Point(194, 101);
+            this.ButtonOK.Name = "ButtonOK";
+            this.ButtonOK.Size = new System.Drawing.Size(75, 21);
+            this.ButtonOK.TabIndex = 6;
+            this.ButtonOK.Text = "OK";
+            this.ButtonOK.UseVisualStyleBackColor = true;
+            this.ButtonOK.Click += new System.EventHandler(this.ButtonOK_Click);
             // 
             // EditPolDelete
             // 
-            AcceptButton = ButtonOK;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(281, 144);
-            Controls.Add(ButtonOK);
-            Controls.Add(TextValueName);
-            Controls.Add(OptDeleteOne);
-            Controls.Add(OptClearFirst);
-            Controls.Add(OptPurge);
-            Controls.Add(Label1);
-            Controls.Add(TextKey);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "EditPolDelete";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Delete Value(s)";
-            KeyDown += new KeyEventHandler(EditPolDelete_KeyDown);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.ButtonOK;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(281, 133);
+            this.Controls.Add(this.ButtonOK);
+            this.Controls.Add(this.TextValueName);
+            this.Controls.Add(this.OptDeleteOne);
+            this.Controls.Add(this.OptClearFirst);
+            this.Controls.Add(this.OptPurge);
+            this.Controls.Add(Label1);
+            this.Controls.Add(this.TextKey);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "EditPolDelete";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Delete Value(s)";
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.EditPolDelete_KeyDown);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal TextBox TextKey;

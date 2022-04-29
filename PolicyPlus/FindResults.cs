@@ -72,6 +72,21 @@ namespace PolicyPlus
             return (PolicyPlusPolicy)ResultsListview.Items[LastSelectedIndex].Tag;
         }
 
+        private List<string> GetParentNames(PolicyPlusCategory category, List<string> namesList = null)
+        {
+            if (namesList == null)
+            {
+                namesList = new List<string>();
+            }
+
+            if (category.Parent is not null)
+            {
+                namesList = GetParentNames(category.Parent, namesList);
+            }
+            namesList.Add(category.DisplayName);
+            return namesList;
+        }
+
         public void SearchJob(AdmxBundle Workspace, Func<PolicyPlusPolicy, bool> Searcher)
         {
             // The long-running task that searches all the policies
@@ -87,6 +102,10 @@ namespace PolicyPlus
                     var lsvi = ResultsListview.Items.Add(insert.DisplayName);
                     lsvi.Tag = insert;
                     lsvi.SubItems.Add(insert.Category.DisplayName);
+
+                    var directoryNames = GetParentNames(insert.Category);
+
+                    lsvi.SubItems.Add("" + string.Join(" - ", directoryNames) + "");
                 }
 
                 ResultsListview.EndUpdate();
@@ -138,11 +157,16 @@ namespace PolicyPlus
                     BackToRegSearchBtn.Focus();
                 } 
                 else
-                {
-                    ResultsListview.Items[0].Focused = true;
-                    ResultsListview.Items[0].Selected= true;
+                {   
+                    if (LastSelectedIndex == -1)
+                    {
+                        ResultsListview.Items[0].Focused = true;
+                        ResultsListview.Items[0].Selected = true;
+                    }
                     if (ResultsListview.Items.Count == 1)
                     {
+                        ResultsListview.Items[0].Focused = true;
+                        ResultsListview.Items[0].Selected = true;
                         GoButton.Enabled = true;
                         GoButton.Focus();
                     }
@@ -218,6 +242,7 @@ namespace PolicyPlus
                 GoButton.Enabled = false;
             } else
             {
+                LastSelectedIndex = ResultsListview.SelectedIndices[0]; // Remember which item is selected
                 GoButton.Enabled = true;
             }
         }

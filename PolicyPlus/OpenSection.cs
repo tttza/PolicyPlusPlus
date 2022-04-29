@@ -30,7 +30,7 @@ namespace PolicyPlus
 
         private void OpenSection_Shown(object sender, EventArgs e)
         {
-            OptUser.Checked = false;
+            OptUser.Checked = true;
             OptComputer.Checked = false;
         }
 

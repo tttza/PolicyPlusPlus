@@ -47,10 +47,9 @@ namespace PolicyPlus
             // PolicyNameLabel
             // 
             PolicyNameLabel.AutoSize = true;
-            PolicyNameLabel.Location = new System.Drawing.Point(16, 17);
-            PolicyNameLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            PolicyNameLabel.Location = new System.Drawing.Point(12, 14);
             PolicyNameLabel.Name = "PolicyNameLabel";
-            PolicyNameLabel.Size = new System.Drawing.Size(45, 15);
+            PolicyNameLabel.Size = new System.Drawing.Size(36, 12);
             PolicyNameLabel.TabIndex = 2;
             PolicyNameLabel.Text = "Policy";
             // 
@@ -58,20 +57,20 @@ namespace PolicyPlus
             // 
             this.PolicyNameTextbox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.PolicyNameTextbox.Location = new System.Drawing.Point(71, 14);
-            this.PolicyNameTextbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.PolicyNameTextbox.Location = new System.Drawing.Point(53, 11);
+            this.PolicyNameTextbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.PolicyNameTextbox.Name = "PolicyNameTextbox";
             this.PolicyNameTextbox.ReadOnly = true;
-            this.PolicyNameTextbox.Size = new System.Drawing.Size(598, 22);
+            this.PolicyNameTextbox.Size = new System.Drawing.Size(450, 19);
             this.PolicyNameTextbox.TabIndex = 0;
             // 
             // PolicyDetailsButton
             // 
             this.PolicyDetailsButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.PolicyDetailsButton.Location = new System.Drawing.Point(678, 12);
-            this.PolicyDetailsButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.PolicyDetailsButton.Location = new System.Drawing.Point(508, 10);
+            this.PolicyDetailsButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.PolicyDetailsButton.Name = "PolicyDetailsButton";
-            this.PolicyDetailsButton.Size = new System.Drawing.Size(100, 27);
+            this.PolicyDetailsButton.Size = new System.Drawing.Size(75, 22);
             this.PolicyDetailsButton.TabIndex = 1;
             this.PolicyDetailsButton.Text = "Details";
             this.PolicyDetailsButton.UseVisualStyleBackColor = true;
@@ -83,11 +82,11 @@ namespace PolicyPlus
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.InfoTreeview.HideSelection = false;
-            this.InfoTreeview.Location = new System.Drawing.Point(20, 44);
-            this.InfoTreeview.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.InfoTreeview.Location = new System.Drawing.Point(15, 35);
+            this.InfoTreeview.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.InfoTreeview.Name = "InfoTreeview";
             this.InfoTreeview.ShowNodeToolTips = true;
-            this.InfoTreeview.Size = new System.Drawing.Size(757, 222);
+            this.InfoTreeview.Size = new System.Drawing.Size(569, 178);
             this.InfoTreeview.TabIndex = 3;
             this.InfoTreeview.KeyDown += new System.Windows.Forms.KeyEventHandler(this.InfoTreeview_KeyDown);
             // 
@@ -95,10 +94,10 @@ namespace PolicyPlus
             // 
             this.CloseButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.CloseButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CloseButton.Location = new System.Drawing.Point(678, 273);
-            this.CloseButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.CloseButton.Location = new System.Drawing.Point(508, 218);
+            this.CloseButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.CloseButton.Name = "CloseButton";
-            this.CloseButton.Size = new System.Drawing.Size(100, 27);
+            this.CloseButton.Size = new System.Drawing.Size(75, 22);
             this.CloseButton.TabIndex = 4;
             this.CloseButton.Text = "Close";
             this.CloseButton.UseVisualStyleBackColor = true;
@@ -106,19 +105,19 @@ namespace PolicyPlus
             // InspectPolicyElements
             // 
             this.AcceptButton = this.CloseButton;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.CloseButton;
-            this.ClientSize = new System.Drawing.Size(794, 314);
+            this.ClientSize = new System.Drawing.Size(596, 251);
             this.Controls.Add(this.CloseButton);
             this.Controls.Add(this.InfoTreeview);
             this.Controls.Add(PolicyNameLabel);
             this.Controls.Add(this.PolicyDetailsButton);
             this.Controls.Add(this.PolicyNameTextbox);
-            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(401, 245);
+            this.MinimumSize = new System.Drawing.Size(305, 204);
             this.Name = "InspectPolicyElements";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
