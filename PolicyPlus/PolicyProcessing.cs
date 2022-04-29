@@ -554,7 +554,7 @@ namespace PolicyPlus
                                             var regType = listElem.RegExpandSz ? Microsoft.Win32.RegistryValueKind.ExpandString : Microsoft.Win32.RegistryValueKind.String;
                                             if (listElem.UserProvidesNames)
                                             {
-                                                Dictionary<string, string> items = (Dictionary<string, string>)optionData;
+                                                Dictionary<string, string> items = ((List<KeyValuePair<string, string>>)optionData).ToDictionary(x => x.Key, x => x.Value);
                                                 foreach (var i in items)
                                                     PolicySource.SetValue(elemKey, i.Key, i.Value, regType);
                                             }
