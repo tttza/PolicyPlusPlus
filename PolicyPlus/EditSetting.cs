@@ -56,13 +56,40 @@ namespace PolicyPlus
                 SectionDropdown.Enabled = false;
                 CurrentSection = CurrentSetting.RawPolicy.Section;
             }
-
             ExtraOptionsPanel.HorizontalScroll.Maximum = 0;
             ExtraOptionsPanel.VerticalScroll.Visible = true;
             ExtraOptionsPanel.AutoScroll = true;
             PreparePolicyElements();
-            SectionDropdown.Text = CurrentSection == AdmxPolicySection.Machine ? "Computer" : "User";
+
+            var dropdownDefault = CurrentSection == AdmxPolicySection.Machine ? "Computer" : "User";
+            if ((CurrentSetting.RawPolicy.Section == AdmxPolicySection.Machine) || (CurrentSetting.RawPolicy.Section == AdmxPolicySection.Both))
+            {
+                SectionDropdown.Text = "Computer";
+                SectionDropdown_SelectedIndexChanged(null, null); // Force an update of the current source
+                switch(PolicyProcessing.GetPolicyState(CurrentSource, CurrentSetting))
+                {
+                    case PolicyState.Enabled:
+                    case PolicyState.Disabled:
+                        dropdownDefault = "Computer";
+                        break;
+                }
+            }
+            if ((CurrentSetting.RawPolicy.Section == AdmxPolicySection.User) || (CurrentSetting.RawPolicy.Section == AdmxPolicySection.Both))
+            {
+                SectionDropdown.Text = "User";
+                SectionDropdown_SelectedIndexChanged(null, null); // Force an update of the current source
+                switch (PolicyProcessing.GetPolicyState(CurrentSource, CurrentSetting))
+                {
+                    case PolicyState.Enabled:
+                    case PolicyState.Disabled:
+                        dropdownDefault = "User";
+                        break;
+                }
+            }
+            SectionDropdown.Text = dropdownDefault;
+            CurrentSection = dropdownDefault == "User" ? AdmxPolicySection.User : AdmxPolicySection.Machine;
             SectionDropdown_SelectedIndexChanged(null, null); // Force an update of the current source
+
             PreparePolicyState();
             StateRadiosChanged(null, null);
         }
@@ -140,12 +167,18 @@ namespace PolicyPlus
                                 Control newControl;
                                 if (decimalTextPres.HasSpinner)
                                 {
+                                    var defaultValue = decimalTextPres.DefaultValue;
+                                    if ((defaultValue < numeric.Minimum) || (numeric.Maximum < defaultValue))
+                                    {
+                                        defaultValue = numeric.Minimum;
+                                    }
+
                                     newControl = new NumericUpDown()
                                     {
                                         Minimum = numeric.Minimum,
                                         Maximum = numeric.Maximum,
                                         Increment = decimalTextPres.SpinnerIncrement,
-                                        Value = decimalTextPres.DefaultValue
+                                        Value = defaultValue
                                     };
                                 }
                                 else

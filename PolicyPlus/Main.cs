@@ -150,7 +150,9 @@ namespace PolicyPlus
         {
             // Update the right pane to include the current category's children
             bool inSameCategory = false;
+            var topItemIndex = PoliciesGrid.FirstDisplayedScrollingRowIndex;
             PoliciesGrid.Rows.Clear();
+
             PoliciesGrid.Columns["Icon"].DefaultCellStyle.NullValue = null;
 
             if (CurrentCategory is object)
@@ -197,6 +199,12 @@ namespace PolicyPlus
                         PoliciesGrid.FirstDisplayedScrollingRowIndex = row.Index;
                     }
                     row.Tag = policy;
+                }
+
+                if (inSameCategory) // Minimize the list view's jumping around when refreshing
+                {
+                    if (PoliciesGrid.Rows.Count > topItemIndex)
+                        PoliciesGrid.FirstDisplayedScrollingRowIndex = topItemIndex;
                 }
 
                 if (CategoriesTree.SelectedNode is null || !ReferenceEquals(CategoriesTree.SelectedNode.Tag, CurrentCategory)) // Update the tree view
