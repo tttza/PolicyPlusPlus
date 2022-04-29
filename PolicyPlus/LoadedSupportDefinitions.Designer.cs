@@ -36,87 +36,91 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label Label1;
-            LsvSupport = new ListView();
-            LsvSupport.DoubleClick += new EventHandler(LsvSupport_DoubleClick);
-            LsvSupport.KeyDown += new KeyEventHandler(LsvSupport_KeyDown);
-            ChName = new ColumnHeader();
-            ChDefinedIn = new ColumnHeader();
-            ButtonClose = new Button();
-            TextFilter = new TextBox();
-            TextFilter.TextChanged += new EventHandler(TextFilter_TextChanged);
-            Label1 = new Label();
-            SuspendLayout();
+            System.Windows.Forms.Label Label1;
+            this.LsvSupport = new System.Windows.Forms.ListView();
+            this.ChName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChDefinedIn = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ButtonClose = new System.Windows.Forms.Button();
+            this.TextFilter = new System.Windows.Forms.TextBox();
+            Label1 = new System.Windows.Forms.Label();
+            this.SuspendLayout();
             // 
             // Label1
             // 
             Label1.AutoSize = true;
-            Label1.Location = new Point(12, 15);
+            Label1.Location = new System.Drawing.Point(12, 14);
             Label1.Name = "Label1";
-            Label1.Size = new Size(79, 13);
+            Label1.Size = new System.Drawing.Size(89, 12);
             Label1.TabIndex = 3;
             Label1.Text = "Substring (filter)";
             // 
             // LsvSupport
             // 
-            LsvSupport.Columns.AddRange(new ColumnHeader[] { ChName, ChDefinedIn });
-            LsvSupport.FullRowSelect = true;
-            LsvSupport.Location = new Point(12, 38);
-            LsvSupport.MultiSelect = false;
-            LsvSupport.Name = "LsvSupport";
-            LsvSupport.ShowItemToolTips = true;
-            LsvSupport.Size = new Size(435, 190);
-            LsvSupport.TabIndex = 2;
-            LsvSupport.UseCompatibleStateImageBehavior = false;
-            LsvSupport.View = View.Details;
+            this.LsvSupport.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.ChName,
+            this.ChDefinedIn});
+            this.LsvSupport.FullRowSelect = true;
+            this.LsvSupport.HideSelection = false;
+            this.LsvSupport.Location = new System.Drawing.Point(12, 35);
+            this.LsvSupport.MultiSelect = false;
+            this.LsvSupport.Name = "LsvSupport";
+            this.LsvSupport.ShowItemToolTips = true;
+            this.LsvSupport.Size = new System.Drawing.Size(435, 176);
+            this.LsvSupport.TabIndex = 2;
+            this.LsvSupport.UseCompatibleStateImageBehavior = false;
+            this.LsvSupport.View = System.Windows.Forms.View.Details;
+            this.LsvSupport.DoubleClick += new System.EventHandler(this.LsvSupport_DoubleClick);
+            this.LsvSupport.KeyDown += new System.Windows.Forms.KeyEventHandler(this.LsvSupport_KeyDown);
             // 
             // ChName
             // 
-            ChName.Text = "Name";
-            ChName.Width = 317;
+            this.ChName.Text = "Name";
+            this.ChName.Width = 317;
             // 
             // ChDefinedIn
             // 
-            ChDefinedIn.Text = "ADMX File";
-            ChDefinedIn.Width = 97;
+            this.ChDefinedIn.Text = "ADMX File";
+            this.ChDefinedIn.Width = 97;
             // 
             // ButtonClose
             // 
-            ButtonClose.DialogResult = DialogResult.OK;
-            ButtonClose.Location = new Point(372, 234);
-            ButtonClose.Name = "ButtonClose";
-            ButtonClose.Size = new Size(75, 23);
-            ButtonClose.TabIndex = 3;
-            ButtonClose.Text = "Close";
-            ButtonClose.UseVisualStyleBackColor = true;
+            this.ButtonClose.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.ButtonClose.Location = new System.Drawing.Point(372, 216);
+            this.ButtonClose.Name = "ButtonClose";
+            this.ButtonClose.Size = new System.Drawing.Size(75, 21);
+            this.ButtonClose.TabIndex = 3;
+            this.ButtonClose.Text = "Close";
+            this.ButtonClose.UseVisualStyleBackColor = true;
             // 
             // TextFilter
             // 
-            TextFilter.Location = new Point(97, 12);
-            TextFilter.Name = "TextFilter";
-            TextFilter.Size = new Size(350, 20);
-            TextFilter.TabIndex = 1;
+            this.TextFilter.Location = new System.Drawing.Point(97, 11);
+            this.TextFilter.Name = "TextFilter";
+            this.TextFilter.Size = new System.Drawing.Size(350, 19);
+            this.TextFilter.TabIndex = 1;
+            this.TextFilter.TextChanged += new System.EventHandler(this.TextFilter_TextChanged);
             // 
             // LoadedSupportDefinitions
             // 
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            CancelButton = ButtonClose;
-            ClientSize = new Size(459, 269);
-            Controls.Add(Label1);
-            Controls.Add(TextFilter);
-            Controls.Add(ButtonClose);
-            Controls.Add(LsvSupport);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "LoadedSupportDefinitions";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "All Support Definitions";
-            ResumeLayout(false);
-            PerformLayout();
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.CancelButton = this.ButtonClose;
+            this.ClientSize = new System.Drawing.Size(459, 248);
+            this.Controls.Add(Label1);
+            this.Controls.Add(this.TextFilter);
+            this.Controls.Add(this.ButtonClose);
+            this.Controls.Add(this.LsvSupport);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "LoadedSupportDefinitions";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "All Support Definitions";
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal ListView LsvSupport;

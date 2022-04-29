@@ -36,92 +36,96 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            EntriesDatagrid = new DataGridView();
-            NameColumn = new DataGridViewTextBoxColumn();
-            ValueColumn = new DataGridViewTextBoxColumn();
-            ElementNameLabel = new Label();
-            CloseButton = new Button();
-            OkButton = new Button();
-            OkButton.Click += new EventHandler(OkButton_Click);
-            ((System.ComponentModel.ISupportInitialize)EntriesDatagrid).BeginInit();
-            SuspendLayout();
+            this.EntriesDatagrid = new System.Windows.Forms.DataGridView();
+            this.NameColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ValueColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ElementNameLabel = new System.Windows.Forms.Label();
+            this.CloseButton = new System.Windows.Forms.Button();
+            this.OkButton = new System.Windows.Forms.Button();
+            ((System.ComponentModel.ISupportInitialize)(this.EntriesDatagrid)).BeginInit();
+            this.SuspendLayout();
             // 
             // EntriesDatagrid
             // 
-            EntriesDatagrid.AllowUserToResizeRows = false;
-            EntriesDatagrid.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-
-            EntriesDatagrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            EntriesDatagrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            EntriesDatagrid.Columns.AddRange(new DataGridViewColumn[] { NameColumn, ValueColumn });
-            EntriesDatagrid.Location = new Point(12, 25);
-            EntriesDatagrid.Name = "EntriesDatagrid";
-            EntriesDatagrid.Size = new Size(404, 170);
-            EntriesDatagrid.TabIndex = 0;
+            this.EntriesDatagrid.AllowUserToResizeRows = false;
+            this.EntriesDatagrid.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.EntriesDatagrid.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.EntriesDatagrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.EntriesDatagrid.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.NameColumn,
+            this.ValueColumn});
+            this.EntriesDatagrid.Location = new System.Drawing.Point(12, 23);
+            this.EntriesDatagrid.Name = "EntriesDatagrid";
+            this.EntriesDatagrid.Size = new System.Drawing.Size(404, 157);
+            this.EntriesDatagrid.TabIndex = 0;
             // 
             // NameColumn
             // 
-            NameColumn.HeaderText = "Name";
-            NameColumn.Name = "NameColumn";
+            this.NameColumn.HeaderText = "Name";
+            this.NameColumn.Name = "NameColumn";
             // 
             // ValueColumn
             // 
-            ValueColumn.HeaderText = "Value";
-            ValueColumn.Name = "ValueColumn";
+            this.ValueColumn.HeaderText = "Value";
+            this.ValueColumn.Name = "ValueColumn";
             // 
             // ElementNameLabel
             // 
-            ElementNameLabel.AutoEllipsis = true;
-            ElementNameLabel.AutoSize = true;
-            ElementNameLabel.Location = new Point(12, 9);
-            ElementNameLabel.MaximumSize = new Size(400, 0);
-            ElementNameLabel.Name = "ElementNameLabel";
-            ElementNameLabel.Size = new Size(92, 13);
-            ElementNameLabel.TabIndex = 1;
-            ElementNameLabel.Text = "List element name";
+            this.ElementNameLabel.AutoEllipsis = true;
+            this.ElementNameLabel.AutoSize = true;
+            this.ElementNameLabel.Location = new System.Drawing.Point(12, 8);
+            this.ElementNameLabel.MaximumSize = new System.Drawing.Size(400, 0);
+            this.ElementNameLabel.Name = "ElementNameLabel";
+            this.ElementNameLabel.Size = new System.Drawing.Size(99, 12);
+            this.ElementNameLabel.TabIndex = 1;
+            this.ElementNameLabel.Text = "List element name";
             // 
             // CloseButton
             // 
-            CloseButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            CloseButton.DialogResult = DialogResult.Cancel;
-            CloseButton.Location = new Point(341, 201);
-            CloseButton.Name = "CloseButton";
-            CloseButton.Size = new Size(75, 23);
-            CloseButton.TabIndex = 2;
-            CloseButton.Text = "Cancel";
-            CloseButton.UseVisualStyleBackColor = true;
+            this.CloseButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.CloseButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.CloseButton.Location = new System.Drawing.Point(341, 186);
+            this.CloseButton.Name = "CloseButton";
+            this.CloseButton.Size = new System.Drawing.Size(75, 21);
+            this.CloseButton.TabIndex = 2;
+            this.CloseButton.Text = "Cancel";
+            this.CloseButton.UseVisualStyleBackColor = true;
             // 
             // OkButton
             // 
-            OkButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            OkButton.Location = new Point(260, 201);
-            OkButton.Name = "OkButton";
-            OkButton.Size = new Size(75, 23);
-            OkButton.TabIndex = 1;
-            OkButton.Text = "OK";
-            OkButton.UseVisualStyleBackColor = true;
+            this.OkButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.OkButton.Location = new System.Drawing.Point(260, 186);
+            this.OkButton.Name = "OkButton";
+            this.OkButton.Size = new System.Drawing.Size(75, 21);
+            this.OkButton.TabIndex = 1;
+            this.OkButton.Text = "OK";
+            this.OkButton.UseVisualStyleBackColor = true;
+            this.OkButton.Click += new System.EventHandler(this.OkButton_Click);
             // 
             // ListEditor
             // 
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            CancelButton = CloseButton;
-            ClientSize = new Size(428, 236);
-            Controls.Add(OkButton);
-            Controls.Add(CloseButton);
-            Controls.Add(ElementNameLabel);
-            Controls.Add(EntriesDatagrid);
-            MaximizeBox = false;
-            MinimizeBox = false;
-            MinimumSize = new Size(444, 275);
-            Name = "ListEditor";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Edit List";
-            ((System.ComponentModel.ISupportInitialize)EntriesDatagrid).EndInit();
-            ResumeLayout(false);
-            PerformLayout();
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.CancelButton = this.CloseButton;
+            this.ClientSize = new System.Drawing.Size(428, 218);
+            this.Controls.Add(this.OkButton);
+            this.Controls.Add(this.CloseButton);
+            this.Controls.Add(this.ElementNameLabel);
+            this.Controls.Add(this.EntriesDatagrid);
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.MinimumSize = new System.Drawing.Size(444, 257);
+            this.Name = "ListEditor";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Edit List";
+            ((System.ComponentModel.ISupportInitialize)(this.EntriesDatagrid)).EndInit();
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal DataGridView EntriesDatagrid;

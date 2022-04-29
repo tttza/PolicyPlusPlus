@@ -12,6 +12,7 @@ namespace PolicyPlus
             // Determine the basic state of a policy
             decimal enabledEvidence = 0m;
             decimal disabledEvidence = 0m;
+            bool hasRegistryValue = false;
             var rawpol = Policy.RawPolicy;
             void checkOneVal(PolicyRegistryValue Value, string Key, string ValueName, ref decimal EvidenceVar)
             {
@@ -36,6 +37,7 @@ namespace PolicyPlus
             {
                 if (rawpol.AffectedValues.OnValue is null)
                 {
+                    hasRegistryValue = true;
                     checkOneVal(new PolicyRegistryValue() { NumberValue = 1U, RegistryType = PolicyRegistryValueType.Numeric }, rawpol.RegistryKey, rawpol.RegistryValue, ref enabledEvidence);
                 }
                 else
@@ -45,6 +47,7 @@ namespace PolicyPlus
 
                 if (rawpol.AffectedValues.OffValue is null)
                 {
+                    hasRegistryValue = true;
                     checkOneVal(new PolicyRegistryValue() { RegistryType = PolicyRegistryValueType.Delete }, rawpol.RegistryKey, rawpol.RegistryValue, ref disabledEvidence);
                 }
                 else
@@ -97,11 +100,17 @@ namespace PolicyPlus
                     }
                     else if (PolicySource.WillDeleteValue(elemKey, elem.RegistryValue))
                     {
-                        deletedElements += 1m;
+                        if (!hasRegistryValue)
+                        {
+                            deletedElements += 1m;
+                        }
                     }
                     else if (PolicySource.ContainsValue(elemKey, elem.RegistryValue))
                     {
-                        presentElements += 1m;
+                        if (!hasRegistryValue)
+                        {
+                            presentElements += 1m;
+                        }
                     }
                 }
 
@@ -554,7 +563,7 @@ namespace PolicyPlus
                                             var regType = listElem.RegExpandSz ? Microsoft.Win32.RegistryValueKind.ExpandString : Microsoft.Win32.RegistryValueKind.String;
                                             if (listElem.UserProvidesNames)
                                             {
-                                                Dictionary<string, string> items = (Dictionary<string, string>)optionData;
+                                                Dictionary<string, string> items = ((List<KeyValuePair<string, string>>)optionData).ToDictionary(x => x.Key, x => x.Value);
                                                 foreach (var i in items)
                                                     PolicySource.SetValue(elemKey, i.Key, i.Value, regType);
                                             }

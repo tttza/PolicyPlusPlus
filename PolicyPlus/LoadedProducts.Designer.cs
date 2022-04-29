@@ -36,44 +36,36 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label Label1;
-            ColumnHeader ColumnHeader1;
-            ColumnHeader ColumnHeader2;
-            ColumnHeader ColumnHeader3;
-            ColumnHeader ColumnHeader4;
-            ColumnHeader ColumnHeader5;
-            ColumnHeader ColumnHeader6;
-            ColumnHeader ColumnHeader7;
-            LsvTopLevelProducts = new ListView();
-            LsvTopLevelProducts.SelectedIndexChanged += new EventHandler(UpdateMajorList);
-            LsvTopLevelProducts.DoubleClick += new EventHandler(OpenProductDetails);
-            LsvTopLevelProducts.KeyDown += new KeyEventHandler(ListKeyPressed);
-            LabelMajorVersion = new Label();
-            LsvMajorVersions = new ListView();
-            LsvMajorVersions.SelectedIndexChanged += new EventHandler(UpdateMinorList);
-            LsvMajorVersions.DoubleClick += new EventHandler(OpenProductDetails);
-            LsvMajorVersions.KeyDown += new KeyEventHandler(ListKeyPressed);
-            LabelMinorVersion = new Label();
-            LsvMinorVersions = new ListView();
-            LsvMinorVersions.DoubleClick += new EventHandler(OpenProductDetails);
-            LsvMinorVersions.KeyDown += new KeyEventHandler(ListKeyPressed);
-            ButtonClose = new Button();
-            Label1 = new Label();
-            ColumnHeader1 = new ColumnHeader();
-            ColumnHeader2 = new ColumnHeader();
-            ColumnHeader3 = new ColumnHeader();
-            ColumnHeader4 = new ColumnHeader();
-            ColumnHeader5 = new ColumnHeader();
-            ColumnHeader6 = new ColumnHeader();
-            ColumnHeader7 = new ColumnHeader();
-            SuspendLayout();
+            System.Windows.Forms.Label Label1;
+            System.Windows.Forms.ColumnHeader ColumnHeader1;
+            System.Windows.Forms.ColumnHeader ColumnHeader2;
+            System.Windows.Forms.ColumnHeader ColumnHeader3;
+            System.Windows.Forms.ColumnHeader ColumnHeader4;
+            System.Windows.Forms.ColumnHeader ColumnHeader5;
+            System.Windows.Forms.ColumnHeader ColumnHeader6;
+            System.Windows.Forms.ColumnHeader ColumnHeader7;
+            this.LsvTopLevelProducts = new System.Windows.Forms.ListView();
+            this.LabelMajorVersion = new System.Windows.Forms.Label();
+            this.LsvMajorVersions = new System.Windows.Forms.ListView();
+            this.LabelMinorVersion = new System.Windows.Forms.Label();
+            this.LsvMinorVersions = new System.Windows.Forms.ListView();
+            this.ButtonClose = new System.Windows.Forms.Button();
+            Label1 = new System.Windows.Forms.Label();
+            ColumnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            ColumnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            ColumnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            ColumnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            ColumnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            ColumnHeader6 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            ColumnHeader7 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.SuspendLayout();
             // 
             // Label1
             // 
             Label1.AutoSize = true;
-            Label1.Location = new Point(12, 9);
+            Label1.Location = new System.Drawing.Point(12, 8);
             Label1.Name = "Label1";
-            Label1.Size = new Size(95, 13);
+            Label1.Size = new System.Drawing.Size(102, 12);
             Label1.TabIndex = 1;
             Label1.Text = "Top-level products";
             // 
@@ -113,97 +105,113 @@ namespace PolicyPlus
             // 
             // LsvTopLevelProducts
             // 
-            LsvTopLevelProducts.Columns.AddRange(new ColumnHeader[] { ColumnHeader1, ColumnHeader2 });
-            LsvTopLevelProducts.FullRowSelect = true;
-            LsvTopLevelProducts.HideSelection = false;
-            LsvTopLevelProducts.Location = new Point(12, 25);
-            LsvTopLevelProducts.MultiSelect = false;
-            LsvTopLevelProducts.Name = "LsvTopLevelProducts";
-            LsvTopLevelProducts.ShowItemToolTips = true;
-            LsvTopLevelProducts.Size = new Size(385, 97);
-            LsvTopLevelProducts.TabIndex = 0;
-            LsvTopLevelProducts.UseCompatibleStateImageBehavior = false;
-            LsvTopLevelProducts.View = View.Details;
+            this.LsvTopLevelProducts.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            ColumnHeader1,
+            ColumnHeader2});
+            this.LsvTopLevelProducts.FullRowSelect = true;
+            this.LsvTopLevelProducts.HideSelection = false;
+            this.LsvTopLevelProducts.Location = new System.Drawing.Point(12, 23);
+            this.LsvTopLevelProducts.MultiSelect = false;
+            this.LsvTopLevelProducts.Name = "LsvTopLevelProducts";
+            this.LsvTopLevelProducts.ShowItemToolTips = true;
+            this.LsvTopLevelProducts.Size = new System.Drawing.Size(385, 90);
+            this.LsvTopLevelProducts.TabIndex = 0;
+            this.LsvTopLevelProducts.UseCompatibleStateImageBehavior = false;
+            this.LsvTopLevelProducts.View = System.Windows.Forms.View.Details;
+            this.LsvTopLevelProducts.SelectedIndexChanged += new System.EventHandler(this.UpdateMajorList);
+            this.LsvTopLevelProducts.DoubleClick += new System.EventHandler(this.OpenProductDetails);
+            this.LsvTopLevelProducts.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ListKeyPressed);
             // 
             // LabelMajorVersion
             // 
-            LabelMajorVersion.AutoSize = true;
-            LabelMajorVersion.Location = new Point(12, 125);
-            LabelMajorVersion.Name = "LabelMajorVersion";
-            LabelMajorVersion.Size = new Size(75, 13);
-            LabelMajorVersion.TabIndex = 3;
-            LabelMajorVersion.Text = "Major versions";
+            this.LabelMajorVersion.AutoSize = true;
+            this.LabelMajorVersion.Location = new System.Drawing.Point(12, 115);
+            this.LabelMajorVersion.Name = "LabelMajorVersion";
+            this.LabelMajorVersion.Size = new System.Drawing.Size(80, 12);
+            this.LabelMajorVersion.TabIndex = 3;
+            this.LabelMajorVersion.Text = "Major versions";
             // 
             // LsvMajorVersions
             // 
-            LsvMajorVersions.Columns.AddRange(new ColumnHeader[] { ColumnHeader3, ColumnHeader4, ColumnHeader7 });
-            LsvMajorVersions.FullRowSelect = true;
-            LsvMajorVersions.HideSelection = false;
-            LsvMajorVersions.Location = new Point(12, 141);
-            LsvMajorVersions.MultiSelect = false;
-            LsvMajorVersions.Name = "LsvMajorVersions";
-            LsvMajorVersions.ShowItemToolTips = true;
-            LsvMajorVersions.Size = new Size(385, 97);
-            LsvMajorVersions.TabIndex = 1;
-            LsvMajorVersions.UseCompatibleStateImageBehavior = false;
-            LsvMajorVersions.View = View.Details;
+            this.LsvMajorVersions.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            ColumnHeader3,
+            ColumnHeader4,
+            ColumnHeader7});
+            this.LsvMajorVersions.FullRowSelect = true;
+            this.LsvMajorVersions.HideSelection = false;
+            this.LsvMajorVersions.Location = new System.Drawing.Point(12, 130);
+            this.LsvMajorVersions.MultiSelect = false;
+            this.LsvMajorVersions.Name = "LsvMajorVersions";
+            this.LsvMajorVersions.ShowItemToolTips = true;
+            this.LsvMajorVersions.Size = new System.Drawing.Size(385, 90);
+            this.LsvMajorVersions.TabIndex = 1;
+            this.LsvMajorVersions.UseCompatibleStateImageBehavior = false;
+            this.LsvMajorVersions.View = System.Windows.Forms.View.Details;
+            this.LsvMajorVersions.SelectedIndexChanged += new System.EventHandler(this.UpdateMinorList);
+            this.LsvMajorVersions.DoubleClick += new System.EventHandler(this.OpenProductDetails);
+            this.LsvMajorVersions.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ListKeyPressed);
             // 
             // LabelMinorVersion
             // 
-            LabelMinorVersion.AutoSize = true;
-            LabelMinorVersion.Location = new Point(12, 241);
-            LabelMinorVersion.Name = "LabelMinorVersion";
-            LabelMinorVersion.Size = new Size(75, 13);
-            LabelMinorVersion.TabIndex = 5;
-            LabelMinorVersion.Text = "Minor versions";
+            this.LabelMinorVersion.AutoSize = true;
+            this.LabelMinorVersion.Location = new System.Drawing.Point(12, 222);
+            this.LabelMinorVersion.Name = "LabelMinorVersion";
+            this.LabelMinorVersion.Size = new System.Drawing.Size(80, 12);
+            this.LabelMinorVersion.TabIndex = 5;
+            this.LabelMinorVersion.Text = "Minor versions";
             // 
             // LsvMinorVersions
             // 
-            LsvMinorVersions.Columns.AddRange(new ColumnHeader[] { ColumnHeader5, ColumnHeader6 });
-            LsvMinorVersions.FullRowSelect = true;
-            LsvMinorVersions.HideSelection = false;
-            LsvMinorVersions.Location = new Point(12, 257);
-            LsvMinorVersions.MultiSelect = false;
-            LsvMinorVersions.Name = "LsvMinorVersions";
-            LsvMinorVersions.ShowItemToolTips = true;
-            LsvMinorVersions.Size = new Size(385, 97);
-            LsvMinorVersions.TabIndex = 2;
-            LsvMinorVersions.UseCompatibleStateImageBehavior = false;
-            LsvMinorVersions.View = View.Details;
+            this.LsvMinorVersions.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            ColumnHeader5,
+            ColumnHeader6});
+            this.LsvMinorVersions.FullRowSelect = true;
+            this.LsvMinorVersions.HideSelection = false;
+            this.LsvMinorVersions.Location = new System.Drawing.Point(12, 237);
+            this.LsvMinorVersions.MultiSelect = false;
+            this.LsvMinorVersions.Name = "LsvMinorVersions";
+            this.LsvMinorVersions.ShowItemToolTips = true;
+            this.LsvMinorVersions.Size = new System.Drawing.Size(385, 90);
+            this.LsvMinorVersions.TabIndex = 2;
+            this.LsvMinorVersions.UseCompatibleStateImageBehavior = false;
+            this.LsvMinorVersions.View = System.Windows.Forms.View.Details;
+            this.LsvMinorVersions.DoubleClick += new System.EventHandler(this.OpenProductDetails);
+            this.LsvMinorVersions.KeyDown += new System.Windows.Forms.KeyEventHandler(this.ListKeyPressed);
             // 
             // ButtonClose
             // 
-            ButtonClose.DialogResult = DialogResult.OK;
-            ButtonClose.Location = new Point(322, 360);
-            ButtonClose.Name = "ButtonClose";
-            ButtonClose.Size = new Size(75, 23);
-            ButtonClose.TabIndex = 3;
-            ButtonClose.Text = "Close";
-            ButtonClose.UseVisualStyleBackColor = true;
+            this.ButtonClose.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.ButtonClose.Location = new System.Drawing.Point(322, 332);
+            this.ButtonClose.Name = "ButtonClose";
+            this.ButtonClose.Size = new System.Drawing.Size(75, 21);
+            this.ButtonClose.TabIndex = 3;
+            this.ButtonClose.Text = "Close";
+            this.ButtonClose.UseVisualStyleBackColor = true;
             // 
             // LoadedProducts
             // 
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            CancelButton = ButtonClose;
-            ClientSize = new Size(409, 395);
-            Controls.Add(ButtonClose);
-            Controls.Add(LabelMinorVersion);
-            Controls.Add(LsvMinorVersions);
-            Controls.Add(LabelMajorVersion);
-            Controls.Add(LsvMajorVersions);
-            Controls.Add(Label1);
-            Controls.Add(LsvTopLevelProducts);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "LoadedProducts";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "All Products";
-            ResumeLayout(false);
-            PerformLayout();
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.CancelButton = this.ButtonClose;
+            this.ClientSize = new System.Drawing.Size(409, 365);
+            this.Controls.Add(this.ButtonClose);
+            this.Controls.Add(this.LabelMinorVersion);
+            this.Controls.Add(this.LsvMinorVersions);
+            this.Controls.Add(this.LabelMajorVersion);
+            this.Controls.Add(this.LsvMajorVersions);
+            this.Controls.Add(Label1);
+            this.Controls.Add(this.LsvTopLevelProducts);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "LoadedProducts";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "All Products";
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal ListView LsvTopLevelProducts;

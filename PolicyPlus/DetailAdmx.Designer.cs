@@ -36,271 +36,291 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label Label1;
-            Label Label2;
-            Label Label3;
-            Label Label4;
-            Label Label5;
-            Label Label6;
-            Label Label7;
-            TextPath = new TextBox();
-            TextNamespace = new TextBox();
-            TextSupersededAdm = new TextBox();
-            LsvPolicies = new ListView();
-            LsvPolicies.DoubleClick += new EventHandler(LsvPolicies_DoubleClick);
-            ChPolicyId = new ColumnHeader();
-            ChName = new ColumnHeader();
-            LsvCategories = new ListView();
-            LsvCategories.DoubleClick += new EventHandler(LsvCategories_DoubleClick);
-            ChCategoryId = new ColumnHeader();
-            ChCategoryName = new ColumnHeader();
-            LsvProducts = new ListView();
-            LsvProducts.DoubleClick += new EventHandler(LsvProducts_DoubleClick);
-            ChProductId = new ColumnHeader();
-            ChProductName = new ColumnHeader();
-            LsvSupportDefinitions = new ListView();
-            LsvSupportDefinitions.DoubleClick += new EventHandler(LsvSupportDefinitions_DoubleClick);
-            ChSupportId = new ColumnHeader();
-            ChSupportName = new ColumnHeader();
-            ButtonClose = new Button();
-            Label1 = new Label();
-            Label2 = new Label();
-            Label3 = new Label();
-            Label4 = new Label();
-            Label5 = new Label();
-            Label6 = new Label();
-            Label7 = new Label();
-            SuspendLayout();
+            System.Windows.Forms.Label Label1;
+            System.Windows.Forms.Label Label2;
+            System.Windows.Forms.Label Label3;
+            System.Windows.Forms.Label Label4;
+            System.Windows.Forms.Label Label5;
+            System.Windows.Forms.Label Label6;
+            System.Windows.Forms.Label Label7;
+            this.TextPath = new System.Windows.Forms.TextBox();
+            this.TextNamespace = new System.Windows.Forms.TextBox();
+            this.TextSupersededAdm = new System.Windows.Forms.TextBox();
+            this.LsvPolicies = new System.Windows.Forms.ListView();
+            this.ChPolicyId = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.LsvCategories = new System.Windows.Forms.ListView();
+            this.ChCategoryId = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChCategoryName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.LsvProducts = new System.Windows.Forms.ListView();
+            this.ChProductId = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChProductName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.LsvSupportDefinitions = new System.Windows.Forms.ListView();
+            this.ChSupportId = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChSupportName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ButtonClose = new System.Windows.Forms.Button();
+            Label1 = new System.Windows.Forms.Label();
+            Label2 = new System.Windows.Forms.Label();
+            Label3 = new System.Windows.Forms.Label();
+            Label4 = new System.Windows.Forms.Label();
+            Label5 = new System.Windows.Forms.Label();
+            Label6 = new System.Windows.Forms.Label();
+            Label7 = new System.Windows.Forms.Label();
+            this.SuspendLayout();
             // 
             // Label1
             // 
             Label1.AutoSize = true;
-            Label1.Location = new Point(12, 15);
+            Label1.Location = new System.Drawing.Point(12, 14);
             Label1.Name = "Label1";
-            Label1.Size = new Size(29, 13);
+            Label1.Size = new System.Drawing.Size(28, 12);
             Label1.TabIndex = 1;
             Label1.Text = "Path";
             // 
             // Label2
             // 
             Label2.AutoSize = true;
-            Label2.Location = new Point(12, 41);
+            Label2.Location = new System.Drawing.Point(12, 38);
             Label2.Name = "Label2";
-            Label2.Size = new Size(64, 13);
+            Label2.Size = new System.Drawing.Size(64, 12);
             Label2.TabIndex = 3;
             Label2.Text = "Namespace";
             // 
             // Label3
             // 
             Label3.AutoSize = true;
-            Label3.Location = new Point(12, 67);
+            Label3.Location = new System.Drawing.Point(12, 62);
             Label3.Name = "Label3";
-            Label3.Size = new Size(91, 13);
+            Label3.Size = new System.Drawing.Size(93, 12);
             Label3.TabIndex = 5;
             Label3.Text = "Superseded ADM";
             // 
             // Label4
             // 
             Label4.AutoSize = true;
-            Label4.Location = new Point(12, 93);
+            Label4.Location = new System.Drawing.Point(12, 86);
             Label4.Name = "Label4";
-            Label4.Size = new Size(43, 13);
+            Label4.Size = new System.Drawing.Size(45, 12);
             Label4.TabIndex = 7;
             Label4.Text = "Policies";
             // 
             // Label5
             // 
             Label5.AutoSize = true;
-            Label5.Location = new Point(12, 196);
+            Label5.Location = new System.Drawing.Point(12, 181);
             Label5.Name = "Label5";
-            Label5.Size = new Size(57, 13);
+            Label5.Size = new System.Drawing.Size(60, 12);
             Label5.TabIndex = 9;
             Label5.Text = "Categories";
             // 
             // Label6
             // 
             Label6.AutoSize = true;
-            Label6.Location = new Point(12, 299);
+            Label6.Location = new System.Drawing.Point(12, 276);
             Label6.Name = "Label6";
-            Label6.Size = new Size(49, 13);
+            Label6.Size = new System.Drawing.Size(50, 12);
             Label6.TabIndex = 11;
             Label6.Text = "Products";
             // 
             // Label7
             // 
             Label7.AutoSize = true;
-            Label7.Location = new Point(12, 402);
+            Label7.Location = new System.Drawing.Point(12, 371);
             Label7.Name = "Label7";
-            Label7.Size = new Size(69, 13);
+            Label7.Size = new System.Drawing.Size(73, 12);
             Label7.TabIndex = 13;
             Label7.Text = "Support rules";
             // 
             // TextPath
             // 
-            TextPath.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            TextPath.Location = new Point(109, 12);
-            TextPath.Name = "TextPath";
-            TextPath.ReadOnly = true;
-            TextPath.Size = new Size(332, 20);
-            TextPath.TabIndex = 0;
+            this.TextPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.TextPath.Location = new System.Drawing.Point(109, 11);
+            this.TextPath.Name = "TextPath";
+            this.TextPath.ReadOnly = true;
+            this.TextPath.Size = new System.Drawing.Size(332, 19);
+            this.TextPath.TabIndex = 0;
             // 
             // TextNamespace
             // 
-            TextNamespace.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            TextNamespace.Location = new Point(109, 38);
-            TextNamespace.Name = "TextNamespace";
-            TextNamespace.ReadOnly = true;
-            TextNamespace.Size = new Size(332, 20);
-            TextNamespace.TabIndex = 2;
+            this.TextNamespace.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.TextNamespace.Location = new System.Drawing.Point(109, 35);
+            this.TextNamespace.Name = "TextNamespace";
+            this.TextNamespace.ReadOnly = true;
+            this.TextNamespace.Size = new System.Drawing.Size(332, 19);
+            this.TextNamespace.TabIndex = 2;
             // 
             // TextSupersededAdm
             // 
-            TextSupersededAdm.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            TextSupersededAdm.Location = new Point(109, 64);
-            TextSupersededAdm.Name = "TextSupersededAdm";
-            TextSupersededAdm.ReadOnly = true;
-            TextSupersededAdm.Size = new Size(332, 20);
-            TextSupersededAdm.TabIndex = 4;
+            this.TextSupersededAdm.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.TextSupersededAdm.Location = new System.Drawing.Point(109, 59);
+            this.TextSupersededAdm.Name = "TextSupersededAdm";
+            this.TextSupersededAdm.ReadOnly = true;
+            this.TextSupersededAdm.Size = new System.Drawing.Size(332, 19);
+            this.TextSupersededAdm.TabIndex = 4;
             // 
             // LsvPolicies
             // 
-            LsvPolicies.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            LsvPolicies.Columns.AddRange(new ColumnHeader[] { ChPolicyId, ChName });
-            LsvPolicies.FullRowSelect = true;
-            LsvPolicies.Location = new Point(109, 90);
-            LsvPolicies.MultiSelect = false;
-            LsvPolicies.Name = "LsvPolicies";
-            LsvPolicies.ShowItemToolTips = true;
-            LsvPolicies.Size = new Size(332, 97);
-            LsvPolicies.TabIndex = 6;
-            LsvPolicies.UseCompatibleStateImageBehavior = false;
-            LsvPolicies.View = View.Details;
+            this.LsvPolicies.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.LsvPolicies.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.ChPolicyId,
+            this.ChName});
+            this.LsvPolicies.FullRowSelect = true;
+            this.LsvPolicies.HideSelection = false;
+            this.LsvPolicies.Location = new System.Drawing.Point(109, 83);
+            this.LsvPolicies.MultiSelect = false;
+            this.LsvPolicies.Name = "LsvPolicies";
+            this.LsvPolicies.ShowItemToolTips = true;
+            this.LsvPolicies.Size = new System.Drawing.Size(332, 90);
+            this.LsvPolicies.TabIndex = 6;
+            this.LsvPolicies.UseCompatibleStateImageBehavior = false;
+            this.LsvPolicies.View = System.Windows.Forms.View.Details;
+            this.LsvPolicies.DoubleClick += new System.EventHandler(this.LsvPolicies_DoubleClick);
             // 
             // ChPolicyId
             // 
-            ChPolicyId.Text = "Local ID";
-            ChPolicyId.Width = 73;
+            this.ChPolicyId.Text = "Local ID";
+            this.ChPolicyId.Width = 73;
             // 
             // ChName
             // 
-            ChName.Text = "Name";
-            ChName.Width = 166;
+            this.ChName.Text = "Name";
+            this.ChName.Width = 166;
             // 
             // LsvCategories
             // 
-            LsvCategories.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            LsvCategories.Columns.AddRange(new ColumnHeader[] { ChCategoryId, ChCategoryName });
-            LsvCategories.FullRowSelect = true;
-            LsvCategories.Location = new Point(109, 193);
-            LsvCategories.MultiSelect = false;
-            LsvCategories.Name = "LsvCategories";
-            LsvCategories.ShowItemToolTips = true;
-            LsvCategories.Size = new Size(332, 97);
-            LsvCategories.TabIndex = 8;
-            LsvCategories.UseCompatibleStateImageBehavior = false;
-            LsvCategories.View = View.Details;
+            this.LsvCategories.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.LsvCategories.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.ChCategoryId,
+            this.ChCategoryName});
+            this.LsvCategories.FullRowSelect = true;
+            this.LsvCategories.HideSelection = false;
+            this.LsvCategories.Location = new System.Drawing.Point(109, 178);
+            this.LsvCategories.MultiSelect = false;
+            this.LsvCategories.Name = "LsvCategories";
+            this.LsvCategories.ShowItemToolTips = true;
+            this.LsvCategories.Size = new System.Drawing.Size(332, 90);
+            this.LsvCategories.TabIndex = 8;
+            this.LsvCategories.UseCompatibleStateImageBehavior = false;
+            this.LsvCategories.View = System.Windows.Forms.View.Details;
+            this.LsvCategories.DoubleClick += new System.EventHandler(this.LsvCategories_DoubleClick);
             // 
             // ChCategoryId
             // 
-            ChCategoryId.Text = "Local ID";
-            ChCategoryId.Width = 73;
+            this.ChCategoryId.Text = "Local ID";
+            this.ChCategoryId.Width = 73;
             // 
             // ChCategoryName
             // 
-            ChCategoryName.Text = "Name";
-            ChCategoryName.Width = 166;
+            this.ChCategoryName.Text = "Name";
+            this.ChCategoryName.Width = 166;
             // 
             // LsvProducts
             // 
-            LsvProducts.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            LsvProducts.Columns.AddRange(new ColumnHeader[] { ChProductId, ChProductName });
-            LsvProducts.FullRowSelect = true;
-            LsvProducts.Location = new Point(109, 296);
-            LsvProducts.MultiSelect = false;
-            LsvProducts.Name = "LsvProducts";
-            LsvProducts.ShowItemToolTips = true;
-            LsvProducts.Size = new Size(332, 97);
-            LsvProducts.TabIndex = 10;
-            LsvProducts.UseCompatibleStateImageBehavior = false;
-            LsvProducts.View = View.Details;
+            this.LsvProducts.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.LsvProducts.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.ChProductId,
+            this.ChProductName});
+            this.LsvProducts.FullRowSelect = true;
+            this.LsvProducts.HideSelection = false;
+            this.LsvProducts.Location = new System.Drawing.Point(109, 273);
+            this.LsvProducts.MultiSelect = false;
+            this.LsvProducts.Name = "LsvProducts";
+            this.LsvProducts.ShowItemToolTips = true;
+            this.LsvProducts.Size = new System.Drawing.Size(332, 90);
+            this.LsvProducts.TabIndex = 10;
+            this.LsvProducts.UseCompatibleStateImageBehavior = false;
+            this.LsvProducts.View = System.Windows.Forms.View.Details;
+            this.LsvProducts.DoubleClick += new System.EventHandler(this.LsvProducts_DoubleClick);
             // 
             // ChProductId
             // 
-            ChProductId.Text = "Local ID";
-            ChProductId.Width = 73;
+            this.ChProductId.Text = "Local ID";
+            this.ChProductId.Width = 73;
             // 
             // ChProductName
             // 
-            ChProductName.Text = "Name";
-            ChProductName.Width = 166;
+            this.ChProductName.Text = "Name";
+            this.ChProductName.Width = 166;
             // 
             // LsvSupportDefinitions
             // 
-            LsvSupportDefinitions.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            LsvSupportDefinitions.Columns.AddRange(new ColumnHeader[] { ChSupportId, ChSupportName });
-            LsvSupportDefinitions.FullRowSelect = true;
-            LsvSupportDefinitions.Location = new Point(109, 399);
-            LsvSupportDefinitions.MultiSelect = false;
-            LsvSupportDefinitions.Name = "LsvSupportDefinitions";
-            LsvSupportDefinitions.ShowItemToolTips = true;
-            LsvSupportDefinitions.Size = new Size(332, 97);
-            LsvSupportDefinitions.TabIndex = 12;
-            LsvSupportDefinitions.UseCompatibleStateImageBehavior = false;
-            LsvSupportDefinitions.View = View.Details;
+            this.LsvSupportDefinitions.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.LsvSupportDefinitions.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.ChSupportId,
+            this.ChSupportName});
+            this.LsvSupportDefinitions.FullRowSelect = true;
+            this.LsvSupportDefinitions.HideSelection = false;
+            this.LsvSupportDefinitions.Location = new System.Drawing.Point(109, 368);
+            this.LsvSupportDefinitions.MultiSelect = false;
+            this.LsvSupportDefinitions.Name = "LsvSupportDefinitions";
+            this.LsvSupportDefinitions.ShowItemToolTips = true;
+            this.LsvSupportDefinitions.Size = new System.Drawing.Size(332, 90);
+            this.LsvSupportDefinitions.TabIndex = 12;
+            this.LsvSupportDefinitions.UseCompatibleStateImageBehavior = false;
+            this.LsvSupportDefinitions.View = System.Windows.Forms.View.Details;
+            this.LsvSupportDefinitions.DoubleClick += new System.EventHandler(this.LsvSupportDefinitions_DoubleClick);
             // 
             // ChSupportId
             // 
-            ChSupportId.Text = "Local ID";
-            ChSupportId.Width = 73;
+            this.ChSupportId.Text = "Local ID";
+            this.ChSupportId.Width = 73;
             // 
             // ChSupportName
             // 
-            ChSupportName.Text = "Name";
-            ChSupportName.Width = 166;
+            this.ChSupportName.Text = "Name";
+            this.ChSupportName.Width = 166;
             // 
             // ButtonClose
             // 
-            ButtonClose.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            ButtonClose.DialogResult = DialogResult.OK;
-            ButtonClose.Location = new Point(366, 502);
-            ButtonClose.Name = "ButtonClose";
-            ButtonClose.Size = new Size(75, 23);
-            ButtonClose.TabIndex = 14;
-            ButtonClose.Text = "Close";
-            ButtonClose.UseVisualStyleBackColor = true;
+            this.ButtonClose.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.ButtonClose.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.ButtonClose.Location = new System.Drawing.Point(366, 463);
+            this.ButtonClose.Name = "ButtonClose";
+            this.ButtonClose.Size = new System.Drawing.Size(75, 21);
+            this.ButtonClose.TabIndex = 14;
+            this.ButtonClose.Text = "Close";
+            this.ButtonClose.UseVisualStyleBackColor = true;
             // 
             // DetailAdmx
             // 
-            AcceptButton = ButtonClose;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            CancelButton = ButtonClose;
-            ClientSize = new Size(453, 537);
-            Controls.Add(ButtonClose);
-            Controls.Add(Label7);
-            Controls.Add(LsvSupportDefinitions);
-            Controls.Add(Label6);
-            Controls.Add(LsvProducts);
-            Controls.Add(Label5);
-            Controls.Add(LsvCategories);
-            Controls.Add(Label4);
-            Controls.Add(LsvPolicies);
-            Controls.Add(Label3);
-            Controls.Add(TextSupersededAdm);
-            Controls.Add(Label2);
-            Controls.Add(TextNamespace);
-            Controls.Add(Label1);
-            Controls.Add(TextPath);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "DetailAdmx";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "ADMX Details";
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.ButtonClose;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.CancelButton = this.ButtonClose;
+            this.ClientSize = new System.Drawing.Size(453, 496);
+            this.Controls.Add(this.ButtonClose);
+            this.Controls.Add(Label7);
+            this.Controls.Add(this.LsvSupportDefinitions);
+            this.Controls.Add(Label6);
+            this.Controls.Add(this.LsvProducts);
+            this.Controls.Add(Label5);
+            this.Controls.Add(this.LsvCategories);
+            this.Controls.Add(Label4);
+            this.Controls.Add(this.LsvPolicies);
+            this.Controls.Add(Label3);
+            this.Controls.Add(this.TextSupersededAdm);
+            this.Controls.Add(Label2);
+            this.Controls.Add(this.TextNamespace);
+            this.Controls.Add(Label1);
+            this.Controls.Add(this.TextPath);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "DetailAdmx";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "ADMX Details";
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal TextBox TextPath;

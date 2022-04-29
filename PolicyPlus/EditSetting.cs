@@ -49,20 +49,47 @@ namespace PolicyPlus
             if (CurrentSetting.RawPolicy.Section == AdmxPolicySection.Both)
             {
                 SectionDropdown.Enabled = true;
-                CurrentSection = CurrentSection == AdmxPolicySection.Both ? AdmxPolicySection.Machine : CurrentSection;
+                CurrentSection = CurrentSection == AdmxPolicySection.Both ? AdmxPolicySection.User : CurrentSection;
             }
             else
             {
                 SectionDropdown.Enabled = false;
                 CurrentSection = CurrentSetting.RawPolicy.Section;
             }
-
             ExtraOptionsPanel.HorizontalScroll.Maximum = 0;
             ExtraOptionsPanel.VerticalScroll.Visible = true;
             ExtraOptionsPanel.AutoScroll = true;
             PreparePolicyElements();
-            SectionDropdown.Text = CurrentSection == AdmxPolicySection.Machine ? "Computer" : "User";
+
+            var dropdownDefault = CurrentSection == AdmxPolicySection.Machine ? "Computer" : "User";
+            if ((CurrentSetting.RawPolicy.Section == AdmxPolicySection.Machine) || (CurrentSetting.RawPolicy.Section == AdmxPolicySection.Both))
+            {
+                SectionDropdown.Text = "Computer";
+                SectionDropdown_SelectedIndexChanged(null, null); // Force an update of the current source
+                switch(PolicyProcessing.GetPolicyState(CurrentSource, CurrentSetting))
+                {
+                    case PolicyState.Enabled:
+                    case PolicyState.Disabled:
+                        dropdownDefault = "Computer";
+                        break;
+                }
+            }
+            if ((CurrentSetting.RawPolicy.Section == AdmxPolicySection.User) || (CurrentSetting.RawPolicy.Section == AdmxPolicySection.Both))
+            {
+                SectionDropdown.Text = "User";
+                SectionDropdown_SelectedIndexChanged(null, null); // Force an update of the current source
+                switch (PolicyProcessing.GetPolicyState(CurrentSource, CurrentSetting))
+                {
+                    case PolicyState.Enabled:
+                    case PolicyState.Disabled:
+                        dropdownDefault = "User";
+                        break;
+                }
+            }
+            SectionDropdown.Text = dropdownDefault;
+            CurrentSection = dropdownDefault == "User" ? AdmxPolicySection.User : AdmxPolicySection.Machine;
             SectionDropdown_SelectedIndexChanged(null, null); // Force an update of the current source
+
             PreparePolicyState();
             StateRadiosChanged(null, null);
         }
@@ -140,12 +167,18 @@ namespace PolicyPlus
                                 Control newControl;
                                 if (decimalTextPres.HasSpinner)
                                 {
+                                    var defaultValue = decimalTextPres.DefaultValue;
+                                    if ((defaultValue < numeric.Minimum) || (numeric.Maximum < defaultValue))
+                                    {
+                                        defaultValue = numeric.Minimum;
+                                    }
+
                                     newControl = new NumericUpDown()
                                     {
                                         Minimum = numeric.Minimum,
                                         Maximum = numeric.Maximum,
                                         Increment = decimalTextPres.SpinnerIncrement,
-                                        Value = decimalTextPres.DefaultValue
+                                        Value = defaultValue
                                     };
                                 }
                                 else
@@ -455,7 +488,16 @@ namespace PolicyPlus
 
                         case "list":
                             {
-                                options.Add(elem.ID, ((List<string>)uiControl.Tag)?.Where(t => !string.IsNullOrWhiteSpace(t)).ToList());
+                                if (uiControl.Tag is List<string>)
+                                {
+                                    options.Add(elem.ID, ((List<string>)uiControl.Tag)?.Where(t => !string.IsNullOrWhiteSpace(t)).ToList());
+                                    break;
+                                } 
+                                if (uiControl.Tag is Dictionary<string, string>)
+                                {
+                                    options.Add(elem.ID, ((Dictionary<string, string>)uiControl.Tag)?.Where(t => !string.IsNullOrWhiteSpace(t.Key)).ToList());
+                                    break;
+                                }
                                 break;
                             }
 
@@ -571,6 +613,12 @@ namespace PolicyPlus
             {
                 return DisplayName;
             }
+        }
+
+        private void CopyToClipboard(object sender, EventArgs e)
+        {
+            var tag = (string)((Button)sender).Tag;
+            Clipboard.SetText(tag);
         }
     }
 }

@@ -36,63 +36,64 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            StatusImage = new PictureBox();
-            IdTextbox = new TextBox();
-            IdTextbox.TextChanged += new EventHandler(IdTextbox_TextChanged);
-            GoButton = new Button();
-            GoButton.Click += new EventHandler(GoButton_Click);
-            ((System.ComponentModel.ISupportInitialize)StatusImage).BeginInit();
-            SuspendLayout();
+            this.StatusImage = new System.Windows.Forms.PictureBox();
+            this.IdTextbox = new System.Windows.Forms.TextBox();
+            this.GoButton = new System.Windows.Forms.Button();
+            ((System.ComponentModel.ISupportInitialize)(this.StatusImage)).BeginInit();
+            this.SuspendLayout();
             // 
             // StatusImage
             // 
-            StatusImage.Location = new Point(12, 14);
-            StatusImage.Name = "StatusImage";
-            StatusImage.Size = new Size(16, 16);
-            StatusImage.TabIndex = 0;
-            StatusImage.TabStop = false;
+            this.StatusImage.Location = new System.Drawing.Point(12, 13);
+            this.StatusImage.Name = "StatusImage";
+            this.StatusImage.Size = new System.Drawing.Size(16, 15);
+            this.StatusImage.TabIndex = 0;
+            this.StatusImage.TabStop = false;
             // 
             // IdTextbox
             // 
-            IdTextbox.Location = new Point(34, 12);
-            IdTextbox.Name = "IdTextbox";
-            IdTextbox.Size = new Size(277, 20);
-            IdTextbox.TabIndex = 1;
-            IdTextbox.Text = " ";
+            this.IdTextbox.Location = new System.Drawing.Point(34, 11);
+            this.IdTextbox.Name = "IdTextbox";
+            this.IdTextbox.Size = new System.Drawing.Size(277, 19);
+            this.IdTextbox.TabIndex = 1;
+            this.IdTextbox.Text = " ";
+            this.IdTextbox.TextChanged += new System.EventHandler(this.IdTextbox_TextChanged);
             // 
             // GoButton
             // 
-            GoButton.Location = new Point(236, 38);
-            GoButton.Name = "GoButton";
-            GoButton.Size = new Size(75, 23);
-            GoButton.TabIndex = 2;
-            GoButton.Text = "Go";
-            GoButton.UseVisualStyleBackColor = true;
+            this.GoButton.Location = new System.Drawing.Point(236, 35);
+            this.GoButton.Name = "GoButton";
+            this.GoButton.Size = new System.Drawing.Size(75, 21);
+            this.GoButton.TabIndex = 2;
+            this.GoButton.Text = "Go";
+            this.GoButton.UseVisualStyleBackColor = true;
+            this.GoButton.Click += new System.EventHandler(this.GoButton_Click);
             // 
             // FindById
             // 
-            AcceptButton = GoButton;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(323, 73);
-            Controls.Add(GoButton);
-            Controls.Add(IdTextbox);
-            Controls.Add(StatusImage);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            KeyPreview = true;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "FindById";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Find by ID";
-            ((System.ComponentModel.ISupportInitialize)StatusImage).EndInit();
-            Load += new EventHandler(FindById_Load);
-            Shown += new EventHandler(FindById_Shown);
-            KeyUp += new KeyEventHandler(FindById_KeyUp);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.GoButton;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(323, 67);
+            this.Controls.Add(this.GoButton);
+            this.Controls.Add(this.IdTextbox);
+            this.Controls.Add(this.StatusImage);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.KeyPreview = true;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "FindById";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Find by ID";
+            this.Load += new System.EventHandler(this.FindById_Load);
+            this.Shown += new System.EventHandler(this.FindById_Shown);
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.FindById_KeyUp);
+            ((System.ComponentModel.ISupportInitialize)(this.StatusImage)).EndInit();
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal PictureBox StatusImage;

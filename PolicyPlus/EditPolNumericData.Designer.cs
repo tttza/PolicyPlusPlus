@@ -36,95 +36,96 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label Label1;
-            Label Label2;
-            TextName = new TextBox();
-            CheckHexadecimal = new CheckBox();
-            CheckHexadecimal.CheckedChanged += new EventHandler(CheckHexadecimal_CheckedChanged);
-            NumData = new WideRangeNumericUpDown();
-            ButtonOK = new Button();
-            Label1 = new Label();
-            Label2 = new Label();
-            ((System.ComponentModel.ISupportInitialize)NumData).BeginInit();
-            SuspendLayout();
+            System.Windows.Forms.Label Label1;
+            System.Windows.Forms.Label Label2;
+            this.TextName = new System.Windows.Forms.TextBox();
+            this.CheckHexadecimal = new System.Windows.Forms.CheckBox();
+            this.NumData = new PolicyPlus.WideRangeNumericUpDown();
+            this.ButtonOK = new System.Windows.Forms.Button();
+            Label1 = new System.Windows.Forms.Label();
+            Label2 = new System.Windows.Forms.Label();
+            ((System.ComponentModel.ISupportInitialize)(this.NumData)).BeginInit();
+            this.SuspendLayout();
             // 
             // Label1
             // 
             Label1.AutoSize = true;
-            Label1.Location = new Point(12, 15);
+            Label1.Location = new System.Drawing.Point(12, 14);
             Label1.Name = "Label1";
-            Label1.Size = new Size(63, 13);
+            Label1.Size = new System.Drawing.Size(65, 12);
             Label1.TabIndex = 1;
             Label1.Text = "Value name";
             // 
             // Label2
             // 
             Label2.AutoSize = true;
-            Label2.Location = new Point(12, 41);
+            Label2.Location = new System.Drawing.Point(12, 38);
             Label2.Name = "Label2";
-            Label2.Size = new Size(44, 13);
+            Label2.Size = new System.Drawing.Size(44, 12);
             Label2.TabIndex = 3;
             Label2.Text = "Number";
             // 
             // TextName
             // 
-            TextName.Location = new Point(81, 12);
-            TextName.Name = "TextName";
-            TextName.ReadOnly = true;
-            TextName.Size = new Size(230, 20);
-            TextName.TabIndex = 0;
+            this.TextName.Location = new System.Drawing.Point(81, 11);
+            this.TextName.Name = "TextName";
+            this.TextName.ReadOnly = true;
+            this.TextName.Size = new System.Drawing.Size(230, 19);
+            this.TextName.TabIndex = 0;
             // 
             // CheckHexadecimal
             // 
-            CheckHexadecimal.AutoSize = true;
-            CheckHexadecimal.Location = new Point(224, 40);
-            CheckHexadecimal.Name = "CheckHexadecimal";
-            CheckHexadecimal.Size = new Size(87, 17);
-            CheckHexadecimal.TabIndex = 2;
-            CheckHexadecimal.Text = "Hexadecimal";
-            CheckHexadecimal.UseVisualStyleBackColor = true;
+            this.CheckHexadecimal.AutoSize = true;
+            this.CheckHexadecimal.Location = new System.Drawing.Point(224, 37);
+            this.CheckHexadecimal.Name = "CheckHexadecimal";
+            this.CheckHexadecimal.Size = new System.Drawing.Size(89, 16);
+            this.CheckHexadecimal.TabIndex = 2;
+            this.CheckHexadecimal.Text = "Hexadecimal";
+            this.CheckHexadecimal.UseVisualStyleBackColor = true;
+            this.CheckHexadecimal.CheckedChanged += new System.EventHandler(this.CheckHexadecimal_CheckedChanged);
             // 
             // NumData
             // 
-            NumData.Location = new Point(81, 37);
-            NumData.Name = "NumData";
-            NumData.Size = new Size(137, 20);
-            NumData.TabIndex = 1;
+            this.NumData.Location = new System.Drawing.Point(81, 34);
+            this.NumData.Name = "NumData";
+            this.NumData.Size = new System.Drawing.Size(137, 19);
+            this.NumData.TabIndex = 1;
             // 
             // ButtonOK
             // 
-            ButtonOK.DialogResult = DialogResult.OK;
-            ButtonOK.Location = new Point(236, 63);
-            ButtonOK.Name = "ButtonOK";
-            ButtonOK.Size = new Size(75, 23);
-            ButtonOK.TabIndex = 3;
-            ButtonOK.Text = "OK";
-            ButtonOK.UseVisualStyleBackColor = true;
+            this.ButtonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.ButtonOK.Location = new System.Drawing.Point(236, 58);
+            this.ButtonOK.Name = "ButtonOK";
+            this.ButtonOK.Size = new System.Drawing.Size(75, 21);
+            this.ButtonOK.TabIndex = 3;
+            this.ButtonOK.Text = "OK";
+            this.ButtonOK.UseVisualStyleBackColor = true;
             // 
             // EditPolNumericData
             // 
-            AcceptButton = ButtonOK;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(323, 98);
-            Controls.Add(ButtonOK);
-            Controls.Add(NumData);
-            Controls.Add(CheckHexadecimal);
-            Controls.Add(Label2);
-            Controls.Add(Label1);
-            Controls.Add(TextName);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "EditPolNumericData";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Edit Number";
-            ((System.ComponentModel.ISupportInitialize)NumData).EndInit();
-            KeyDown += new KeyEventHandler(EditPolNumericData_KeyDown);
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.ButtonOK;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.ClientSize = new System.Drawing.Size(323, 90);
+            this.Controls.Add(this.ButtonOK);
+            this.Controls.Add(this.NumData);
+            this.Controls.Add(this.CheckHexadecimal);
+            this.Controls.Add(Label2);
+            this.Controls.Add(Label1);
+            this.Controls.Add(this.TextName);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "EditPolNumericData";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Edit Number";
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.EditPolNumericData_KeyDown);
+            ((System.ComponentModel.ISupportInitialize)(this.NumData)).EndInit();
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal TextBox TextName;

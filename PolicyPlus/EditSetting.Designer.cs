@@ -55,20 +55,36 @@ namespace PolicyPlus
             this.ViewDetailFormattedBtn = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.splitContainer4 = new System.Windows.Forms.SplitContainer();
+            this.panel4 = new System.Windows.Forms.Panel();
+            this.splitContainer5 = new System.Windows.Forms.SplitContainer();
+            this.panel6 = new System.Windows.Forms.Panel();
+            this.panel3 = new System.Windows.Forms.Panel();
+            this.splitContainer6 = new System.Windows.Forms.SplitContainer();
+            this.panel5 = new System.Windows.Forms.Panel();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
-            this.panel3 = new System.Windows.Forms.Panel();
-            this.panel4 = new System.Windows.Forms.Panel();
-            this.splitContainer4 = new System.Windows.Forms.SplitContainer();
-            this.panel5 = new System.Windows.Forms.Panel();
-            this.panel6 = new System.Windows.Forms.Panel();
-            this.splitContainer5 = new System.Windows.Forms.SplitContainer();
-            this.splitContainer6 = new System.Windows.Forms.SplitContainer();
             SectionLabel = new System.Windows.Forms.Label();
             this.ExtraOptionsPanel.SuspendLayout();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).BeginInit();
+            this.splitContainer4.Panel1.SuspendLayout();
+            this.splitContainer4.Panel2.SuspendLayout();
+            this.splitContainer4.SuspendLayout();
+            this.panel4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer5)).BeginInit();
+            this.splitContainer5.Panel1.SuspendLayout();
+            this.splitContainer5.Panel2.SuspendLayout();
+            this.splitContainer5.SuspendLayout();
+            this.panel6.SuspendLayout();
+            this.panel3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).BeginInit();
+            this.splitContainer6.Panel1.SuspendLayout();
+            this.splitContainer6.Panel2.SuspendLayout();
+            this.splitContainer6.SuspendLayout();
+            this.panel5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -81,31 +97,14 @@ namespace PolicyPlus
             this.splitContainer3.Panel1.SuspendLayout();
             this.splitContainer3.Panel2.SuspendLayout();
             this.splitContainer3.SuspendLayout();
-            this.panel3.SuspendLayout();
-            this.panel4.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).BeginInit();
-            this.splitContainer4.Panel1.SuspendLayout();
-            this.splitContainer4.Panel2.SuspendLayout();
-            this.splitContainer4.SuspendLayout();
-            this.panel5.SuspendLayout();
-            this.panel6.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer5)).BeginInit();
-            this.splitContainer5.Panel1.SuspendLayout();
-            this.splitContainer5.Panel2.SuspendLayout();
-            this.splitContainer5.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).BeginInit();
-            this.splitContainer6.Panel1.SuspendLayout();
-            this.splitContainer6.Panel2.SuspendLayout();
-            this.splitContainer6.SuspendLayout();
             this.SuspendLayout();
             // 
             // SectionLabel
             // 
             SectionLabel.AutoSize = true;
-            SectionLabel.Location = new System.Drawing.Point(11, 10);
-            SectionLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            SectionLabel.Location = new System.Drawing.Point(8, 8);
             SectionLabel.Name = "SectionLabel";
-            SectionLabel.Size = new System.Drawing.Size(71, 15);
+            SectionLabel.Size = new System.Drawing.Size(58, 12);
             SectionLabel.TabIndex = 12;
             SectionLabel.Text = "Editing for";
             // 
@@ -113,9 +112,8 @@ namespace PolicyPlus
             // 
             this.CommentLabel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.CommentLabel.Location = new System.Drawing.Point(0, 0);
-            this.CommentLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.CommentLabel.Name = "CommentLabel";
-            this.CommentLabel.Size = new System.Drawing.Size(100, 69);
+            this.CommentLabel.Size = new System.Drawing.Size(100, 34);
             this.CommentLabel.TabIndex = 2;
             this.CommentLabel.Text = "Comment";
             this.CommentLabel.TextAlign = System.Drawing.ContentAlignment.TopRight;
@@ -124,7 +122,6 @@ namespace PolicyPlus
             // 
             this.SupportedLabel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.SupportedLabel.Location = new System.Drawing.Point(0, 0);
-            this.SupportedLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.SupportedLabel.Name = "SupportedLabel";
             this.SupportedLabel.Size = new System.Drawing.Size(100, 70);
             this.SupportedLabel.TabIndex = 4;
@@ -137,9 +134,8 @@ namespace PolicyPlus
             this.SettingNameLabel.AutoEllipsis = true;
             this.SettingNameLabel.Dock = System.Windows.Forms.DockStyle.Top;
             this.SettingNameLabel.Location = new System.Drawing.Point(0, 0);
-            this.SettingNameLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.SettingNameLabel.Name = "SettingNameLabel";
-            this.SettingNameLabel.Size = new System.Drawing.Size(834, 15);
+            this.SettingNameLabel.Size = new System.Drawing.Size(626, 12);
             this.SettingNameLabel.TabIndex = 0;
             this.SettingNameLabel.Text = "Policy name";
             // 
@@ -148,10 +144,10 @@ namespace PolicyPlus
             this.CommentTextbox.AcceptsReturn = true;
             this.CommentTextbox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.CommentTextbox.Location = new System.Drawing.Point(0, 0);
-            this.CommentTextbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.CommentTextbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.CommentTextbox.Multiline = true;
             this.CommentTextbox.Name = "CommentTextbox";
-            this.CommentTextbox.Size = new System.Drawing.Size(448, 69);
+            this.CommentTextbox.Size = new System.Drawing.Size(312, 34);
             this.CommentTextbox.TabIndex = 100;
             this.CommentTextbox.TabStop = false;
             // 
@@ -159,21 +155,21 @@ namespace PolicyPlus
             // 
             this.SupportedTextbox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.SupportedTextbox.Location = new System.Drawing.Point(0, 0);
-            this.SupportedTextbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.SupportedTextbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.SupportedTextbox.Multiline = true;
             this.SupportedTextbox.Name = "SupportedTextbox";
             this.SupportedTextbox.ReadOnly = true;
-            this.SupportedTextbox.Size = new System.Drawing.Size(448, 70);
+            this.SupportedTextbox.Size = new System.Drawing.Size(312, 70);
             this.SupportedTextbox.TabIndex = 101;
             this.SupportedTextbox.TabStop = false;
             // 
             // NotConfiguredOption
             // 
             this.NotConfiguredOption.AutoSize = true;
-            this.NotConfiguredOption.Location = new System.Drawing.Point(11, 38);
-            this.NotConfiguredOption.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.NotConfiguredOption.Location = new System.Drawing.Point(8, 30);
+            this.NotConfiguredOption.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.NotConfiguredOption.Name = "NotConfiguredOption";
-            this.NotConfiguredOption.Size = new System.Drawing.Size(125, 19);
+            this.NotConfiguredOption.Size = new System.Drawing.Size(100, 16);
             this.NotConfiguredOption.TabIndex = 1;
             this.NotConfiguredOption.TabStop = true;
             this.NotConfiguredOption.Text = "Not Configured";
@@ -183,10 +179,10 @@ namespace PolicyPlus
             // EnabledOption
             // 
             this.EnabledOption.AutoSize = true;
-            this.EnabledOption.Location = new System.Drawing.Point(11, 65);
-            this.EnabledOption.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.EnabledOption.Location = new System.Drawing.Point(8, 52);
+            this.EnabledOption.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.EnabledOption.Name = "EnabledOption";
-            this.EnabledOption.Size = new System.Drawing.Size(76, 19);
+            this.EnabledOption.Size = new System.Drawing.Size(63, 16);
             this.EnabledOption.TabIndex = 2;
             this.EnabledOption.TabStop = true;
             this.EnabledOption.Text = "Enabled";
@@ -196,10 +192,10 @@ namespace PolicyPlus
             // DisabledOption
             // 
             this.DisabledOption.AutoSize = true;
-            this.DisabledOption.Location = new System.Drawing.Point(11, 91);
-            this.DisabledOption.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.DisabledOption.Location = new System.Drawing.Point(8, 73);
+            this.DisabledOption.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.DisabledOption.Name = "DisabledOption";
-            this.DisabledOption.Size = new System.Drawing.Size(80, 19);
+            this.DisabledOption.Size = new System.Drawing.Size(67, 16);
             this.DisabledOption.TabIndex = 3;
             this.DisabledOption.TabStop = true;
             this.DisabledOption.Text = "Disabled";
@@ -213,9 +209,9 @@ namespace PolicyPlus
             this.ExtraOptionsPanel.Controls.Add(this.ExtraOptionsTable);
             this.ExtraOptionsPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ExtraOptionsPanel.Location = new System.Drawing.Point(0, 0);
-            this.ExtraOptionsPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.ExtraOptionsPanel.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.ExtraOptionsPanel.Name = "ExtraOptionsPanel";
-            this.ExtraOptionsPanel.Size = new System.Drawing.Size(418, 285);
+            this.ExtraOptionsPanel.Size = new System.Drawing.Size(313, 228);
             this.ExtraOptionsPanel.TabIndex = 8;
             // 
             // ExtraOptionsTable
@@ -223,25 +219,26 @@ namespace PolicyPlus
             this.ExtraOptionsTable.AutoSize = true;
             this.ExtraOptionsTable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.ExtraOptionsTable.ColumnCount = 1;
-            this.ExtraOptionsTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 397F));
+            this.ExtraOptionsTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 298F));
             this.ExtraOptionsTable.Location = new System.Drawing.Point(0, 0);
             this.ExtraOptionsTable.Margin = new System.Windows.Forms.Padding(0);
-            this.ExtraOptionsTable.MaximumSize = new System.Drawing.Size(396, 0);
-            this.ExtraOptionsTable.MinimumSize = new System.Drawing.Size(396, 0);
+            this.ExtraOptionsTable.MaximumSize = new System.Drawing.Size(297, 0);
+            this.ExtraOptionsTable.MinimumSize = new System.Drawing.Size(297, 0);
             this.ExtraOptionsTable.Name = "ExtraOptionsTable";
             this.ExtraOptionsTable.RowCount = 1;
-            this.ExtraOptionsTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 23F));
-            this.ExtraOptionsTable.Size = new System.Drawing.Size(396, 23);
+            this.ExtraOptionsTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 18F));
+            this.ExtraOptionsTable.Size = new System.Drawing.Size(297, 18);
             this.ExtraOptionsTable.TabIndex = 0;
+            this.ExtraOptionsTable.DoubleClick += new System.EventHandler(this.CopyToClipboard);
             // 
             // CloseButton
             // 
             this.CloseButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.CloseButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CloseButton.Location = new System.Drawing.Point(628, 462);
-            this.CloseButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.CloseButton.Location = new System.Drawing.Point(471, 370);
+            this.CloseButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.CloseButton.Name = "CloseButton";
-            this.CloseButton.Size = new System.Drawing.Size(100, 27);
+            this.CloseButton.Size = new System.Drawing.Size(75, 22);
             this.CloseButton.TabIndex = 104;
             this.CloseButton.Text = "Cancel";
             this.CloseButton.UseVisualStyleBackColor = true;
@@ -250,10 +247,10 @@ namespace PolicyPlus
             // OkButton
             // 
             this.OkButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.OkButton.Location = new System.Drawing.Point(520, 462);
-            this.OkButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.OkButton.Location = new System.Drawing.Point(390, 370);
+            this.OkButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.OkButton.Name = "OkButton";
-            this.OkButton.Size = new System.Drawing.Size(100, 27);
+            this.OkButton.Size = new System.Drawing.Size(75, 22);
             this.OkButton.TabIndex = 103;
             this.OkButton.Text = "OK";
             this.OkButton.UseVisualStyleBackColor = true;
@@ -263,12 +260,12 @@ namespace PolicyPlus
             // 
             this.HelpTextbox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.HelpTextbox.Location = new System.Drawing.Point(0, 0);
-            this.HelpTextbox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.HelpTextbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.HelpTextbox.Multiline = true;
             this.HelpTextbox.Name = "HelpTextbox";
             this.HelpTextbox.ReadOnly = true;
             this.HelpTextbox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.HelpTextbox.Size = new System.Drawing.Size(414, 285);
+            this.HelpTextbox.Size = new System.Drawing.Size(311, 228);
             this.HelpTextbox.TabIndex = 102;
             // 
             // SectionDropdown
@@ -278,20 +275,20 @@ namespace PolicyPlus
             this.SectionDropdown.Items.AddRange(new object[] {
             "User",
             "Computer"});
-            this.SectionDropdown.Location = new System.Drawing.Point(91, 7);
-            this.SectionDropdown.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.SectionDropdown.Location = new System.Drawing.Point(68, 6);
+            this.SectionDropdown.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.SectionDropdown.Name = "SectionDropdown";
-            this.SectionDropdown.Size = new System.Drawing.Size(148, 23);
+            this.SectionDropdown.Size = new System.Drawing.Size(112, 20);
             this.SectionDropdown.TabIndex = 4;
             this.SectionDropdown.SelectedIndexChanged += new System.EventHandler(this.SectionDropdown_SelectedIndexChanged);
             // 
             // ApplyButton
             // 
             this.ApplyButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.ApplyButton.Location = new System.Drawing.Point(736, 462);
-            this.ApplyButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.ApplyButton.Location = new System.Drawing.Point(552, 370);
+            this.ApplyButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.ApplyButton.Name = "ApplyButton";
-            this.ApplyButton.Size = new System.Drawing.Size(100, 27);
+            this.ApplyButton.Size = new System.Drawing.Size(75, 22);
             this.ApplyButton.TabIndex = 105;
             this.ApplyButton.Text = "Apply";
             this.ApplyButton.UseVisualStyleBackColor = true;
@@ -300,10 +297,10 @@ namespace PolicyPlus
             // ViewDetailFormattedBtn
             // 
             this.ViewDetailFormattedBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.ViewDetailFormattedBtn.Location = new System.Drawing.Point(14, 463);
-            this.ViewDetailFormattedBtn.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.ViewDetailFormattedBtn.Location = new System.Drawing.Point(10, 370);
+            this.ViewDetailFormattedBtn.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.ViewDetailFormattedBtn.Name = "ViewDetailFormattedBtn";
-            this.ViewDetailFormattedBtn.Size = new System.Drawing.Size(152, 27);
+            this.ViewDetailFormattedBtn.Size = new System.Drawing.Size(114, 22);
             this.ViewDetailFormattedBtn.TabIndex = 106;
             this.ViewDetailFormattedBtn.Text = "View Detail (Apply)";
             this.ViewDetailFormattedBtn.UseVisualStyleBackColor = true;
@@ -318,8 +315,9 @@ namespace PolicyPlus
             this.panel1.Controls.Add(this.NotConfiguredOption);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
+            this.panel1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(278, 143);
+            this.panel1.Size = new System.Drawing.Size(208, 107);
             this.panel1.TabIndex = 107;
             // 
             // panel2
@@ -327,85 +325,16 @@ namespace PolicyPlus
             this.panel2.Controls.Add(this.splitContainer4);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel2.Location = new System.Drawing.Point(0, 0);
+            this.panel2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(552, 143);
+            this.panel2.Size = new System.Drawing.Size(415, 107);
             this.panel2.TabIndex = 108;
-            // 
-            // splitContainer1
-            // 
-            this.splitContainer1.Location = new System.Drawing.Point(6, 171);
-            this.splitContainer1.Name = "splitContainer1";
-            // 
-            // splitContainer1.Panel1
-            // 
-            this.splitContainer1.Panel1.Controls.Add(this.ExtraOptionsPanel);
-            // 
-            // splitContainer1.Panel2
-            // 
-            this.splitContainer1.Panel2.Controls.Add(this.HelpTextbox);
-            this.splitContainer1.Size = new System.Drawing.Size(836, 285);
-            this.splitContainer1.SplitterDistance = 418;
-            this.splitContainer1.TabIndex = 109;
-            // 
-            // splitContainer2
-            // 
-            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer2.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer2.Name = "splitContainer2";
-            // 
-            // splitContainer2.Panel1
-            // 
-            this.splitContainer2.Panel1.Controls.Add(this.panel1);
-            // 
-            // splitContainer2.Panel2
-            // 
-            this.splitContainer2.Panel2.Controls.Add(this.panel2);
-            this.splitContainer2.Size = new System.Drawing.Size(834, 143);
-            this.splitContainer2.SplitterDistance = 278;
-            this.splitContainer2.TabIndex = 110;
-            // 
-            // splitContainer3
-            // 
-            this.splitContainer3.Location = new System.Drawing.Point(8, 5);
-            this.splitContainer3.Name = "splitContainer3";
-            this.splitContainer3.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // splitContainer3.Panel1
-            // 
-            this.splitContainer3.Panel1.Controls.Add(this.SettingNameLabel);
-            this.splitContainer3.Panel1MinSize = 15;
-            // 
-            // splitContainer3.Panel2
-            // 
-            this.splitContainer3.Panel2.Controls.Add(this.splitContainer2);
-            this.splitContainer3.Size = new System.Drawing.Size(834, 162);
-            this.splitContainer3.SplitterDistance = 15;
-            this.splitContainer3.TabIndex = 111;
-            // 
-            // panel3
-            // 
-            this.panel3.Controls.Add(this.splitContainer6);
-            this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel3.Location = new System.Drawing.Point(0, 0);
-            this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(552, 70);
-            this.panel3.TabIndex = 102;
-            // 
-            // panel4
-            // 
-            this.panel4.AutoSize = true;
-            this.panel4.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.panel4.Controls.Add(this.splitContainer5);
-            this.panel4.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel4.Location = new System.Drawing.Point(0, 0);
-            this.panel4.Name = "panel4";
-            this.panel4.Size = new System.Drawing.Size(552, 69);
-            this.panel4.TabIndex = 103;
             // 
             // splitContainer4
             // 
             this.splitContainer4.Dock = System.Windows.Forms.DockStyle.Fill;
             this.splitContainer4.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer4.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.splitContainer4.Name = "splitContainer4";
             this.splitContainer4.Orientation = System.Windows.Forms.Orientation.Horizontal;
             // 
@@ -417,33 +346,29 @@ namespace PolicyPlus
             // 
             this.splitContainer4.Panel2.Controls.Add(this.panel3);
             this.splitContainer4.Panel2MinSize = 70;
-            this.splitContainer4.Size = new System.Drawing.Size(552, 143);
-            this.splitContainer4.SplitterDistance = 69;
+            this.splitContainer4.Size = new System.Drawing.Size(415, 107);
+            this.splitContainer4.SplitterDistance = 34;
+            this.splitContainer4.SplitterWidth = 3;
             this.splitContainer4.TabIndex = 104;
             // 
-            // panel5
+            // panel4
             // 
-            this.panel5.Controls.Add(this.SupportedLabel);
-            this.panel5.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel5.Location = new System.Drawing.Point(0, 0);
-            this.panel5.Name = "panel5";
-            this.panel5.Size = new System.Drawing.Size(100, 70);
-            this.panel5.TabIndex = 102;
-            // 
-            // panel6
-            // 
-            this.panel6.Controls.Add(this.CommentLabel);
-            this.panel6.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel6.Location = new System.Drawing.Point(0, 0);
-            this.panel6.Name = "panel6";
-            this.panel6.Size = new System.Drawing.Size(100, 69);
-            this.panel6.TabIndex = 101;
+            this.panel4.AutoSize = true;
+            this.panel4.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.panel4.Controls.Add(this.splitContainer5);
+            this.panel4.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel4.Location = new System.Drawing.Point(0, 0);
+            this.panel4.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.panel4.Name = "panel4";
+            this.panel4.Size = new System.Drawing.Size(415, 34);
+            this.panel4.TabIndex = 103;
             // 
             // splitContainer5
             // 
             this.splitContainer5.Dock = System.Windows.Forms.DockStyle.Fill;
             this.splitContainer5.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
             this.splitContainer5.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer5.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.splitContainer5.Name = "splitContainer5";
             // 
             // splitContainer5.Panel1
@@ -453,15 +378,37 @@ namespace PolicyPlus
             // splitContainer5.Panel2
             // 
             this.splitContainer5.Panel2.Controls.Add(this.CommentTextbox);
-            this.splitContainer5.Size = new System.Drawing.Size(552, 69);
+            this.splitContainer5.Size = new System.Drawing.Size(415, 34);
             this.splitContainer5.SplitterDistance = 100;
+            this.splitContainer5.SplitterWidth = 3;
             this.splitContainer5.TabIndex = 102;
+            // 
+            // panel6
+            // 
+            this.panel6.Controls.Add(this.CommentLabel);
+            this.panel6.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel6.Location = new System.Drawing.Point(0, 0);
+            this.panel6.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.panel6.Name = "panel6";
+            this.panel6.Size = new System.Drawing.Size(100, 34);
+            this.panel6.TabIndex = 101;
+            // 
+            // panel3
+            // 
+            this.panel3.Controls.Add(this.splitContainer6);
+            this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel3.Location = new System.Drawing.Point(0, 0);
+            this.panel3.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.panel3.Name = "panel3";
+            this.panel3.Size = new System.Drawing.Size(415, 70);
+            this.panel3.TabIndex = 102;
             // 
             // splitContainer6
             // 
             this.splitContainer6.Dock = System.Windows.Forms.DockStyle.Fill;
             this.splitContainer6.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
             this.splitContainer6.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer6.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.splitContainer6.Name = "splitContainer6";
             // 
             // splitContainer6.Panel1
@@ -471,27 +418,95 @@ namespace PolicyPlus
             // splitContainer6.Panel2
             // 
             this.splitContainer6.Panel2.Controls.Add(this.SupportedTextbox);
-            this.splitContainer6.Size = new System.Drawing.Size(552, 70);
+            this.splitContainer6.Size = new System.Drawing.Size(415, 70);
             this.splitContainer6.SplitterDistance = 100;
+            this.splitContainer6.SplitterWidth = 3;
             this.splitContainer6.TabIndex = 5;
+            // 
+            // panel5
+            // 
+            this.panel5.Controls.Add(this.SupportedLabel);
+            this.panel5.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel5.Location = new System.Drawing.Point(0, 0);
+            this.panel5.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.panel5.Name = "panel5";
+            this.panel5.Size = new System.Drawing.Size(100, 70);
+            this.panel5.TabIndex = 102;
+            // 
+            // splitContainer1
+            // 
+            this.splitContainer1.Location = new System.Drawing.Point(4, 137);
+            this.splitContainer1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.splitContainer1.Name = "splitContainer1";
+            // 
+            // splitContainer1.Panel1
+            // 
+            this.splitContainer1.Panel1.Controls.Add(this.ExtraOptionsPanel);
+            // 
+            // splitContainer1.Panel2
+            // 
+            this.splitContainer1.Panel2.Controls.Add(this.HelpTextbox);
+            this.splitContainer1.Size = new System.Drawing.Size(627, 228);
+            this.splitContainer1.SplitterDistance = 313;
+            this.splitContainer1.SplitterWidth = 3;
+            this.splitContainer1.TabIndex = 109;
+            // 
+            // splitContainer2
+            // 
+            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer2.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.splitContainer2.Name = "splitContainer2";
+            // 
+            // splitContainer2.Panel1
+            // 
+            this.splitContainer2.Panel1.Controls.Add(this.panel1);
+            // 
+            // splitContainer2.Panel2
+            // 
+            this.splitContainer2.Panel2.Controls.Add(this.panel2);
+            this.splitContainer2.Size = new System.Drawing.Size(626, 107);
+            this.splitContainer2.SplitterDistance = 208;
+            this.splitContainer2.SplitterWidth = 3;
+            this.splitContainer2.TabIndex = 110;
+            // 
+            // splitContainer3
+            // 
+            this.splitContainer3.Location = new System.Drawing.Point(6, 4);
+            this.splitContainer3.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.splitContainer3.Name = "splitContainer3";
+            this.splitContainer3.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // splitContainer3.Panel1
+            // 
+            this.splitContainer3.Panel1.Controls.Add(this.SettingNameLabel);
+            this.splitContainer3.Panel1MinSize = 15;
+            // 
+            // splitContainer3.Panel2
+            // 
+            this.splitContainer3.Panel2.Controls.Add(this.splitContainer2);
+            this.splitContainer3.Size = new System.Drawing.Size(626, 130);
+            this.splitContainer3.SplitterDistance = 20;
+            this.splitContainer3.SplitterWidth = 3;
+            this.splitContainer3.TabIndex = 111;
             // 
             // EditSetting
             // 
             this.AcceptButton = this.OkButton;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.CloseButton;
-            this.ClientSize = new System.Drawing.Size(852, 502);
+            this.ClientSize = new System.Drawing.Size(639, 402);
             this.Controls.Add(this.ViewDetailFormattedBtn);
             this.Controls.Add(this.ApplyButton);
             this.Controls.Add(this.OkButton);
             this.Controls.Add(this.CloseButton);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.splitContainer3);
-            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(866, 540);
+            this.MinimumSize = new System.Drawing.Size(654, 440);
             this.Name = "EditSetting";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
@@ -505,6 +520,25 @@ namespace PolicyPlus
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.panel2.ResumeLayout(false);
+            this.splitContainer4.Panel1.ResumeLayout(false);
+            this.splitContainer4.Panel1.PerformLayout();
+            this.splitContainer4.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).EndInit();
+            this.splitContainer4.ResumeLayout(false);
+            this.panel4.ResumeLayout(false);
+            this.splitContainer5.Panel1.ResumeLayout(false);
+            this.splitContainer5.Panel2.ResumeLayout(false);
+            this.splitContainer5.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer5)).EndInit();
+            this.splitContainer5.ResumeLayout(false);
+            this.panel6.ResumeLayout(false);
+            this.panel3.ResumeLayout(false);
+            this.splitContainer6.Panel1.ResumeLayout(false);
+            this.splitContainer6.Panel2.ResumeLayout(false);
+            this.splitContainer6.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).EndInit();
+            this.splitContainer6.ResumeLayout(false);
+            this.panel5.ResumeLayout(false);
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.Panel2.PerformLayout();
@@ -518,25 +552,6 @@ namespace PolicyPlus
             this.splitContainer3.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
             this.splitContainer3.ResumeLayout(false);
-            this.panel3.ResumeLayout(false);
-            this.panel4.ResumeLayout(false);
-            this.splitContainer4.Panel1.ResumeLayout(false);
-            this.splitContainer4.Panel1.PerformLayout();
-            this.splitContainer4.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).EndInit();
-            this.splitContainer4.ResumeLayout(false);
-            this.panel5.ResumeLayout(false);
-            this.panel6.ResumeLayout(false);
-            this.splitContainer5.Panel1.ResumeLayout(false);
-            this.splitContainer5.Panel2.ResumeLayout(false);
-            this.splitContainer5.Panel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer5)).EndInit();
-            this.splitContainer5.ResumeLayout(false);
-            this.splitContainer6.Panel1.ResumeLayout(false);
-            this.splitContainer6.Panel2.ResumeLayout(false);
-            this.splitContainer6.Panel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer6)).EndInit();
-            this.splitContainer6.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }

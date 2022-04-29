@@ -35,259 +35,260 @@ namespace PolicyPlus
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            Label NameLabel;
-            Label IdLabel;
-            Label DefinedLabel;
-            Label DisplayLabel;
-            Label InfoLabel;
-            Label PresentLabel;
-            Label SectionLabel;
-            Label SupportLabel;
-            Label CategoryLabel;
-            NameTextbox = new TextBox();
-            IdTextbox = new TextBox();
-            DefinedTextbox = new TextBox();
-            DisplayCodeTextbox = new TextBox();
-            InfoCodeTextbox = new TextBox();
-            PresentCodeTextbox = new TextBox();
-            SectionTextbox = new TextBox();
-            SupportTextbox = new TextBox();
-            CategoryTextbox = new TextBox();
-            CategoryButton = new Button();
-            CategoryButton.Click += new EventHandler(CategoryButton_Click);
-            SupportButton = new Button();
-            SupportButton.Click += new EventHandler(SupportButton_Click);
-            CloseButton = new Button();
-            NameLabel = new Label();
-            IdLabel = new Label();
-            DefinedLabel = new Label();
-            DisplayLabel = new Label();
-            InfoLabel = new Label();
-            PresentLabel = new Label();
-            SectionLabel = new Label();
-            SupportLabel = new Label();
-            CategoryLabel = new Label();
-            SuspendLayout();
-            // 
-            // NameTextbox
-            // 
-            NameTextbox.Location = new Point(111, 12);
-            NameTextbox.Name = "NameTextbox";
-            NameTextbox.ReadOnly = true;
-            NameTextbox.Size = new Size(258, 20);
-            NameTextbox.TabIndex = 0;
-            // 
-            // IdTextbox
-            // 
-            IdTextbox.Location = new Point(111, 38);
-            IdTextbox.Name = "IdTextbox";
-            IdTextbox.ReadOnly = true;
-            IdTextbox.Size = new Size(258, 20);
-            IdTextbox.TabIndex = 1;
-            // 
-            // DefinedTextbox
-            // 
-            DefinedTextbox.Location = new Point(111, 64);
-            DefinedTextbox.Name = "DefinedTextbox";
-            DefinedTextbox.ReadOnly = true;
-            DefinedTextbox.Size = new Size(258, 20);
-            DefinedTextbox.TabIndex = 2;
-            // 
-            // DisplayCodeTextbox
-            // 
-            DisplayCodeTextbox.Location = new Point(111, 90);
-            DisplayCodeTextbox.Name = "DisplayCodeTextbox";
-            DisplayCodeTextbox.ReadOnly = true;
-            DisplayCodeTextbox.Size = new Size(258, 20);
-            DisplayCodeTextbox.TabIndex = 3;
-            // 
-            // InfoCodeTextbox
-            // 
-            InfoCodeTextbox.Location = new Point(111, 116);
-            InfoCodeTextbox.Name = "InfoCodeTextbox";
-            InfoCodeTextbox.ReadOnly = true;
-            InfoCodeTextbox.Size = new Size(258, 20);
-            InfoCodeTextbox.TabIndex = 4;
-            // 
-            // PresentCodeTextbox
-            // 
-            PresentCodeTextbox.Location = new Point(111, 142);
-            PresentCodeTextbox.Name = "PresentCodeTextbox";
-            PresentCodeTextbox.ReadOnly = true;
-            PresentCodeTextbox.Size = new Size(258, 20);
-            PresentCodeTextbox.TabIndex = 5;
-            // 
-            // SectionTextbox
-            // 
-            SectionTextbox.Location = new Point(111, 168);
-            SectionTextbox.Name = "SectionTextbox";
-            SectionTextbox.ReadOnly = true;
-            SectionTextbox.Size = new Size(258, 20);
-            SectionTextbox.TabIndex = 6;
-            // 
-            // SupportTextbox
-            // 
-            SupportTextbox.Location = new Point(111, 194);
-            SupportTextbox.Name = "SupportTextbox";
-            SupportTextbox.ReadOnly = true;
-            SupportTextbox.Size = new Size(177, 20);
-            SupportTextbox.TabIndex = 7;
-            // 
-            // CategoryTextbox
-            // 
-            CategoryTextbox.Location = new Point(111, 220);
-            CategoryTextbox.Name = "CategoryTextbox";
-            CategoryTextbox.ReadOnly = true;
-            CategoryTextbox.Size = new Size(177, 20);
-            CategoryTextbox.TabIndex = 8;
+            System.Windows.Forms.Label NameLabel;
+            System.Windows.Forms.Label IdLabel;
+            System.Windows.Forms.Label DefinedLabel;
+            System.Windows.Forms.Label DisplayLabel;
+            System.Windows.Forms.Label InfoLabel;
+            System.Windows.Forms.Label PresentLabel;
+            System.Windows.Forms.Label SectionLabel;
+            System.Windows.Forms.Label SupportLabel;
+            System.Windows.Forms.Label CategoryLabel;
+            this.NameTextbox = new System.Windows.Forms.TextBox();
+            this.IdTextbox = new System.Windows.Forms.TextBox();
+            this.DefinedTextbox = new System.Windows.Forms.TextBox();
+            this.DisplayCodeTextbox = new System.Windows.Forms.TextBox();
+            this.InfoCodeTextbox = new System.Windows.Forms.TextBox();
+            this.PresentCodeTextbox = new System.Windows.Forms.TextBox();
+            this.SectionTextbox = new System.Windows.Forms.TextBox();
+            this.SupportTextbox = new System.Windows.Forms.TextBox();
+            this.CategoryTextbox = new System.Windows.Forms.TextBox();
+            this.CategoryButton = new System.Windows.Forms.Button();
+            this.SupportButton = new System.Windows.Forms.Button();
+            this.CloseButton = new System.Windows.Forms.Button();
+            NameLabel = new System.Windows.Forms.Label();
+            IdLabel = new System.Windows.Forms.Label();
+            DefinedLabel = new System.Windows.Forms.Label();
+            DisplayLabel = new System.Windows.Forms.Label();
+            InfoLabel = new System.Windows.Forms.Label();
+            PresentLabel = new System.Windows.Forms.Label();
+            SectionLabel = new System.Windows.Forms.Label();
+            SupportLabel = new System.Windows.Forms.Label();
+            CategoryLabel = new System.Windows.Forms.Label();
+            this.SuspendLayout();
             // 
             // NameLabel
             // 
             NameLabel.AutoSize = true;
-            NameLabel.Location = new Point(12, 15);
+            NameLabel.Location = new System.Drawing.Point(12, 14);
             NameLabel.Name = "NameLabel";
-            NameLabel.Size = new Size(35, 13);
+            NameLabel.Size = new System.Drawing.Size(34, 12);
             NameLabel.TabIndex = 9;
             NameLabel.Text = "Name";
             // 
             // IdLabel
             // 
             IdLabel.AutoSize = true;
-            IdLabel.Location = new Point(12, 41);
+            IdLabel.Location = new System.Drawing.Point(12, 38);
             IdLabel.Name = "IdLabel";
-            IdLabel.Size = new Size(55, 13);
+            IdLabel.Size = new System.Drawing.Size(55, 12);
             IdLabel.TabIndex = 10;
             IdLabel.Text = "Unique ID";
             // 
             // DefinedLabel
             // 
             DefinedLabel.AutoSize = true;
-            DefinedLabel.Location = new Point(12, 67);
+            DefinedLabel.Location = new System.Drawing.Point(12, 62);
             DefinedLabel.Name = "DefinedLabel";
-            DefinedLabel.Size = new Size(55, 13);
+            DefinedLabel.Size = new System.Drawing.Size(57, 12);
             DefinedLabel.TabIndex = 11;
             DefinedLabel.Text = "Defined in";
             // 
             // DisplayLabel
             // 
             DisplayLabel.AutoSize = true;
-            DisplayLabel.Location = new Point(12, 93);
+            DisplayLabel.Location = new System.Drawing.Point(12, 86);
             DisplayLabel.Name = "DisplayLabel";
-            DisplayLabel.Size = new Size(68, 13);
+            DisplayLabel.Size = new System.Drawing.Size(71, 12);
             DisplayLabel.TabIndex = 12;
             DisplayLabel.Text = "Display code";
             // 
             // InfoLabel
             // 
             InfoLabel.AutoSize = true;
-            InfoLabel.Location = new Point(12, 119);
+            InfoLabel.Location = new System.Drawing.Point(12, 110);
             InfoLabel.Name = "InfoLabel";
-            InfoLabel.Size = new Size(52, 13);
+            InfoLabel.Size = new System.Drawing.Size(52, 12);
             InfoLabel.TabIndex = 13;
             InfoLabel.Text = "Info code";
             // 
             // PresentLabel
             // 
             PresentLabel.AutoSize = true;
-            PresentLabel.Location = new Point(12, 145);
+            PresentLabel.Location = new System.Drawing.Point(12, 134);
             PresentLabel.Name = "PresentLabel";
-            PresentLabel.Size = new Size(93, 13);
+            PresentLabel.Size = new System.Drawing.Size(97, 12);
             PresentLabel.TabIndex = 14;
             PresentLabel.Text = "Presentation code";
             // 
             // SectionLabel
             // 
             SectionLabel.AutoSize = true;
-            SectionLabel.Location = new Point(12, 171);
+            SectionLabel.Location = new System.Drawing.Point(12, 158);
             SectionLabel.Name = "SectionLabel";
-            SectionLabel.Size = new Size(43, 13);
+            SectionLabel.Size = new System.Drawing.Size(43, 12);
             SectionLabel.TabIndex = 15;
             SectionLabel.Text = "Section";
             // 
             // SupportLabel
             // 
             SupportLabel.AutoSize = true;
-            SupportLabel.Location = new Point(12, 197);
+            SupportLabel.Location = new System.Drawing.Point(12, 182);
             SupportLabel.Name = "SupportLabel";
-            SupportLabel.Size = new Size(71, 13);
+            SupportLabel.Size = new System.Drawing.Size(72, 12);
             SupportLabel.TabIndex = 16;
             SupportLabel.Text = "Supported on";
             // 
             // CategoryLabel
             // 
             CategoryLabel.AutoSize = true;
-            CategoryLabel.Location = new Point(12, 223);
+            CategoryLabel.Location = new System.Drawing.Point(12, 206);
             CategoryLabel.Name = "CategoryLabel";
-            CategoryLabel.Size = new Size(49, 13);
+            CategoryLabel.Size = new System.Drawing.Size(51, 12);
             CategoryLabel.TabIndex = 17;
             CategoryLabel.Text = "Category";
             // 
+            // NameTextbox
+            // 
+            this.NameTextbox.Location = new System.Drawing.Point(111, 11);
+            this.NameTextbox.Name = "NameTextbox";
+            this.NameTextbox.ReadOnly = true;
+            this.NameTextbox.Size = new System.Drawing.Size(258, 19);
+            this.NameTextbox.TabIndex = 0;
+            // 
+            // IdTextbox
+            // 
+            this.IdTextbox.Location = new System.Drawing.Point(111, 35);
+            this.IdTextbox.Name = "IdTextbox";
+            this.IdTextbox.ReadOnly = true;
+            this.IdTextbox.Size = new System.Drawing.Size(258, 19);
+            this.IdTextbox.TabIndex = 1;
+            // 
+            // DefinedTextbox
+            // 
+            this.DefinedTextbox.Location = new System.Drawing.Point(111, 59);
+            this.DefinedTextbox.Name = "DefinedTextbox";
+            this.DefinedTextbox.ReadOnly = true;
+            this.DefinedTextbox.Size = new System.Drawing.Size(258, 19);
+            this.DefinedTextbox.TabIndex = 2;
+            // 
+            // DisplayCodeTextbox
+            // 
+            this.DisplayCodeTextbox.Location = new System.Drawing.Point(111, 83);
+            this.DisplayCodeTextbox.Name = "DisplayCodeTextbox";
+            this.DisplayCodeTextbox.ReadOnly = true;
+            this.DisplayCodeTextbox.Size = new System.Drawing.Size(258, 19);
+            this.DisplayCodeTextbox.TabIndex = 3;
+            // 
+            // InfoCodeTextbox
+            // 
+            this.InfoCodeTextbox.Location = new System.Drawing.Point(111, 107);
+            this.InfoCodeTextbox.Name = "InfoCodeTextbox";
+            this.InfoCodeTextbox.ReadOnly = true;
+            this.InfoCodeTextbox.Size = new System.Drawing.Size(258, 19);
+            this.InfoCodeTextbox.TabIndex = 4;
+            // 
+            // PresentCodeTextbox
+            // 
+            this.PresentCodeTextbox.Location = new System.Drawing.Point(111, 131);
+            this.PresentCodeTextbox.Name = "PresentCodeTextbox";
+            this.PresentCodeTextbox.ReadOnly = true;
+            this.PresentCodeTextbox.Size = new System.Drawing.Size(258, 19);
+            this.PresentCodeTextbox.TabIndex = 5;
+            // 
+            // SectionTextbox
+            // 
+            this.SectionTextbox.Location = new System.Drawing.Point(111, 155);
+            this.SectionTextbox.Name = "SectionTextbox";
+            this.SectionTextbox.ReadOnly = true;
+            this.SectionTextbox.Size = new System.Drawing.Size(258, 19);
+            this.SectionTextbox.TabIndex = 6;
+            // 
+            // SupportTextbox
+            // 
+            this.SupportTextbox.Location = new System.Drawing.Point(111, 179);
+            this.SupportTextbox.Name = "SupportTextbox";
+            this.SupportTextbox.ReadOnly = true;
+            this.SupportTextbox.Size = new System.Drawing.Size(177, 19);
+            this.SupportTextbox.TabIndex = 7;
+            // 
+            // CategoryTextbox
+            // 
+            this.CategoryTextbox.Location = new System.Drawing.Point(111, 203);
+            this.CategoryTextbox.Name = "CategoryTextbox";
+            this.CategoryTextbox.ReadOnly = true;
+            this.CategoryTextbox.Size = new System.Drawing.Size(177, 19);
+            this.CategoryTextbox.TabIndex = 8;
+            // 
             // CategoryButton
             // 
-            CategoryButton.Location = new Point(294, 218);
-            CategoryButton.Name = "CategoryButton";
-            CategoryButton.Size = new Size(75, 23);
-            CategoryButton.TabIndex = 18;
-            CategoryButton.Text = "Details";
-            CategoryButton.UseVisualStyleBackColor = true;
+            this.CategoryButton.Location = new System.Drawing.Point(294, 201);
+            this.CategoryButton.Name = "CategoryButton";
+            this.CategoryButton.Size = new System.Drawing.Size(75, 21);
+            this.CategoryButton.TabIndex = 18;
+            this.CategoryButton.Text = "Details";
+            this.CategoryButton.UseVisualStyleBackColor = true;
+            this.CategoryButton.Click += new System.EventHandler(this.CategoryButton_Click);
             // 
             // SupportButton
             // 
-            SupportButton.Location = new Point(294, 192);
-            SupportButton.Name = "SupportButton";
-            SupportButton.Size = new Size(75, 23);
-            SupportButton.TabIndex = 17;
-            SupportButton.Text = "Details";
-            SupportButton.UseVisualStyleBackColor = true;
+            this.SupportButton.Location = new System.Drawing.Point(294, 177);
+            this.SupportButton.Name = "SupportButton";
+            this.SupportButton.Size = new System.Drawing.Size(75, 21);
+            this.SupportButton.TabIndex = 17;
+            this.SupportButton.Text = "Details";
+            this.SupportButton.UseVisualStyleBackColor = true;
+            this.SupportButton.Click += new System.EventHandler(this.SupportButton_Click);
             // 
             // CloseButton
             // 
-            CloseButton.DialogResult = DialogResult.OK;
-            CloseButton.Location = new Point(294, 247);
-            CloseButton.Name = "CloseButton";
-            CloseButton.Size = new Size(75, 23);
-            CloseButton.TabIndex = 19;
-            CloseButton.Text = "Close";
-            CloseButton.UseVisualStyleBackColor = true;
+            this.CloseButton.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.CloseButton.Location = new System.Drawing.Point(294, 228);
+            this.CloseButton.Name = "CloseButton";
+            this.CloseButton.Size = new System.Drawing.Size(75, 21);
+            this.CloseButton.TabIndex = 19;
+            this.CloseButton.Text = "Close";
+            this.CloseButton.UseVisualStyleBackColor = true;
             // 
             // DetailPolicy
             // 
-            AcceptButton = CloseButton;
-            AutoScaleDimensions = new SizeF(6.0f, 13.0f);
-            AutoScaleMode = AutoScaleMode.Font;
-            CancelButton = CloseButton;
-            ClientSize = new Size(381, 282);
-            Controls.Add(CloseButton);
-            Controls.Add(SupportButton);
-            Controls.Add(CategoryButton);
-            Controls.Add(CategoryLabel);
-            Controls.Add(SupportLabel);
-            Controls.Add(SectionLabel);
-            Controls.Add(PresentLabel);
-            Controls.Add(InfoLabel);
-            Controls.Add(DisplayLabel);
-            Controls.Add(DefinedLabel);
-            Controls.Add(IdLabel);
-            Controls.Add(NameLabel);
-            Controls.Add(CategoryTextbox);
-            Controls.Add(SupportTextbox);
-            Controls.Add(SectionTextbox);
-            Controls.Add(PresentCodeTextbox);
-            Controls.Add(InfoCodeTextbox);
-            Controls.Add(DisplayCodeTextbox);
-            Controls.Add(DefinedTextbox);
-            Controls.Add(IdTextbox);
-            Controls.Add(NameTextbox);
-            FormBorderStyle = FormBorderStyle.FixedSingle;
-            MaximizeBox = false;
-            MinimizeBox = false;
-            Name = "DetailPolicy";
-            ShowIcon = false;
-            ShowInTaskbar = false;
-            StartPosition = FormStartPosition.CenterParent;
-            Text = "Policy Details";
-            ResumeLayout(false);
-            PerformLayout();
+            this.AcceptButton = this.CloseButton;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.CancelButton = this.CloseButton;
+            this.ClientSize = new System.Drawing.Size(381, 260);
+            this.Controls.Add(this.CloseButton);
+            this.Controls.Add(this.SupportButton);
+            this.Controls.Add(this.CategoryButton);
+            this.Controls.Add(CategoryLabel);
+            this.Controls.Add(SupportLabel);
+            this.Controls.Add(SectionLabel);
+            this.Controls.Add(PresentLabel);
+            this.Controls.Add(InfoLabel);
+            this.Controls.Add(DisplayLabel);
+            this.Controls.Add(DefinedLabel);
+            this.Controls.Add(IdLabel);
+            this.Controls.Add(NameLabel);
+            this.Controls.Add(this.CategoryTextbox);
+            this.Controls.Add(this.SupportTextbox);
+            this.Controls.Add(this.SectionTextbox);
+            this.Controls.Add(this.PresentCodeTextbox);
+            this.Controls.Add(this.InfoCodeTextbox);
+            this.Controls.Add(this.DisplayCodeTextbox);
+            this.Controls.Add(this.DefinedTextbox);
+            this.Controls.Add(this.IdTextbox);
+            this.Controls.Add(this.NameTextbox);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "DetailPolicy";
+            this.ShowIcon = false;
+            this.ShowInTaskbar = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Policy Details";
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         internal TextBox NameTextbox;
