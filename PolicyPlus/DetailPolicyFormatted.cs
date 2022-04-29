@@ -336,7 +336,7 @@ namespace PolicyPlus
                     filteredKey.Name = k.Name;
                     var rawName = k.Name.Remove(0, k.Name.IndexOf("\\")).Substring(1).ToLower();
                     var filter2 = filter.Where(f => f[0].ToLower() == rawName);
-                    filteredKey.Values = k.Values.Where(v => (filter2.Where(f => f[1].ToLower() == v.Name.ToLower()).Any())).ToList();
+                    filteredKey.Values = k.Values.Where(v => (filter2.Where(f => f[1]?.ToLower() == v.Name.ToLower()).Any())).ToList();
                     if (filteredKey.Values.Count > 0)
                     {
                         filteredKeys.Add(filteredKey);
@@ -543,9 +543,9 @@ namespace PolicyPlus
                                                 if (optionData is null)
                                                     continue;
                                             var regType = listElem.RegExpandSz ? Microsoft.Win32.RegistryValueKind.ExpandString : Microsoft.Win32.RegistryValueKind.String;
+                                            regStr += $"{GetRegPathString(elemKey, languageCode, isUser)}{nl}";
                                             if (listElem.UserProvidesNames)
                                             {
-                                                regStr += $"{GetRegPathString(elemKey, languageCode, isUser)}{nl}";
                                                 Dictionary<string, string> items = (Dictionary<string, string>)optionData;
                                                 foreach (var i in items)
                                                 {
