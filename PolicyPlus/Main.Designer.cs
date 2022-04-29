@@ -48,6 +48,7 @@ namespace PolicyPlus
             System.Windows.Forms.ToolStripStatusLabel ToolStripStatusLabel2;
             System.Windows.Forms.ToolStripSeparator ToolStripSeparator6;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.MainMenu = new System.Windows.Forms.MenuStrip();
             this.FileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.OpenADMXFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -101,6 +102,7 @@ namespace PolicyPlus
             this.panel2 = new System.Windows.Forms.Panel();
             this.ComboAppliesTo = new System.Windows.Forms.ComboBox();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.PoliciesGrid = new System.Windows.Forms.DataGridView();
             this.PoliciesList = new System.Windows.Forms.ListView();
             this.ChSettingName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.ChSettingID = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -116,6 +118,11 @@ namespace PolicyPlus
             this.ComputerSourceLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.UserSourceLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.AppVersion = new System.Windows.Forms.ToolStripStatusLabel();
+            this.State = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Icon = new System.Windows.Forms.DataGridViewImageColumn();
+            this._Name = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ID = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Comment = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ChSettingEnabled = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             ChSettingCommented = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             ToolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
@@ -135,6 +142,7 @@ namespace PolicyPlus
             this.PolicyObjectContext.SuspendLayout();
             this.panel2.SuspendLayout();
             this.panel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.PoliciesGrid)).BeginInit();
             this.SettingInfoPanel.SuspendLayout();
             this.PolicyInfoTable.SuspendLayout();
             this.PolicyIsPrefTable.SuspendLayout();
@@ -208,7 +216,7 @@ namespace PolicyPlus
             this.HelpToolStripMenuItem});
             this.MainMenu.Location = new System.Drawing.Point(0, 0);
             this.MainMenu.Name = "MainMenu";
-            this.MainMenu.Size = new System.Drawing.Size(1483, 30);
+            this.MainMenu.Size = new System.Drawing.Size(1483, 28);
             this.MainMenu.TabIndex = 0;
             this.MainMenu.Text = "MenuStrip1";
             // 
@@ -472,14 +480,14 @@ namespace PolicyPlus
             // AboutToolStripMenuItem
             // 
             this.AboutToolStripMenuItem.Name = "AboutToolStripMenuItem";
-            this.AboutToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
+            this.AboutToolStripMenuItem.Size = new System.Drawing.Size(223, 26);
             this.AboutToolStripMenuItem.Text = "About";
             this.AboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
             // 
             // AcquireADMXFilesToolStripMenuItem
             // 
             this.AcquireADMXFilesToolStripMenuItem.Name = "AcquireADMXFilesToolStripMenuItem";
-            this.AcquireADMXFilesToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
+            this.AcquireADMXFilesToolStripMenuItem.Size = new System.Drawing.Size(223, 26);
             this.AcquireADMXFilesToolStripMenuItem.Text = "Acquire ADMX Files";
             this.AcquireADMXFilesToolStripMenuItem.Click += new System.EventHandler(this.AcquireADMXFilesToolStripMenuItem_Click);
             // 
@@ -715,12 +723,44 @@ namespace PolicyPlus
             this.panel1.AutoScroll = true;
             this.panel1.AutoSize = true;
             this.panel1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.panel1.Controls.Add(this.PoliciesGrid);
             this.panel1.Controls.Add(this.PoliciesList);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(878, 732);
             this.panel1.TabIndex = 4;
+            // 
+            // PoliciesGrid
+            // 
+            this.PoliciesGrid.AllowUserToAddRows = false;
+            this.PoliciesGrid.AllowUserToDeleteRows = false;
+            this.PoliciesGrid.AllowUserToResizeRows = false;
+            this.PoliciesGrid.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.PoliciesGrid.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.PoliciesGrid.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.None;
+            this.PoliciesGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.PoliciesGrid.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.State,
+            this.Icon,
+            this._Name,
+            this.ID,
+            this.Comment});
+            this.PoliciesGrid.ContextMenuStrip = this.PolicyObjectContext;
+            this.PoliciesGrid.Location = new System.Drawing.Point(116, 507);
+            this.PoliciesGrid.MultiSelect = false;
+            this.PoliciesGrid.Name = "PoliciesGrid";
+            this.PoliciesGrid.ReadOnly = true;
+            this.PoliciesGrid.RowHeadersVisible = false;
+            this.PoliciesGrid.RowHeadersWidth = 51;
+            this.PoliciesGrid.RowHeadersWidthSizeMode = System.Windows.Forms.DataGridViewRowHeadersWidthSizeMode.DisableResizing;
+            this.PoliciesGrid.RowTemplate.Height = 24;
+            this.PoliciesGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.PoliciesGrid.Size = new System.Drawing.Size(732, 150);
+            this.PoliciesGrid.TabIndex = 4;
+            this.PoliciesGrid.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.PoliciesGrid_CellContentClick);
+            this.PoliciesGrid.CellContentDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.PoliciesGrid_CellContentDoubleClick);
+            this.PoliciesGrid.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.PoliciesGrid_CellContentDoubleClick);
             // 
             // PoliciesList
             // 
@@ -900,11 +940,64 @@ namespace PolicyPlus
             // AppVersion
             // 
             this.AppVersion.Name = "AppVersion";
-            this.AppVersion.Size = new System.Drawing.Size(1038, 20);
+            this.AppVersion.Size = new System.Drawing.Size(1077, 20);
             this.AppVersion.Spring = true;
             this.AppVersion.Text = "version";
             this.AppVersion.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.AppVersion.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
+            // 
+            // State
+            // 
+            this.State.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.State.ContextMenuStrip = this.PolicyObjectContext;
+            this.State.HeaderText = "State";
+            this.State.MinimumWidth = 6;
+            this.State.Name = "State";
+            this.State.ReadOnly = true;
+            this.State.Width = 70;
+            // 
+            // Icon
+            // 
+            this.Icon.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.AllCells;
+            this.Icon.ContextMenuStrip = this.PolicyObjectContext;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.NullValue = "null";
+            this.Icon.DefaultCellStyle = dataGridViewCellStyle2;
+            this.Icon.HeaderText = " ";
+            this.Icon.ImageLayout = System.Windows.Forms.DataGridViewImageCellLayout.Zoom;
+            this.Icon.MinimumWidth = 6;
+            this.Icon.Name = "Icon";
+            this.Icon.ReadOnly = true;
+            this.Icon.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.Icon.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            this.Icon.Width = 41;
+            // 
+            // _Name
+            // 
+            this._Name.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this._Name.ContextMenuStrip = this.PolicyObjectContext;
+            this._Name.HeaderText = "Name";
+            this._Name.MinimumWidth = 6;
+            this._Name.Name = "_Name";
+            this._Name.ReadOnly = true;
+            // 
+            // ID
+            // 
+            this.ID.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.ID.ContextMenuStrip = this.PolicyObjectContext;
+            this.ID.FillWeight = 50F;
+            this.ID.HeaderText = "ID";
+            this.ID.MinimumWidth = 6;
+            this.ID.Name = "ID";
+            this.ID.ReadOnly = true;
+            // 
+            // Comment
+            // 
+            this.Comment.ContextMenuStrip = this.PolicyObjectContext;
+            this.Comment.HeaderText = "Comment";
+            this.Comment.MinimumWidth = 6;
+            this.Comment.Name = "Comment";
+            this.Comment.ReadOnly = true;
             // 
             // Main
             // 
@@ -936,6 +1029,7 @@ namespace PolicyPlus
             this.PolicyObjectContext.ResumeLayout(false);
             this.panel2.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.PoliciesGrid)).EndInit();
             this.SettingInfoPanel.ResumeLayout(false);
             this.SettingInfoPanel.PerformLayout();
             this.PolicyInfoTable.ResumeLayout(false);
@@ -1018,5 +1112,11 @@ namespace PolicyPlus
         private Panel panel3;
         private Panel panel2;
         private ToolStripStatusLabel AppVersion;
+        private DataGridView PoliciesGrid;
+        private DataGridViewTextBoxColumn State;
+        private DataGridViewImageColumn Icon;
+        private DataGridViewTextBoxColumn _Name;
+        private DataGridViewTextBoxColumn ID;
+        private DataGridViewTextBoxColumn Comment;
     }
 }

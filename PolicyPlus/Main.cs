@@ -4,6 +4,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
@@ -202,6 +203,80 @@ namespace PolicyPlus
                     CategoriesTree.SelectedNode = CategoryNodes[CurrentCategory];
                 }
             }
+            UpdateCategoryListing2();
+        }
+
+        public void UpdateCategoryListing2()
+        {
+            // Update the right pane to include the current category's children
+            var topItemIndex = default(int?);
+            bool inSameCategory = false;
+            PoliciesGrid.Rows.Clear();
+            PoliciesGrid.Columns["Icon"].DefaultCellStyle.NullValue = null;
+            //DataTable taskTable = (DataTable)PoliciesGrid.DataSource;
+
+            if (CurrentCategory is object)
+            {
+                if (CurrentSetting is object && ReferenceEquals(CurrentSetting.Category, CurrentCategory))
+                    inSameCategory = true;
+                if (CurrentCategory.Parent is object) // Add the parent
+                {
+                    var rowId = PoliciesGrid.Rows.Add();
+                    DataGridViewRow row = PoliciesGrid.Rows[rowId];
+                    row.Cells["Icon"].Value = PolicyIcons.Images[6];
+
+                    row.Cells["ID"].Value = "";
+                    row.Cells["State"].Value = "Parent";
+                    row.Cells["_Name"].Value = "Up: " + CurrentCategory.Parent.DisplayName;
+                    row.Cells["Comment"].Value = "";
+                    row.Tag = CurrentCategory.Parent;
+                }
+
+                foreach (var category in CurrentCategory.Children.Where(ShouldShowCategory).OrderBy(c => c.DisplayName)) // Add subcategories
+                {
+                    var rowId = PoliciesGrid.Rows.Add();
+                    DataGridViewRow row = PoliciesGrid.Rows[rowId];
+                    row.Cells["Icon"].Value = PolicyIcons.Images[GetImageIndexForCategory(category)];
+                    row.Cells["ID"].Value = "";
+                    row.Cells["State"].Value = "";
+                    row.Cells["_Name"].Value = category.DisplayName;
+                    row.Cells["Comment"].Value = "";
+                    row.Tag = category;
+                }
+
+                foreach (var policy in CurrentCategory.Policies.Where(ShouldShowPolicy).OrderBy(p => p.DisplayName)) // Add policies
+                {
+                    var rowId = PoliciesGrid.Rows.Add();
+                    DataGridViewRow row = PoliciesGrid.Rows[rowId];
+                    row.Cells["Icon"].Value = PolicyIcons.Images[GetImageIndexForSetting(policy)];
+                    row.Cells["ID"].Value = GetPolicyID(policy);
+                    row.Cells["State"].Value = GetPolicyState(policy);
+                    row.Cells["_Name"].Value = policy.DisplayName;
+                    row.Cells["Comment"].Value = GetPolicyCommentText(policy);
+                    if (ReferenceEquals(policy, CurrentSetting)) // Keep the current policy selected
+                    {
+                        row.Selected = true;
+                        PoliciesGrid.FirstDisplayedScrollingRowIndex = row.Index;
+                    }
+                    row.Tag = policy;
+                }
+
+                if (topItemIndex.HasValue & inSameCategory) // Minimize the list view's jumping around when refreshing
+                {
+                    if (PoliciesList.Items.Count > topItemIndex.Value)
+                        PoliciesList.TopItem = PoliciesList.Items[topItemIndex.Value];
+                }
+
+                if (CategoriesTree.SelectedNode is null || !ReferenceEquals(CategoriesTree.SelectedNode.Tag, CurrentCategory)) // Update the tree view
+                {
+                    CategoriesTree.SelectedNode = CategoryNodes[CurrentCategory];
+                }
+            }
+        }
+
+        private void BindData(DataTable data)
+        {
+            PoliciesGrid.DataSource = data;
         }
 
         public void UpdatePolicyInfo()
@@ -1354,6 +1429,27 @@ namespace PolicyPlus
             else
             {
                 CopyToClipboard(polObject, e);
+            }
+        }
+
+        private void PoliciesGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void PoliciesGrid_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            var clickedItem = PoliciesGrid.Rows[e.RowIndex];
+            // When the user opens a policy object in the right pane
+            var policyItem = clickedItem.Tag;
+            if (policyItem is PolicyPlusCategory)
+            {
+                CurrentCategory = (PolicyPlusCategory)policyItem;
+                UpdateCategoryListing();
+            }
+            else if (policyItem is PolicyPlusPolicy)
+            {
+                ShowSettingEditor((PolicyPlusPolicy)policyItem, ViewPolicyTypes);
             }
         }
 
