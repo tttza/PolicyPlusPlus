@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualBasic.CompilerServices;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -596,6 +597,11 @@ namespace PolicyPlus
             CommentLabel.Left = CommentTextbox.Left - 57;
             SupportedLabel.Left = SupportedTextbox.Left - 77;
             OptionsTableResized();
+        }
+
+        private void HelpTextbox_LinkClicked(object sender, LinkClickedEventArgs e)
+        {
+            Process.Start(e.LinkText);
         }
 
         private void EditSetting_FormClosed(object sender, FormClosedEventArgs e)

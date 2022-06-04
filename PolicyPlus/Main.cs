@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
@@ -1376,14 +1377,9 @@ namespace PolicyPlus
             }
         }
 
-        private void PolicyInfoTable_Paint(object sender, PaintEventArgs e)
+        private void PolicyDescLabel_LinkClicked(object sender, LinkClickedEventArgs e)
         {
-
-        }
-
-        private void PolicyIsPrefLabel_TextChanged(object sender, EventArgs e)
-        {
-
+            Process.Start(e.LinkText);
         }
 
         private void CopyToClipboard(object polObject, ToolStripItemClickedEventArgs e)
