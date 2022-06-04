@@ -99,12 +99,11 @@ namespace PolicyPlus
                 ResultsListview.BeginUpdate();
                 foreach (var insert in pendingInsertions)
                 {
-                    var lsvi = ResultsListview.Items.Add(insert.DisplayName);
-                    lsvi.Tag = insert;
-                    lsvi.SubItems.Add(insert.Category.DisplayName);
-
                     var directoryNames = GetParentNames(insert.Category);
-
+                    var lsvi = ResultsListview.Items.Add(directoryNames[0]);
+                    lsvi.Tag = insert;
+                    lsvi.SubItems.Add(insert.DisplayName);
+                    lsvi.SubItems.Add(insert.Category.DisplayName);
                     lsvi.SubItems.Add("" + string.Join(" - ", directoryNames) + "");
                 }
 
@@ -128,7 +127,7 @@ namespace PolicyPlus
                     pendingInsertions.Add(policy.Value);
                 }
 
-                if (searchedSoFar % 20 == 0) // UI updating is costly
+                if (searchedSoFar % 100 == 0) // UI updating is costly
                 {
                     Invoke(new Action(() =>
                     {
@@ -205,7 +204,6 @@ namespace PolicyPlus
 
         private void ResultsListview_SizeChanged(object sender, EventArgs e)
         {
-            ChTitle.Width = ResultsListview.ClientSize.Width - ChCategory.Width;
         }
 
         private void FindResults_Closing(object sender, CancelEventArgs e)

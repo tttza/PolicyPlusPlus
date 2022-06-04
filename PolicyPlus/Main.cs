@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
@@ -1029,18 +1030,7 @@ namespace PolicyPlus
 
         private void SettingInfoPanel_ClientSizeChanged(object sender, EventArgs e)
         {
-            // Finagle the middle pane's UI elements
-            SettingInfoPanel.AutoScrollMinSize = SettingInfoPanel.Size;
-            PolicyTitleLabel.MaximumSize = new Size(PolicyInfoTable.Width, 0);
-            PolicySupportedLabel.MaximumSize = new Size(PolicyInfoTable.Width, 0);
-            PolicyDescLabel.MaximumSize = new Size(PolicyInfoTable.Width, 0);
-            PolicyIsPrefLabel.MaximumSize = new Size(PolicyInfoTable.Width - 22, 0); // Leave room for the exclamation icon
-            PolicyInfoTable.MaximumSize = new Size(SettingInfoPanel.Width - (SettingInfoPanel.VerticalScroll.Visible ? SystemInformation.VerticalScrollBarWidth : 0), 0);
-            PolicyInfoTable.Width = PolicyInfoTable.MaximumSize.Width;
-            if (PolicyInfoTable.ColumnCount > 0)
-                PolicyInfoTable.ColumnStyles[0].Width = PolicyInfoTable.ClientSize.Width; // Only once everything is initialized
-            PolicyInfoTable.PerformLayout(); // Force the table to take up its full desired size
-            PInvoke.ShowScrollBar(SettingInfoPanel.Handle, 0, false); // 0 means horizontal
+
         }
 
         private void Main_Closed(object sender, EventArgs e)
@@ -1332,12 +1322,12 @@ namespace PolicyPlus
             }
         }
 
-        private void PoliciesGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void UpdateSelectedRowInfo(int rowIndex)
         {
             // When the user highlights an item in the right pane
-            if (e.RowIndex >= 0)
+            if (rowIndex >= 0)
             {
-                var row = PoliciesGrid.Rows[e.RowIndex];
+                var row = PoliciesGrid.Rows[rowIndex];
                 var selObject = row.Tag;
                 if (selObject is PolicyPlusPolicy)
                 {
@@ -1355,7 +1345,12 @@ namespace PolicyPlus
                 ClearSelections();
             }
 
-            UpdatePolicyInfo();
+            Invoke(new Action(() => UpdatePolicyInfo()));
+        }
+
+        private void PoliciesGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            UpdateSelectedRowInfo(e.RowIndex);
         }
 
         private void PoliciesGrid_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
@@ -1372,6 +1367,19 @@ namespace PolicyPlus
             {
                 ShowSettingEditor((PolicyPlusPolicy)policyItem, ViewPolicyTypes);
             }
+        }
+
+        private void PoliciesGrid_SelectionChanged(object sender, EventArgs e)
+        {
+            if (PoliciesGrid.SelectedRows.Count > 0)
+            {
+                UpdateSelectedRowInfo(PoliciesGrid.SelectedRows[0].Index);
+            }
+        }
+
+        private void PolicyDescLabel_LinkClicked(object sender, LinkClickedEventArgs e)
+        {
+            Process.Start(e.LinkText);
         }
 
         private void CopyToClipboard(object polObject, ToolStripItemClickedEventArgs e)
