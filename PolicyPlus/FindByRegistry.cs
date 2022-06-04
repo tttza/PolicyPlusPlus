@@ -21,6 +21,40 @@ namespace PolicyPlus
                 DialogResult = DialogResult.Cancel;
         }
 
+        public static bool SearchRegistry(PolicyPlusPolicy Policy, string keyName, string valName) {
+            
+            var affected = PolicyProcessing.GetReferencedRegistryValues(Policy);
+            foreach (var rkvp in affected)
+            {
+                if (!string.IsNullOrEmpty(valName))
+                {
+                    if (!LikeOperator.LikeString(rkvp.Value.ToLowerInvariant(), valName, CompareMethod.Binary))
+                        continue;
+                }
+
+                if (!string.IsNullOrEmpty(keyName))
+                {
+                    if (keyName.Contains("*") | keyName.Contains("?")) // Wildcard path
+                    {
+                        if (!LikeOperator.LikeString(rkvp.Key.ToLowerInvariant(), keyName, CompareMethod.Binary))
+                            continue;
+                    }
+                    else if (keyName.Contains(@"\")) // Path root
+                    {
+                        if (!rkvp.Key.StartsWith(keyName, StringComparison.InvariantCultureIgnoreCase))
+                            continue;
+                    }
+                    else if (!Strings.Split(rkvp.Key, @"\").Any(part => part.Equals(keyName, StringComparison.InvariantCultureIgnoreCase))) // One path component
+                        continue;
+                }
+
+                return true;
+            }
+
+            return false;
+            
+        }
+
         private void SearchButton_Click(object sender, EventArgs e)
         {
             string keyName = KeyTextbox.Text.ToLowerInvariant();
@@ -39,35 +73,7 @@ namespace PolicyPlus
 
             Searcher = new Func<PolicyPlusPolicy, bool>((Policy) =>
             {
-                var affected = PolicyProcessing.GetReferencedRegistryValues(Policy);
-                foreach (var rkvp in affected)
-                {
-                    if (!string.IsNullOrEmpty(valName))
-                    {
-                        if (!LikeOperator.LikeString(rkvp.Value.ToLowerInvariant(), valName, CompareMethod.Binary))
-                            continue;
-                    }
-
-                    if (!string.IsNullOrEmpty(keyName))
-                    {
-                        if (keyName.Contains("*") | keyName.Contains("?")) // Wildcard path
-                        {
-                            if (!LikeOperator.LikeString(rkvp.Key.ToLowerInvariant(), keyName, CompareMethod.Binary))
-                                continue;
-                        }
-                        else if (keyName.Contains(@"\")) // Path root
-                        {
-                            if (!rkvp.Key.StartsWith(keyName, StringComparison.InvariantCultureIgnoreCase))
-                                continue;
-                        }
-                        else if (!Strings.Split(rkvp.Key, @"\").Any(part => part.Equals(keyName, StringComparison.InvariantCultureIgnoreCase))) // One path component
-                            continue;
-                    }
-
-                    return true;
-                }
-
-                return false;
+                return SearchRegistry(Policy, keyName, valName);
             });
             DialogResult = DialogResult.OK;
         }

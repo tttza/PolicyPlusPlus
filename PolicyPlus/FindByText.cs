@@ -37,13 +37,15 @@ namespace PolicyPlus
                 Interaction.MsgBox("Please enter search terms.", MsgBoxStyle.Exclamation);
                 return;
             }
+            string lowText = text.ToLower();
 
             bool checkTitle = TitleCheckbox.Checked;
             bool checkDesc = DescriptionCheckbox.Checked;
             bool checkComment = CommentCheckbox.Checked;
             bool checkId = IdCheckbox.Checked;
             bool checkPartial = partialCheckbox.Checked;
-            if (!(checkTitle | checkDesc | checkComment | checkId))
+            bool checkRegName = RegNameCheckbox.Checked;
+            if (!(checkTitle | checkDesc | checkComment | checkId | checkRegName))
             {
                 Interaction.MsgBox("At least one attribute must be searched. Check one of the boxes and try again.", MsgBoxStyle.Exclamation);
                 return;
@@ -122,6 +124,13 @@ namespace PolicyPlus
                     if (isStringAHit(Policy.UniqueID.Split(':')[1]))
                         return true;
                 }
+
+                if (checkRegName)
+                {
+                    if (FindByRegistry.SearchRegistry(Policy, "", lowText))
+                        return true;
+                }
+
 
                 return false;
             });
