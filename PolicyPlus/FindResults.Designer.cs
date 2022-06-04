@@ -40,12 +40,13 @@ namespace PolicyPlus
             this.ResultsListview = new System.Windows.Forms.ListView();
             this.ChTitle = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.ChCategory = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChDirectory = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.ProgressLabel = new System.Windows.Forms.Label();
             this.CloseButton = new System.Windows.Forms.Button();
             this.GoButton = new System.Windows.Forms.Button();
             this.StopButton = new System.Windows.Forms.Button();
             this.BackToRegSearchBtn = new System.Windows.Forms.Button();
-            this.ChDirectory = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.ChParentDir = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.SuspendLayout();
             // 
             // SearchProgress
@@ -55,7 +56,7 @@ namespace PolicyPlus
             this.SearchProgress.Location = new System.Drawing.Point(15, 29);
             this.SearchProgress.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.SearchProgress.Name = "SearchProgress";
-            this.SearchProgress.Size = new System.Drawing.Size(789, 28);
+            this.SearchProgress.Size = new System.Drawing.Size(906, 28);
             this.SearchProgress.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.SearchProgress.TabIndex = 0;
             // 
@@ -65,6 +66,7 @@ namespace PolicyPlus
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.ResultsListview.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.ChParentDir,
             this.ChTitle,
             this.ChCategory,
             this.ChDirectory});
@@ -75,7 +77,7 @@ namespace PolicyPlus
             this.ResultsListview.MultiSelect = false;
             this.ResultsListview.Name = "ResultsListview";
             this.ResultsListview.ShowItemToolTips = true;
-            this.ResultsListview.Size = new System.Drawing.Size(858, 295);
+            this.ResultsListview.Size = new System.Drawing.Size(975, 483);
             this.ResultsListview.TabIndex = 1;
             this.ResultsListview.UseCompatibleStateImageBehavior = false;
             this.ResultsListview.View = System.Windows.Forms.View.Details;
@@ -86,12 +88,17 @@ namespace PolicyPlus
             // ChTitle
             // 
             this.ChTitle.Text = "Title";
-            this.ChTitle.Width = 435;
+            this.ChTitle.Width = 600;
             // 
             // ChCategory
             // 
             this.ChCategory.Text = "Category";
-            this.ChCategory.Width = 174;
+            this.ChCategory.Width = 250;
+            // 
+            // ChDirectory
+            // 
+            this.ChDirectory.Text = "Directory";
+            this.ChDirectory.Width = 400;
             // 
             // ProgressLabel
             // 
@@ -107,7 +114,7 @@ namespace PolicyPlus
             // 
             this.CloseButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.CloseButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CloseButton.Location = new System.Drawing.Point(780, 364);
+            this.CloseButton.Location = new System.Drawing.Point(897, 552);
             this.CloseButton.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.CloseButton.Name = "CloseButton";
             this.CloseButton.Size = new System.Drawing.Size(94, 28);
@@ -118,7 +125,7 @@ namespace PolicyPlus
             // GoButton
             // 
             this.GoButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.GoButton.Location = new System.Drawing.Point(679, 364);
+            this.GoButton.Location = new System.Drawing.Point(796, 552);
             this.GoButton.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.GoButton.Name = "GoButton";
             this.GoButton.Size = new System.Drawing.Size(94, 28);
@@ -130,7 +137,7 @@ namespace PolicyPlus
             // StopButton
             // 
             this.StopButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.StopButton.Location = new System.Drawing.Point(811, 29);
+            this.StopButton.Location = new System.Drawing.Point(928, 29);
             this.StopButton.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.StopButton.Name = "StopButton";
             this.StopButton.Size = new System.Drawing.Size(62, 28);
@@ -143,7 +150,7 @@ namespace PolicyPlus
             // 
             this.BackToRegSearchBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.BackToRegSearchBtn.DialogResult = System.Windows.Forms.DialogResult.Retry;
-            this.BackToRegSearchBtn.Location = new System.Drawing.Point(13, 364);
+            this.BackToRegSearchBtn.Location = new System.Drawing.Point(13, 552);
             this.BackToRegSearchBtn.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.BackToRegSearchBtn.Name = "BackToRegSearchBtn";
             this.BackToRegSearchBtn.Size = new System.Drawing.Size(120, 28);
@@ -151,10 +158,10 @@ namespace PolicyPlus
             this.BackToRegSearchBtn.Text = "Back";
             this.BackToRegSearchBtn.UseVisualStyleBackColor = true;
             // 
-            // ChDirectory
+            // ChParentDir
             // 
-            this.ChDirectory.Text = "Directory";
-            this.ChDirectory.Width = 640;
+            this.ChParentDir.Text = "TopCategory";
+            this.ChParentDir.Width = 100;
             // 
             // FindResults
             // 
@@ -162,7 +169,7 @@ namespace PolicyPlus
             this.AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.CloseButton;
-            this.ClientSize = new System.Drawing.Size(889, 405);
+            this.ClientSize = new System.Drawing.Size(1006, 593);
             this.Controls.Add(this.BackToRegSearchBtn);
             this.Controls.Add(this.StopButton);
             this.Controls.Add(this.GoButton);
@@ -196,5 +203,6 @@ namespace PolicyPlus
         internal Button StopButton;
         internal Button BackToRegSearchBtn;
         private ColumnHeader ChDirectory;
+        private ColumnHeader ChParentDir;
     }
 }
