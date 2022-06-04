@@ -1029,18 +1029,7 @@ namespace PolicyPlus
 
         private void SettingInfoPanel_ClientSizeChanged(object sender, EventArgs e)
         {
-            // Finagle the middle pane's UI elements
-            SettingInfoPanel.AutoScrollMinSize = SettingInfoPanel.Size;
-            PolicyTitleLabel.MaximumSize = new Size(PolicyInfoTable.Width, 0);
-            PolicySupportedLabel.MaximumSize = new Size(PolicyInfoTable.Width, 0);
-            PolicyDescLabel.MaximumSize = new Size(PolicyInfoTable.Width, 0);
-            PolicyIsPrefLabel.MaximumSize = new Size(PolicyInfoTable.Width - 22, 0); // Leave room for the exclamation icon
-            PolicyInfoTable.MaximumSize = new Size(SettingInfoPanel.Width - (SettingInfoPanel.VerticalScroll.Visible ? SystemInformation.VerticalScrollBarWidth : 0), 0);
-            PolicyInfoTable.Width = PolicyInfoTable.MaximumSize.Width;
-            if (PolicyInfoTable.ColumnCount > 0)
-                PolicyInfoTable.ColumnStyles[0].Width = PolicyInfoTable.ClientSize.Width; // Only once everything is initialized
-            PolicyInfoTable.PerformLayout(); // Force the table to take up its full desired size
-            PInvoke.ShowScrollBar(SettingInfoPanel.Handle, 0, false); // 0 means horizontal
+
         }
 
         private void Main_Closed(object sender, EventArgs e)
@@ -1355,7 +1344,7 @@ namespace PolicyPlus
                 ClearSelections();
             }
 
-            UpdatePolicyInfo();
+            Invoke(new Action(() => UpdatePolicyInfo()));
         }
 
         private void PoliciesGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
@@ -1381,7 +1370,20 @@ namespace PolicyPlus
 
         private void PoliciesGrid_SelectionChanged(object sender, EventArgs e)
         {
-            UpdateSelectedRowInfo(PoliciesGrid.SelectedRows[0].Index);
+            if (PoliciesGrid.SelectedRows.Count > 0)
+            {
+                UpdateSelectedRowInfo(PoliciesGrid.SelectedRows[0].Index);
+            }
+        }
+
+        private void PolicyInfoTable_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void PolicyIsPrefLabel_TextChanged(object sender, EventArgs e)
+        {
+
         }
 
         private void CopyToClipboard(object polObject, ToolStripItemClickedEventArgs e)

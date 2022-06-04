@@ -109,16 +109,16 @@ namespace PolicyPlus
             this.Comment = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.SettingInfoPanel = new System.Windows.Forms.Panel();
             this.PolicyInfoTable = new System.Windows.Forms.TableLayoutPanel();
-            this.PolicyTitleLabel = new System.Windows.Forms.Label();
-            this.PolicySupportedLabel = new System.Windows.Forms.Label();
-            this.PolicyDescLabel = new System.Windows.Forms.Label();
-            this.PolicyIsPrefTable = new System.Windows.Forms.TableLayoutPanel();
-            this.PictureBox1 = new System.Windows.Forms.PictureBox();
-            this.PolicyIsPrefLabel = new System.Windows.Forms.Label();
+            this.PolicyDescLabel = new System.Windows.Forms.TextBox();
             this.InfoStrip = new System.Windows.Forms.StatusStrip();
             this.ComputerSourceLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.UserSourceLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.AppVersion = new System.Windows.Forms.ToolStripStatusLabel();
+            this.PictureBox1 = new System.Windows.Forms.PictureBox();
+            this.PolicyIsPrefTable = new System.Windows.Forms.TableLayoutPanel();
+            this.PolicyIsPrefLabel = new System.Windows.Forms.TextBox();
+            this.PolicySupportedLabel = new System.Windows.Forms.TextBox();
+            this.PolicyTitleLabel = new System.Windows.Forms.TextBox();
             ToolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             ToolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             ToolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
@@ -139,9 +139,9 @@ namespace PolicyPlus
             ((System.ComponentModel.ISupportInitialize)(this.PoliciesGrid)).BeginInit();
             this.SettingInfoPanel.SuspendLayout();
             this.PolicyInfoTable.SuspendLayout();
-            this.PolicyIsPrefTable.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.PictureBox1)).BeginInit();
             this.InfoStrip.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.PictureBox1)).BeginInit();
+            this.PolicyIsPrefTable.SuspendLayout();
             this.SuspendLayout();
             // 
             // ToolStripSeparator1
@@ -197,7 +197,6 @@ namespace PolicyPlus
             this.HelpToolStripMenuItem});
             this.MainMenu.Location = new System.Drawing.Point(0, 0);
             this.MainMenu.Name = "MainMenu";
-            this.MainMenu.Padding = new System.Windows.Forms.Padding(6, 2, 0, 2);
             this.MainMenu.Size = new System.Drawing.Size(1482, 28);
             this.MainMenu.TabIndex = 0;
             this.MainMenu.Text = "MenuStrip1";
@@ -831,95 +830,39 @@ namespace PolicyPlus
             this.PolicyInfoTable.AutoSize = true;
             this.PolicyInfoTable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.PolicyInfoTable.ColumnCount = 1;
-            this.PolicyInfoTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 941F));
-            this.PolicyInfoTable.Controls.Add(this.PolicyTitleLabel, 0, 0);
-            this.PolicyInfoTable.Controls.Add(this.PolicySupportedLabel, 0, 1);
-            this.PolicyInfoTable.Controls.Add(this.PolicyDescLabel, 0, 3);
+            this.PolicyInfoTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.PolicyInfoTable.Controls.Add(this.PolicyDescLabel, 0, 4);
             this.PolicyInfoTable.Controls.Add(this.PolicyIsPrefTable, 0, 2);
-            this.PolicyInfoTable.Location = new System.Drawing.Point(4, 2);
+            this.PolicyInfoTable.Controls.Add(this.PolicySupportedLabel, 0, 1);
+            this.PolicyInfoTable.Controls.Add(this.PolicyTitleLabel, 0, 0);
+            this.PolicyInfoTable.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.PolicyInfoTable.Location = new System.Drawing.Point(0, 0);
             this.PolicyInfoTable.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.PolicyInfoTable.Name = "PolicyInfoTable";
             this.PolicyInfoTable.RowCount = 5;
             this.PolicyInfoTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.PolicyInfoTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.PolicyInfoTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.PolicyInfoTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 10F));
             this.PolicyInfoTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.PolicyInfoTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 22F));
-            this.PolicyInfoTable.Size = new System.Drawing.Size(941, 175);
+            this.PolicyInfoTable.Size = new System.Drawing.Size(300, 732);
             this.PolicyInfoTable.TabIndex = 0;
-            // 
-            // PolicyTitleLabel
-            // 
-            this.PolicyTitleLabel.AutoSize = true;
-            this.PolicyTitleLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.PolicyTitleLabel.Location = new System.Drawing.Point(4, 0);
-            this.PolicyTitleLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 28);
-            this.PolicyTitleLabel.Name = "PolicyTitleLabel";
-            this.PolicyTitleLabel.Size = new System.Drawing.Size(83, 17);
-            this.PolicyTitleLabel.TabIndex = 0;
-            this.PolicyTitleLabel.Text = "Policy title";
-            this.PolicyTitleLabel.UseMnemonic = false;
-            // 
-            // PolicySupportedLabel
-            // 
-            this.PolicySupportedLabel.AutoSize = true;
-            this.PolicySupportedLabel.Location = new System.Drawing.Point(4, 45);
-            this.PolicySupportedLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 28);
-            this.PolicySupportedLabel.Name = "PolicySupportedLabel";
-            this.PolicySupportedLabel.Size = new System.Drawing.Size(94, 15);
-            this.PolicySupportedLabel.TabIndex = 1;
-            this.PolicySupportedLabel.Text = "Requirements";
-            this.PolicySupportedLabel.UseMnemonic = false;
+            this.PolicyInfoTable.Paint += new System.Windows.Forms.PaintEventHandler(this.PolicyInfoTable_Paint);
             // 
             // PolicyDescLabel
             // 
-            this.PolicyDescLabel.AutoSize = true;
-            this.PolicyDescLabel.Location = new System.Drawing.Point(4, 138);
-            this.PolicyDescLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.PolicyDescLabel.BackColor = System.Drawing.SystemColors.Window;
+            this.PolicyDescLabel.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.PolicyDescLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.PolicyDescLabel.Font = new System.Drawing.Font("MS UI Gothic", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.PolicyDescLabel.Location = new System.Drawing.Point(3, 171);
+            this.PolicyDescLabel.Multiline = true;
             this.PolicyDescLabel.Name = "PolicyDescLabel";
-            this.PolicyDescLabel.Size = new System.Drawing.Size(119, 15);
-            this.PolicyDescLabel.TabIndex = 2;
-            this.PolicyDescLabel.Text = "Policy description";
-            this.PolicyDescLabel.UseMnemonic = false;
-            // 
-            // PolicyIsPrefTable
-            // 
-            this.PolicyIsPrefTable.AutoSize = true;
-            this.PolicyIsPrefTable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.PolicyIsPrefTable.ColumnCount = 2;
-            this.PolicyIsPrefTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.PolicyIsPrefTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.PolicyIsPrefTable.Controls.Add(this.PictureBox1, 0, 0);
-            this.PolicyIsPrefTable.Controls.Add(this.PolicyIsPrefLabel, 1, 0);
-            this.PolicyIsPrefTable.Location = new System.Drawing.Point(4, 90);
-            this.PolicyIsPrefTable.Margin = new System.Windows.Forms.Padding(4, 2, 0, 28);
-            this.PolicyIsPrefTable.Name = "PolicyIsPrefTable";
-            this.PolicyIsPrefTable.RowCount = 1;
-            this.PolicyIsPrefTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.PolicyIsPrefTable.Size = new System.Drawing.Size(937, 20);
-            this.PolicyIsPrefTable.TabIndex = 4;
-            // 
-            // PictureBox1
-            // 
-            this.PictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("PictureBox1.Image")));
-            this.PictureBox1.Location = new System.Drawing.Point(4, 2);
-            this.PictureBox1.Margin = new System.Windows.Forms.Padding(4, 2, 0, 2);
-            this.PictureBox1.Name = "PictureBox1";
-            this.PictureBox1.Size = new System.Drawing.Size(16, 16);
-            this.PictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
-            this.PictureBox1.TabIndex = 0;
-            this.PictureBox1.TabStop = false;
-            // 
-            // PolicyIsPrefLabel
-            // 
-            this.PolicyIsPrefLabel.AutoSize = true;
-            this.PolicyIsPrefLabel.Location = new System.Drawing.Point(24, 0);
-            this.PolicyIsPrefLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.PolicyIsPrefLabel.Name = "PolicyIsPrefLabel";
-            this.PolicyIsPrefLabel.Size = new System.Drawing.Size(970, 15);
-            this.PolicyIsPrefLabel.TabIndex = 1;
-            this.PolicyIsPrefLabel.Text = "Because it is not stored in a Policies section of the Registry, this policy is a " +
-    "preference and will not be automatically undone if the setting is removed.";
+            this.PolicyDescLabel.ReadOnly = true;
+            this.PolicyDescLabel.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.PolicyDescLabel.Size = new System.Drawing.Size(294, 558);
+            this.PolicyDescLabel.TabIndex = 5;
+            this.PolicyDescLabel.Text = "description";
             // 
             // InfoStrip
             // 
@@ -958,6 +901,76 @@ namespace PolicyPlus
             this.AppVersion.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.AppVersion.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
             // 
+            // PictureBox1
+            // 
+            this.PictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("PictureBox1.Image")));
+            this.PictureBox1.Location = new System.Drawing.Point(4, 2);
+            this.PictureBox1.Margin = new System.Windows.Forms.Padding(4, 2, 0, 2);
+            this.PictureBox1.Name = "PictureBox1";
+            this.PictureBox1.Size = new System.Drawing.Size(16, 16);
+            this.PictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            this.PictureBox1.TabIndex = 0;
+            this.PictureBox1.TabStop = false;
+            // 
+            // PolicyIsPrefTable
+            // 
+            this.PolicyIsPrefTable.AutoSize = true;
+            this.PolicyIsPrefTable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.PolicyIsPrefTable.ColumnCount = 2;
+            this.PolicyIsPrefTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.PolicyIsPrefTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.PolicyIsPrefTable.Controls.Add(this.PictureBox1, 0, 0);
+            this.PolicyIsPrefTable.Controls.Add(this.PolicyIsPrefLabel, 1, 0);
+            this.PolicyIsPrefTable.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.PolicyIsPrefTable.Location = new System.Drawing.Point(4, 109);
+            this.PolicyIsPrefTable.Margin = new System.Windows.Forms.Padding(4, 2, 0, 28);
+            this.PolicyIsPrefTable.Name = "PolicyIsPrefTable";
+            this.PolicyIsPrefTable.RowCount = 1;
+            this.PolicyIsPrefTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.PolicyIsPrefTable.Size = new System.Drawing.Size(296, 21);
+            this.PolicyIsPrefTable.TabIndex = 4;
+            // 
+            // PolicyIsPrefLabel
+            // 
+            this.PolicyIsPrefLabel.BackColor = System.Drawing.SystemColors.Window;
+            this.PolicyIsPrefLabel.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.PolicyIsPrefLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.PolicyIsPrefLabel.Location = new System.Drawing.Point(23, 3);
+            this.PolicyIsPrefLabel.Multiline = true;
+            this.PolicyIsPrefLabel.Name = "PolicyIsPrefLabel";
+            this.PolicyIsPrefLabel.ReadOnly = true;
+            this.PolicyIsPrefLabel.Size = new System.Drawing.Size(270, 15);
+            this.PolicyIsPrefLabel.TabIndex = 1;
+            this.PolicyIsPrefLabel.TextChanged += new System.EventHandler(this.PolicyIsPrefLabel_TextChanged);
+            // 
+            // PolicySupportedLabel
+            // 
+            this.PolicySupportedLabel.BackColor = System.Drawing.SystemColors.Window;
+            this.PolicySupportedLabel.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.PolicySupportedLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.PolicySupportedLabel.Location = new System.Drawing.Point(3, 59);
+            this.PolicySupportedLabel.Multiline = true;
+            this.PolicySupportedLabel.Name = "PolicySupportedLabel";
+            this.PolicySupportedLabel.ReadOnly = true;
+            this.PolicySupportedLabel.Size = new System.Drawing.Size(294, 45);
+            this.PolicySupportedLabel.TabIndex = 6;
+            this.PolicySupportedLabel.Text = "Policy Supported";
+            // 
+            // PolicyTitleLabel
+            // 
+            this.PolicyTitleLabel.BackColor = System.Drawing.SystemColors.Window;
+            this.PolicyTitleLabel.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.PolicyTitleLabel.Dock = System.Windows.Forms.DockStyle.Top;
+            this.PolicyTitleLabel.Font = new System.Drawing.Font("MS UI Gothic", 7.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
+            this.PolicyTitleLabel.Location = new System.Drawing.Point(3, 3);
+            this.PolicyTitleLabel.MinimumSize = new System.Drawing.Size(0, 30);
+            this.PolicyTitleLabel.Multiline = true;
+            this.PolicyTitleLabel.Name = "PolicyTitleLabel";
+            this.PolicyTitleLabel.ReadOnly = true;
+            this.PolicyTitleLabel.Size = new System.Drawing.Size(294, 50);
+            this.PolicyTitleLabel.TabIndex = 7;
+            this.PolicyTitleLabel.Text = "Policy Title";
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
@@ -992,11 +1005,11 @@ namespace PolicyPlus
             this.SettingInfoPanel.PerformLayout();
             this.PolicyInfoTable.ResumeLayout(false);
             this.PolicyInfoTable.PerformLayout();
-            this.PolicyIsPrefTable.ResumeLayout(false);
-            this.PolicyIsPrefTable.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.PictureBox1)).EndInit();
             this.InfoStrip.ResumeLayout(false);
             this.InfoStrip.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.PictureBox1)).EndInit();
+            this.PolicyIsPrefTable.ResumeLayout(false);
+            this.PolicyIsPrefTable.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1013,9 +1026,6 @@ namespace PolicyPlus
         internal Panel SettingInfoPanel;
         internal ImageList PolicyIcons;
         internal TableLayoutPanel PolicyInfoTable;
-        internal Label PolicyTitleLabel;
-        internal Label PolicySupportedLabel;
-        internal Label PolicyDescLabel;
         internal ToolStripMenuItem ViewToolStripMenuItem;
         internal ToolStripMenuItem EmptyCategoriesToolStripMenuItem;
         internal ComboBox ComboAppliesTo;
@@ -1053,9 +1063,6 @@ namespace PolicyPlus
         internal ToolStripMenuItem ExportREGToolStripMenuItem;
         internal ToolStripMenuItem ImportREGToolStripMenuItem;
         internal ToolStripMenuItem SetADMLLanguageToolStripMenuItem;
-        internal TableLayoutPanel PolicyIsPrefTable;
-        internal PictureBox PictureBox1;
-        internal Label PolicyIsPrefLabel;
         internal ToolStripMenuItem CmeAllDetailsFormatted;
         private ToolStripSeparator toolStripSeparator7;
         internal ToolStripMenuItem CmeCopyToClipboard;
@@ -1073,5 +1080,11 @@ namespace PolicyPlus
         private DataGridViewTextBoxColumn _Name;
         private DataGridViewTextBoxColumn ID;
         private DataGridViewTextBoxColumn Comment;
+        private TextBox PolicyDescLabel;
+        internal TableLayoutPanel PolicyIsPrefTable;
+        internal PictureBox PictureBox1;
+        private TextBox PolicyIsPrefLabel;
+        private TextBox PolicySupportedLabel;
+        private TextBox PolicyTitleLabel;
     }
 }
