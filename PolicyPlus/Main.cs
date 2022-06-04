@@ -1332,12 +1332,12 @@ namespace PolicyPlus
             }
         }
 
-        private void PoliciesGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void UpdateSelectedRowInfo(int rowIndex)
         {
             // When the user highlights an item in the right pane
-            if (e.RowIndex >= 0)
+            if (rowIndex >= 0)
             {
-                var row = PoliciesGrid.Rows[e.RowIndex];
+                var row = PoliciesGrid.Rows[rowIndex];
                 var selObject = row.Tag;
                 if (selObject is PolicyPlusPolicy)
                 {
@@ -1358,6 +1358,11 @@ namespace PolicyPlus
             UpdatePolicyInfo();
         }
 
+        private void PoliciesGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            UpdateSelectedRowInfo(e.RowIndex);
+        }
+
         private void PoliciesGrid_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
             var clickedItem = PoliciesGrid.Rows[e.RowIndex];
@@ -1372,6 +1377,11 @@ namespace PolicyPlus
             {
                 ShowSettingEditor((PolicyPlusPolicy)policyItem, ViewPolicyTypes);
             }
+        }
+
+        private void PoliciesGrid_SelectionChanged(object sender, EventArgs e)
+        {
+            UpdateSelectedRowInfo(PoliciesGrid.SelectedRows[0].Index);
         }
 
         private void CopyToClipboard(object polObject, ToolStripItemClickedEventArgs e)

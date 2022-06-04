@@ -204,7 +204,6 @@ namespace PolicyPlus
 
         private void ResultsListview_SizeChanged(object sender, EventArgs e)
         {
-            //ChTitle.Width = ResultsListview.ClientSize.Width - ChCategory.Width;
         }
 
         private void FindResults_Closing(object sender, CancelEventArgs e)
