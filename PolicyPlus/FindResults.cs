@@ -128,7 +128,7 @@ namespace PolicyPlus
                     pendingInsertions.Add(policy.Value);
                 }
 
-                if (searchedSoFar % 20 == 0) // UI updating is costly
+                if (searchedSoFar % 100 == 0) // UI updating is costly
                 {
                     Invoke(new Action(() =>
                     {
