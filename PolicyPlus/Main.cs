@@ -355,7 +355,7 @@ namespace PolicyPlus
                     if (IsPolicyVisibleAfterFilter(Policy, false))
                         visibleAfterFilter = true;
                 }
-                else if ((int)(ViewPolicyTypes & AdmxPolicySection.User) > 0 & PolicyVisibleInSection(Policy, AdmxPolicySection.User))
+                if (!visibleAfterFilter & (int)(ViewPolicyTypes & AdmxPolicySection.User) > 0 & PolicyVisibleInSection(Policy, AdmxPolicySection.User))
                 {
                     if (IsPolicyVisibleAfterFilter(Policy, true))
                         visibleAfterFilter = true;
