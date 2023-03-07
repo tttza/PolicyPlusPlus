@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
+using System.DirectoryServices;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
@@ -168,11 +169,12 @@ namespace PolicyPlus
             }
         }
 
-        public void UpdateCategoryListing()
+        public void UpdateCategoryListing(bool resetSort=false)
         {
             // Update the right pane to include the current category's children
             bool inSameCategory = false;
             var topItemIndex = PoliciesGrid.FirstDisplayedScrollingRowIndex;
+
             ChangeColumnsAutoSize(false);
             PoliciesGrid.Rows.Clear();
 
@@ -234,6 +236,16 @@ namespace PolicyPlus
             {
                 if (PoliciesGrid.Rows.Count > topItemIndex)
                     PoliciesGrid.FirstDisplayedScrollingRowIndex = topItemIndex;
+            }
+            if (resetSort & PoliciesGrid.SortedColumn != null) {
+                var sortedColumnIndex = PoliciesGrid.SortedColumn.Index;
+                PoliciesGrid.Columns[sortedColumnIndex].SortMode = DataGridViewColumnSortMode.NotSortable;
+                PoliciesGrid.Columns[sortedColumnIndex].SortMode = DataGridViewColumnSortMode.Automatic;
+            }
+            if (PoliciesGrid.SortOrder != SortOrder.None)
+            {
+                var order = PoliciesGrid.SortOrder == SortOrder.Ascending ? ListSortDirection.Ascending : ListSortDirection.Descending;
+                PoliciesGrid.Sort(PoliciesGrid.SortedColumn, order);
             }
         }
 
@@ -371,7 +383,7 @@ namespace PolicyPlus
                 newFocusPolicy = null;
             PopulateAdmxUi();
             CurrentCategory = newFocusCategory;
-            UpdateCategoryListing();
+            UpdateCategoryListing(true);
             CurrentSetting = newFocusPolicy;
             UpdatePolicyInfo();
         }
@@ -772,7 +784,7 @@ namespace PolicyPlus
         {
             // When the user selects a new category in the left pane
             CurrentCategory = (PolicyPlusCategory)e.Node.Tag;
-            UpdateCategoryListing();
+            UpdateCategoryListing(true);
             ClearSelections();
             UpdatePolicyInfo();
         }
@@ -1355,6 +1367,7 @@ namespace PolicyPlus
 
         private void PoliciesGrid_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
+            if (e.RowIndex < 0) { return; }
             var clickedItem = PoliciesGrid.Rows[e.RowIndex];
             // When the user opens a policy object in the right pane
             var policyItem = clickedItem.Tag;
