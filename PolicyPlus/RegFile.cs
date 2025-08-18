@@ -179,34 +179,43 @@ namespace PolicyPlus
             }
         }
 
-        public void Save(TextWriter Writer)
+        public void Save(TextWriter Writer, Dictionary<string, string> casePreservation = null)
         {
             Writer.WriteLine(RegSignature);
             Writer.WriteLine();
             foreach (var key in Keys)
             {
+                string keyName = key.Name;
+                if (casePreservation != null && casePreservation.TryGetValue(keyName.ToLowerInvariant() + "\\", out var preservedKey))
+                    keyName = preservedKey;
                 if (key.IsDeleter)
                 {
-                    Writer.WriteLine("[-" + key.Name + "]");
+                    Writer.WriteLine("[-" + keyName + "]");
                 }
                 else
                 {
-                    Writer.WriteLine("[" + key.Name + "]");
+                    Writer.WriteLine("[" + keyName + "]");
                     foreach (var value in key.Values)
                     {
                         int posInRow = 0; // To split hex across lines
-                        if (string.IsNullOrEmpty(value.Name))
+                        string valueName = value.Name;
+                        if (casePreservation != null && !string.IsNullOrEmpty(valueName))
+                        {
+                            string dictKey = keyName.ToLowerInvariant() + "\\" + valueName.ToLowerInvariant();
+                            if (casePreservation.TryGetValue(dictKey, out var preservedValue))
+                                valueName = preservedValue;
+                        }
+                        if (string.IsNullOrEmpty(valueName))
                         {
                             Writer.Write("@");
                             posInRow = 1;
                         }
                         else
                         {
-                            string quotedName = "\"" + EscapeValue(value.Name) + "\"";
+                            string quotedName = "\"" + EscapeValue(valueName) + "\"";
                             Writer.Write(quotedName);
                             posInRow = quotedName.Length;
                         }
-
                         Writer.Write("=");
                         posInRow += 1;
                         if (value.IsDeleter)
@@ -224,14 +233,12 @@ namespace PolicyPlus
                                         Writer.WriteLine("\"");
                                         break;
                                     }
-
                                 case RegistryValueKind.DWord:
                                     {
                                         Writer.Write("dword:");
                                         Writer.WriteLine(Convert.ToString(Conversions.ToUInteger(value.Data), 16).PadLeft(8, '0'));
                                         break;
                                     }
-
                                 default:
                                     {
                                         Writer.Write("hex");
@@ -243,7 +250,6 @@ namespace PolicyPlus
                                             Writer.Write(")");
                                             posInRow += 3;
                                         }
-
                                         Writer.Write(":");
                                         posInRow += 1;
                                         var bytes = PolFile.ObjectToBytes(value.Data, value.Kind);
@@ -259,7 +265,6 @@ namespace PolicyPlus
                                                 posInRow = 2;
                                             }
                                         }
-
                                         if (bytes.Length > 0)
                                         {
                                             Writer.WriteLine(Convert.ToString(bytes[bytes.Length - 1], 16).PadLeft(2, '0'));
@@ -268,14 +273,12 @@ namespace PolicyPlus
                                         {
                                             Writer.WriteLine();
                                         }
-
                                         break;
                                     }
                             }
                         }
                     }
                 }
-
                 Writer.WriteLine();
             }
         }

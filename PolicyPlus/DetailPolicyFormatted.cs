@@ -314,12 +314,19 @@ namespace PolicyPlus
             {
                 filter.Add(new string[2] { rawpol.RegistryKey, rawpol.RegistryValue });
             }
-            if (rawpol.Elements is object) // Write the elements' states
+            if (rawpol.Elements is object)
             {
                 foreach (var elem in rawpol.Elements)
                 {
                     string elemKey = string.IsNullOrEmpty(elem.RegistryKey) ? rawpol.RegistryKey : elem.RegistryKey;
-                    filter.Add(new string[] { elemKey, elem.RegistryValue });
+                    if (elem.ElementType == "list")
+                    {
+                        filter.Add(new string[] { elemKey, null });
+                    }
+                    else
+                    {
+                        filter.Add(new string[] { elemKey, elem.RegistryValue });
+                    }
                 }
             }
 
@@ -328,7 +335,6 @@ namespace PolicyPlus
             try
             {
                 Source.Apply(reg);
-                // Filter registries relate to current policy.
                 reg.Keys.ForEach(k =>
                 {
                     var filteredKey = new RegFile.RegFileKey() { };
@@ -336,17 +342,31 @@ namespace PolicyPlus
                     filteredKey.Name = k.Name;
                     var rawName = k.Name.Remove(0, k.Name.IndexOf("\\")).Substring(1).ToLower();
                     var filter2 = filter.Where(f => f[0].ToLower() == rawName);
-                    filteredKey.Values = k.Values.Where(v => (filter2.Where(f => f[1]?.ToLower() == v.Name.ToLower()).Any())).ToList();
+                    if (filter2.Any(f => f[1] == null))
+                    {
+                        filteredKey.Values = k.Values.ToList();
+                    }
+                    else
+                    {
+                        filteredKey.Values = k.Values.Where(v => (filter2.Where(f => f[1]?.ToLower() == v.Name.ToLower()).Any())).ToList();
+                    }
                     if (filteredKey.Values.Count > 0)
                     {
                         filteredKeys.Add(filteredKey);
                     }
                 });
-                reg.Keys = filteredKeys;                
+                reg.Keys = filteredKeys;
 
                 var sb = new StringBuilder();
                 var sw = new StringWriter(sb);
-                reg.Save(sw);
+                
+                Dictionary<string, string> casePreservation = null;
+                if (Source is PolFile polFile)
+                {
+                    var field = typeof(PolFile).GetField("CasePreservation", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    casePreservation = (Dictionary<string, string>)field.GetValue(polFile);
+                }
+                reg.Save(sw, casePreservation);
                 return sw.ToString();
 
             }

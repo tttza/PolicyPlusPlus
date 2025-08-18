@@ -186,5 +186,100 @@ namespace PolicyPlusModTests.TestHelpers
                 }
             };
         }
+
+        public static PolicyPlusPolicy CreateBinaryPolicy(string uniqueId = "MACHINE:BinaryPolicy")
+        {
+            var rawPolicy = new AdmxPolicy
+            {
+                RegistryKey = "Software\\PolicyPlusTest",
+                RegistryValue = "BinaryValue",
+                Section = AdmxPolicySection.Machine,
+                Elements = null,
+                AffectedValues = new PolicyRegistryList(),
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+            };
+            return new PolicyPlusPolicy
+            {
+                RawPolicy = rawPolicy,
+                UniqueID = uniqueId,
+                DisplayName = "Binary Policy"
+            };
+        }
+
+        public static PolicyPlusPolicy CreateQwordPolicy(string uniqueId = "MACHINE:QwordPolicy")
+        {
+            var rawPolicy = new AdmxPolicy
+            {
+                RegistryKey = "Software\\PolicyPlusTest",
+                RegistryValue = "QwordValue",
+                Section = AdmxPolicySection.Machine,
+                Elements = null,
+                AffectedValues = new PolicyRegistryList(),
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+            };
+            return new PolicyPlusPolicy
+            {
+                RawPolicy = rawPolicy,
+                UniqueID = uniqueId,
+                DisplayName = "Qword Policy"
+            };
+        }
+
+        public static PolicyPlusPolicy CreateExpandStringPolicy(string uniqueId = "MACHINE:ExpandStringPolicy")
+        {
+            var rawPolicy = new AdmxPolicy
+            {
+                RegistryKey = "Software\\PolicyPlusTest",
+                RegistryValue = "ExpandStringValue",
+                Section = AdmxPolicySection.Machine,
+                Elements = null,
+                AffectedValues = new PolicyRegistryList(),
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+            };
+            return new PolicyPlusPolicy
+            {
+                RawPolicy = rawPolicy,
+                UniqueID = uniqueId,
+                DisplayName = "ExpandString Policy"
+            };
+        }
+
+        public static PolicyPlusPolicy CreateDeletePolicy(string uniqueId = "MACHINE:DeletePolicy")
+        {
+            var rawPolicy = new AdmxPolicy
+            {
+                RegistryKey = "Software\\PolicyPlusTest",
+                RegistryValue = "DeleteValue",
+                Section = AdmxPolicySection.Machine,
+                Elements = null,
+                AffectedValues = new PolicyRegistryList(),
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+            };
+            return new PolicyPlusPolicy
+            {
+                RawPolicy = rawPolicy,
+                UniqueID = uniqueId,
+                DisplayName = "Delete Policy"
+            };
+        }
+
+        public static PolicyPlusPolicy CreateClearKeyPolicy(string uniqueId = "MACHINE:ClearKeyPolicy")
+        {
+            var rawPolicy = new AdmxPolicy
+            {
+                RegistryKey = "Software\\PolicyPlusTest\\ClearMe",
+                RegistryValue = null,
+                Section = AdmxPolicySection.Machine,
+                Elements = null,
+                AffectedValues = new PolicyRegistryList(),
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+            };
+            return new PolicyPlusPolicy
+            {
+                RawPolicy = rawPolicy,
+                UniqueID = uniqueId,
+                DisplayName = "ClearKey Policy"
+            };
+        }
     }
 }
