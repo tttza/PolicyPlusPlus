@@ -23,8 +23,7 @@ namespace PolicyPlus
         private Dictionary<string, string> CompComments, UserComments;
         private string languageCode;
 
-        // Above: passed in; below: internal state
-        private Dictionary<string, Control> ElementControls;
+        protected Dictionary<string, Control> ElementControls;
         private List<Control> ResizableControls;
         private IPolicySource CurrentSource;
         private PolicyLoader CurrentLoader;
@@ -67,7 +66,7 @@ namespace PolicyPlus
             {
                 SectionDropdown.Text = "Computer";
                 SectionDropdown_SelectedIndexChanged(null, null); // Force an update of the current source
-                switch(PolicyProcessing.GetPolicyState(CurrentSource, CurrentSetting))
+                switch (PolicyProcessing.GetPolicyState(CurrentSource, CurrentSetting))
                 {
                     case PolicyState.Enabled:
                     case PolicyState.Disabled:
@@ -144,7 +143,6 @@ namespace PolicyPlus
             ExtraOptionsTable.RowStyles.Clear();
             ElementControls = new Dictionary<string, Control>();
             ResizableControls = new List<Control>();
-            // Create the Windows Forms elements
             if (CurrentSetting.RawPolicy.Elements is object & CurrentSetting.Presentation is object)
             {
                 var elemDict = CurrentSetting.RawPolicy.Elements.ToDictionary(e => e.ID);
@@ -152,7 +150,7 @@ namespace PolicyPlus
                 {
                     switch (pres.ElementType ?? "")
                     {
-                        case "text": // A plain label
+                        case "text":
                             {
                                 LabelPresentationElement textPres = (LabelPresentationElement)pres;
                                 var label = new Label() { Text = textPres.Text, AutoSize = true };
@@ -160,8 +158,7 @@ namespace PolicyPlus
                                 addControl(textPres.ID, label, "");
                                 break;
                             }
-
-                        case "decimalTextBox": // Numeric spin box or a plain text box restricted to numbers
+                        case "decimalTextBox":
                             {
                                 NumericBoxPresentationElement decimalTextPres = (NumericBoxPresentationElement)pres;
                                 DecimalPolicyElement numeric = (DecimalPolicyElement)elemDict[pres.ID];
@@ -173,7 +170,6 @@ namespace PolicyPlus
                                     {
                                         defaultValue = numeric.Minimum;
                                     }
-
                                     newControl = new NumericUpDown()
                                     {
                                         Minimum = numeric.Minimum,
@@ -187,8 +183,7 @@ namespace PolicyPlus
                                     var text = new TextBox();
                                     text.TextChanged += (o, i) =>
                                     {
-                                        int argresult = 0;
-                                        if (!int.TryParse(text.Text, out argresult))
+                                        if (!int.TryParse(text.Text, out _))
                                             text.Text = decimalTextPres.DefaultValue.ToString();
                                         int curNum = Conversions.ToInteger(text.Text);
                                         if (curNum > numeric.Maximum)
@@ -200,12 +195,10 @@ namespace PolicyPlus
                                     text.Text = decimalTextPres.DefaultValue.ToString();
                                     newControl = text;
                                 }
-
                                 addControl(pres.ID, newControl, decimalTextPres.Label);
                                 break;
                             }
-
-                        case "textBox": // Simple text box
+                        case "textBox":
                             {
                                 TextBoxPresentationElement textboxPres = (TextBoxPresentationElement)pres;
                                 TextPolicyElement text = (TextPolicyElement)elemDict[pres.ID];
@@ -218,8 +211,7 @@ namespace PolicyPlus
                                 addControl(pres.ID, textbox, textboxPres.Label);
                                 break;
                             }
-
-                        case "checkBox": // Check box
+                        case "checkBox":
                             {
                                 CheckBoxPresentationElement checkPres = (CheckBoxPresentationElement)pres;
                                 var checkbox = new CheckBox() { TextAlign = ContentAlignment.MiddleLeft };
@@ -230,12 +222,10 @@ namespace PolicyPlus
                                     var size = g.MeasureString(checkbox.Text, checkbox.Font, checkbox.Width);
                                     checkbox.Height = (int)Math.Round(size.Height + checkbox.Padding.Vertical + checkbox.Margin.Vertical);
                                 }
-
                                 checkbox.Checked = checkPres.DefaultState;
                                 addControl(pres.ID, checkbox, "");
                                 break;
                             }
-
                         case "comboBox": // Text box with suggestions, not tested because it's not used in any default ADML
                             {
                                 ComboBoxPresentationElement comboPres = (ComboBoxPresentationElement)pres;
@@ -250,8 +240,7 @@ namespace PolicyPlus
                                 addControl(pres.ID, combobox, comboPres.Label);
                                 break;
                             }
-
-                        case "dropdownList": // Dropdown list of options
+                        case "dropdownList":
                             {
                                 DropDownPresentationElement dropdownPres = (DropDownPresentationElement)pres;
                                 var combobox = new ComboBox() { DropDownStyle = ComboBoxStyle.DropDownList };
@@ -264,7 +253,7 @@ namespace PolicyPlus
                                     foreach (var entry in enumElem.Items)
                                     {
                                         var map = new DropdownPresentationMap() { ID = itemId, DisplayName = AdmxWorkspace.ResolveString(entry.DisplayCode, CurrentSetting.RawPolicy.DefinedIn) };
-                                        float width = g.MeasureString(map.DisplayName, combobox.Font).Width + 25f; // A little extra margin
+                                        float width = g.MeasureString(map.DisplayName, combobox.Font).Width + 25f;
                                         if (width > maxWidth)
                                             maxWidth = (int)Math.Round(width);
                                         combobox.Items.Add(map);
@@ -272,15 +261,12 @@ namespace PolicyPlus
                                             combobox.SelectedItem = map;
                                         itemId += 1;
                                     }
-
                                     combobox.Width = maxWidth;
                                 }
-
                                 addControl(pres.ID, combobox, dropdownPres.Label);
                                 break;
                             }
-
-                        case "listBox": // Button to launch a grid view editor
+                        case "listBox":
                             {
                                 ListPresentationElement listPres = (ListPresentationElement)pres;
                                 ListPolicyElement list = (ListPolicyElement)elemDict[pres.ID];
@@ -293,8 +279,7 @@ namespace PolicyPlus
                                 addControl(pres.ID, button, listPres.Label);
                                 break;
                             }
-
-                        case "multiTextBox": // Multiline text box
+                        case "multiTextBox":
                             {
                                 MultiTextPresentationElement multiTextPres = (MultiTextPresentationElement)pres;
                                 var bigTextbox = new TextBox()
@@ -312,14 +297,21 @@ namespace PolicyPlus
                             }
                     }
                 }
-
                 OptionsTableResized();
             }
         }
 
         public void PreparePolicyState()
         {
-            // Set the value of the UI elements depending on the current policy state
+            if (CurrentSource == null)
+            {
+                bool isUser = CurrentSection == AdmxPolicySection.User;
+                CurrentSource = isUser ? UserPolSource : CompPolSource;
+                CurrentLoader = isUser ? UserPolLoader : CompPolLoader;
+                CurrentComments = isUser ? UserComments : CompComments;
+            }
+            if (CurrentSource == null)
+                return;
             switch (PolicyProcessing.GetPolicyState(CurrentSource, CurrentSetting))
             {
                 case PolicyState.Disabled:
@@ -327,7 +319,6 @@ namespace PolicyPlus
                         DisabledOption.Checked = true;
                         break;
                     }
-
                 case PolicyState.Enabled:
                     {
                         EnabledOption.Checked = true;
@@ -338,13 +329,9 @@ namespace PolicyPlus
                             if (kv.Value is uint) // Numeric box
                             {
                                 if (uiControl is TextBox)
-                                {
                                     ((TextBox)uiControl).Text = kv.Value.ToString();
-                                }
                                 else
-                                {
                                     ((NumericUpDown)uiControl).Value = Conversions.ToDecimal(kv.Value);
-                                }
                             }
                             else if (kv.Value is string) // Text box or combo box
                             {
@@ -353,9 +340,7 @@ namespace PolicyPlus
                                     ((ComboBox)uiControl).Text = Conversions.ToString(kv.Value);
                                 }
                                 else
-                                {
                                     ((TextBox)uiControl).Text = Conversions.ToString(kv.Value);
-                                }
                             }
                             else if (kv.Value is int) // Dropdown list
                             {
@@ -377,10 +362,8 @@ namespace PolicyPlus
                                 uiControl.Tag = kv.Value;
                             }
                         }
-
                         break;
                     }
-
                 default:
                     {
                         NotConfiguredOption.Checked = true;
@@ -410,19 +393,16 @@ namespace PolicyPlus
 
         public void ApplyToPolicySource()
         {
-            // Write the new state to the policy source object
             PolicyProcessing.ForgetPolicy(CurrentSource, CurrentSetting);
             if (EnabledOption.Checked)
             {
                 Dictionary<string, object> options = GetOptions(CurrentSetting);
-
                 PolicyProcessing.SetPolicyState(CurrentSource, CurrentSetting, PolicyState.Enabled, options);
             }
             else if (DisabledOption.Checked)
             {
                 PolicyProcessing.SetPolicyState(CurrentSource, CurrentSetting, PolicyState.Disabled, null);
             }
-            // Update the comment for this policy
             if (CurrentComments is object)
             {
                 if (string.IsNullOrEmpty(CommentTextbox.Text))
@@ -450,50 +430,36 @@ namespace PolicyPlus
                         case "decimal":
                             {
                                 if (uiControl is TextBox)
-                                {
                                     options.Add(elem.ID, Conversions.ToUInteger(((TextBox)uiControl).Text));
-                                }
                                 else
-                                {
                                     options.Add(elem.ID, (uint)Math.Round(((NumericUpDown)uiControl).Value));
-                                }
-
                                 break;
                             }
-
                         case "text":
                             {
                                 if (uiControl is ComboBox)
-                                {
                                     options.Add(elem.ID, ((ComboBox)uiControl).Text);
-                                }
                                 else
-                                {
                                     options.Add(elem.ID, ((TextBox)uiControl).Text);
-                                }
-
                                 break;
                             }
-
                         case "boolean":
                             {
                                 options.Add(elem.ID, ((CheckBox)uiControl).Checked);
                                 break;
                             }
-
                         case "enum":
                             {
                                 options.Add(elem.ID, ((DropdownPresentationMap)((ComboBox)uiControl).SelectedItem).ID);
                                 break;
                             }
-
                         case "list":
                             {
                                 if (uiControl.Tag is List<string>)
                                 {
                                     options.Add(elem.ID, ((List<string>)uiControl.Tag)?.Where(t => !string.IsNullOrWhiteSpace(t)).ToList());
                                     break;
-                                } 
+                                }
                                 if (uiControl.Tag is Dictionary<string, string>)
                                 {
                                     options.Add(elem.ID, ((Dictionary<string, string>)uiControl.Tag)?.Where(t => !string.IsNullOrWhiteSpace(t.Key)).ToList());
@@ -501,7 +467,6 @@ namespace PolicyPlus
                                 }
                                 break;
                             }
-
                         case "multiText":
                             {
                                 options.Add(elem.ID, ((TextBox)uiControl).Lines);
@@ -510,7 +475,6 @@ namespace PolicyPlus
                     }
                 }
             }
-
             return options;
         }
 
@@ -578,10 +542,7 @@ namespace PolicyPlus
             My.MyProject.Forms.DetailPolicyFormatted.PresentDialog(CurrentSetting, CompPolSource, UserPolSource, this.languageCode);
         }
 
-        private void SupportedLabel_Click(object sender, EventArgs e)
-        {
-
-        }
+        private void SupportedLabel_Click(object sender, EventArgs e) { }
 
         private void EditSetting_Resize(object sender, EventArgs e)
         {
@@ -614,11 +575,7 @@ namespace PolicyPlus
         {
             public int ID;
             public string DisplayName;
-
-            public override string ToString()
-            {
-                return DisplayName;
-            }
+            public override string ToString() => DisplayName;
         }
 
         private void CopyToClipboard(object sender, EventArgs e)
@@ -626,5 +583,10 @@ namespace PolicyPlus
             var tag = (string)((Button)sender).Tag;
             Clipboard.SetText(tag);
         }
+
+        public Dictionary<string, Control> GetElementControls() => ElementControls;
+        public RadioButton GetEnabledOption() => EnabledOption;
+        public RadioButton GetNotConfiguredOption() => NotConfiguredOption;
+        public RadioButton GetDisabledOption() => DisabledOption;
     }
 }

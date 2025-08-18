@@ -150,6 +150,19 @@ namespace PolicyPlus
             string dictKey = GetDictKey(Key, Value);
             if (Entries.ContainsKey(dictKey))
                 Entries.Remove(dictKey);
+            // Special handling for MultiString
+            if (DataType == RegistryValueKind.MultiString)
+            {
+                if (Data is string[] arr)
+                    Entries.Add(dictKey, PolEntryData.FromMultiString(arr));
+                else if (Data is IEnumerable<string> lines)
+                    Entries.Add(dictKey, PolEntryData.FromMultiString(lines.ToArray()));
+                else if (Data != null)
+                    Entries.Add(dictKey, PolEntryData.FromMultiString(new[] { Data.ToString() }));
+                else
+                    Entries.Add(dictKey, PolEntryData.FromMultiString(Array.Empty<string>()));
+                return;
+            }
             Entries.Add(dictKey, PolEntryData.FromArbitrary(Data, DataType));
         }
 
@@ -164,7 +177,10 @@ namespace PolicyPlus
         {
             if (!ContainsValue(Key, Value))
                 return null;
-            return Entries[GetDictKey(Key, Value)].AsArbitrary();
+            var entry = Entries[GetDictKey(Key, Value)];
+            if (entry.Kind == RegistryValueKind.MultiString)
+                return entry.AsMultiString();
+            return entry.AsArbitrary();
         }
 
         public bool WillDeleteValue(string Key, string Value)
@@ -408,45 +424,41 @@ namespace PolicyPlus
 
             public string[] AsMultiString()
             {
+                // Properly decode UTF-16LE null-terminated strings
                 var strings = new List<string>();
-                var sb = new System.Text.StringBuilder();
-                for (double n = 0d, loopTo = Data.Length / 2d - 1d; n <= loopTo; n++)
+                int i = 0;
+                while (i + 1 < Data.Length)
                 {
-                    byte charCode = (byte)(Data[(int)Math.Round(n * 2d)] + (Data[(int)Math.Round(n * 2d + 1d)] << 8));
-                    if (charCode == 0)
+                    int start = i;
+                    while (i + 1 < Data.Length && (Data[i] != 0 || Data[i + 1] != 0))
+                        i += 2;
+                    if (i > start)
                     {
-                        if (sb.Length == 0)
-                            break;
-                        strings.Add(sb.ToString());
-                        sb.Clear();
+                        var s = System.Text.Encoding.Unicode.GetString(Data, start, i - start);
+                        strings.Add(s);
                     }
-                    else
-                    {
-                        sb.Append(charCode);
-                    }
+                    i += 2; // Skip null terminator
                 }
-
                 return strings.ToArray();
             }
 
             public static PolEntryData FromMultiString(string[] Strings)
             {
                 var ped = new PolEntryData() { Kind = RegistryValueKind.MultiString };
-                var data = new byte[((Strings.Sum(s => s.Length + 1) + 1) * 2)];
+                // Each string is null-terminated, and the array is double-null-terminated
+                int totalLen = (Strings.Sum(s => s.Length) + Strings.Length + 1) * 2;
+                var data = new byte[totalLen];
                 int n = 0;
                 foreach (var s in Strings)
                 {
-                    foreach (var c in s)
-                    {
-                        int charCode = Microsoft.VisualBasic.Strings.AscW(c);
-                        data[n] = (byte)(charCode & 0xFF);
-                        data[n + 1] = (byte)(charCode >> 8);
-                        n += 2;
-                    }
-
-                    n += 2; // Leave two null bytes after each string
+                    var bytes = System.Text.Encoding.Unicode.GetBytes(s);
+                    Array.Copy(bytes, 0, data, n, bytes.Length);
+                    n += bytes.Length;
+                    data[n] = 0; data[n + 1] = 0; // null terminator
+                    n += 2;
                 }
-
+                // Final double null
+                data[n] = 0; data[n + 1] = 0;
                 ped.Data = data;
                 return ped;
             }

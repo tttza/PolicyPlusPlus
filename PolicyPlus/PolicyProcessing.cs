@@ -14,6 +14,8 @@ namespace PolicyPlus
             decimal disabledEvidence = 0m;
             bool hasRegistryValue = false;
             var rawpol = Policy.RawPolicy;
+            if (rawpol.AffectedValues == null)
+                rawpol.AffectedValues = new PolicyRegistryList();
             void checkOneVal(PolicyRegistryValue Value, string Key, string ValueName, ref decimal EvidenceVar)
             {
                 if (Value is null)
@@ -144,6 +146,8 @@ namespace PolicyPlus
 
         private static bool ValuePresent(PolicyRegistryValue Value, IPolicySource Source, string Key, string ValueName)
         {
+            if (Value == null)
+                return false;
             // Determine whether the given value is found in the Registry
             switch (Value.RegistryType)
             {
@@ -175,7 +179,6 @@ namespace PolicyPlus
                 default:
                     {
                         throw new InvalidOperationException("Illegal value type");
-                        break;
                     }
             }
         }
@@ -372,6 +375,8 @@ namespace PolicyPlus
             };
             // Get all Registry values affected by this policy
             var rawpol = Policy.RawPolicy;
+            if (rawpol == null)
+                return entries;
             if (!string.IsNullOrEmpty(rawpol.RegistryValue))
                 addReg(rawpol.RegistryKey, rawpol.RegistryValue);
             void addSingleList(PolicyRegistrySingleList SingleList, string OverrideKey)
@@ -386,8 +391,11 @@ namespace PolicyPlus
                     addReg(entryKey, e.RegistryValue);
                 }
             };
-            addSingleList(rawpol.AffectedValues.OnValueList, "");
-            addSingleList(rawpol.AffectedValues.OffValueList, "");
+            if (rawpol.AffectedValues != null)
+            {
+                addSingleList(rawpol.AffectedValues.OnValueList, "");
+                addSingleList(rawpol.AffectedValues.OffValueList, "");
+            }
             if (rawpol.Elements is object)
             {
                 foreach (var elem in rawpol.Elements)
@@ -400,22 +408,28 @@ namespace PolicyPlus
                         case "boolean":
                             {
                                 BooleanPolicyElement booleanElem = (BooleanPolicyElement)elem;
-                                addSingleList(booleanElem.AffectedRegistry.OnValueList, elemKey);
-                                addSingleList(booleanElem.AffectedRegistry.OffValueList, elemKey);
+                                if (booleanElem.AffectedRegistry != null)
+                                {
+                                    addSingleList(booleanElem.AffectedRegistry.OnValueList, elemKey);
+                                    addSingleList(booleanElem.AffectedRegistry.OffValueList, elemKey);
+                                }
                                 break;
                             }
 
                         case "enum":
                             {
                                 EnumPolicyElement enumElem = (EnumPolicyElement)elem;
-                                foreach (var e in enumElem.Items)
-                                    addSingleList(e.ValueList, elemKey);
+                                if (enumElem.Items != null)
+                                {
+                                    foreach (var e in enumElem.Items)
+                                        addSingleList(e.ValueList, elemKey);
+                                }
                                 break;
                             }
 
                         case "list":
                             {
-                                if (Forget)
+                                if (Forget && PolicySource != null)
                                 {
                                     PolicySource.ClearKey(elemKey); // Delete all the values
                                     PolicySource.ForgetKeyClearance(elemKey);
@@ -431,7 +445,7 @@ namespace PolicyPlus
                 }
             }
 
-            if (Forget) // Remove them if forgetting
+            if (Forget && PolicySource != null) // Remove them if forgetting
             {
                 foreach (var e in entries)
                     PolicySource.ForgetValue(e.Key, e.Value);
@@ -593,7 +607,13 @@ namespace PolicyPlus
 
                                     case "multiText":
                                         {
-                                            PolicySource.SetValue(elemKey, elem.RegistryValue, optionData, Microsoft.Win32.RegistryValueKind.MultiString);
+                                            // Ensure the value is stored as a string[] for MultiString
+                                            if (optionData is string[] multiLines)
+                                                PolicySource.SetValue(elemKey, elem.RegistryValue, multiLines, Microsoft.Win32.RegistryValueKind.MultiString);
+                                            else if (optionData is IEnumerable<string> lines)
+                                                PolicySource.SetValue(elemKey, elem.RegistryValue, lines.ToArray(), Microsoft.Win32.RegistryValueKind.MultiString);
+                                            else if (optionData != null)
+                                                PolicySource.SetValue(elemKey, elem.RegistryValue, new[] { optionData.ToString() }, Microsoft.Win32.RegistryValueKind.MultiString);
                                             break;
                                         }
                                 }

@@ -16,7 +16,7 @@ namespace PolicyPlus
         public List<AdmxCategory> Categories = new List<AdmxCategory>();
         public List<AdmxPolicy> Policies = new List<AdmxPolicy>();
 
-        private AdmxFile()
+        public AdmxFile()
         {
         }
 

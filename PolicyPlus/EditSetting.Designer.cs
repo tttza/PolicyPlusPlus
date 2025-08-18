@@ -576,21 +576,21 @@ namespace PolicyPlus
 
         }
 
-        internal Label SettingNameLabel;
-        internal TextBox CommentTextbox;
-        internal TextBox SupportedTextbox;
-        internal RadioButton NotConfiguredOption;
-        internal RadioButton EnabledOption;
-        internal RadioButton DisabledOption;
-        internal Panel ExtraOptionsPanel;
-        internal TableLayoutPanel ExtraOptionsTable;
-        internal Button CloseButton;
-        internal Button OkButton;
-        internal ComboBox SectionDropdown;
-        internal Button ApplyButton;
-        internal Label CommentLabel;
-        internal Label SupportedLabel;
-        internal Button ViewDetailFormattedBtn;
+        protected Label SettingNameLabel;
+        protected TextBox CommentTextbox;
+        protected TextBox SupportedTextbox;
+        protected RadioButton NotConfiguredOption;
+        protected RadioButton EnabledOption;
+        protected RadioButton DisabledOption;
+        protected Panel ExtraOptionsPanel;
+        protected TableLayoutPanel ExtraOptionsTable;
+        protected Button CloseButton;
+        protected Button OkButton;
+        protected ComboBox SectionDropdown;
+        protected Button ApplyButton;
+        protected Label CommentLabel;
+        protected Label SupportedLabel;
+        protected Button ViewDetailFormattedBtn;
         private Panel panel1;
         private Panel panel2;
         private SplitContainer splitContainer1;

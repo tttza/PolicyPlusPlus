@@ -1439,6 +1439,8 @@ namespace PolicyPlus
 
         public static string PrettifyDescription(string Description)
         {
+            if (Description == null)
+                return "";
             // Remove extra indentation from paragraphs
             var sb = new StringBuilder();
             foreach (var line in Description.Split(Conversions.ToChar(Constants.vbCrLf)))

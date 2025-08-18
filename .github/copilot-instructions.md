@@ -1,0 +1,2 @@
+* Comments in the source code should be limited to what is necessary. Comments that are self-explanatory or intended to highlight the changes made in this revision are not necessary.
+* Please write comments in English only. Questions will be answered in the language in which they are asked.
