@@ -1,2 +1,2 @@
-* Comments in the source code should be limited to what is necessary. Comments that are self-explanatory or intended to highlight the changes made in this revision are not necessary.
-* Please write comments in English only. Questions will be answered in the language in which they are asked.
+* Leave existing comments in the source code as they are, and keep any comments added by Copilot to a minimum. Self-explanatory comments and comments highlighting the changes made in this fix are not necessary.
+* Please write comments in English only. Questions will be answered in the language in which they were asked.
