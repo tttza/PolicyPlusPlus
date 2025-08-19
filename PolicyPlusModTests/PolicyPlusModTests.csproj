@@ -22,8 +22,4 @@
     <ProjectReference Include="..\PolicyPlus\PolicyPlus.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="System.Windows.Forms" />
-  </ItemGroup>
-
 </Project>
