@@ -1,18 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
-
-// General Information about an assembly is controlled through the following 
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
-
-// Review the values of the assembly attributes
-
-[assembly: AssemblyTitle("Policy Plus")]
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Policy Plus")]
-[assembly: AssemblyCopyright("Copyright © Ben Nordick 2016-2021, modified by tttza 2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: ComVisible(false)]
 

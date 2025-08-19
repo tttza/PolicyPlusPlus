@@ -30,6 +30,9 @@
     <OptionInfer>On</OptionInfer>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <ApplicationManifest>My Project\app.manifest</ApplicationManifest>
+    <AssemblyTitle>Policy Plus</AssemblyTitle>
+    <Product>Policy Plus</Product>
+    <Copyright>Copyright © Ben Nordick 2016-2021, modified by tttza 2022</Copyright>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineDebug>true</DefineDebug>
