@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Windows.Forms;
+using PolicyPlus.UI.PolicyDetail;
 using PolicyPlus;
 using Xunit;
 using PolicyPlusModTests.TestHelpers;

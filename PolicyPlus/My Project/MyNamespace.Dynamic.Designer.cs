@@ -1,6 +1,12 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using PolicyPlus.UI.Admx;
+using PolicyPlus.UI.CategoryDetail;
+using PolicyPlus.UI.PolicyDetail;
+using PolicyPlus.UI.Export;
+using PolicyPlus.UI.Find;
+using PolicyPlus.UI.Main;
 
 namespace PolicyPlus.My
 {
