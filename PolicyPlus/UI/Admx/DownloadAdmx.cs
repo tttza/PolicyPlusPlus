@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using System.Security.AccessControl;
 
 namespace PolicyPlus.UI.Admx
 {
@@ -75,14 +76,15 @@ namespace PolicyPlus.UI.Admx
 
             void takeOwnership(string Folder)
             {
-                var dacl = System.IO.Directory.GetAccessControl(Folder);
+                var dirInfo = new System.IO.DirectoryInfo(Folder);
+                var dacl = dirInfo.GetAccessControl();
                 var adminSid = new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.BuiltinAdministratorsSid, null);
                 dacl.SetOwner(adminSid);
-                System.IO.Directory.SetAccessControl(Folder, dacl);
-                dacl = System.IO.Directory.GetAccessControl(Folder);
+                dirInfo.SetAccessControl(dacl);
+                dacl = dirInfo.GetAccessControl();
                 var allowRule = new System.Security.AccessControl.FileSystemAccessRule(adminSid, System.Security.AccessControl.FileSystemRights.FullControl, System.Security.AccessControl.AccessControlType.Allow);
                 dacl.AddAccessRule(allowRule);
-                System.IO.Directory.SetAccessControl(Folder, dacl);
+                dirInfo.SetAccessControl(dacl);
             };
             void moveFilesInDir(string Source, string Dest, bool InheritAcl)
             {
