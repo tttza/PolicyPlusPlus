@@ -96,7 +96,7 @@ namespace PolicyPlus.UI.Admx
                     {
                         var dirAcl = new System.Security.AccessControl.DirectorySecurity();
                         dirAcl.SetAccessRuleProtection(false, true);
-                        System.IO.Directory.SetAccessControl(Dest, dirAcl);
+                        (new DirectoryInfo(Dest)).SetAccessControl(dirAcl);
                     }
                     else if (!creatingNew)
                     {
@@ -115,7 +115,7 @@ namespace PolicyPlus.UI.Admx
                     {
                         var fileAcl = new System.Security.AccessControl.FileSecurity();
                         fileAcl.SetAccessRuleProtection(false, true);
-                        System.IO.File.SetAccessControl(newName, fileAcl);
+                        (new FileInfo(newName)).SetAccessControl(fileAcl);
                     }
                 }
             };
