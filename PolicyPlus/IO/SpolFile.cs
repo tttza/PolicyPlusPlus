@@ -152,7 +152,6 @@ namespace PolicyPlus
                     default:
                         {
                             throw new Exception("Unknown policy state.");
-                            break;
                         }
                 }
 

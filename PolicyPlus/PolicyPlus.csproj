@@ -35,14 +35,14 @@
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
     <DocumentationFile>bin\Debug\Policy Plus.xml</DocumentationFile>
-  <NoWarn>41999,42016,CS1591,CS0649,CS0162,CS0414</NoWarn>
+  <NoWarn>41999,42016,CS1591</NoWarn>
     <WarningsAsErrors>42017,42018,42019,42020,42021,42022,42030,42032,42036,42104,42108,42109</WarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DefineDebug>false</DefineDebug>
     <DefineTrace>true</DefineTrace>
     <DocumentationFile>bin\Release\Policy Plus.xml</DocumentationFile>
-  <NoWarn>41999,42016,CS1591,CS0649,CS0162,CS0414</NoWarn>
+  <NoWarn>41999,42016,CS1591</NoWarn>
     <WarningsAsErrors>42017,42018,42019,42020,42021,42022,42030,42032,42036,42104,42108,42109</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>

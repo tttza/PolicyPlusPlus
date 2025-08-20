@@ -229,8 +229,6 @@ namespace PolicyPlus
                             PInvoke.SendNotifyMessageW(new IntPtr(0xFFFF), 0x1A, UIntPtr.Zero, IntPtr.Zero); // Broadcast WM_SETTINGCHANGE
                             return "saved to disk and applied diff to Registry";
                         }
-
-                        break;
                     }
 
                 case PolicyLoaderSource.LocalRegistry:
