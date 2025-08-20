@@ -21,6 +21,7 @@ namespace PolicyPlus.UI.Main
             Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
             InitializeComponent();
+            PolicyIconsLoader.Initialize(PolicyIcons); // Load icons according to selected mode (embedded / generated)
             var version = Assembly.GetExecutingAssembly().GetName().Version.ToString().Substring(0, 5);
             if (!string.IsNullOrEmpty(version))
                 AppVersion.Text = $"Version: {version}";

@@ -44,6 +44,12 @@
     <DocumentationFile>bin\Release\Policy Plus.xml</DocumentationFile>
   <NoWarn>41999,42016,CS1591</NoWarn>
     <WarningsAsErrors>42017,42018,42019,42020,42021,42022,42030,42032,42036,42104,42108,42109</WarningsAsErrors>
+  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  <PublishSingleFile>true</PublishSingleFile>
+  <SelfContained>true</SelfContained>
+  <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+  <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
@@ -81,5 +87,8 @@
   <None Remove="My Project\**" />
   <Compile Remove="My Project\**" />
   <EmbeddedResource Remove="My Project\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="images\*.png" />
   </ItemGroup>
 </Project>

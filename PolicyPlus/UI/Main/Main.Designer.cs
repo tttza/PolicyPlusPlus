@@ -625,53 +625,8 @@ namespace PolicyPlus.UI.Main
             this.CmePolSpolFragment.Tag = "P";
             this.CmePolSpolFragment.Text = "Semantic Policy Fragment";
             // 
-            // PolicyIcons
-            // 
-            this.PolicyIcons.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("PolicyIcons.ImageStream")));
+            // PolicyIcons will be populated at runtime from disk (PNG files)
             this.PolicyIcons.TransparentColor = System.Drawing.Color.Transparent;
-            this.PolicyIcons.Images.SetKeyName(0, "folder.png");
-            this.PolicyIcons.Images.SetKeyName(1, "folder_error.png");
-            this.PolicyIcons.Images.SetKeyName(2, "folder_delete.png");
-            this.PolicyIcons.Images.SetKeyName(3, "folder_go.png");
-            this.PolicyIcons.Images.SetKeyName(4, "page_white.png");
-            this.PolicyIcons.Images.SetKeyName(5, "page_white_gear.png");
-            this.PolicyIcons.Images.SetKeyName(6, "arrow_up.png");
-            this.PolicyIcons.Images.SetKeyName(7, "page_white_error.png");
-            this.PolicyIcons.Images.SetKeyName(8, "delete.png");
-            this.PolicyIcons.Images.SetKeyName(9, "arrow_right.png");
-            this.PolicyIcons.Images.SetKeyName(10, "package.png");
-            this.PolicyIcons.Images.SetKeyName(11, "computer.png");
-            this.PolicyIcons.Images.SetKeyName(12, "database.png");
-            this.PolicyIcons.Images.SetKeyName(13, "cog.png");
-            this.PolicyIcons.Images.SetKeyName(14, "text_allcaps.png");
-            this.PolicyIcons.Images.SetKeyName(15, "calculator.png");
-            this.PolicyIcons.Images.SetKeyName(16, "cog_edit.png");
-            this.PolicyIcons.Images.SetKeyName(17, "accept.png");
-            this.PolicyIcons.Images.SetKeyName(18, "cross.png");
-            this.PolicyIcons.Images.SetKeyName(19, "application_xp_terminal.png");
-            this.PolicyIcons.Images.SetKeyName(20, "application_form.png");
-            this.PolicyIcons.Images.SetKeyName(21, "text_align_left.png");
-            this.PolicyIcons.Images.SetKeyName(22, "calculator_edit.png");
-            this.PolicyIcons.Images.SetKeyName(23, "wrench.png");
-            this.PolicyIcons.Images.SetKeyName(24, "textfield.png");
-            this.PolicyIcons.Images.SetKeyName(25, "tick.png");
-            this.PolicyIcons.Images.SetKeyName(26, "text_horizontalrule.png");
-            this.PolicyIcons.Images.SetKeyName(27, "table.png");
-            this.PolicyIcons.Images.SetKeyName(28, "table_sort.png");
-            this.PolicyIcons.Images.SetKeyName(29, "font_go.png");
-            this.PolicyIcons.Images.SetKeyName(30, "application_view_list.png");
-            this.PolicyIcons.Images.SetKeyName(31, "brick.png");
-            this.PolicyIcons.Images.SetKeyName(32, "error.png");
-            this.PolicyIcons.Images.SetKeyName(33, "style.png");
-            this.PolicyIcons.Images.SetKeyName(34, "sound_low.png");
-            this.PolicyIcons.Images.SetKeyName(35, "arrow_down.png");
-            this.PolicyIcons.Images.SetKeyName(36, "style_go.png");
-            this.PolicyIcons.Images.SetKeyName(37, "exclamation.png");
-            this.PolicyIcons.Images.SetKeyName(38, "application_cascade.png");
-            this.PolicyIcons.Images.SetKeyName(39, "page_copy.png");
-            this.PolicyIcons.Images.SetKeyName(40, "page.png");
-            this.PolicyIcons.Images.SetKeyName(41, "calculator_add.png");
-            this.PolicyIcons.Images.SetKeyName(42, "page_go.png");
             // 
             // panel2
             // 
