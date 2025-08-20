@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
+﻿// VB dependency removed: replaced Strings/Conversions helpers with .NET equivalents
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -63,10 +62,10 @@ namespace PolicyPlus
             {
                 if (Reader.EndOfStream)
                     return null;
-                if (StopAt.HasValue && Reader.Peek() == Strings.Asc(StopAt.Value))
+                if (StopAt.HasValue && Reader.Peek() == (int)StopAt.Value)
                     return null;
                 string line = Reader.ReadLine();
-                if (string.IsNullOrWhiteSpace(line) || Strings.Trim(line).StartsWith(";"))
+                if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith(";"))
                     continue;
                 return line;
             }
@@ -107,7 +106,7 @@ namespace PolicyPlus
                         }
                         else
                         {
-                            var parts = Strings.Split(valueLine, "\"=", 2);
+                            var parts = valueLine.Split(new[] { "\"=" }, 2, StringSplitOptions.None);
                             valueName = UnescapeValue(parts[0].Substring(1));
                             data = parts[1];
                         }
@@ -145,7 +144,7 @@ namespace PolicyPlus
                             var allDehexedBytes = new List<byte>();
                             do // Read all the hex lines
                             {
-                                var hexBytes = Strings.Split(Strings.Trim(curHexLine).TrimEnd('\\', ','), ",").Where(s => !string.IsNullOrEmpty(s));
+                                var hexBytes = curHexLine.Trim().TrimEnd('\\', ',').Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
                                 foreach (var b in hexBytes)
                                     allDehexedBytes.Add(byte.Parse(b, System.Globalization.NumberStyles.HexNumber));
                                 if (curHexLine.EndsWith(@"\"))
@@ -229,14 +228,15 @@ namespace PolicyPlus
                                 case RegistryValueKind.String:
                                     {
                                         Writer.Write("\"");
-                                        Writer.Write(EscapeValue(Conversions.ToString(value.Data)));
+                                        Writer.Write(EscapeValue(Convert.ToString(value.Data)));
                                         Writer.WriteLine("\"");
                                         break;
                                     }
                                 case RegistryValueKind.DWord:
                                     {
                                         Writer.Write("dword:");
-                                        Writer.WriteLine(Convert.ToString(Conversions.ToUInteger(value.Data), 16).PadLeft(8, '0'));
+                                        var dwordVal = Convert.ToUInt32(value.Data);
+                                        Writer.WriteLine(Convert.ToString(dwordVal, 16).PadLeft(8, '0'));
                                         break;
                                     }
                                 default:

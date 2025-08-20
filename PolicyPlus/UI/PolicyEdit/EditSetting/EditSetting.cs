@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic.CompilerServices;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -183,9 +182,10 @@ namespace PolicyPlus.UI.PolicyDetail
                                     var text = new TextBox();
                                     text.TextChanged += (o, i) =>
                                     {
-                                        if (!int.TryParse(text.Text, out _))
+                                        if (!uint.TryParse(text.Text, out _))
                                             text.Text = decimalTextPres.DefaultValue.ToString();
-                                        int curNum = Conversions.ToInteger(text.Text);
+                                        if (!uint.TryParse(text.Text, out uint curNum))
+                                            curNum = (uint)decimalTextPres.DefaultValue;
                                         if (curNum > numeric.Maximum)
                                             text.Text = numeric.Maximum.ToString();
                                         if (curNum < numeric.Minimum)
@@ -331,27 +331,27 @@ namespace PolicyPlus.UI.PolicyDetail
                                 if (uiControl is TextBox)
                                     ((TextBox)uiControl).Text = kv.Value.ToString();
                                 else
-                                    ((NumericUpDown)uiControl).Value = Conversions.ToDecimal(kv.Value);
+                                    ((NumericUpDown)uiControl).Value = Convert.ToDecimal(kv.Value);
                             }
                             else if (kv.Value is string) // Text box or combo box
                             {
                                 if (uiControl is ComboBox)
                                 {
-                                    ((ComboBox)uiControl).Text = Conversions.ToString(kv.Value);
+                                    ((ComboBox)uiControl).Text = Convert.ToString(kv.Value);
                                 }
                                 else
-                                    ((TextBox)uiControl).Text = Conversions.ToString(kv.Value);
+                                    ((TextBox)uiControl).Text = Convert.ToString(kv.Value);
                             }
                             else if (kv.Value is int) // Dropdown list
                             {
                                 ComboBox combobox = (ComboBox)uiControl;
-                                var matchingItem = combobox.Items.OfType<DropdownPresentationMap>().FirstOrDefault(i => i.ID == Conversions.ToInteger(kv.Value));
+                                var matchingItem = combobox.Items.OfType<DropdownPresentationMap>().FirstOrDefault(i => i.ID == Convert.ToInt32(kv.Value));
                                 if (matchingItem is object)
                                     combobox.SelectedItem = matchingItem;
                             }
                             else if (kv.Value is bool) // Check box
                             {
-                                ((CheckBox)uiControl).Checked = Conversions.ToBoolean(kv.Value);
+                                ((CheckBox)uiControl).Checked = Convert.ToBoolean(kv.Value);
                             }
                             else if (kv.Value is string[]) // Multiline text box
                             {
@@ -430,7 +430,10 @@ namespace PolicyPlus.UI.PolicyDetail
                         case "decimal":
                             {
                                 if (uiControl is TextBox)
-                                    options.Add(elem.ID, Conversions.ToUInteger(((TextBox)uiControl).Text));
+                                    if (uint.TryParse(((TextBox)uiControl).Text, out uint parsedUint))
+                                        options.Add(elem.ID, parsedUint);
+                                    else
+                                        options.Add(elem.ID, 0u);
                                 else
                                     options.Add(elem.ID, (uint)Math.Round(((NumericUpDown)uiControl).Value));
                                 break;

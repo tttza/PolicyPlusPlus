@@ -3,7 +3,6 @@
 // More code here...
 // Even more code...
 // Final lines of code...
-using Microsoft.VisualBasic;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -377,7 +376,7 @@ namespace PolicyPlus.UI.PolicyDetail
             }
             catch (Exception)
             {
-                Interaction.MsgBox("Failed to read REG!", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Failed to read REG!", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
             return "";
         }

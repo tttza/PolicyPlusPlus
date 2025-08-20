@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -172,7 +171,7 @@ namespace PolicyPlus.UI.Admx
                     Invoke(new Action(() =>
                     {
                         SetIsBusy(false);
-                        if (Interaction.MsgBox("ADMX files downloaded successfully. Open them now?", MsgBoxStyle.YesNo | MsgBoxStyle.Question) == MsgBoxResult.Yes)
+                        if (MessageBox.Show("ADMX files downloaded successfully. Open them now?", "Policy Plus", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                         {
                             NewPolicySourceFolder = destination;
                         }
@@ -185,7 +184,7 @@ namespace PolicyPlus.UI.Admx
                     Invoke(new Action(() =>
                     {
                         SetIsBusy(false);
-                        Interaction.MsgBox("Failed to " + failPhase + ".", MsgBoxStyle.Exclamation);
+                        MessageBox.Show("Failed to " + failPhase + ".", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     }));
                 }
             });

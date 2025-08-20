@@ -1,8 +1,8 @@
-﻿using Microsoft.VisualBasic.CompilerServices;
-using PolicyPlus;
+﻿using PolicyPlus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Globalization;
 
 namespace PolicyPlus
 {
@@ -145,6 +145,48 @@ namespace PolicyPlus
             }
         }
 
+        private static uint TryGetUInt32(object value)
+        {
+            if (value == null)
+                return 0U;
+            switch (value)
+            {
+                case uint u:
+                    return u;
+                case int i when i >= 0:
+                    return (uint)i;
+                case long l when l >= 0 && l <= uint.MaxValue:
+                    return (uint)l;
+                case ulong ul when ul <= uint.MaxValue:
+                    return (uint)ul;
+                case string s:
+                    {
+                        s = s.Trim();
+                        if (s.Length == 0)
+                            return 0U;
+                        uint parsed;
+                        if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase) || s.StartsWith("&H", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var hex = s.Substring(2);
+                            if (uint.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out parsed))
+                                return parsed;
+                        }
+                        if (uint.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed))
+                            return parsed;
+                        return 0U;
+                    }
+                default:
+                    try
+                    {
+                        return Convert.ToUInt32(value, CultureInfo.InvariantCulture);
+                    }
+                    catch
+                    {
+                        return 0U;
+                    }
+            }
+        }
+
         private static bool ValuePresent(PolicyRegistryValue Value, IPolicySource Source, string Key, string ValueName)
         {
             if (Value == null)
@@ -164,7 +206,15 @@ namespace PolicyPlus
                         var sourceVal = Source.GetValue(Key, ValueName);
                         if (!(sourceVal is uint) & !(sourceVal is int))
                             return false;
-                        return Conversions.ToLong(sourceVal) == Value.NumberValue;
+                        try
+                        {
+                            long num = Convert.ToInt64(sourceVal);
+                            return num == Value.NumberValue;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
                     }
 
                 case PolicyRegistryValueType.Text:
@@ -174,7 +224,7 @@ namespace PolicyPlus
                         var sourceVal = Source.GetValue(Key, ValueName);
                         if (!(sourceVal is string))
                             return false;
-                        return (Conversions.ToString(sourceVal) ?? "") == (Value.StringValue ?? "");
+                        return (Convert.ToString(sourceVal) ?? "") == (Value.StringValue ?? "");
                     }
 
                 default:
@@ -236,7 +286,16 @@ namespace PolicyPlus
                 {
                     case "decimal":
                         {
-                            state.Add(elem.ID, Conversions.ToUInteger(PolicySource.GetValue(elemKey, elem.RegistryValue)));
+                            try
+                            {
+                                var raw = PolicySource.GetValue(elemKey, elem.RegistryValue);
+                                uint u = Convert.ToUInt32(raw);
+                                state.Add(elem.ID, u);
+                            }
+                            catch
+                            {
+                                state.Add(elem.ID, 0u);
+                            }
                             break;
                         }
 
@@ -260,7 +319,7 @@ namespace PolicyPlus
                             {
                                 var entries = new Dictionary<string, string>();
                                 foreach (var value in PolicySource.GetValueNames(elemKey))
-                                    entries.Add(value, Conversions.ToString(PolicySource.GetValue(elemKey, value)));
+                                    entries.Add(value, Convert.ToString(PolicySource.GetValue(elemKey, value)));
                                 state.Add(elem.ID, entries);
                             }
                             else // Keys don't matter, use a list
@@ -271,7 +330,7 @@ namespace PolicyPlus
                                     int n = 1;
                                     while (PolicySource.ContainsValue(elemKey, elem.RegistryValue + n))
                                     {
-                                        entries.Add(Conversions.ToString(PolicySource.GetValue(elemKey, elem.RegistryValue + n)));
+                                        entries.Add(Convert.ToString(PolicySource.GetValue(elemKey, elem.RegistryValue + n)));
                                         n += 1;
                                     }
                                 }
@@ -338,7 +397,7 @@ namespace PolicyPlus
                 if (isListAllPresent(RegList.OnValueList))
                     return true;
             }
-            else if (Conversions.ToUInteger(PolicySource.GetValue(DefaultKey, DefaultValueName)) == 1U)
+            else if (TryGetUInt32(PolicySource.GetValue(DefaultKey, DefaultValueName)) == 1U)
                 return true;
             if (RegList.OffValue is object)
             {
@@ -532,11 +591,16 @@ namespace PolicyPlus
                                             DecimalPolicyElement decimalElem = (DecimalPolicyElement)elem;
                                             if (decimalElem.StoreAsText)
                                             {
-                                                PolicySource.SetValue(elemKey, elem.RegistryValue, Conversions.ToString(optionData), Microsoft.Win32.RegistryValueKind.String);
+                                                PolicySource.SetValue(elemKey, elem.RegistryValue, Convert.ToString(optionData), Microsoft.Win32.RegistryValueKind.String);
                                             }
                                             else
                                             {
-                                                PolicySource.SetValue(elemKey, elem.RegistryValue, Conversions.ToUInteger(optionData), Microsoft.Win32.RegistryValueKind.DWord);
+                                                try
+                                                {
+                                                    var u = Convert.ToUInt32(optionData);
+                                                    PolicySource.SetValue(elemKey, elem.RegistryValue, u, Microsoft.Win32.RegistryValueKind.DWord);
+                                                }
+                                                catch { }
                                             }
 
                                             break;
@@ -545,7 +609,7 @@ namespace PolicyPlus
                                     case "boolean":
                                         {
                                             BooleanPolicyElement booleanElem = (BooleanPolicyElement)elem;
-                                            bool checkState = Conversions.ToBoolean(optionData);
+                                            bool checkState = Convert.ToBoolean(optionData);
                                             if (booleanElem.AffectedRegistry.OnValue is null & checkState)
                                             {
                                                 PolicySource.SetValue(elemKey, elem.RegistryValue, 1U, Microsoft.Win32.RegistryValueKind.DWord);
@@ -600,7 +664,7 @@ namespace PolicyPlus
                                     case "enum":
                                         {
                                             EnumPolicyElement enumElem = (EnumPolicyElement)elem;
-                                            var selItem = enumElem.Items[Conversions.ToInteger(optionData)];
+                                            var selItem = enumElem.Items[Convert.ToInt32(optionData)];
                                             setValue(elemKey, elem.RegistryValue, selItem.Value);
                                             setSingleList(selItem.ValueList, elemKey);
                                             break;

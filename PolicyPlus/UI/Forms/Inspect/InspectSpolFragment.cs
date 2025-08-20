@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
@@ -64,7 +63,7 @@ namespace PolicyPlus
         {
             if (CheckHeader.Checked)
             {
-                TextSpol.Text = "Policy Plus Semantic Policy" + Constants.vbCrLf + Constants.vbCrLf + SpolFragment;
+                TextSpol.Text = "Policy Plus Semantic Policy" + Environment.NewLine + Environment.NewLine + SpolFragment;
             }
             else
             {

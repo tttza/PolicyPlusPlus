@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Drawing;
-using System.Windows.Forms;
 
-namespace PolicyPlus.UI.PolicyDetail
+namespace PolicyPlus.UI.PolicyDetail;
+
+public partial class EditPolDelete : Form
 {
-    [Microsoft.VisualBasic.CompilerServices.DesignerGenerated()]
-    public partial class EditPolDelete : Form
-    {
 
         // Form overrides dispose to clean up the component list.
         [DebuggerNonUserCode()]
@@ -149,5 +147,4 @@ namespace PolicyPlus.UI.PolicyDetail
         internal RadioButton OptDeleteOne;
         internal TextBox TextValueName;
         internal Button ButtonOK;
-    }
 }

@@ -1,6 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -73,7 +71,7 @@ namespace PolicyPlus
                 string key = readSz();
                 Stream.BaseStream.Position += 2L; // Skip ";"
                 string value = readSz();
-                if (Stream.ReadUInt16() != Strings.Asc(';'))
+                if (Stream.ReadUInt16() != ';')
                     Stream.BaseStream.Position += 2L; // MS documentation indicates there might be an extra null before the ";" after the value name
                 ped.Kind = (RegistryValueKind)Stream.ReadInt32();
                 Stream.BaseStream.Position += 2L; // ";"
@@ -111,7 +109,7 @@ namespace PolicyPlus
             foreach (var kv in Entries)
             {
                 Writer.Write('[');
-                var pathparts = Strings.Split(CasePreservation[kv.Key], @"\\", 2);
+                var pathparts = CasePreservation[kv.Key].Split(new[] { "\\\\" }, 2, StringSplitOptions.None);
                 writeSz(pathparts[0]); // Key name
                 Writer.Write(';');
                 writeSz(pathparts[1]); // Value name
@@ -200,7 +198,7 @@ namespace PolicyPlus
                 else if ((kv.Key ?? "") == (GetDictKey(Key, "**deletevalues") ?? ""))
                 {
                     string lowerVal = Value.ToLowerInvariant();
-                    var deletedValues = Strings.Split(kv.Value.AsString(), ";");
+                    var deletedValues = kv.Value.AsString().Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
                     if (deletedValues.Any(s => (s.ToLowerInvariant() ?? "") == (lowerVal ?? "")))
                         willDelete = true;
                 }
@@ -226,7 +224,7 @@ namespace PolicyPlus
             {
                 if (k.StartsWith(prefix))
                 {
-                    string valName = Strings.Split(CasePreservation[k], @"\\", 2)[1];
+                    string valName = CasePreservation[k].Split(new[] { "\\\\" }, 2, StringSplitOptions.None)[1];
                     if (!(OnlyValues & valName.StartsWith("**")))
                         valNames.Add(valName);
                 }
@@ -243,11 +241,11 @@ namespace PolicyPlus
             var oldEntries = OldVersion.Entries.Keys.Where(k => !k.Contains(@"\\**")).ToList();
             foreach (var kv in Entries)
             {
-                var parts = Strings.Split(kv.Key, @"\\", 2); // Key, value
-                var casedParts = Strings.Split(CasePreservation[kv.Key], @"\\", 2);
+                var parts = kv.Key.Split(new[] { "\\\\" }, 2, StringSplitOptions.None); // Key, value
+                var casedParts = CasePreservation[kv.Key].Split(new[] { "\\\\" }, 2, StringSplitOptions.None);
                 if (parts[1].StartsWith("**del."))
                 {
-                    Target.DeleteValue(parts[0], Strings.Split(parts[1], ".", 2)[1]);
+                    Target.DeleteValue(parts[0], parts[1].Split(new[] { '.' }, 2)[1]);
                 }
                 else if (parts[1].StartsWith("**delvals"))
                 {
@@ -255,12 +253,12 @@ namespace PolicyPlus
                 }
                 else if (parts[1] == "**deletevalues")
                 {
-                    foreach (var entry in Strings.Split(kv.Value.AsString(), ";"))
+                    foreach (var entry in kv.Value.AsString().Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
                         Target.DeleteValue(parts[0], entry);
                 }
                 else if (parts[1].StartsWith("**deletekeys"))
                 {
-                    foreach (var entry in Strings.Split(kv.Value.AsString(), ";"))
+                    foreach (var entry in kv.Value.AsString().Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
                         Target.ClearKey(parts[0] + @"\" + entry);
                 }
                 else if (!string.IsNullOrEmpty(parts[1]) & !parts[1].StartsWith("**"))
@@ -273,7 +271,7 @@ namespace PolicyPlus
 
             foreach (var e in oldEntries.Where(RegistryPolicyProxy.IsPolicyKey)) // Remove the forgotten entries from the Registry
             {
-                var parts = Strings.Split(e, @"\\", 2);
+                var parts = e.Split(new[] { "\\\\" }, 2, StringSplitOptions.None);
                 Target.ForgetValue(parts[0], parts[1]);
             }
         }
@@ -307,10 +305,10 @@ namespace PolicyPlus
             {
                 if (entry.StartsWith(prefix + @"\", StringComparison.InvariantCultureIgnoreCase))
                     continue; // Values are delimited by an extra slash
-                string properCased = Strings.Split(CasePreservation[entry], @"\\", 2)[0];
+                string properCased = CasePreservation[entry].Split(new[] { "\\\\" }, 2, StringSplitOptions.None)[0];
                 if (prefix.Length >= properCased.Length)
                     continue; // Do not return the requested key itself
-                string localKeyName = Strings.Split(properCased.Substring(prefix.Length), @"\", 2)[0];
+                string localKeyName = properCased.Substring(prefix.Length).Split(new[] { '\\' }, 2)[0];
                 if (!subkeyNames.Contains(localKeyName, StringComparer.InvariantCultureIgnoreCase))
                     subkeyNames.Add(localKeyName);
             }
@@ -378,7 +376,7 @@ namespace PolicyPlus
                 var data = new byte[Text.Length * 2 + 1 + 1];
                 for (int x = 0, loopTo = Text.Length - 1; x <= loopTo; x++)
                 {
-                    int charCode = Strings.AscW(Text[x]);
+                    int charCode = Text[x];
                     data[x * 2] = (byte)(charCode & 0xFF);
                     data[x * 2 + 1] = (byte)(charCode >> 8);
                 }
@@ -519,22 +517,22 @@ namespace PolicyPlus
                 {
                     case RegistryValueKind.String:
                         {
-                            return FromString(Conversions.ToString(Data));
+                            return FromString(Convert.ToString(Data));
                         }
 
                     case RegistryValueKind.DWord:
                         {
-                            return FromDword(Conversions.ToUInteger(Data));
+                            return FromDword(Convert.ToUInt32(Data));
                         }
 
                     case RegistryValueKind.ExpandString:
                         {
-                            return FromString(Conversions.ToString(Data), true);
+                            return FromString(Convert.ToString(Data), true);
                         }
 
                     case RegistryValueKind.QWord:
                         {
-                            return FromQword(Conversions.ToULong(Data));
+                            return FromQword(Convert.ToUInt64(Data));
                         }
 
                     case RegistryValueKind.MultiString:
@@ -590,13 +588,13 @@ namespace PolicyPlus
 
         public void SetValue(string Key, string Value, object Data, RegistryValueKind DataType)
         {
-            if (Data is uint)
+            if (Data is uint u)
             {
-                Data = new ReinterpretableDword() { Unsigned = Conversions.ToUInteger(Data) }.Signed;
+                Data = new ReinterpretableDword() { Unsigned = u }.Signed;
             }
-            else if (Data is ulong)
+            else if (Data is ulong ul)
             {
-                Data = new ReinterpretableQword() { Unsigned = Conversions.ToULong(Data) }.Signed;
+                Data = new ReinterpretableQword() { Unsigned = ul }.Signed;
             }
 
             using (var regKey = RootKey.CreateSubKey(Key))
@@ -624,13 +622,13 @@ namespace PolicyPlus
                 if (regKey is null)
                     return null;
                 var data = regKey.GetValue(Value, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
-                if (data is int)
+                if (data is int i)
                 {
-                    return new ReinterpretableDword() { Signed = Conversions.ToInteger(data) }.Unsigned;
+                    return new ReinterpretableDword() { Signed = i }.Unsigned;
                 }
-                else if (data is long)
+                else if (data is long l)
                 {
-                    return new ReinterpretableQword() { Signed = Conversions.ToLong(data) }.Unsigned;
+                    return new ReinterpretableQword() { Signed = l }.Unsigned;
                 }
                 else
                 {

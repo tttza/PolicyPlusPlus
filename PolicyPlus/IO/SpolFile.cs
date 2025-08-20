@@ -1,6 +1,5 @@
 ﻿
-using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
+// VB dependency removed: replaced Strings/Constants/Conversions with .NET APIs
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,7 +29,7 @@ namespace PolicyPlus
         private void LoadFromText(string Text)
         {
             // Load a SPOL script into policy states
-            var allLines = Strings.Split(Text, Constants.vbCrLf);
+            var allLines = Text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
             string line = "";
             string nextLine()
             {
@@ -83,15 +82,15 @@ namespace PolicyPlus
                 throw new Exception("Incorrect signature.");
             while (!atEnd())
             {
-                if (string.IsNullOrEmpty(Strings.Trim(nextLine())))
+                if (string.IsNullOrEmpty(nextLine().Trim()))
                     continue;
-                var policyHeaderParts = Strings.Split(line, " ", 2); // Section and policy ID
+                var policyHeaderParts = line.Split(new[] { ' ' }, 2, StringSplitOptions.None); // Section and policy ID
                 var singlePolicy = new SpolPolicyState() { UniqueID = policyHeaderParts[1] };
                 singlePolicy.Section = policyHeaderParts[0] == "U" ? AdmxPolicySection.User : AdmxPolicySection.Machine;
                 const string commentPrefix = "comment: ";
-                if (Strings.LTrim(peekLine()).ToLowerInvariant().StartsWith(commentPrefix))
+                if (peekLine().TrimStart().ToLowerInvariant().StartsWith(commentPrefix))
                 {
-                    string escapedCommentText = Strings.LTrim(nextLine()).Substring(commentPrefix.Length);
+                    string escapedCommentText = nextLine().TrimStart().Substring(commentPrefix.Length);
                     var commentText = new System.Text.StringBuilder();
                     for (int n = 0, loopTo = escapedCommentText.Length - 1; n <= loopTo; n++)
                     {
@@ -109,7 +108,7 @@ namespace PolicyPlus
 
                                 case 'n':
                                     {
-                                        commentText.Append(Constants.vbCrLf);
+                                        commentText.Append(Environment.NewLine);
                                         break;
                                     }
 
@@ -131,7 +130,7 @@ namespace PolicyPlus
                     singlePolicy.Comment = commentText.ToString();
                 }
 
-                switch (Strings.Trim(nextLine()).ToLowerInvariant() ?? "")
+                switch (nextLine().Trim().ToLowerInvariant())
                 {
                     case "not configured":
                         {
@@ -160,24 +159,24 @@ namespace PolicyPlus
 
                 if (singlePolicy.BasicState == PolicyState.Enabled)
                 {
-                    while (!atEnd() && !string.IsNullOrEmpty(Strings.Trim(peekLine())))
+                    while (!atEnd() && !string.IsNullOrEmpty(peekLine().Trim()))
                     {
-                        var optionParts = Strings.Split(Strings.Trim(nextLine()), ": ", 2); // Name and value
+                        var optionParts = nextLine().Trim().Split(new[] { ": " }, 2, StringSplitOptions.None); // Name and value
                         string valueText = optionParts[1];
                         object newObj;
-                        uint argresult = 0U;
-                        bool argresult1 = false;
+                        uint uintVal;
+                        bool boolVal;
                         if (valueText.StartsWith("#"))
                         {
-                            newObj = Conversions.ToInteger(valueText.Substring(1));
+                            newObj = int.Parse(valueText.Substring(1));
                         }
-                        else if (uint.TryParse(valueText, out argresult))
+                        else if (uint.TryParse(valueText, out uintVal))
                         {
-                            newObj = Conversions.ToUInteger(valueText);
+                            newObj = uintVal;
                         }
-                        else if (bool.TryParse(valueText, out argresult1))
+                        else if (bool.TryParse(valueText, out boolVal))
                         {
-                            newObj = Conversions.ToBoolean(valueText);
+                            newObj = boolVal;
                         }
                         else if (valueText.StartsWith("'") & valueText.EndsWith("'"))
                         {
@@ -194,7 +193,7 @@ namespace PolicyPlus
                         else if (valueText == "[")
                         {
                             var entries = new List<List<string>>();
-                            while (Strings.Trim(peekLine()) != "]")
+                            while (peekLine().Trim() != "]")
                                 entries.Add(getAllStrings(nextLine(), '"'));
                             nextLine(); // Skip the closing bracket
                             if (entries.Count == 0)
@@ -232,7 +231,7 @@ namespace PolicyPlus
             if (!string.IsNullOrEmpty(State.Comment))
             {
                 // Escape newlines and backslashes in the comment so it can fit on one SPOL line
-                sb.AppendLine(" Comment: " + State.Comment.Replace(@"\", @"\\").Replace(Constants.vbCrLf, @"\n"));
+                sb.AppendLine(" Comment: " + State.Comment.Replace(@"\", @"\\").Replace(Environment.NewLine, @"\n"));
             }
 
             switch (State.BasicState)
@@ -268,31 +267,31 @@ namespace PolicyPlus
                     sb.Append("  ");
                     sb.Append(kv.Key);
                     sb.Append(": ");
-                    switch (kv.Value.GetType())
+                    switch (kv.Value?.GetType())
                     {
                         case var @case when @case == typeof(int):
                             {
                                 sb.Append("#");
-                                sb.AppendLine(Conversions.ToInteger(kv.Value).ToString());
+                                sb.AppendLine(((int)kv.Value).ToString());
                                 break;
                             }
 
                         case var case1 when case1 == typeof(uint):
                             {
-                                sb.AppendLine(Conversions.ToUInteger(kv.Value).ToString());
+                                sb.AppendLine(((uint)kv.Value).ToString());
                                 break;
                             }
 
                         case var case2 when case2 == typeof(bool):
                             {
-                                sb.AppendLine(Conversions.ToString(Conversions.ToBoolean(kv.Value)));
+                                sb.AppendLine(((bool)kv.Value).ToString());
                                 break;
                             }
 
                         case var case3 when case3 == typeof(string):
                             {
                                 sb.Append("'");
-                                sb.Append(Conversions.ToString(kv.Value));
+                                sb.Append((string)kv.Value);
                                 sb.AppendLine("'");
                                 break;
                             }

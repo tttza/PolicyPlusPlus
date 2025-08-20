@@ -1,6 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
@@ -48,7 +46,7 @@ namespace PolicyPlus.UI.Find
             // Open the dialog normally, like from the main form
             if (!HasSearched)
             {
-                Interaction.MsgBox("No search has been run yet, so there are no results to display.", MsgBoxStyle.Information);
+                MessageBox.Show("No search has been run yet, so there are no results to display.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return DialogResult.Cancel;
             }
 
@@ -113,7 +111,7 @@ namespace PolicyPlus.UI.Find
             foreach (var policy in Workspace.Policies)
             {
                 object argaddress = CancelingSearch;
-                if (Conversions.ToBoolean(System.Threading.Thread.VolatileRead(ref argaddress)))
+                if (Convert.ToBoolean(System.Threading.Thread.VolatileRead(ref argaddress)))
                 {
                     stoppedByCancel = true;
                     break;
@@ -142,7 +140,7 @@ namespace PolicyPlus.UI.Find
 
             object localVolatileRead1() { object argaddress = CancelDueToFormClose; var ret = System.Threading.Thread.VolatileRead(ref argaddress); return ret; }
 
-            if (stoppedByCancel && Conversions.ToBoolean(localVolatileRead1()))
+            if (stoppedByCancel && Convert.ToBoolean(localVolatileRead1()))
                 return; // Avoid accessing a disposed object
             Invoke(new Action(() =>
             {

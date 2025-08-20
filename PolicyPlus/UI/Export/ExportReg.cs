@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System;
+﻿using System;
 using System.Windows.Forms;
 
 namespace PolicyPlus.UI.Export
@@ -42,7 +41,7 @@ namespace PolicyPlus.UI.Export
         {
             if (string.IsNullOrEmpty(TextReg.Text))
             {
-                Interaction.MsgBox("Please specify a filename and path for the exported REG.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Please specify a filename and path for the exported REG.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
 
@@ -53,12 +52,12 @@ namespace PolicyPlus.UI.Export
             {
                 Source.Apply(reg);
                 reg.Save(TextReg.Text);
-                Interaction.MsgBox("REG exported successfully.", MsgBoxStyle.Information);
+                MessageBox.Show("REG exported successfully.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 DialogResult = DialogResult.OK;
             }
             catch (Exception)
             {
-                Interaction.MsgBox("Failed to export REG!", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Failed to export REG!", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
     }

@@ -1,6 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.Linq;
 
@@ -34,7 +32,7 @@ namespace PolicyPlus
 
                 case PolicyLoaderSource.LocalRegistry:
                     {
-                        var pathParts = Strings.Split(Argument, @"\", 2);
+                        var pathParts = Argument.Split(new[] { '\\' }, 2);
                         string baseName = pathParts[0].ToLowerInvariant();
                         RegistryKey baseKey;
                         if (baseName == "hkcu" | baseName == "hkey_current_user")
@@ -197,7 +195,7 @@ namespace PolicyPlus
         {
             if (SourceType == PolicyLoaderSource.NtUserDat & SourceObject is RegistryPolicyProxy)
             {
-                string subkeyName = Strings.Split(MainSourceRegKey.Name, @"\", 2)[1]; // Remove the host hive name
+                string subkeyName = MainSourceRegKey.Name.Split(new[] { '\\' }, 2)[1]; // Remove the host hive name
                 MainSourceRegKey.Dispose();
                 return PInvoke.RegUnLoadKeyW(new IntPtr(int.MinValue + 0x00000002), subkeyName) == 0;
             }
@@ -322,7 +320,7 @@ namespace PolicyPlus
                     {
                         if (line.StartsWith("Version", StringComparison.InvariantCultureIgnoreCase))
                         {
-                            int curVersion = Conversions.ToInteger(Strings.Split(line, "=", 2)[1]);
+                            int curVersion = int.Parse(line.Split(new[]{'='}, 2)[1]);
                             curVersion += User ? 0x10000 : 1;
                             fGpt.WriteLine("Version=" + curVersion);
                             seenVersion = true;

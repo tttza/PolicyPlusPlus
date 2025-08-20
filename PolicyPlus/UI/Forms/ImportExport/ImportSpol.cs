@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System;
+﻿using System;
 using System.Windows.Forms;
 
 namespace PolicyPlus
@@ -30,11 +29,11 @@ namespace PolicyPlus
             try
             {
                 var spol = SpolFile.FromText(TextSpol.Text);
-                Interaction.MsgBox("Validation successful, " + spol.Policies.Count + " policy settings found.", MsgBoxStyle.Information);
+                MessageBox.Show("Validation successful, " + spol.Policies.Count + " policy settings found.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                Interaction.MsgBox("SPOL validation failed: " + ex.Message, MsgBoxStyle.Exclamation);
+                MessageBox.Show("SPOL validation failed: " + ex.Message, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
 
@@ -47,7 +46,7 @@ namespace PolicyPlus
             }
             catch (Exception ex)
             {
-                Interaction.MsgBox("The SPOL text is invalid: " + ex.Message, MsgBoxStyle.Exclamation);
+                MessageBox.Show("The SPOL text is invalid: " + ex.Message, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
 
@@ -70,9 +69,9 @@ namespace PolicyPlus
 
         private void ButtonReset_Click(object sender, EventArgs e)
         {
-            if (Interaction.MsgBox("Are you sure you want to reset the text box?", MsgBoxStyle.Question | MsgBoxStyle.YesNo) == MsgBoxResult.Yes)
+            if (MessageBox.Show("Are you sure you want to reset the text box?", "Policy Plus", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                TextSpol.Text = "Policy Plus Semantic Policy" + Constants.vbCrLf + Constants.vbCrLf;
+                TextSpol.Text = "Policy Plus Semantic Policy" + Environment.NewLine + Environment.NewLine;
             }
         }
     }

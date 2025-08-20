@@ -1,6 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -21,14 +19,14 @@ namespace PolicyPlus.UI.Find
                 DialogResult = DialogResult.Cancel;
         }
 
-        public static bool SearchRegistry(PolicyPlusPolicy Policy, string keyName, string valName) {
+    public static bool SearchRegistry(PolicyPlusPolicy Policy, string keyName, string valName) {
             
             var affected = PolicyProcessing.GetReferencedRegistryValues(Policy);
             foreach (var rkvp in affected)
             {
                 if (!string.IsNullOrEmpty(valName))
                 {
-                    if (!LikeOperator.LikeString(rkvp.Value.ToLowerInvariant(), valName, CompareMethod.Binary))
+                    if (!WildcardOrExact(rkvp.Value.ToLowerInvariant(), valName))
                         continue;
                 }
 
@@ -36,7 +34,7 @@ namespace PolicyPlus.UI.Find
                 {
                     if (keyName.Contains("*") | keyName.Contains("?")) // Wildcard path
                     {
-                        if (!LikeOperator.LikeString(rkvp.Key.ToLowerInvariant(), keyName, CompareMethod.Binary))
+                        if (!WildcardMatch(rkvp.Key.ToLowerInvariant(), keyName))
                             continue;
                     }
                     else if (keyName.Contains(@"\")) // Path root
@@ -44,7 +42,7 @@ namespace PolicyPlus.UI.Find
                         if (!rkvp.Key.StartsWith(keyName, StringComparison.InvariantCultureIgnoreCase))
                             continue;
                     }
-                    else if (!Strings.Split(rkvp.Key, @"\").Any(part => part.Equals(keyName, StringComparison.InvariantCultureIgnoreCase))) // One path component
+                    else if (!rkvp.Key.Split('\\').Any(part => part.Equals(keyName, StringComparison.InvariantCultureIgnoreCase))) // One path component
                         continue;
                 }
 
@@ -55,19 +53,40 @@ namespace PolicyPlus.UI.Find
             
         }
 
+        private static bool WildcardOrExact(string input, string pattern)
+        {
+            if (pattern.Contains('*') || pattern.Contains('?'))
+                return WildcardMatch(input, pattern);
+            return input.Equals(pattern, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        private static bool WildcardMatch(string input, string pattern)
+        {
+            int i = 0, p = 0, star = -1, mark = 0;
+            while (i < input.Length)
+            {
+                if (p < pattern.Length && (pattern[p] == '?' || pattern[p] == input[i])) { i++; p++; continue; }
+                if (p < pattern.Length && pattern[p] == '*') { star = p++; mark = i; continue; }
+                if (star != -1) { p = star + 1; i = ++mark; continue; }
+                return false;
+            }
+            while (p < pattern.Length && pattern[p] == '*') p++;
+            return p == pattern.Length;
+        }
+
         private void SearchButton_Click(object sender, EventArgs e)
         {
             string keyName = KeyTextbox.Text.ToLowerInvariant();
             string valName = ValueTextbox.Text.ToLowerInvariant();
             if (string.IsNullOrEmpty(keyName) & string.IsNullOrEmpty(valName))
             {
-                Interaction.MsgBox("Please enter search terms.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Please enter search terms.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
 
             if (new[] { @"HKLM\", @"HKCU\", @"HKEY_LOCAL_MACHINE\", @"HKEY_CURRENT_USER\" }.Any(bad => keyName.StartsWith(bad, StringComparison.InvariantCultureIgnoreCase)))
             {
-                Interaction.MsgBox("Policies' root keys are determined only by their section. Remove the root key from the search terms and try again.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Policies' root keys are determined only by their section. Remove the root key from the search terms and try again.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
 

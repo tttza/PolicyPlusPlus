@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
+﻿// Removed Microsoft.VisualBasic dependency by implementing custom wildcard matching
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,7 +33,7 @@ namespace PolicyPlus.UI.Find
             string text = StringTextbox.Text;
             if (string.IsNullOrEmpty(text))
             {
-                Interaction.MsgBox("Please enter search terms.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Please enter search terms.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
             string lowText = text.ToLower();
@@ -47,7 +46,7 @@ namespace PolicyPlus.UI.Find
             bool checkRegName = RegNameCheckbox.Checked;
             if (!(checkTitle | checkDesc | checkComment | checkId | checkRegName))
             {
-                Interaction.MsgBox("At least one attribute must be searched. Check one of the boxes and try again.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("At least one attribute must be searched. Check one of the boxes and try again.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
 
@@ -55,10 +54,10 @@ namespace PolicyPlus.UI.Find
             {
                 string cleanupStr(string RawText)
                 {
-                    return new string(Strings.Trim(RawText.ToLowerInvariant()).Where(c => !".,'\";/!(){}[] 　".Contains(Conversions.ToString(c))).ToArray());
+                    return new string(RawText.Trim().ToLowerInvariant().Where(c => !".,'\";/!(){}[] 　".Contains(c)).ToArray());
                 }
                 // Parse the query string for wildcards or quoted strings
-                var rawSplitted = Strings.Split(text);
+                var rawSplitted = text.Split(new[]{' '}, StringSplitOptions.RemoveEmptyEntries);
                 var simpleWords = new List<string>();
                 var wildcards = new List<string>();
                 var quotedStrings = new List<string>();
@@ -96,8 +95,10 @@ namespace PolicyPlus.UI.Find
                 bool isStringAHit(string SearchedText)
                 {
                     string cleanText = cleanupStr(SearchedText);
-                    var wordsInText = Strings.Split(cleanText);
-                    return simpleWords.All(w => wordsInText.Contains(w)) & wildcards.All(w => wordsInText.Any(wit => LikeOperator.LikeString(wit, w, CompareMethod.Binary))) & quotedStrings.All(w => cleanText.Contains(" " + w + " ") | cleanText.StartsWith(w + " ") | cleanText.EndsWith(" " + w) | (cleanText ?? "") == (w ?? "")); // Plain search terms
+                    var wordsInText = cleanText.Split(new[]{' '}, StringSplitOptions.RemoveEmptyEntries);
+                    return simpleWords.All(w => wordsInText.Contains(w))
+                        & wildcards.All(w => wordsInText.Any(wit => WildcardMatch(wit, w)))
+                        & quotedStrings.All(w => cleanText.Contains(" " + w + " ") | cleanText.StartsWith(w + " ") | cleanText.EndsWith(" " + w) | cleanText == w); // Plain search terms / Wildcards / Quoted strings
                                                                                                                                                                                                                                                                                                                                          // Wildcards
                                                                                                                                                                                                                                                                                                                                          // Quoted strings
                 };
@@ -135,6 +136,32 @@ namespace PolicyPlus.UI.Find
                 return false;
             });
             DialogResult = DialogResult.OK;
+        }
+        private static bool WildcardMatch(string input, string pattern)
+        {
+            int i = 0, p = 0, star = -1, mark = 0;
+            while (i < input.Length)
+            {
+                if (p < pattern.Length && (pattern[p] == '?' || pattern[p] == input[i]))
+                {
+                    i++; p++; continue;
+                }
+                if (p < pattern.Length && pattern[p] == '*')
+                {
+                    star = p++;
+                    mark = i;
+                    continue;
+                }
+                if (star != -1)
+                {
+                    p = star + 1;
+                    i = ++mark;
+                    continue;
+                }
+                return false;
+            }
+            while (p < pattern.Length && pattern[p] == '*') p++;
+            return p == pattern.Length;
         }
     }
 }

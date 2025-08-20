@@ -1,51 +1,48 @@
-﻿using Microsoft.VisualBasic;
-using System;
-using System.Windows.Forms;
+﻿using System;
 
-namespace PolicyPlus.UI.PolicyDetail
+namespace PolicyPlus.UI.PolicyDetail;
+
+public partial class EditPolDelete
 {
-    public partial class EditPolDelete
+    public EditPolDelete()
     {
-        public EditPolDelete()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
+    }
 
-        public DialogResult PresentDialog(string ContainerKey)
-        {
-            OptClearFirst.Checked = false;
-            OptDeleteOne.Checked = false;
-            OptPurge.Checked = false;
-            TextKey.Text = ContainerKey;
-            TextValueName.Text = "";
-            return ShowDialog();
-        }
+    public DialogResult PresentDialog(string ContainerKey)
+    {
+        OptClearFirst.Checked = false;
+        OptDeleteOne.Checked = false;
+        OptPurge.Checked = false;
+        TextKey.Text = ContainerKey;
+        TextValueName.Text = string.Empty;
+        return ShowDialog();
+    }
 
-        private void ButtonOK_Click(object sender, EventArgs e)
+    private void ButtonOK_Click(object sender, EventArgs e)
+    {
+        if (OptClearFirst.Checked || OptPurge.Checked)
+            DialogResult = DialogResult.OK;
+        if (OptDeleteOne.Checked)
         {
-            if (OptClearFirst.Checked | OptPurge.Checked)
-                DialogResult = DialogResult.OK;
-            if (OptDeleteOne.Checked)
+            if (string.IsNullOrEmpty(TextValueName.Text))
             {
-                if (string.IsNullOrEmpty(TextValueName.Text))
-                {
-                    Interaction.MsgBox("You must enter a value name.", MsgBoxStyle.Exclamation);
-                    return;
-                }
-
-                DialogResult = DialogResult.OK;
+                MessageBox.Show("You must enter a value name.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                return;
             }
-        }
 
-        private void EditPolDelete_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Escape)
-                DialogResult = DialogResult.Cancel;
+            DialogResult = DialogResult.OK;
         }
+    }
 
-        public void ChoiceChanged(object sender, EventArgs e)
-        {
-            TextValueName.Enabled = OptDeleteOne.Checked;
-        }
+    private void EditPolDelete_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.Escape)
+            DialogResult = DialogResult.Cancel;
+    }
+
+    public void ChoiceChanged(object sender, EventArgs e)
+    {
+        TextValueName.Enabled = OptDeleteOne.Checked;
     }
 }

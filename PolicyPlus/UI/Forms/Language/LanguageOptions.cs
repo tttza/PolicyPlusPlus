@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System;
+﻿using System;
 using System.Windows.Forms;
 
 namespace PolicyPlus
@@ -26,7 +25,7 @@ namespace PolicyPlus
             string selection = TextAdmlLanguage.Text.Trim();
             if (selection.Split('-').Length != 2)
             {
-                Interaction.MsgBox("Please enter a valid language code.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Please enter a valid language code.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
 

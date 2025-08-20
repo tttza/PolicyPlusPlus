@@ -1,6 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
@@ -52,16 +50,16 @@ namespace PolicyPlus
                 {
                     if (row.IsNewRow)
                         continue;
-                    string key = Conversions.ToString(row.Cells[0].Value);
+                    string key = Convert.ToString(row.Cells[0].Value);
                     if (key is null) continue;
                     if (dict.ContainsKey(key))
                     {
-                        Interaction.MsgBox("Multiple entries are named \"" + key + "\"! Remove or rename all but one.", MsgBoxStyle.Exclamation);
+                        MessageBox.Show("Multiple entries are named \"" + key + "\"! Remove or rename all but one.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                         return;
                     }
                     else
                     {
-                        dict.Add(key, Conversions.ToString(row.Cells[1].Value));
+                        dict.Add(key, Convert.ToString(row.Cells[1].Value));
                     }
                 }
 
@@ -73,7 +71,7 @@ namespace PolicyPlus
                 foreach (DataGridViewRow row in EntriesDatagrid.Rows)
                 {
                     if (!row.IsNewRow)
-                        list.Add(Conversions.ToString(row.Cells[1].Value));
+                        list.Add(Convert.ToString(row.Cells[1].Value));
                 }
 
                 FinalData = list;

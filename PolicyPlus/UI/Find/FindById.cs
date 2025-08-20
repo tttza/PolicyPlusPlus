@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -43,7 +42,7 @@ namespace PolicyPlus.UI.Find
             SelectedCategory = null;
             SelectedProduct = null;
             SelectedSupport = null;
-            string id = Strings.Trim(IdTextbox.Text);
+            string id = IdTextbox.Text.Trim();
             if (AdmxWorkspace.FlatCategories.ContainsKey(id))
             {
                 StatusImage.Image = CategoryImage;
@@ -61,7 +60,7 @@ namespace PolicyPlus.UI.Find
             }
             else // Check for a policy
             {
-                var policyAndSection = Strings.Split(id, "@", 2);
+                var policyAndSection = id.Split(new[]{'@'}, 2);
                 string policyId = policyAndSection[0]; // Cut off the section override
                 if (AdmxWorkspace.Policies.ContainsKey(policyId))
                 {

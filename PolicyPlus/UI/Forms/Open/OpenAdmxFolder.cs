@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System;
+﻿using System;
 using System.DirectoryServices.ActiveDirectory;
 using System.Windows.Forms;
 
@@ -74,7 +73,7 @@ namespace PolicyPlus
             }
             else
             {
-                Interaction.MsgBox("The folder you specified does not exist.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("The folder you specified does not exist.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
 

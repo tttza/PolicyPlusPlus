@@ -1,6 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using Microsoft.VisualBasic.CompilerServices;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using PolicyPlus.UI.Find;
 using System;
 using System.Collections.Generic;
@@ -54,19 +52,19 @@ namespace PolicyPlus.UI.Main
             var userLoaderData = Configuration.GetValue("UserSourceData", "");
             try
             {
-                OpenPolicyLoaders(new PolicyLoader(userLoaderType, Conversions.ToString(userLoaderData), true), new PolicyLoader(compLoaderType, Conversions.ToString(compLoaderData), false), true);
+                OpenPolicyLoaders(new PolicyLoader(userLoaderType, Convert.ToString(userLoaderData), true), new PolicyLoader(compLoaderType, Convert.ToString(compLoaderData), false), true);
             }
             catch (Exception)
             {
-                Interaction.MsgBox("The previous policy sources are not accessible. The defaults will be loaded.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("The previous policy sources are not accessible. The defaults will be loaded.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 Configuration.SetValue("CompSourceType", (int)PolicyLoaderSource.LocalGpo);
                 Configuration.SetValue("UserSourceType", (int)PolicyLoaderSource.LocalGpo);
                 OpenPolicyLoaders(new PolicyLoader(PolicyLoaderSource.LocalGpo, "", true), new PolicyLoader(PolicyLoaderSource.LocalGpo, "", false), true);
             }
 
-            My.MyProject.Forms.OpenPol.SetLastSources(compLoaderType, Conversions.ToString(compLoaderData), userLoaderType, Conversions.ToString(userLoaderData));
+            My.MyProject.Forms.OpenPol.SetLastSources(compLoaderType, Convert.ToString(compLoaderData), userLoaderType, Convert.ToString(userLoaderData));
             // Set up the UI
-            ComboAppliesTo.Text = Conversions.ToString(ComboAppliesTo.Items[0]);
+            ComboAppliesTo.Text = Convert.ToString(ComboAppliesTo.Items[0]);
             InfoStrip.Items.Insert(2, new ToolStripSeparator());
             PopulateAdmxUi();
         }
@@ -74,12 +72,12 @@ namespace PolicyPlus.UI.Main
         private void Main_Shown(object sender, EventArgs e)
         {
             // Check whether ADMX files probably need to be downloaded
-            if (Conversions.ToInteger(Configuration.GetValue("CheckedPolicyDefinitions", 0)) == 0)
+            if (Convert.ToInt32(Configuration.GetValue("CheckedPolicyDefinitions", 0)) == 0)
             {
                 Configuration.SetValue("CheckedPolicyDefinitions", 1);
                 if (!SystemInfo.HasGroupPolicyInfrastructure() && AdmxWorkspace.Categories.Values.Where(c => IsOrphanCategory(c) & !IsEmptyCategory(c)).Count() > 2)
                 {
-                    if (Interaction.MsgBox($"Welcome to Policy Plus!{Constants.vbCrLf}{Constants.vbCrLf}Home editions do not come with the full set of policy definitions. Would you like to download them now? " + "This can also be done later with Help | Acquire ADMX Files.", MsgBoxStyle.Information | MsgBoxStyle.YesNo) == MsgBoxResult.Yes)
+                    if (MessageBox.Show($"Welcome to Policy Plus!{Environment.NewLine}{Environment.NewLine}Home editions do not come with the full set of policy definitions. Would you like to download them now? This can also be done later with Help | Acquire ADMX Files.", "Policy Plus", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
                     {
                         AcquireADMXFilesToolStripMenuItem_Click(null, null);
                     }
@@ -90,11 +88,11 @@ namespace PolicyPlus.UI.Main
         public void OpenLastAdmxSource()
         {
             string defaultAdmxSource = Environment.ExpandEnvironmentVariables(@"%windir%\PolicyDefinitions");
-            string admxSource = Conversions.ToString(Configuration.GetValue("AdmxSource", defaultAdmxSource));
+            string admxSource = Convert.ToString(Configuration.GetValue("AdmxSource", defaultAdmxSource));
             try
             {
                 var fails = AdmxWorkspace.LoadFolder(admxSource, GetPreferredLanguageCode());
-                if (DisplayAdmxLoadErrorReport(fails, true) == MsgBoxResult.No)
+                if (DisplayAdmxLoadErrorReport(fails, true) == DialogResult.No)
                     throw new Exception("You decided to not use the problematic ADMX bundle.");
             }
             catch (Exception ex)
@@ -103,7 +101,7 @@ namespace PolicyPlus.UI.Main
                 string loadFailReason = "";
                 if ((admxSource ?? "") != (defaultAdmxSource ?? ""))
                 {
-                    if (Interaction.MsgBox("Policy definitions could not be loaded from \"" + admxSource + "\": " + ex.Message + Constants.vbCrLf + Constants.vbCrLf + "Load from the default location?", MsgBoxStyle.YesNo | MsgBoxStyle.Question) == MsgBoxResult.Yes)
+                    if (MessageBox.Show("Policy definitions could not be loaded from \"" + admxSource + "\": " + ex.Message + Environment.NewLine + Environment.NewLine + "Load from the default location?", "Policy Plus", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                     {
                         try
                         {
@@ -123,7 +121,7 @@ namespace PolicyPlus.UI.Main
                 }
 
                 if (!string.IsNullOrEmpty(loadFailReason))
-                    Interaction.MsgBox("Policy definitions could not be loaded: " + loadFailReason, MsgBoxStyle.Exclamation);
+                    MessageBox.Show("Policy definitions could not be loaded: " + loadFailReason, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
 
@@ -265,7 +263,7 @@ namespace PolicyPlus.UI.Main
                 }
                 else
                 {
-                    PolicySupportedLabel.Text = "Requirements:" + Constants.vbCrLf + CurrentSetting.SupportedOn.DisplayName;
+                    PolicySupportedLabel.Text = "Requirements:" + Environment.NewLine + CurrentSetting.SupportedOn.DisplayName;
                 }
 
                 PolicyDescLabel.Text = PrettifyDescription(CurrentSetting.DisplayExplanation);
@@ -574,13 +572,13 @@ namespace PolicyPlus.UI.Main
             {
                 if (!Quiet)
                 {
-                    Interaction.MsgBox("Both the user and computer policy sources are loaded and writable.", MsgBoxStyle.Information);
+                    MessageBox.Show("Both the user and computer policy sources are loaded and writable.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             else
             {
-                string msgText = "Not all policy sources are fully writable." + Constants.vbCrLf + Constants.vbCrLf + "The user source " + userStatus + "." + Constants.vbCrLf + Constants.vbCrLf + "The computer source " + compStatus + ".";
-                Interaction.MsgBox(msgText, MsgBoxStyle.Exclamation);
+                string msgText = "Not all policy sources are fully writable." + Environment.NewLine + Environment.NewLine + "The user source " + userStatus + "." + Environment.NewLine + Environment.NewLine + "The computer source " + compStatus + ".";
+                MessageBox.Show(msgText, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
 
@@ -602,7 +600,7 @@ namespace PolicyPlus.UI.Main
 
             if (!allOk)
             {
-                Interaction.MsgBox("Cleanup did not complete fully because the loaded resources are open in other programs.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Cleanup did not complete fully because the loaded resources are open in other programs.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
 
@@ -767,18 +765,19 @@ namespace PolicyPlus.UI.Main
             }
         }
 
-        public MsgBoxResult DisplayAdmxLoadErrorReport(IEnumerable<AdmxLoadFailure> Failures, bool AskContinue = false)
+        public DialogResult DisplayAdmxLoadErrorReport(IEnumerable<AdmxLoadFailure> Failures, bool AskContinue = false)
         {
-            if (Failures.Count() == 0)
-                return MsgBoxResult.Ok;
-            var boxStyle = AskContinue ? MsgBoxStyle.Exclamation | MsgBoxStyle.YesNo : MsgBoxStyle.Exclamation;
+            var failureList = Failures?.ToList() ?? new List<AdmxLoadFailure>();
+            if (failureList.Count == 0)
+                return DialogResult.OK;
             string header = "Errors were encountered while adding administrative templates to the workspace.";
-            return Interaction.MsgBox(header + (AskContinue ? " Continue trying to use this workspace?" : "") + Constants.vbCrLf + Constants.vbCrLf + string.Join(Constants.vbCrLf + Constants.vbCrLf, Failures.Select(f => f.ToString())), boxStyle);
+            var buttons = AskContinue ? MessageBoxButtons.YesNo : MessageBoxButtons.OK;
+            return MessageBox.Show(header + (AskContinue ? " Continue trying to use this workspace?" : "") + Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine + Environment.NewLine, failureList.Select(f => f.ToString())), "Policy Plus", buttons, MessageBoxIcon.Exclamation);
         }
 
         public string GetPreferredLanguageCode()
         {
-            return Conversions.ToString(Configuration.GetValue("LanguageCode", System.Globalization.CultureInfo.CurrentCulture.Name));
+            return Convert.ToString(Configuration.GetValue("LanguageCode", System.Globalization.CultureInfo.CurrentCulture.Name));
         }
 
         private void CategoriesTree_AfterSelect(object sender, TreeViewEventArgs e)
@@ -811,7 +810,7 @@ namespace PolicyPlus.UI.Main
                 }
                 catch (Exception ex)
                 {
-                    Interaction.MsgBox("The folder could not be fully added to the workspace. " + ex.Message, MsgBoxStyle.Exclamation);
+                    MessageBox.Show("The folder could not be fully added to the workspace. " + ex.Message, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 }
 
                 PopulateAdmxUi();
@@ -833,7 +832,7 @@ namespace PolicyPlus.UI.Main
                 }
                 catch (Exception ex)
                 {
-                    Interaction.MsgBox("The ADMX file could not be added to the workspace. " + ex.Message, MsgBoxStyle.Exclamation);
+                    MessageBox.Show("The ADMX file could not be added to the workspace. " + ex.Message, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 }
 
                 PopulateAdmxUi();
@@ -888,7 +887,7 @@ namespace PolicyPlus.UI.Main
             // Make otherwise-identical pairs of user and computer policies into single dual-section policies
             ClearSelections();
             int deduped = PolicyProcessing.DeduplicatePolicies(AdmxWorkspace);
-            Interaction.MsgBox("Deduplicated " + deduped + " policies.", MsgBoxStyle.Information);
+            MessageBox.Show("Deduplicated " + deduped + " policies.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
             UpdateCategoryListing();
             UpdatePolicyInfo();
         }
@@ -912,7 +911,7 @@ namespace PolicyPlus.UI.Main
                     }
                     else
                     {
-                        Interaction.MsgBox("The category is not currently visible. Change the view settings and try again.", MsgBoxStyle.Exclamation);
+                        MessageBox.Show("The category is not currently visible. Change the view settings and try again.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     }
                 }
                 else if (selPol is object)
@@ -930,7 +929,7 @@ namespace PolicyPlus.UI.Main
                 }
                 else
                 {
-                    Interaction.MsgBox("That object could not be found.", MsgBoxStyle.Exclamation);
+                    MessageBox.Show("That object could not be found.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 }
             }
         }
@@ -964,11 +963,11 @@ namespace PolicyPlus.UI.Main
                 Configuration.SetValue("UserSourceType", (int)UserPolicyLoader.Source);
                 Configuration.SetValue("CompSourceData", CompPolicyLoader.LoaderData ?? "");
                 Configuration.SetValue("UserSourceData", UserPolicyLoader.LoaderData ?? "");
-                Interaction.MsgBox("Success." + Constants.vbCrLf + Constants.vbCrLf + "User policies: " + userStatus + "." + Constants.vbCrLf + Constants.vbCrLf + "Computer policies: " + compStatus + ".", MsgBoxStyle.Information);
+                MessageBox.Show("Success." + Environment.NewLine + Environment.NewLine + "User policies: " + userStatus + "." + Environment.NewLine + Environment.NewLine + "Computer policies: " + compStatus + ".", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                Interaction.MsgBox("Saving failed!" + Constants.vbCrLf + Constants.vbCrLf + ex.Message, MsgBoxStyle.Exclamation);
+                MessageBox.Show("Saving failed!" + Environment.NewLine + Environment.NewLine + ex.Message, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             }
         }
 
@@ -979,7 +978,7 @@ namespace PolicyPlus.UI.Main
             var version = Assembly.GetExecutingAssembly().GetName().Version.ToString().Substring(0, 5);
             if (!string.IsNullOrEmpty(version))
                 about += $"{System.Environment.NewLine} Version: {version}";
-            Interaction.MsgBox(about, MsgBoxStyle.Information);
+            MessageBox.Show(about, "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void ByTextToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1012,7 +1011,7 @@ namespace PolicyPlus.UI.Main
                 var nextPol = My.MyProject.Forms.FindResults.NextPolicy();
                 if (nextPol is null)
                 {
-                    Interaction.MsgBox("There are no more results that match the filter.", MsgBoxStyle.Information);
+                    MessageBox.Show("There are no more results that match the filter.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     break;
                 }
                 else if (ShouldShowPolicy(nextPol))
@@ -1080,11 +1079,11 @@ namespace PolicyPlus.UI.Main
                 MoveToVisibleCategoryAndReload();
                 if (fails == 0)
                 {
-                    Interaction.MsgBox("Semantic Policy successfully applied.", MsgBoxStyle.Information);
+                    MessageBox.Show("Semantic Policy successfully applied.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 else
                 {
-                    Interaction.MsgBox(fails + " out of " + spol.Policies.Count + " could not be applied.", MsgBoxStyle.Exclamation);
+                    MessageBox.Show(fails + " out of " + spol.Policies.Count + " could not be applied.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 }
             }
         }
@@ -1104,7 +1103,7 @@ namespace PolicyPlus.UI.Main
                     }
                     catch (Exception)
                     {
-                        Interaction.MsgBox("The POL file could not be loaded.", MsgBoxStyle.Exclamation);
+                        MessageBox.Show("The POL file could not be loaded.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                         return;
                     }
 
@@ -1113,7 +1112,7 @@ namespace PolicyPlus.UI.Main
                         var section = My.MyProject.Forms.OpenSection.SelectedSection == AdmxPolicySection.User ? UserPolicySource : CompPolicySource;
                         pol.Apply(section);
                         MoveToVisibleCategoryAndReload();
-                        Interaction.MsgBox("POL import successful.", MsgBoxStyle.Information);
+                        MessageBox.Show("POL import successful.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
             }
@@ -1131,11 +1130,11 @@ namespace PolicyPlus.UI.Main
                     try
                     {
                         GetOrCreatePolFromPolicySource(section).Save(sfd.FileName);
-                        Interaction.MsgBox("POL exported successfully.", MsgBoxStyle.Information);
+                        MessageBox.Show("POL exported successfully.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     catch (Exception)
                     {
-                        Interaction.MsgBox("The POL file could not be saved.", MsgBoxStyle.Exclamation);
+                        MessageBox.Show("The POL file could not be saved.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     }
                 }
             }
@@ -1177,13 +1176,13 @@ namespace PolicyPlus.UI.Main
             bool compIsPol = CompPolicySource is PolFile;
             if (!(userIsPol | compIsPol))
             {
-                Interaction.MsgBox("Neither loaded source is backed by a POL file.", MsgBoxStyle.Exclamation);
+                MessageBox.Show("Neither loaded source is backed by a POL file.", "Policy Plus", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
 
-            if (Conversions.ToInteger(Configuration.GetValue("EditPolDangerAcknowledged", 0)) == 0)
+            if (Convert.ToInt32(Configuration.GetValue("EditPolDangerAcknowledged", 0)) == 0)
             {
-                if (Interaction.MsgBox("Caution! This tool is for very advanced users. Improper modifications may result in inconsistencies in policies' states." + Constants.vbCrLf + Constants.vbCrLf + "Changes operate directly on the policy source, though they will not be committed to disk until you save. Are you sure you want to continue?", MsgBoxStyle.Exclamation | MsgBoxStyle.YesNo) == MsgBoxResult.No)
+                if (MessageBox.Show("Caution! This tool is for very advanced users. Improper modifications may result in inconsistencies in policies' states." + Environment.NewLine + Environment.NewLine + "Changes operate directly on the policy source, though they will not be committed to disk until you save. Are you sure you want to continue?", "Policy Plus", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation) == DialogResult.No)
                     return;
                 Configuration.SetValue("EditPolDangerAcknowledged", 1);
             }
@@ -1220,7 +1219,7 @@ namespace PolicyPlus.UI.Main
             if (My.MyProject.Forms.LanguageOptions.PresentDialog(GetPreferredLanguageCode()) == DialogResult.OK)
             {
                 Configuration.SetValue("LanguageCode", My.MyProject.Forms.LanguageOptions.NewLanguage);
-                if (Interaction.MsgBox("Language changes will take effect when ADML files are next loaded. Would you like to reload the workspace now?", MsgBoxStyle.YesNo | MsgBoxStyle.Question) == MsgBoxResult.Yes)
+                if (MessageBox.Show("Language changes will take effect when ADML files are next loaded. Would you like to reload the workspace now?", "Policy Plus", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
                     ClearAdmxWorkspace();
                     OpenLastAdmxSource();
@@ -1269,25 +1268,25 @@ namespace PolicyPlus.UI.Main
                     foreach (var item2 in item.DropDownItems.OfType<ToolStripDropDownItem>())
                     {
                         bool ok2 = true;
-                        if (Conversions.ToString(item2.Tag) == "P" & showingForCategory)
+                        if (Convert.ToString(item2.Tag) == "P" & showingForCategory)
                             ok2 = false;
-                        if (Conversions.ToString(item2.Tag) == "C" & !showingForCategory)
+                        if (Convert.ToString(item2.Tag) == "C" & !showingForCategory)
                             ok2 = false;
-                        if (ok2 & Conversions.ToString(item2.Tag) == "P-LM" & section == AdmxPolicySection.User)
+                        if (ok2 & Convert.ToString(item2.Tag) == "P-LM" & section == AdmxPolicySection.User)
                             ok2 = false;
-                        if (ok2 & Conversions.ToString(item2.Tag) == "P-CU" & section == AdmxPolicySection.Machine)
+                        if (ok2 & Convert.ToString(item2.Tag) == "P-CU" & section == AdmxPolicySection.Machine)
                             ok2 = false;
                         item2.Visible = ok2;
                     }
                 }
                 bool ok = true;
-                if (Conversions.ToString(item.Tag) == "P" & showingForCategory)
+                if (Convert.ToString(item.Tag) == "P" & showingForCategory)
                     ok = false;
-                if (Conversions.ToString(item.Tag) == "C" & !showingForCategory)
+                if (Convert.ToString(item.Tag) == "C" & !showingForCategory)
                     ok = false;
-                if (ok & Conversions.ToString(item.Tag) == "P-LM" & showingForCategory & section == AdmxPolicySection.User)
+                if (ok & Convert.ToString(item.Tag) == "P-LM" & showingForCategory & section == AdmxPolicySection.User)
                     ok = false;
-                if (ok & Conversions.ToString(item.Tag) == "P-CU" & showingForCategory & section == AdmxPolicySection.Machine)
+                if (ok & Convert.ToString(item.Tag) == "P-CU" & showingForCategory & section == AdmxPolicySection.Machine)
                     ok = false;
                 item.Visible = ok;
             }
@@ -1444,7 +1443,7 @@ namespace PolicyPlus.UI.Main
                 return "";
             // Remove extra indentation from paragraphs
             var sb = new StringBuilder();
-            foreach (var line in Description.Split(Conversions.ToChar(Constants.vbCrLf)))
+            foreach (var line in Description.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None))
                 sb.AppendLine(line.Trim());
             return sb.ToString().TrimEnd();
         }
