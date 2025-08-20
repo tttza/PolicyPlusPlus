@@ -40,6 +40,7 @@ namespace PolicyPlus.UI.PolicyDetail
         private void EditSetting_Shown(object sender, EventArgs e)
         {
             SettingNameLabel.Text = CurrentSetting.DisplayName;
+            AdjustHeaderHeight();
             if (CurrentSetting.SupportedOn is null)
                 SupportedTextbox.Text = "";
             else
@@ -91,6 +92,27 @@ namespace PolicyPlus.UI.PolicyDetail
 
             PreparePolicyState();
             StateRadiosChanged(null, null);
+        }
+
+        private void AdjustHeaderHeight()
+        {
+            if (SettingNameLabel == null || splitContainer3 == null)
+                return;
+            // Measure a representative text height using font metrics
+            int textHeight = TextRenderer.MeasureText("Ay", SettingNameLabel.Font, new Size(SettingNameLabel.Width, int.MaxValue), TextFormatFlags.SingleLine).Height;
+            int desired = textHeight + SettingNameLabel.Padding.Vertical + 2; // extra breathing space
+            if (desired < textHeight + 2)
+                desired = textHeight + 2;
+            if (SettingNameLabel.Height != desired)
+            {
+                SettingNameLabel.Height = desired;
+                // Ensure splitter distance accommodates the label
+                int splitterDistance = desired + 3; // small gap to next panel
+                if (splitterDistance > splitContainer3.Height - 20)
+                    splitterDistance = Math.Max(0, splitContainer3.Height - 20);
+                splitContainer3.Panel1MinSize = Math.Min(splitterDistance, desired + 6);
+                splitContainer3.SplitterDistance = splitterDistance;
+            }
         }
 
         public void PreparePolicyElements()
@@ -561,6 +583,7 @@ namespace PolicyPlus.UI.PolicyDetail
             CommentLabel.Left = CommentTextbox.Left - 57;
             SupportedLabel.Left = SupportedTextbox.Left - 77;
             OptionsTableResized();
+            AdjustHeaderHeight();
         }
 
         private void HelpTextbox_LinkClicked(object sender, LinkClickedEventArgs e)

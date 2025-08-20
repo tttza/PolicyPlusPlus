@@ -283,8 +283,27 @@ namespace PolicyPlus.UI.Main
                 PolicyDescLabel.Text = "Select an item to see its description.";
                 PolicyIsPrefTable.Visible = false;
             }
-
+            AutoSizePolicySupportedLabel();
             SettingInfoPanel_ClientSizeChanged(null, null);
+        }
+
+        private void AutoSizePolicySupportedLabel()
+        {
+            if (PolicySupportedLabel == null || !PolicySupportedLabel.Visible)
+                return;
+            // Measure required height for current text within fixed width
+            var width = PolicySupportedLabel.ClientSize.Width;
+            if (width <= 0) return;
+            var needed = TextRenderer.MeasureText(PolicySupportedLabel.Text + " ", PolicySupportedLabel.Font, new Size(width, int.MaxValue), TextFormatFlags.WordBreak).Height;
+            // Minimum line height safeguard
+            if (needed < PolicySupportedLabel.Font.Height + 4)
+                needed = PolicySupportedLabel.Font.Height + 4;
+            // Apply only if different to avoid layout churn
+            if (PolicySupportedLabel.Height != needed)
+            {
+                PolicySupportedLabel.Height = needed;
+                PolicyInfoTable.ResumeLayout();
+            }
         }
 
         public bool IsOrphanCategory(PolicyPlusCategory Category)

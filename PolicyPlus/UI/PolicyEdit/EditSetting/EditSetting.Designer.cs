@@ -132,12 +132,15 @@ namespace PolicyPlus.UI.PolicyDetail
             // SettingNameLabel
             // 
             this.SettingNameLabel.AutoEllipsis = true;
+            this.SettingNameLabel.AutoSize = false;
             this.SettingNameLabel.Dock = System.Windows.Forms.DockStyle.Top;
             this.SettingNameLabel.Location = new System.Drawing.Point(0, 0);
             this.SettingNameLabel.Name = "SettingNameLabel";
-            this.SettingNameLabel.Size = new System.Drawing.Size(626, 12);
+            this.SettingNameLabel.Padding = new System.Windows.Forms.Padding(0, 2, 0, 2);
+            this.SettingNameLabel.Size = new System.Drawing.Size(626, 22);
             this.SettingNameLabel.TabIndex = 0;
             this.SettingNameLabel.Text = "Policy name";
+            this.SettingNameLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // CommentTextbox
             // 
@@ -485,13 +488,13 @@ namespace PolicyPlus.UI.PolicyDetail
             // splitContainer3.Panel1
             // 
             this.splitContainer3.Panel1.Controls.Add(this.SettingNameLabel);
-            this.splitContainer3.Panel1MinSize = 15;
+            this.splitContainer3.Panel1MinSize = 24;
             // 
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.splitContainer2);
             this.splitContainer3.Size = new System.Drawing.Size(626, 130);
-            this.splitContainer3.SplitterDistance = 25;
+            this.splitContainer3.SplitterDistance = 26;
             this.splitContainer3.SplitterWidth = 3;
             this.splitContainer3.TabIndex = 111;
             // 

@@ -851,9 +851,11 @@ namespace PolicyPlus.UI.Main
             this.PolicySupportedLabel.Location = new System.Drawing.Point(2, 46);
             this.PolicySupportedLabel.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.PolicySupportedLabel.Multiline = true;
+            this.PolicySupportedLabel.AutoSize = false;
+            this.PolicySupportedLabel.WordWrap = true;
             this.PolicySupportedLabel.Name = "PolicySupportedLabel";
             this.PolicySupportedLabel.ReadOnly = true;
-            this.PolicySupportedLabel.Size = new System.Drawing.Size(238, 36);
+            this.PolicySupportedLabel.Size = new System.Drawing.Size(238, 40);
             this.PolicySupportedLabel.TabIndex = 6;
             this.PolicySupportedLabel.Text = "Policy Supported";
             // 
@@ -861,15 +863,15 @@ namespace PolicyPlus.UI.Main
             // 
             this.PolicyTitleLabel.BackColor = System.Drawing.SystemColors.Window;
             this.PolicyTitleLabel.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.PolicyTitleLabel.Dock = System.Windows.Forms.DockStyle.Top;
+            this.PolicyTitleLabel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.PolicyTitleLabel.Font = new System.Drawing.Font("MS UI Gothic", 7.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
             this.PolicyTitleLabel.Location = new System.Drawing.Point(2, 2);
             this.PolicyTitleLabel.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.PolicyTitleLabel.MinimumSize = new System.Drawing.Size(0, 24);
-            this.PolicyTitleLabel.Multiline = true;
+            this.PolicyTitleLabel.Multiline = false;
             this.PolicyTitleLabel.Name = "PolicyTitleLabel";
             this.PolicyTitleLabel.ReadOnly = true;
-            this.PolicyTitleLabel.Size = new System.Drawing.Size(238, 40);
+            this.PolicyTitleLabel.Size = new System.Drawing.Size(238, 24);
             this.PolicyTitleLabel.TabIndex = 7;
             this.PolicyTitleLabel.Text = "Policy Title";
             // 
