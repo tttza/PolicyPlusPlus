@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace PolicyPlus.My.Resources {
+namespace PolicyPlus.Resources {
     using System;
     
     

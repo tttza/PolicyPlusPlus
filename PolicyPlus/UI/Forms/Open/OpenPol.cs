@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
+using PolicyPlus.UI; // For AppForms
 
 namespace PolicyPlus
 {
@@ -139,8 +140,8 @@ namespace PolicyPlus
         private void UserBrowseRegistryButton_Click(object sender, EventArgs e)
         {
             // Browse for a user Registry hive
-            if (My.MyProject.Forms.OpenUserRegistry.ShowDialog() == DialogResult.OK)
-                UserHivePathTextbox.Text = My.MyProject.Forms.OpenUserRegistry.SelectedFilePath;
+            if (AppForms.OpenUserRegistry.ShowDialog() == DialogResult.OK)
+                UserHivePathTextbox.Text = AppForms.OpenUserRegistry.SelectedFilePath;
         }
 
         private void OkButton_Click(object sender, EventArgs e)
@@ -210,8 +211,8 @@ namespace PolicyPlus
         private void UserBrowseGpoButton_Click(object sender, EventArgs e)
         {
             // Browse for a per-user GPO
-            if (My.MyProject.Forms.OpenUserGpo.ShowDialog() == DialogResult.OK)
-                UserGpoSidTextbox.Text = My.MyProject.Forms.OpenUserGpo.SelectedSid;
+            if (AppForms.OpenUserGpo.ShowDialog() == DialogResult.OK)
+                UserGpoSidTextbox.Text = AppForms.OpenUserGpo.SelectedSid;
         }
 
         private void OpenPol_KeyDown(object sender, KeyEventArgs e)

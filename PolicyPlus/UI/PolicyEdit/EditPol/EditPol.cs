@@ -156,7 +156,7 @@ public partial class EditPol
 
     private void ButtonAddKey_Click(object sender, EventArgs e)
     {
-        string keyName = My.MyProject.Forms.EditPolKey.PresentDialog(string.Empty);
+    string keyName = AppForms.EditPolKey.PresentDialog(string.Empty);
         if (string.IsNullOrEmpty(keyName)) return;
         if (!IsKeyNameValid(keyName))
         {
@@ -179,20 +179,20 @@ public partial class EditPol
     {
         if (Kind == RegistryValueKind.String || Kind == RegistryValueKind.ExpandString)
         {
-            if (My.MyProject.Forms.EditPolStringData.PresentDialog(ValueName, CurrentData as string ?? string.Empty) == System.Windows.Forms.DialogResult.OK)
-                return My.MyProject.Forms.EditPolStringData.TextData.Text;
+            if (AppForms.EditPolStringData.PresentDialog(ValueName, CurrentData as string ?? string.Empty) == System.Windows.Forms.DialogResult.OK)
+                return AppForms.EditPolStringData.TextData.Text;
             return null;
         }
         if (Kind == RegistryValueKind.DWord || Kind == RegistryValueKind.QWord)
         {
-            if (My.MyProject.Forms.EditPolNumericData.PresentDialog(ValueName, Convert.ToUInt64(CurrentData), Kind == RegistryValueKind.QWord) == System.Windows.Forms.DialogResult.OK)
-                return My.MyProject.Forms.EditPolNumericData.NumData.Value;
+            if (AppForms.EditPolNumericData.PresentDialog(ValueName, Convert.ToUInt64(CurrentData), Kind == RegistryValueKind.QWord) == System.Windows.Forms.DialogResult.OK)
+                return AppForms.EditPolNumericData.NumData.Value;
             return null;
         }
         if (Kind == RegistryValueKind.MultiString)
         {
-            if (My.MyProject.Forms.EditPolMultiStringData.PresentDialog(ValueName, (string[])CurrentData) == System.Windows.Forms.DialogResult.OK)
-                return My.MyProject.Forms.EditPolMultiStringData.TextData.Lines;
+            if (AppForms.EditPolMultiStringData.PresentDialog(ValueName, (string[])CurrentData) == System.Windows.Forms.DialogResult.OK)
+                return AppForms.EditPolMultiStringData.TextData.Lines;
             return null;
         }
         System.Windows.Forms.MessageBox.Show("This value kind is not supported.", "Policy Plus", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Exclamation);
@@ -202,9 +202,9 @@ public partial class EditPol
     private void ButtonAddValue_Click(object sender, EventArgs e)
     {
         string keyPath = LsvPol.SelectedItems[0].Tag as string ?? string.Empty;
-        if (My.MyProject.Forms.EditPolValue.PresentDialog() != System.Windows.Forms.DialogResult.OK) return;
-        string value = My.MyProject.Forms.EditPolValue.ChosenName;
-        var kind = My.MyProject.Forms.EditPolValue.SelectedKind;
+    if (AppForms.EditPolValue.PresentDialog() != System.Windows.Forms.DialogResult.OK) return;
+    string value = AppForms.EditPolValue.ChosenName;
+    var kind = AppForms.EditPolValue.SelectedKind;
         object defaultData = kind switch
         {
             RegistryValueKind.String or RegistryValueKind.ExpandString => string.Empty,
@@ -225,13 +225,13 @@ public partial class EditPol
         var tag = LsvPol.SelectedItems[0].Tag;
         if (tag is string keyTag)
         {
-            if (My.MyProject.Forms.EditPolDelete.PresentDialog(keyTag.Split('\\').Last()) != System.Windows.Forms.DialogResult.OK)
+            if (AppForms.EditPolDelete.PresentDialog(keyTag.Split('\\').Last()) != System.Windows.Forms.DialogResult.OK)
                 return;
-            if (My.MyProject.Forms.EditPolDelete.OptPurge.Checked)
+            if (AppForms.EditPolDelete.OptPurge.Checked)
             {
                 EditingPol.ClearKey(keyTag);
             }
-            else if (My.MyProject.Forms.EditPolDelete.OptClearFirst.Checked)
+            else if (AppForms.EditPolDelete.OptClearFirst.Checked)
             {
                 EditingPol.ForgetKeyClearance(keyTag);
                 EditingPol.ClearKey(keyTag);
@@ -248,7 +248,7 @@ public partial class EditPol
             }
             else
             {
-                EditingPol.DeleteValue(keyTag, My.MyProject.Forms.EditPolDelete.TextValueName.Text);
+                EditingPol.DeleteValue(keyTag, AppForms.EditPolDelete.TextValueName.Text);
             }
             UpdateTree();
             SelectKey(keyTag);
@@ -350,14 +350,14 @@ public partial class EditPol
 
     private void ButtonImport_Click(object sender, EventArgs e)
     {
-        if (My.MyProject.Forms.ImportReg.PresentDialog(EditingPol) == System.Windows.Forms.DialogResult.OK)
+    if (AppForms.ImportReg.PresentDialog(EditingPol) == System.Windows.Forms.DialogResult.OK)
             UpdateTree();
     }
 
     private void ButtonExport_Click(object sender, EventArgs e)
     {
         string branch = LsvPol.SelectedItems.Count > 0 ? LsvPol.SelectedItems[0].Tag as string ?? string.Empty : string.Empty;
-        My.MyProject.Forms.ExportReg.PresentDialog(branch, EditingPol, EditingUserSource);
+    AppForms.ExportReg.PresentDialog(branch, EditingPol, EditingUserSource);
     }
 
     private class PolValueInfo

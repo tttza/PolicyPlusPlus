@@ -5,7 +5,6 @@ using System.Windows.Forms;
 
 namespace PolicyPlus.UI.Export
 {
-    [Microsoft.VisualBasic.CompilerServices.DesignerGenerated()]
     public partial class ExportReg : Form
     {
 

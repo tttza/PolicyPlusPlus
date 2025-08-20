@@ -5,7 +5,6 @@ using System.Windows.Forms;
 
 namespace PolicyPlus.UI.CategoryDetail
 {
-    [Microsoft.VisualBasic.CompilerServices.DesignerGenerated()]
     public partial class DetailCategory : Form
     {
 

@@ -38,22 +38,22 @@ namespace PolicyPlus.UI.Admx
 
         private void LsvPolicies_DoubleClick(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailPolicy.PresentDialog((PolicyPlusPolicy)LsvPolicies.SelectedItems[0].Tag);
+            AppForms.DetailPolicy.PresentDialog((PolicyPlusPolicy)LsvPolicies.SelectedItems[0].Tag);
         }
 
         private void LsvCategories_DoubleClick(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailCategory.PresentDialog((PolicyPlusCategory)LsvCategories.SelectedItems[0].Tag);
+            AppForms.DetailCategory.PresentDialog((PolicyPlusCategory)LsvCategories.SelectedItems[0].Tag);
         }
 
         private void LsvProducts_DoubleClick(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailProduct.PresentDialog((PolicyPlusProduct)LsvProducts.SelectedItems[0].Tag);
+            AppForms.DetailProduct.PresentDialog((PolicyPlusProduct)LsvProducts.SelectedItems[0].Tag);
         }
 
         private void LsvSupportDefinitions_DoubleClick(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailSupport.PresentDialog((PolicyPlusSupport)LsvSupportDefinitions.SelectedItems[0].Tag);
+            AppForms.DetailSupport.PresentDialog((PolicyPlusSupport)LsvSupportDefinitions.SelectedItems[0].Tag);
         }
     }
 }

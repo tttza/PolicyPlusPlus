@@ -275,7 +275,7 @@ namespace PolicyPlus.UI.PolicyDetail
                                     UseVisualStyleBackColor = true,
                                     Text = "Edit..."
                                 };
-                                button.Click += (o, i) => { if (My.MyProject.Forms.ListEditor.PresentDialog(listPres.Label, button.Tag, list.UserProvidesNames) == DialogResult.OK) button.Tag = My.MyProject.Forms.ListEditor.FinalData; };
+                                button.Click += (o, i) => { if (AppForms.ListEditor.PresentDialog(listPres.Label, button.Tag, list.UserProvidesNames) == DialogResult.OK) button.Tag = AppForms.ListEditor.FinalData; };
                                 addControl(pres.ID, button, listPres.Label);
                                 break;
                             }
@@ -542,7 +542,7 @@ namespace PolicyPlus.UI.PolicyDetail
         {
             ApplyToPolicySource();
             ChangesMade = true;
-            My.MyProject.Forms.DetailPolicyFormatted.PresentDialog(CurrentSetting, CompPolSource, UserPolSource, this.languageCode);
+            AppForms.DetailPolicyFormatted.PresentDialog(CurrentSetting, CompPolSource, UserPolSource, this.languageCode);
         }
 
         private void SupportedLabel_Click(object sender, EventArgs e) { }

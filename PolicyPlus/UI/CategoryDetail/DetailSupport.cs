@@ -90,7 +90,7 @@ namespace PolicyPlus.UI.CategoryDetail
             PolicyPlusSupportEntry supEntry = (PolicyPlusSupportEntry)EntriesListview.SelectedItems[0].Tag;
             if (supEntry.Product is object)
             {
-                My.MyProject.Forms.DetailProduct.PresentDialog(supEntry.Product);
+                AppForms.DetailProduct.PresentDialog(supEntry.Product);
             }
             else if (supEntry.SupportDefinition is object)
             {

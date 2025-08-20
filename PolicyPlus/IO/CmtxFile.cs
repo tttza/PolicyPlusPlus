@@ -87,17 +87,21 @@ namespace PolicyPlus
             var revPrefixes = new Dictionary<string, string>(); // Opposite-direction prefix lookup
             foreach (var kv in Table)
             {
-                var idParts = Microsoft.VisualBasic.Strings.Split(kv.Key, ":", 2);
-                if (!revPrefixes.ContainsKey(idParts[0]))
+                var idParts = kv.Key.Split(new[] { ':' }, 2);
+                if (idParts.Length != 2)
+                    continue; // Skip malformed keys
+                var nsPart = idParts[0];
+                var policyPart = idParts[1];
+                if (!revPrefixes.ContainsKey(nsPart))
                 {
-                    string prefixId = idParts[0].Replace('.', '_') + "__" + resNum;
-                    revPrefixes.Add(idParts[0], prefixId);
-                    cmtx.Prefixes.Add(prefixId, idParts[0]);
+                    string prefixId = nsPart.Replace('.', '_') + "__" + resNum;
+                    revPrefixes.Add(nsPart, prefixId);
+                    cmtx.Prefixes.Add(prefixId, nsPart);
                 }
 
-                string resourceId = idParts[0].Replace('.', '_') + "__" + idParts[1] + "__" + resNum;
+                string resourceId = nsPart.Replace('.', '_') + "__" + policyPart + "__" + resNum;
                 cmtx.Strings.Add(resourceId, kv.Value);
-                cmtx.Comments.Add(revPrefixes[idParts[0]] + ":" + idParts[1], "$(resource." + resourceId + ")");
+                cmtx.Comments.Add(revPrefixes[nsPart] + ":" + policyPart, "$(resource." + resourceId + ")");
                 resNum += 1;
             }
 
@@ -110,11 +114,19 @@ namespace PolicyPlus
             var commentTable = new Dictionary<string, string>();
             foreach (var comment in Comments)
             {
-                var refParts = Microsoft.VisualBasic.Strings.Split(comment.Key, ":", 2);
-                string polNamespace = Prefixes[refParts[0]];
+                var refParts = comment.Key.Split(new[] { ':' }, 2);
+                if (refParts.Length != 2)
+                    continue; // Skip malformed keys
+                var prefixKey = refParts[0];
+                if (!Prefixes.TryGetValue(prefixKey, out var polNamespace))
+                    continue; // Unknown prefix
                 string stringRef = comment.Value;
-                string stringId = stringRef.Substring(11, stringRef.Length - 12); // "$(resource." is 11 characters long
-                commentTable.Add(polNamespace + ":" + refParts[1], Strings[stringId]);
+                if (stringRef.Length < 13 || !stringRef.StartsWith("$(resource.") || !stringRef.EndsWith(")"))
+                    continue; // Unexpected format
+                string stringId = stringRef.Substring(11, stringRef.Length - 12); // "$(resource." is 11 chars
+                if (!Strings.TryGetValue(stringId, out var resolved))
+                    continue; // Missing string
+                commentTable.Add(polNamespace + ":" + refParts[1], resolved);
             }
 
             return commentTable;

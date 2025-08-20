@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Windows.Forms;
+using PolicyPlus.UI; // For AppForms
 
 namespace PolicyPlus
 {
@@ -295,13 +296,13 @@ namespace PolicyPlus
         {
             if (e.KeyCode == Keys.C & e.Modifiers == Keys.Control & InfoTreeview.SelectedNode is object)
             {
-                My.MyProject.Computer.Clipboard.SetText(InfoTreeview.SelectedNode.Text);
+                Clipboard.SetText(InfoTreeview.SelectedNode.Text);
             }
         }
 
         private void PolicyDetailsButton_Click(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailPolicy.PresentDialog(SelectedPolicy);
+            AppForms.DetailPolicy.PresentDialog(SelectedPolicy);
         }
     }
 }

@@ -1,5 +1,6 @@
-﻿using Microsoft.VisualBasic.CompilerServices;
+﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Xml;
 
 namespace PolicyPlus
@@ -20,7 +21,7 @@ namespace PolicyPlus
         {
         }
 
-        public static AdmxFile Load(string File)
+    public static AdmxFile Load(string File)
         {
             // ADMX documentation: https://technet.microsoft.com/en-us/library/cc772138(v=ws.10).aspx
             var admx = new AdmxFile();
@@ -129,7 +130,7 @@ namespace PolicyPlus
                                             if ((subproductElement.LocalName ?? "") != (ChildTagName ?? "")) continue;
                                             var product = new AdmxProduct();
                                             product.ID = subproductElement.Attributes["name"].Value; product.DisplayCode = subproductElement.Attributes["displayName"].Value;
-                                            if (Parent is object) product.Version = Conversions.ToInteger(subproductElement.Attributes["versionIndex"].Value);
+                                            if (Parent is object) product.Version = int.Parse(subproductElement.Attributes["versionIndex"].Value, CultureInfo.InvariantCulture);
                                             product.Parent = Parent; product.DefinedIn = admx;
                                             admx.Products.Add(product);
                                             if (Parent is null)
@@ -191,7 +192,7 @@ namespace PolicyPlus
                                     else if (subElement.LocalName == "decimal")
                                     {
                                         regItem.RegistryType = PolicyRegistryValueType.Numeric;
-                                        regItem.NumberValue = Conversions.ToUInteger(subElement.Attributes["value"].Value);
+                                        regItem.NumberValue = uint.Parse(subElement.Attributes["value"].Value, CultureInfo.InvariantCulture);
                                         break;
                                     }
                                     else if (subElement.LocalName == "string")
@@ -318,10 +319,10 @@ namespace PolicyPlus
                                                         case "decimal":
                                                             {
                                                                 var decimalEntry = new DecimalPolicyElement();
-                                                                decimalEntry.Minimum = Conversions.ToUInteger(uiElement.AttributeOrDefault("minValue", 0));
-                                                                decimalEntry.Maximum = Conversions.ToUInteger(uiElement.AttributeOrDefault("maxValue", uint.MaxValue));
-                                                                decimalEntry.NoOverwrite = Conversions.ToBoolean(uiElement.AttributeOrDefault("soft", false));
-                                                                decimalEntry.StoreAsText = Conversions.ToBoolean(uiElement.AttributeOrDefault("storeAsText", false));
+                                                                decimalEntry.Minimum = Convert.ToUInt32(uiElement.AttributeOrDefault("minValue", 0), CultureInfo.InvariantCulture);
+                                                                decimalEntry.Maximum = Convert.ToUInt32(uiElement.AttributeOrDefault("maxValue", uint.MaxValue), CultureInfo.InvariantCulture);
+                                                                decimalEntry.NoOverwrite = Convert.ToBoolean(uiElement.AttributeOrDefault("soft", false));
+                                                                decimalEntry.StoreAsText = Convert.ToBoolean(uiElement.AttributeOrDefault("storeAsText", false));
                                                                 entry = decimalEntry;
                                                                 break;
                                                             }
@@ -337,10 +338,10 @@ namespace PolicyPlus
                                                         case "text":
                                                             {
                                                                 var textEntry = new TextPolicyElement();
-                                                                textEntry.MaxLength = Conversions.ToInteger(uiElement.AttributeOrDefault("maxLength", 255));
-                                                                textEntry.Required = Conversions.ToBoolean(uiElement.AttributeOrDefault("required", false));
-                                                                textEntry.RegExpandSz = Conversions.ToBoolean(uiElement.AttributeOrDefault("expandable", false));
-                                                                textEntry.NoOverwrite = Conversions.ToBoolean(uiElement.AttributeOrDefault("soft", false));
+                                                                textEntry.MaxLength = Convert.ToInt32(uiElement.AttributeOrDefault("maxLength", 255), CultureInfo.InvariantCulture);
+                                                                textEntry.Required = Convert.ToBoolean(uiElement.AttributeOrDefault("required", false));
+                                                                textEntry.RegExpandSz = Convert.ToBoolean(uiElement.AttributeOrDefault("expandable", false));
+                                                                textEntry.NoOverwrite = Convert.ToBoolean(uiElement.AttributeOrDefault("soft", false));
                                                                 entry = textEntry;
                                                                 break;
                                                             }
@@ -348,9 +349,9 @@ namespace PolicyPlus
                                                         case "list":
                                                             {
                                                                 var listEntry = new ListPolicyElement();
-                                                                listEntry.NoPurgeOthers = Conversions.ToBoolean(uiElement.AttributeOrDefault("additive", false));
-                                                                listEntry.RegExpandSz = Conversions.ToBoolean(uiElement.AttributeOrDefault("expandable", false));
-                                                                listEntry.UserProvidesNames = Conversions.ToBoolean(uiElement.AttributeOrDefault("explicitValue", false));
+                                                                listEntry.NoPurgeOthers = Convert.ToBoolean(uiElement.AttributeOrDefault("additive", false));
+                                                                listEntry.RegExpandSz = Convert.ToBoolean(uiElement.AttributeOrDefault("expandable", false));
+                                                                listEntry.UserProvidesNames = Convert.ToBoolean(uiElement.AttributeOrDefault("explicitValue", false));
                                                                 listEntry.HasPrefix = uiElement.Attributes["valuePrefix"] is object;
                                                                 listEntry.RegistryValue = uiElement.AttributeOrNull("valuePrefix");
                                                                 entry = listEntry;
@@ -360,7 +361,7 @@ namespace PolicyPlus
                                                         case "enum":
                                                             {
                                                                 var enumEntry = new EnumPolicyElement();
-                                                                enumEntry.Required = Conversions.ToBoolean(uiElement.AttributeOrDefault("required", false));
+                                                                enumEntry.Required = Convert.ToBoolean(uiElement.AttributeOrDefault("required", false));
                                                                 enumEntry.Items = new List<EnumPolicyElementItem>();
                                                                 foreach (XmlNode itemElement in uiElement.ChildNodes)
                                                                 {

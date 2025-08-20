@@ -5,7 +5,6 @@ using System.Windows.Forms;
 
 namespace PolicyPlus.UI.Admx
 {
-    [Microsoft.VisualBasic.CompilerServices.DesignerGenerated()]
     public partial class DownloadAdmx : Form
     {
 

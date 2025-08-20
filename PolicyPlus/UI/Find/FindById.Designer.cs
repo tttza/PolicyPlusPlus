@@ -2,11 +2,9 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace PolicyPlus.UI.Find
 {
-    [DesignerGenerated()]
     public partial class FindById : Form
     {
 

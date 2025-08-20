@@ -1,5 +1,6 @@
-﻿using Microsoft.VisualBasic.CompilerServices;
+﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Xml;
 
 namespace PolicyPlus
@@ -17,7 +18,7 @@ namespace PolicyPlus
         {
         }
 
-        public static AdmlFile Load(string File)
+    public static AdmlFile Load(string File)
         {
             // ADML documentation: https://technet.microsoft.com/en-us/library/cc772050(v=ws.10).aspx
             var adml = new AdmlFile();
@@ -85,9 +86,9 @@ namespace PolicyPlus
                             case "decimalTextBox":
                                 {
                                     var decTextPart = new NumericBoxPresentationElement();
-                                    decTextPart.DefaultValue = Conversions.ToUInteger(uiElement.AttributeOrDefault("defaultValue", 1));
-                                    decTextPart.HasSpinner = Conversions.ToBoolean(uiElement.AttributeOrDefault("spin", true));
-                                    decTextPart.SpinnerIncrement = Conversions.ToUInteger(uiElement.AttributeOrDefault("spinStep", 1));
+                                    decTextPart.DefaultValue = Convert.ToUInt32(uiElement.AttributeOrDefault("defaultValue", 1), CultureInfo.InvariantCulture);
+                                    decTextPart.HasSpinner = Convert.ToBoolean(uiElement.AttributeOrDefault("spin", true));
+                                    decTextPart.SpinnerIncrement = Convert.ToUInt32(uiElement.AttributeOrDefault("spinStep", 1), CultureInfo.InvariantCulture);
                                     decTextPart.Label = uiElement.InnerText;
                                     presPart = decTextPart;
                                     break;
@@ -121,7 +122,7 @@ namespace PolicyPlus
                             case "checkBox":
                                 {
                                     var checkPart = new CheckBoxPresentationElement();
-                                    checkPart.DefaultState = Conversions.ToBoolean(uiElement.AttributeOrDefault("defaultChecked", false));
+                                    checkPart.DefaultState = Convert.ToBoolean(uiElement.AttributeOrDefault("defaultChecked", false));
                                     checkPart.Text = uiElement.InnerText;
                                     presPart = checkPart;
                                     break;
@@ -130,7 +131,7 @@ namespace PolicyPlus
                             case "comboBox":
                                 {
                                     var comboPart = new ComboBoxPresentationElement();
-                                    comboPart.NoSort = Conversions.ToBoolean(uiElement.AttributeOrDefault("noSort", false));
+                                    comboPart.NoSort = Convert.ToBoolean(uiElement.AttributeOrDefault("noSort", false));
                                     foreach (XmlNode comboInfo in uiElement.ChildNodes)
                                     {
                                         switch (comboInfo.LocalName ?? "")
@@ -162,7 +163,7 @@ namespace PolicyPlus
                             case "dropdownList":
                                 {
                                     var dropPart = new DropDownPresentationElement();
-                                    dropPart.NoSort = Conversions.ToBoolean(uiElement.AttributeOrDefault("noSort", false));
+                                    dropPart.NoSort = Convert.ToBoolean(uiElement.AttributeOrDefault("noSort", false));
                                     dropPart.DefaultItemID = (int.TryParse(uiElement.AttributeOrNull("defaultItem"), out int num)) ? num : null;
                                     dropPart.Label = uiElement.InnerText;
                                     presPart = dropPart;

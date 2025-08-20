@@ -26,12 +26,12 @@ namespace PolicyPlus.UI.Find
 
         private void FindById_Load(object sender, EventArgs e)
         {
-            CategoryImage = My.MyProject.Forms.Main.PolicyIcons.Images[0];
-            PolicyImage = My.MyProject.Forms.Main.PolicyIcons.Images[4];
-            ProductImage = My.MyProject.Forms.Main.PolicyIcons.Images[10];
-            SupportImage = My.MyProject.Forms.Main.PolicyIcons.Images[11];
-            NotFoundImage = My.MyProject.Forms.Main.PolicyIcons.Images[8];
-            BlankImage = My.MyProject.Forms.Main.PolicyIcons.Images[9];
+            CategoryImage = AppForms.Main.PolicyIcons.Images[0];
+            PolicyImage = AppForms.Main.PolicyIcons.Images[4];
+            ProductImage = AppForms.Main.PolicyIcons.Images[10];
+            SupportImage = AppForms.Main.PolicyIcons.Images[11];
+            NotFoundImage = AppForms.Main.PolicyIcons.Images[8];
+            BlankImage = AppForms.Main.PolicyIcons.Images[9];
         }
 
         private void IdTextbox_TextChanged(object sender, EventArgs e)

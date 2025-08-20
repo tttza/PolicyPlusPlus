@@ -5,11 +5,15 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Security.AccessControl;
+using System.Net.Http; // For HttpClient download
 
 namespace PolicyPlus.UI.Admx
 {
     public partial class DownloadAdmx
     {
+    // Static HttpClient (recommended reuse) for downloading the MSI instead of obsolete WebClient
+    private static readonly HttpClient _httpClient = new HttpClient();
+
         public DownloadAdmx()
         {
             InitializeComponent();
@@ -128,9 +132,15 @@ namespace PolicyPlus.UI.Admx
                     failPhase = "download the package";
                     setProgress("Downloading MSI from Microsoft...");
                     string downloadPath = tempPath + "W10Admx.msi";
-                    using (var webcli = new System.Net.WebClient())
+                    // Download with HttpClient (synchronous wait on background thread)
+                    using (var response = _httpClient.GetAsync(MicrosoftMsiDownloadLink, HttpCompletionOption.ResponseHeadersRead).Result)
                     {
-                        webcli.DownloadFile(MicrosoftMsiDownloadLink, downloadPath);
+                        response.EnsureSuccessStatusCode();
+                        using (var fs = File.Create(downloadPath))
+                        {
+                            // Copy the content stream to file synchronously via blocking wait (background task thread)
+                            response.Content.CopyToAsync(fs).GetAwaiter().GetResult();
+                        }
                     }
 
                     failPhase = "extract the package";

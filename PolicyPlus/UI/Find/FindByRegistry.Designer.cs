@@ -5,7 +5,6 @@ using System.Windows.Forms;
 
 namespace PolicyPlus.UI.Find
 {
-    [Microsoft.VisualBasic.CompilerServices.DesignerGenerated()]
     public partial class FindByRegistry : Form
     {
 

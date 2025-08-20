@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
+using PolicyPlus.UI; // For AppForms
 
 namespace PolicyPlus
 {
@@ -31,7 +32,7 @@ namespace PolicyPlus
 
         private void LsvAdmx_DoubleClick(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailAdmx.PresentDialog((AdmxFile)LsvAdmx.SelectedItems[0].Tag, Bundle);
+            AppForms.DetailAdmx.PresentDialog((AdmxFile)LsvAdmx.SelectedItems[0].Tag, Bundle);
         }
 
         private void LoadedAdmx_SizeChanged(object sender, EventArgs e)

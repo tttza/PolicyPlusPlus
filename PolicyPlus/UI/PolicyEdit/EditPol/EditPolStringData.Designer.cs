@@ -4,7 +4,6 @@ using System.Windows.Forms;
 
 namespace PolicyPlus.UI.PolicyDetail
 {
-    [Microsoft.VisualBasic.CompilerServices.DesignerGenerated()]
     public partial class EditPolStringData : Form
     {
 

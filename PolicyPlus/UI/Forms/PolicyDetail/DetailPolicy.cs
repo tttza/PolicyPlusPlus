@@ -74,12 +74,12 @@ namespace PolicyPlus.UI.PolicyDetail
 
         private void SupportButton_Click(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailSupport.PresentDialog(SelectedPolicy.SupportedOn);
+            AppForms.DetailSupport.PresentDialog(SelectedPolicy.SupportedOn);
         }
 
         private void CategoryButton_Click(object sender, EventArgs e)
         {
-            My.MyProject.Forms.DetailCategory.PresentDialog(SelectedPolicy.Category);
+            AppForms.DetailCategory.PresentDialog(SelectedPolicy.Category);
         }
     }
 }
