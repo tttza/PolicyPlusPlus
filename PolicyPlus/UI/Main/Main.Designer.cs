@@ -34,938 +34,907 @@ namespace PolicyPlus.UI.Main
         [DebuggerStepThrough()]
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.ToolStripSeparator ToolStripSeparator1;
-            System.Windows.Forms.ToolStripSeparator ToolStripSeparator2;
-            System.Windows.Forms.ToolStripSeparator ToolStripSeparator3;
-            System.Windows.Forms.ToolStripSeparator ToolStripSeparator4;
-            System.Windows.Forms.ToolStripSeparator ToolStripSeparator5;
-            System.Windows.Forms.ToolStripStatusLabel ToolStripStatusLabel1;
-            System.Windows.Forms.ToolStripStatusLabel ToolStripStatusLabel2;
-            System.Windows.Forms.ToolStripSeparator ToolStripSeparator6;
+            components = new System.ComponentModel.Container();
+            ToolStripSeparator ToolStripSeparator1;
+            ToolStripSeparator ToolStripSeparator2;
+            ToolStripSeparator ToolStripSeparator3;
+            ToolStripSeparator ToolStripSeparator4;
+            ToolStripSeparator ToolStripSeparator5;
+            ToolStripStatusLabel ToolStripStatusLabel1;
+            ToolStripStatusLabel ToolStripStatusLabel2;
+            ToolStripSeparator ToolStripSeparator6;
+            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            this.MainMenu = new System.Windows.Forms.MenuStrip();
-            this.FileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.OpenADMXFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.OpenADMXFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.SetADMLLanguageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.CloseADMXWorkspaceToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.OpenPolicyResourcesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
-            this.SavePoliciesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.EditRawPOLToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ExitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ViewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.EmptyCategoriesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.OnlyFilteredObjectsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.FilterOptionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.DeduplicatePoliciesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.LoadedADMXFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.AllProductsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.AllSupportDefinitionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.FindToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ByIDToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ByTextToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ByRegistryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.SearchResultsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.FindNextToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ShareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ImportSemanticPolicyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ImportPOLToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ImportREGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ExportPOLToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ExportREGToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.HelpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.AboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.AcquireADMXFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.SplitContainer = new System.Windows.Forms.SplitContainer();
-            this.panel3 = new System.Windows.Forms.Panel();
-            this.CategoriesTree = new System.Windows.Forms.TreeView();
-            this.PolicyObjectContext = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.CmeCopyToClipboard = new System.Windows.Forms.ToolStripMenuItem();
-            this.Cme2CopyId = new System.Windows.Forms.ToolStripMenuItem();
-            this.Cme2CopyName = new System.Windows.Forms.ToolStripMenuItem();
-            this.Cme2CopyRegPathLC = new System.Windows.Forms.ToolStripMenuItem();
-            this.Cme2CopyRegPathCU = new System.Windows.Forms.ToolStripMenuItem();
-            this.CmeCatOpen = new System.Windows.Forms.ToolStripMenuItem();
-            this.CmePolEdit = new System.Windows.Forms.ToolStripMenuItem();
-            this.CmeAllDetails = new System.Windows.Forms.ToolStripMenuItem();
-            this.CmeAllDetailsFormatted = new System.Windows.Forms.ToolStripMenuItem();
-            this.CmePolInspectElements = new System.Windows.Forms.ToolStripMenuItem();
-            this.CmePolSpolFragment = new System.Windows.Forms.ToolStripMenuItem();
-            this.PolicyIcons = new System.Windows.Forms.ImageList(this.components);
-            this.panel2 = new System.Windows.Forms.Panel();
-            this.ComboAppliesTo = new System.Windows.Forms.ComboBox();
-            this.panel1 = new System.Windows.Forms.Panel();
-            this.PoliciesGrid = new System.Windows.Forms.DataGridView();
-            this.State = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Icon = new System.Windows.Forms.DataGridViewImageColumn();
-            this._Name = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ID = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Comment = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.SettingInfoPanel = new System.Windows.Forms.Panel();
-            this.PolicyInfoTable = new System.Windows.Forms.TableLayoutPanel();
-            this.PolicyIsPrefTable = new System.Windows.Forms.TableLayoutPanel();
-            this.PictureBox1 = new System.Windows.Forms.PictureBox();
-            this.PolicyIsPrefLabel = new System.Windows.Forms.TextBox();
-            this.PolicySupportedLabel = new System.Windows.Forms.TextBox();
-            this.PolicyTitleLabel = new System.Windows.Forms.TextBox();
-            this.InfoStrip = new System.Windows.Forms.StatusStrip();
-            this.ComputerSourceLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.UserSourceLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.AppVersion = new System.Windows.Forms.ToolStripStatusLabel();
-            this.PolicyDescLabel = new System.Windows.Forms.RichTextBox();
-            ToolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-            ToolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-            ToolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
-            ToolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
-            ToolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
-            ToolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
-            ToolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
-            ToolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
-            this.MainMenu.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.SplitContainer)).BeginInit();
-            this.SplitContainer.Panel1.SuspendLayout();
-            this.SplitContainer.Panel2.SuspendLayout();
-            this.SplitContainer.SuspendLayout();
-            this.panel3.SuspendLayout();
-            this.PolicyObjectContext.SuspendLayout();
-            this.panel2.SuspendLayout();
-            this.panel1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.PoliciesGrid)).BeginInit();
-            this.SettingInfoPanel.SuspendLayout();
-            this.PolicyInfoTable.SuspendLayout();
-            this.PolicyIsPrefTable.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.PictureBox1)).BeginInit();
-            this.InfoStrip.SuspendLayout();
-            this.SuspendLayout();
+            SettingInfoSplitter = new Splitter();
+            MainMenu = new MenuStrip();
+            FileToolStripMenuItem = new ToolStripMenuItem();
+            OpenADMXFolderToolStripMenuItem = new ToolStripMenuItem();
+            OpenADMXFileToolStripMenuItem = new ToolStripMenuItem();
+            SetADMLLanguageToolStripMenuItem = new ToolStripMenuItem();
+            CloseADMXWorkspaceToolStripMenuItem = new ToolStripMenuItem();
+            OpenPolicyResourcesToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator7 = new ToolStripSeparator();
+            SavePoliciesToolStripMenuItem = new ToolStripMenuItem();
+            EditRawPOLToolStripMenuItem = new ToolStripMenuItem();
+            ExitToolStripMenuItem = new ToolStripMenuItem();
+            ViewToolStripMenuItem = new ToolStripMenuItem();
+            EmptyCategoriesToolStripMenuItem = new ToolStripMenuItem();
+            OnlyFilteredObjectsToolStripMenuItem = new ToolStripMenuItem();
+            FilterOptionsToolStripMenuItem = new ToolStripMenuItem();
+            DeduplicatePoliciesToolStripMenuItem = new ToolStripMenuItem();
+            LoadedADMXFilesToolStripMenuItem = new ToolStripMenuItem();
+            AllProductsToolStripMenuItem = new ToolStripMenuItem();
+            AllSupportDefinitionsToolStripMenuItem = new ToolStripMenuItem();
+            FindToolStripMenuItem = new ToolStripMenuItem();
+            ByIDToolStripMenuItem = new ToolStripMenuItem();
+            ByTextToolStripMenuItem = new ToolStripMenuItem();
+            ByRegistryToolStripMenuItem = new ToolStripMenuItem();
+            SearchResultsToolStripMenuItem = new ToolStripMenuItem();
+            FindNextToolStripMenuItem = new ToolStripMenuItem();
+            ShareToolStripMenuItem = new ToolStripMenuItem();
+            ImportSemanticPolicyToolStripMenuItem = new ToolStripMenuItem();
+            ImportPOLToolStripMenuItem = new ToolStripMenuItem();
+            ImportREGToolStripMenuItem = new ToolStripMenuItem();
+            ExportPOLToolStripMenuItem = new ToolStripMenuItem();
+            ExportREGToolStripMenuItem = new ToolStripMenuItem();
+            HelpToolStripMenuItem = new ToolStripMenuItem();
+            AboutToolStripMenuItem = new ToolStripMenuItem();
+            AcquireADMXFilesToolStripMenuItem = new ToolStripMenuItem();
+            SplitContainer = new SplitContainer();
+            panel3 = new Panel();
+            CategoriesTree = new TreeView();
+            PolicyObjectContext = new ContextMenuStrip(components);
+            CmeCopyToClipboard = new ToolStripMenuItem();
+            Cme2CopyId = new ToolStripMenuItem();
+            Cme2CopyName = new ToolStripMenuItem();
+            Cme2CopyRegPathLC = new ToolStripMenuItem();
+            Cme2CopyRegPathCU = new ToolStripMenuItem();
+            CmeCatOpen = new ToolStripMenuItem();
+            CmePolEdit = new ToolStripMenuItem();
+            CmeAllDetails = new ToolStripMenuItem();
+            CmeAllDetailsFormatted = new ToolStripMenuItem();
+            CmePolInspectElements = new ToolStripMenuItem();
+            CmePolSpolFragment = new ToolStripMenuItem();
+            PolicyIcons = new ImageList(components);
+            panel2 = new Panel();
+            ComboAppliesTo = new ComboBox();
+            panel1 = new Panel();
+            PoliciesGrid = new DataGridView();
+            State = new DataGridViewTextBoxColumn();
+            Icon = new DataGridViewImageColumn();
+            _Name = new DataGridViewTextBoxColumn();
+            ID = new DataGridViewTextBoxColumn();
+            Comment = new DataGridViewTextBoxColumn();
+            SettingInfoPanel = new Panel();
+            PolicyInfoTable = new TableLayoutPanel();
+            PolicyIsPrefTable = new TableLayoutPanel();
+            PictureBox1 = new PictureBox();
+            PolicyIsPrefLabel = new TextBox();
+            PolicySupportedLabel = new TextBox();
+            PolicyTitleLabel = new TextBox();
+            PolicyDescLabel = new RichTextBox();
+            InfoStrip = new StatusStrip();
+            ComputerSourceLabel = new ToolStripStatusLabel();
+            UserSourceLabel = new ToolStripStatusLabel();
+            AppVersion = new ToolStripStatusLabel();
+            ToolStripSeparator1 = new ToolStripSeparator();
+            ToolStripSeparator2 = new ToolStripSeparator();
+            ToolStripSeparator3 = new ToolStripSeparator();
+            ToolStripSeparator4 = new ToolStripSeparator();
+            ToolStripSeparator5 = new ToolStripSeparator();
+            ToolStripStatusLabel1 = new ToolStripStatusLabel();
+            ToolStripStatusLabel2 = new ToolStripStatusLabel();
+            ToolStripSeparator6 = new ToolStripSeparator();
+            MainMenu.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)SplitContainer).BeginInit();
+            SplitContainer.Panel1.SuspendLayout();
+            SplitContainer.Panel2.SuspendLayout();
+            SplitContainer.SuspendLayout();
+            panel3.SuspendLayout();
+            PolicyObjectContext.SuspendLayout();
+            panel2.SuspendLayout();
+            panel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)PoliciesGrid).BeginInit();
+            SettingInfoPanel.SuspendLayout();
+            PolicyInfoTable.SuspendLayout();
+            PolicyIsPrefTable.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)PictureBox1).BeginInit();
+            InfoStrip.SuspendLayout();
+            SuspendLayout();
             // 
             // ToolStripSeparator1
             // 
             ToolStripSeparator1.Name = "ToolStripSeparator1";
-            ToolStripSeparator1.Size = new System.Drawing.Size(189, 6);
+            ToolStripSeparator1.Size = new Size(239, 6);
             // 
             // ToolStripSeparator2
             // 
             ToolStripSeparator2.Name = "ToolStripSeparator2";
-            ToolStripSeparator2.Size = new System.Drawing.Size(233, 6);
+            ToolStripSeparator2.Size = new Size(291, 6);
             // 
             // ToolStripSeparator3
             // 
             ToolStripSeparator3.Name = "ToolStripSeparator3";
-            ToolStripSeparator3.Size = new System.Drawing.Size(233, 6);
+            ToolStripSeparator3.Size = new Size(291, 6);
             // 
             // ToolStripSeparator4
             // 
             ToolStripSeparator4.Name = "ToolStripSeparator4";
-            ToolStripSeparator4.Size = new System.Drawing.Size(197, 6);
+            ToolStripSeparator4.Size = new Size(247, 6);
             // 
             // ToolStripSeparator5
             // 
             ToolStripSeparator5.Name = "ToolStripSeparator5";
-            ToolStripSeparator5.Size = new System.Drawing.Size(192, 6);
+            ToolStripSeparator5.Size = new Size(242, 6);
             // 
             // ToolStripStatusLabel1
             // 
             ToolStripStatusLabel1.Name = "ToolStripStatusLabel1";
-            ToolStripStatusLabel1.Size = new System.Drawing.Size(100, 17);
+            ToolStripStatusLabel1.Size = new Size(125, 20);
             ToolStripStatusLabel1.Text = "Computer source:";
             // 
             // ToolStripStatusLabel2
             // 
             ToolStripStatusLabel2.Name = "ToolStripStatusLabel2";
-            ToolStripStatusLabel2.Size = new System.Drawing.Size(71, 17);
+            ToolStripStatusLabel2.Size = new Size(88, 20);
             ToolStripStatusLabel2.Text = "User source:";
             // 
             // ToolStripSeparator6
             // 
             ToolStripSeparator6.Name = "ToolStripSeparator6";
-            ToolStripSeparator6.Size = new System.Drawing.Size(189, 6);
+            ToolStripSeparator6.Size = new Size(239, 6);
             // 
             // MainMenu
             // 
-            this.MainMenu.ImageScalingSize = new System.Drawing.Size(20, 20);
-            this.MainMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.FileToolStripMenuItem,
-            this.ViewToolStripMenuItem,
-            this.FindToolStripMenuItem,
-            this.ShareToolStripMenuItem,
-            this.HelpToolStripMenuItem});
-            this.MainMenu.Location = new System.Drawing.Point(0, 0);
-            this.MainMenu.Name = "MainMenu";
-            this.MainMenu.Padding = new System.Windows.Forms.Padding(5, 2, 0, 2);
-            this.MainMenu.Size = new System.Drawing.Size(1186, 24);
-            this.MainMenu.TabIndex = 0;
-            this.MainMenu.Text = "MenuStrip1";
+            MainMenu.ImageScalingSize = new Size(20, 20);
+            MainMenu.Items.AddRange(new ToolStripItem[] { FileToolStripMenuItem, ViewToolStripMenuItem, FindToolStripMenuItem, ShareToolStripMenuItem, HelpToolStripMenuItem });
+            MainMenu.Location = new Point(0, 0);
+            MainMenu.Name = "MainMenu";
+            MainMenu.Size = new Size(1852, 30);
+            MainMenu.TabIndex = 0;
+            MainMenu.Text = "MenuStrip1";
             // 
             // FileToolStripMenuItem
             // 
-            this.FileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.OpenADMXFolderToolStripMenuItem,
-            this.OpenADMXFileToolStripMenuItem,
-            this.SetADMLLanguageToolStripMenuItem,
-            this.CloseADMXWorkspaceToolStripMenuItem,
-            ToolStripSeparator2,
-            this.OpenPolicyResourcesToolStripMenuItem,
-            this.toolStripSeparator7,
-            this.SavePoliciesToolStripMenuItem,
-            this.EditRawPOLToolStripMenuItem,
-            ToolStripSeparator3,
-            this.ExitToolStripMenuItem});
-            this.FileToolStripMenuItem.Name = "FileToolStripMenuItem";
-            this.FileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
-            this.FileToolStripMenuItem.Text = "File";
+            FileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { OpenADMXFolderToolStripMenuItem, OpenADMXFileToolStripMenuItem, SetADMLLanguageToolStripMenuItem, CloseADMXWorkspaceToolStripMenuItem, ToolStripSeparator2, OpenPolicyResourcesToolStripMenuItem, toolStripSeparator7, SavePoliciesToolStripMenuItem, EditRawPOLToolStripMenuItem, ToolStripSeparator3, ExitToolStripMenuItem });
+            FileToolStripMenuItem.Name = "FileToolStripMenuItem";
+            FileToolStripMenuItem.Size = new Size(46, 26);
+            FileToolStripMenuItem.Text = "File";
             // 
             // OpenADMXFolderToolStripMenuItem
             // 
-            this.OpenADMXFolderToolStripMenuItem.Name = "OpenADMXFolderToolStripMenuItem";
-            this.OpenADMXFolderToolStripMenuItem.Size = new System.Drawing.Size(236, 22);
-            this.OpenADMXFolderToolStripMenuItem.Text = "Open ADMX Folder";
-            this.OpenADMXFolderToolStripMenuItem.Click += new System.EventHandler(this.OpenADMXFolderToolStripMenuItem_Click);
+            OpenADMXFolderToolStripMenuItem.Name = "OpenADMXFolderToolStripMenuItem";
+            OpenADMXFolderToolStripMenuItem.Size = new Size(294, 26);
+            OpenADMXFolderToolStripMenuItem.Text = "Open ADMX Folder";
+            OpenADMXFolderToolStripMenuItem.Click += OpenADMXFolderToolStripMenuItem_Click;
             // 
             // OpenADMXFileToolStripMenuItem
             // 
-            this.OpenADMXFileToolStripMenuItem.Name = "OpenADMXFileToolStripMenuItem";
-            this.OpenADMXFileToolStripMenuItem.Size = new System.Drawing.Size(236, 22);
-            this.OpenADMXFileToolStripMenuItem.Text = "Open ADMX File";
-            this.OpenADMXFileToolStripMenuItem.Click += new System.EventHandler(this.OpenADMXFileToolStripMenuItem_Click);
+            OpenADMXFileToolStripMenuItem.Name = "OpenADMXFileToolStripMenuItem";
+            OpenADMXFileToolStripMenuItem.Size = new Size(294, 26);
+            OpenADMXFileToolStripMenuItem.Text = "Open ADMX File";
+            OpenADMXFileToolStripMenuItem.Click += OpenADMXFileToolStripMenuItem_Click;
             // 
             // SetADMLLanguageToolStripMenuItem
             // 
-            this.SetADMLLanguageToolStripMenuItem.Name = "SetADMLLanguageToolStripMenuItem";
-            this.SetADMLLanguageToolStripMenuItem.Size = new System.Drawing.Size(236, 22);
-            this.SetADMLLanguageToolStripMenuItem.Text = "Set ADML Language";
-            this.SetADMLLanguageToolStripMenuItem.Click += new System.EventHandler(this.SetADMLLanguageToolStripMenuItem_Click);
+            SetADMLLanguageToolStripMenuItem.Name = "SetADMLLanguageToolStripMenuItem";
+            SetADMLLanguageToolStripMenuItem.Size = new Size(294, 26);
+            SetADMLLanguageToolStripMenuItem.Text = "Set ADML Language";
+            SetADMLLanguageToolStripMenuItem.Click += SetADMLLanguageToolStripMenuItem_Click;
             // 
             // CloseADMXWorkspaceToolStripMenuItem
             // 
-            this.CloseADMXWorkspaceToolStripMenuItem.Name = "CloseADMXWorkspaceToolStripMenuItem";
-            this.CloseADMXWorkspaceToolStripMenuItem.Size = new System.Drawing.Size(236, 22);
-            this.CloseADMXWorkspaceToolStripMenuItem.Text = "Close ADMX Workspace";
-            this.CloseADMXWorkspaceToolStripMenuItem.Click += new System.EventHandler(this.CloseADMXWorkspaceToolStripMenuItem_Click);
+            CloseADMXWorkspaceToolStripMenuItem.Name = "CloseADMXWorkspaceToolStripMenuItem";
+            CloseADMXWorkspaceToolStripMenuItem.Size = new Size(294, 26);
+            CloseADMXWorkspaceToolStripMenuItem.Text = "Close ADMX Workspace";
+            CloseADMXWorkspaceToolStripMenuItem.Click += CloseADMXWorkspaceToolStripMenuItem_Click;
             // 
             // OpenPolicyResourcesToolStripMenuItem
             // 
-            this.OpenPolicyResourcesToolStripMenuItem.Name = "OpenPolicyResourcesToolStripMenuItem";
-            this.OpenPolicyResourcesToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.OpenPolicyResourcesToolStripMenuItem.Size = new System.Drawing.Size(236, 22);
-            this.OpenPolicyResourcesToolStripMenuItem.Text = "Open Policy Resources";
-            this.OpenPolicyResourcesToolStripMenuItem.Click += new System.EventHandler(this.OpenPolicyResourcesToolStripMenuItem_Click);
+            OpenPolicyResourcesToolStripMenuItem.Name = "OpenPolicyResourcesToolStripMenuItem";
+            OpenPolicyResourcesToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.O;
+            OpenPolicyResourcesToolStripMenuItem.Size = new Size(294, 26);
+            OpenPolicyResourcesToolStripMenuItem.Text = "Open Policy Resources";
+            OpenPolicyResourcesToolStripMenuItem.Click += OpenPolicyResourcesToolStripMenuItem_Click;
             // 
             // toolStripSeparator7
             // 
-            this.toolStripSeparator7.Name = "toolStripSeparator7";
-            this.toolStripSeparator7.Size = new System.Drawing.Size(233, 6);
+            toolStripSeparator7.Name = "toolStripSeparator7";
+            toolStripSeparator7.Size = new Size(291, 6);
             // 
             // SavePoliciesToolStripMenuItem
             // 
-            this.SavePoliciesToolStripMenuItem.Name = "SavePoliciesToolStripMenuItem";
-            this.SavePoliciesToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.SavePoliciesToolStripMenuItem.Size = new System.Drawing.Size(236, 22);
-            this.SavePoliciesToolStripMenuItem.Text = "Save Policies";
-            this.SavePoliciesToolStripMenuItem.Click += new System.EventHandler(this.SavePoliciesToolStripMenuItem_Click);
+            SavePoliciesToolStripMenuItem.Name = "SavePoliciesToolStripMenuItem";
+            SavePoliciesToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.S;
+            SavePoliciesToolStripMenuItem.Size = new Size(294, 26);
+            SavePoliciesToolStripMenuItem.Text = "Save Policies";
+            SavePoliciesToolStripMenuItem.Click += SavePoliciesToolStripMenuItem_Click;
             // 
             // EditRawPOLToolStripMenuItem
             // 
-            this.EditRawPOLToolStripMenuItem.Name = "EditRawPOLToolStripMenuItem";
-            this.EditRawPOLToolStripMenuItem.Size = new System.Drawing.Size(236, 22);
-            this.EditRawPOLToolStripMenuItem.Text = "Edit Raw POL";
-            this.EditRawPOLToolStripMenuItem.Click += new System.EventHandler(this.EditRawPOLToolStripMenuItem_Click);
+            EditRawPOLToolStripMenuItem.Name = "EditRawPOLToolStripMenuItem";
+            EditRawPOLToolStripMenuItem.Size = new Size(294, 26);
+            EditRawPOLToolStripMenuItem.Text = "Edit Raw POL";
+            EditRawPOLToolStripMenuItem.Click += EditRawPOLToolStripMenuItem_Click;
             // 
             // ExitToolStripMenuItem
             // 
-            this.ExitToolStripMenuItem.Name = "ExitToolStripMenuItem";
-            this.ExitToolStripMenuItem.Size = new System.Drawing.Size(236, 22);
-            this.ExitToolStripMenuItem.Text = "Exit";
-            this.ExitToolStripMenuItem.Click += new System.EventHandler(this.ExitToolStripMenuItem_Click);
+            ExitToolStripMenuItem.Name = "ExitToolStripMenuItem";
+            ExitToolStripMenuItem.Size = new Size(294, 26);
+            ExitToolStripMenuItem.Text = "Exit";
+            ExitToolStripMenuItem.Click += ExitToolStripMenuItem_Click;
             // 
             // ViewToolStripMenuItem
             // 
-            this.ViewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.EmptyCategoriesToolStripMenuItem,
-            this.OnlyFilteredObjectsToolStripMenuItem,
-            ToolStripSeparator1,
-            this.FilterOptionsToolStripMenuItem,
-            this.DeduplicatePoliciesToolStripMenuItem,
-            ToolStripSeparator6,
-            this.LoadedADMXFilesToolStripMenuItem,
-            this.AllProductsToolStripMenuItem,
-            this.AllSupportDefinitionsToolStripMenuItem});
-            this.ViewToolStripMenuItem.Name = "ViewToolStripMenuItem";
-            this.ViewToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
-            this.ViewToolStripMenuItem.Text = "View";
+            ViewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { EmptyCategoriesToolStripMenuItem, OnlyFilteredObjectsToolStripMenuItem, ToolStripSeparator1, FilterOptionsToolStripMenuItem, DeduplicatePoliciesToolStripMenuItem, ToolStripSeparator6, LoadedADMXFilesToolStripMenuItem, AllProductsToolStripMenuItem, AllSupportDefinitionsToolStripMenuItem });
+            ViewToolStripMenuItem.Name = "ViewToolStripMenuItem";
+            ViewToolStripMenuItem.Size = new Size(55, 26);
+            ViewToolStripMenuItem.Text = "View";
             // 
             // EmptyCategoriesToolStripMenuItem
             // 
-            this.EmptyCategoriesToolStripMenuItem.Name = "EmptyCategoriesToolStripMenuItem";
-            this.EmptyCategoriesToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.EmptyCategoriesToolStripMenuItem.Text = "Empty Categories";
-            this.EmptyCategoriesToolStripMenuItem.Click += new System.EventHandler(this.EmptyCategoriesToolStripMenuItem_Click);
+            EmptyCategoriesToolStripMenuItem.Name = "EmptyCategoriesToolStripMenuItem";
+            EmptyCategoriesToolStripMenuItem.Size = new Size(242, 26);
+            EmptyCategoriesToolStripMenuItem.Text = "Empty Categories";
+            EmptyCategoriesToolStripMenuItem.Click += EmptyCategoriesToolStripMenuItem_Click;
             // 
             // OnlyFilteredObjectsToolStripMenuItem
             // 
-            this.OnlyFilteredObjectsToolStripMenuItem.Name = "OnlyFilteredObjectsToolStripMenuItem";
-            this.OnlyFilteredObjectsToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.OnlyFilteredObjectsToolStripMenuItem.Text = "Only Filtered Policies";
-            this.OnlyFilteredObjectsToolStripMenuItem.Click += new System.EventHandler(this.OnlyFilteredObjectsToolStripMenuItem_Click);
+            OnlyFilteredObjectsToolStripMenuItem.Name = "OnlyFilteredObjectsToolStripMenuItem";
+            OnlyFilteredObjectsToolStripMenuItem.Size = new Size(242, 26);
+            OnlyFilteredObjectsToolStripMenuItem.Text = "Only Filtered Policies";
+            OnlyFilteredObjectsToolStripMenuItem.Click += OnlyFilteredObjectsToolStripMenuItem_Click;
             // 
             // FilterOptionsToolStripMenuItem
             // 
-            this.FilterOptionsToolStripMenuItem.Name = "FilterOptionsToolStripMenuItem";
-            this.FilterOptionsToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.FilterOptionsToolStripMenuItem.Text = "Filter Options";
-            this.FilterOptionsToolStripMenuItem.Click += new System.EventHandler(this.FilterOptionsToolStripMenuItem_Click);
+            FilterOptionsToolStripMenuItem.Name = "FilterOptionsToolStripMenuItem";
+            FilterOptionsToolStripMenuItem.Size = new Size(242, 26);
+            FilterOptionsToolStripMenuItem.Text = "Filter Options";
+            FilterOptionsToolStripMenuItem.Click += FilterOptionsToolStripMenuItem_Click;
             // 
             // DeduplicatePoliciesToolStripMenuItem
             // 
-            this.DeduplicatePoliciesToolStripMenuItem.Name = "DeduplicatePoliciesToolStripMenuItem";
-            this.DeduplicatePoliciesToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.DeduplicatePoliciesToolStripMenuItem.Text = "Deduplicate Policies";
-            this.DeduplicatePoliciesToolStripMenuItem.Visible = false;
-            this.DeduplicatePoliciesToolStripMenuItem.Click += new System.EventHandler(this.DeduplicatePoliciesToolStripMenuItem_Click);
+            DeduplicatePoliciesToolStripMenuItem.Name = "DeduplicatePoliciesToolStripMenuItem";
+            DeduplicatePoliciesToolStripMenuItem.Size = new Size(242, 26);
+            DeduplicatePoliciesToolStripMenuItem.Text = "Deduplicate Policies";
+            DeduplicatePoliciesToolStripMenuItem.Visible = false;
+            DeduplicatePoliciesToolStripMenuItem.Click += DeduplicatePoliciesToolStripMenuItem_Click;
             // 
             // LoadedADMXFilesToolStripMenuItem
             // 
-            this.LoadedADMXFilesToolStripMenuItem.Name = "LoadedADMXFilesToolStripMenuItem";
-            this.LoadedADMXFilesToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.LoadedADMXFilesToolStripMenuItem.Text = "Loaded ADMX Files";
-            this.LoadedADMXFilesToolStripMenuItem.Click += new System.EventHandler(this.LoadedADMXFilesToolStripMenuItem_Click);
+            LoadedADMXFilesToolStripMenuItem.Name = "LoadedADMXFilesToolStripMenuItem";
+            LoadedADMXFilesToolStripMenuItem.Size = new Size(242, 26);
+            LoadedADMXFilesToolStripMenuItem.Text = "Loaded ADMX Files";
+            LoadedADMXFilesToolStripMenuItem.Click += LoadedADMXFilesToolStripMenuItem_Click;
             // 
             // AllProductsToolStripMenuItem
             // 
-            this.AllProductsToolStripMenuItem.Name = "AllProductsToolStripMenuItem";
-            this.AllProductsToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.AllProductsToolStripMenuItem.Text = "All Products";
-            this.AllProductsToolStripMenuItem.Click += new System.EventHandler(this.AllProductsToolStripMenuItem_Click);
+            AllProductsToolStripMenuItem.Name = "AllProductsToolStripMenuItem";
+            AllProductsToolStripMenuItem.Size = new Size(242, 26);
+            AllProductsToolStripMenuItem.Text = "All Products";
+            AllProductsToolStripMenuItem.Click += AllProductsToolStripMenuItem_Click;
             // 
             // AllSupportDefinitionsToolStripMenuItem
             // 
-            this.AllSupportDefinitionsToolStripMenuItem.Name = "AllSupportDefinitionsToolStripMenuItem";
-            this.AllSupportDefinitionsToolStripMenuItem.Size = new System.Drawing.Size(192, 22);
-            this.AllSupportDefinitionsToolStripMenuItem.Text = "All Support Definitions";
-            this.AllSupportDefinitionsToolStripMenuItem.Click += new System.EventHandler(this.AllSupportDefinitionsToolStripMenuItem_Click);
+            AllSupportDefinitionsToolStripMenuItem.Name = "AllSupportDefinitionsToolStripMenuItem";
+            AllSupportDefinitionsToolStripMenuItem.Size = new Size(242, 26);
+            AllSupportDefinitionsToolStripMenuItem.Text = "All Support Definitions";
+            AllSupportDefinitionsToolStripMenuItem.Click += AllSupportDefinitionsToolStripMenuItem_Click;
             // 
             // FindToolStripMenuItem
             // 
-            this.FindToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.ByIDToolStripMenuItem,
-            this.ByTextToolStripMenuItem,
-            this.ByRegistryToolStripMenuItem,
-            ToolStripSeparator4,
-            this.SearchResultsToolStripMenuItem,
-            this.FindNextToolStripMenuItem});
-            this.FindToolStripMenuItem.Name = "FindToolStripMenuItem";
-            this.FindToolStripMenuItem.Size = new System.Drawing.Size(42, 20);
-            this.FindToolStripMenuItem.Text = "Find";
+            FindToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { ByIDToolStripMenuItem, ByTextToolStripMenuItem, ByRegistryToolStripMenuItem, ToolStripSeparator4, SearchResultsToolStripMenuItem, FindNextToolStripMenuItem });
+            FindToolStripMenuItem.Name = "FindToolStripMenuItem";
+            FindToolStripMenuItem.Size = new Size(51, 26);
+            FindToolStripMenuItem.Text = "Find";
             // 
             // ByIDToolStripMenuItem
             // 
-            this.ByIDToolStripMenuItem.Name = "ByIDToolStripMenuItem";
-            this.ByIDToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.G)));
-            this.ByIDToolStripMenuItem.Size = new System.Drawing.Size(200, 22);
-            this.ByIDToolStripMenuItem.Text = "By ID";
-            this.ByIDToolStripMenuItem.Click += new System.EventHandler(this.FindByIDToolStripMenuItem_Click);
+            ByIDToolStripMenuItem.Name = "ByIDToolStripMenuItem";
+            ByIDToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.G;
+            ByIDToolStripMenuItem.Size = new Size(250, 26);
+            ByIDToolStripMenuItem.Text = "By ID";
+            ByIDToolStripMenuItem.Click += FindByIDToolStripMenuItem_Click;
             // 
             // ByTextToolStripMenuItem
             // 
-            this.ByTextToolStripMenuItem.Name = "ByTextToolStripMenuItem";
-            this.ByTextToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F)));
-            this.ByTextToolStripMenuItem.Size = new System.Drawing.Size(200, 22);
-            this.ByTextToolStripMenuItem.Text = "By Text";
-            this.ByTextToolStripMenuItem.Click += new System.EventHandler(this.ByTextToolStripMenuItem_Click);
+            ByTextToolStripMenuItem.Name = "ByTextToolStripMenuItem";
+            ByTextToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.F;
+            ByTextToolStripMenuItem.Size = new Size(250, 26);
+            ByTextToolStripMenuItem.Text = "By Text";
+            ByTextToolStripMenuItem.Click += ByTextToolStripMenuItem_Click;
             // 
             // ByRegistryToolStripMenuItem
             // 
-            this.ByRegistryToolStripMenuItem.Name = "ByRegistryToolStripMenuItem";
-            this.ByRegistryToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.R)));
-            this.ByRegistryToolStripMenuItem.Size = new System.Drawing.Size(200, 22);
-            this.ByRegistryToolStripMenuItem.Text = "By Registry";
-            this.ByRegistryToolStripMenuItem.Click += new System.EventHandler(this.ByRegistryToolStripMenuItem_Click);
+            ByRegistryToolStripMenuItem.Name = "ByRegistryToolStripMenuItem";
+            ByRegistryToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.R;
+            ByRegistryToolStripMenuItem.Size = new Size(250, 26);
+            ByRegistryToolStripMenuItem.Text = "By Registry";
+            ByRegistryToolStripMenuItem.Click += ByRegistryToolStripMenuItem_Click;
             // 
             // SearchResultsToolStripMenuItem
             // 
-            this.SearchResultsToolStripMenuItem.Name = "SearchResultsToolStripMenuItem";
-            this.SearchResultsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Shift | System.Windows.Forms.Keys.F3)));
-            this.SearchResultsToolStripMenuItem.Size = new System.Drawing.Size(200, 22);
-            this.SearchResultsToolStripMenuItem.Text = "Search Results";
-            this.SearchResultsToolStripMenuItem.Click += new System.EventHandler(this.SearchResultsToolStripMenuItem_Click);
+            SearchResultsToolStripMenuItem.Name = "SearchResultsToolStripMenuItem";
+            SearchResultsToolStripMenuItem.ShortcutKeys = Keys.Shift | Keys.F3;
+            SearchResultsToolStripMenuItem.Size = new Size(250, 26);
+            SearchResultsToolStripMenuItem.Text = "Search Results";
+            SearchResultsToolStripMenuItem.Click += SearchResultsToolStripMenuItem_Click;
             // 
             // FindNextToolStripMenuItem
             // 
-            this.FindNextToolStripMenuItem.Name = "FindNextToolStripMenuItem";
-            this.FindNextToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F3;
-            this.FindNextToolStripMenuItem.Size = new System.Drawing.Size(200, 22);
-            this.FindNextToolStripMenuItem.Text = "Find Next";
-            this.FindNextToolStripMenuItem.Click += new System.EventHandler(this.FindNextToolStripMenuItem_Click);
+            FindNextToolStripMenuItem.Name = "FindNextToolStripMenuItem";
+            FindNextToolStripMenuItem.ShortcutKeys = Keys.F3;
+            FindNextToolStripMenuItem.Size = new Size(250, 26);
+            FindNextToolStripMenuItem.Text = "Find Next";
+            FindNextToolStripMenuItem.Click += FindNextToolStripMenuItem_Click;
             // 
             // ShareToolStripMenuItem
             // 
-            this.ShareToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.ImportSemanticPolicyToolStripMenuItem,
-            this.ImportPOLToolStripMenuItem,
-            this.ImportREGToolStripMenuItem,
-            ToolStripSeparator5,
-            this.ExportPOLToolStripMenuItem,
-            this.ExportREGToolStripMenuItem});
-            this.ShareToolStripMenuItem.Name = "ShareToolStripMenuItem";
-            this.ShareToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
-            this.ShareToolStripMenuItem.Text = "Share";
+            ShareToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { ImportSemanticPolicyToolStripMenuItem, ImportPOLToolStripMenuItem, ImportREGToolStripMenuItem, ToolStripSeparator5, ExportPOLToolStripMenuItem, ExportREGToolStripMenuItem });
+            ShareToolStripMenuItem.Name = "ShareToolStripMenuItem";
+            ShareToolStripMenuItem.Size = new Size(60, 26);
+            ShareToolStripMenuItem.Text = "Share";
             // 
             // ImportSemanticPolicyToolStripMenuItem
             // 
-            this.ImportSemanticPolicyToolStripMenuItem.Name = "ImportSemanticPolicyToolStripMenuItem";
-            this.ImportSemanticPolicyToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.ImportSemanticPolicyToolStripMenuItem.Text = "Import Semantic Policy";
-            this.ImportSemanticPolicyToolStripMenuItem.Click += new System.EventHandler(this.ImportSemanticPolicyToolStripMenuItem_Click);
+            ImportSemanticPolicyToolStripMenuItem.Name = "ImportSemanticPolicyToolStripMenuItem";
+            ImportSemanticPolicyToolStripMenuItem.Size = new Size(245, 26);
+            ImportSemanticPolicyToolStripMenuItem.Text = "Import Semantic Policy";
+            ImportSemanticPolicyToolStripMenuItem.Click += ImportSemanticPolicyToolStripMenuItem_Click;
             // 
             // ImportPOLToolStripMenuItem
             // 
-            this.ImportPOLToolStripMenuItem.Name = "ImportPOLToolStripMenuItem";
-            this.ImportPOLToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.ImportPOLToolStripMenuItem.Text = "Import POL";
-            this.ImportPOLToolStripMenuItem.Click += new System.EventHandler(this.ImportPOLToolStripMenuItem_Click);
+            ImportPOLToolStripMenuItem.Name = "ImportPOLToolStripMenuItem";
+            ImportPOLToolStripMenuItem.Size = new Size(245, 26);
+            ImportPOLToolStripMenuItem.Text = "Import POL";
+            ImportPOLToolStripMenuItem.Click += ImportPOLToolStripMenuItem_Click;
             // 
             // ImportREGToolStripMenuItem
             // 
-            this.ImportREGToolStripMenuItem.Name = "ImportREGToolStripMenuItem";
-            this.ImportREGToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.ImportREGToolStripMenuItem.Text = "Import REG";
-            this.ImportREGToolStripMenuItem.Click += new System.EventHandler(this.ImportREGToolStripMenuItem_Click);
+            ImportREGToolStripMenuItem.Name = "ImportREGToolStripMenuItem";
+            ImportREGToolStripMenuItem.Size = new Size(245, 26);
+            ImportREGToolStripMenuItem.Text = "Import REG";
+            ImportREGToolStripMenuItem.Click += ImportREGToolStripMenuItem_Click;
             // 
             // ExportPOLToolStripMenuItem
             // 
-            this.ExportPOLToolStripMenuItem.Name = "ExportPOLToolStripMenuItem";
-            this.ExportPOLToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.ExportPOLToolStripMenuItem.Text = "Export POL";
-            this.ExportPOLToolStripMenuItem.Click += new System.EventHandler(this.ExportPOLToolStripMenuItem_Click);
+            ExportPOLToolStripMenuItem.Name = "ExportPOLToolStripMenuItem";
+            ExportPOLToolStripMenuItem.Size = new Size(245, 26);
+            ExportPOLToolStripMenuItem.Text = "Export POL";
+            ExportPOLToolStripMenuItem.Click += ExportPOLToolStripMenuItem_Click;
             // 
             // ExportREGToolStripMenuItem
             // 
-            this.ExportREGToolStripMenuItem.Name = "ExportREGToolStripMenuItem";
-            this.ExportREGToolStripMenuItem.Size = new System.Drawing.Size(195, 22);
-            this.ExportREGToolStripMenuItem.Text = "Export REG";
-            this.ExportREGToolStripMenuItem.Click += new System.EventHandler(this.ExportREGToolStripMenuItem_Click);
+            ExportREGToolStripMenuItem.Name = "ExportREGToolStripMenuItem";
+            ExportREGToolStripMenuItem.Size = new Size(245, 26);
+            ExportREGToolStripMenuItem.Text = "Export REG";
+            ExportREGToolStripMenuItem.Click += ExportREGToolStripMenuItem_Click;
             // 
             // HelpToolStripMenuItem
             // 
-            this.HelpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.AboutToolStripMenuItem,
-            this.AcquireADMXFilesToolStripMenuItem});
-            this.HelpToolStripMenuItem.Name = "HelpToolStripMenuItem";
-            this.HelpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
-            this.HelpToolStripMenuItem.Text = "Help";
+            HelpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { AboutToolStripMenuItem, AcquireADMXFilesToolStripMenuItem });
+            HelpToolStripMenuItem.Name = "HelpToolStripMenuItem";
+            HelpToolStripMenuItem.Size = new Size(55, 26);
+            HelpToolStripMenuItem.Text = "Help";
             // 
             // AboutToolStripMenuItem
             // 
-            this.AboutToolStripMenuItem.Name = "AboutToolStripMenuItem";
-            this.AboutToolStripMenuItem.Size = new System.Drawing.Size(178, 22);
-            this.AboutToolStripMenuItem.Text = "About";
-            this.AboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
+            AboutToolStripMenuItem.Name = "AboutToolStripMenuItem";
+            AboutToolStripMenuItem.Size = new Size(223, 26);
+            AboutToolStripMenuItem.Text = "About";
+            AboutToolStripMenuItem.Click += AboutToolStripMenuItem_Click;
             // 
             // AcquireADMXFilesToolStripMenuItem
             // 
-            this.AcquireADMXFilesToolStripMenuItem.Name = "AcquireADMXFilesToolStripMenuItem";
-            this.AcquireADMXFilesToolStripMenuItem.Size = new System.Drawing.Size(178, 22);
-            this.AcquireADMXFilesToolStripMenuItem.Text = "Acquire ADMX Files";
-            this.AcquireADMXFilesToolStripMenuItem.Click += new System.EventHandler(this.AcquireADMXFilesToolStripMenuItem_Click);
+            AcquireADMXFilesToolStripMenuItem.Name = "AcquireADMXFilesToolStripMenuItem";
+            AcquireADMXFilesToolStripMenuItem.Size = new Size(223, 26);
+            AcquireADMXFilesToolStripMenuItem.Text = "Acquire ADMX Files";
+            AcquireADMXFilesToolStripMenuItem.Click += AcquireADMXFilesToolStripMenuItem_Click;
             // 
             // SplitContainer
             // 
-            this.SplitContainer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.SplitContainer.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            this.SplitContainer.Location = new System.Drawing.Point(0, 22);
-            this.SplitContainer.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.SplitContainer.Name = "SplitContainer";
+            SplitContainer.Dock = DockStyle.Fill;
+            // Keep left (Panel1) width constant when overall container width changes (right info panel resize)
+            SplitContainer.FixedPanel = FixedPanel.Panel1;
+            SplitContainer.Location = new Point(0, 0);
+            SplitContainer.Margin = new Padding(5, 2, 5, 2);
+            SplitContainer.Name = "SplitContainer";
             // 
             // SplitContainer.Panel1
             // 
-            this.SplitContainer.Panel1.AutoScroll = true;
-            this.SplitContainer.Panel1.Controls.Add(this.panel3);
-            this.SplitContainer.Panel1.Controls.Add(this.panel2);
+            SplitContainer.Panel1.AutoScroll = true;
+            SplitContainer.Panel1.Controls.Add(panel3);
+            SplitContainer.Panel1.Controls.Add(panel2);
             // 
             // SplitContainer.Panel2
-            // 
-            this.SplitContainer.Panel2.BackColor = System.Drawing.Color.White;
-            this.SplitContainer.Panel2.Controls.Add(this.panel1);
-            this.SplitContainer.Panel2.Controls.Add(this.SettingInfoPanel);
-            this.SplitContainer.Size = new System.Drawing.Size(1186, 586);
-            this.SplitContainer.SplitterDistance = 300;
-            this.SplitContainer.TabIndex = 1;
-            this.SplitContainer.TabStop = false;
+            SplitContainer.Panel2.BackColor = Color.White;
+            SplitContainer.Panel2.Controls.Add(panel1);
+            SplitContainer.Size = new Size(1477, 925); // width adjusted automatically at runtime; design-time value not critical
+            SplitContainer.SplitterDistance = 469;
+            SplitContainer.SplitterWidth = 6;
+            SplitContainer.TabIndex = 1;
+            SplitContainer.TabStop = false;
             // 
             // panel3
             // 
-            this.panel3.AutoSize = true;
-            this.panel3.Controls.Add(this.CategoriesTree);
-            this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel3.Location = new System.Drawing.Point(0, 20);
-            this.panel3.Margin = new System.Windows.Forms.Padding(2);
-            this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(300, 566);
-            this.panel3.TabIndex = 4;
+            panel3.AutoSize = true;
+            panel3.Controls.Add(CategoriesTree);
+            panel3.Dock = DockStyle.Fill;
+            panel3.Location = new Point(0, 28);
+            panel3.Margin = new Padding(2);
+            panel3.Name = "panel3";
+            panel3.Size = new Size(469, 887);
+            panel3.TabIndex = 4;
             // 
             // CategoriesTree
             // 
-            this.CategoriesTree.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.CategoriesTree.ContextMenuStrip = this.PolicyObjectContext;
-            this.CategoriesTree.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.CategoriesTree.HideSelection = false;
-            this.CategoriesTree.ImageIndex = 0;
-            this.CategoriesTree.ImageList = this.PolicyIcons;
-            this.CategoriesTree.Location = new System.Drawing.Point(0, 0);
-            this.CategoriesTree.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.CategoriesTree.Name = "CategoriesTree";
-            this.CategoriesTree.SelectedImageIndex = 0;
-            this.CategoriesTree.ShowNodeToolTips = true;
-            this.CategoriesTree.Size = new System.Drawing.Size(300, 566);
-            this.CategoriesTree.TabIndex = 2;
-            this.CategoriesTree.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.CategoriesTree_AfterSelect);
-            this.CategoriesTree.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.CategoriesTree_NodeMouseClick);
+            CategoriesTree.BorderStyle = BorderStyle.None;
+            CategoriesTree.ContextMenuStrip = PolicyObjectContext;
+            CategoriesTree.Dock = DockStyle.Fill;
+            CategoriesTree.HideSelection = false;
+            CategoriesTree.ImageIndex = 0;
+            CategoriesTree.ImageList = PolicyIcons;
+            CategoriesTree.Location = new Point(0, 0);
+            CategoriesTree.Margin = new Padding(5, 2, 5, 2);
+            CategoriesTree.Name = "CategoriesTree";
+            CategoriesTree.SelectedImageIndex = 0;
+            CategoriesTree.ShowNodeToolTips = true;
+            CategoriesTree.Size = new Size(469, 887);
+            CategoriesTree.TabIndex = 2;
+            CategoriesTree.AfterSelect += CategoriesTree_AfterSelect;
+            CategoriesTree.NodeMouseClick += CategoriesTree_NodeMouseClick;
             // 
             // PolicyObjectContext
             // 
-            this.PolicyObjectContext.ImageScalingSize = new System.Drawing.Size(20, 20);
-            this.PolicyObjectContext.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.CmeCopyToClipboard,
-            this.CmeCatOpen,
-            this.CmePolEdit,
-            this.CmeAllDetails,
-            this.CmeAllDetailsFormatted,
-            this.CmePolInspectElements,
-            this.CmePolSpolFragment});
-            this.PolicyObjectContext.Name = "PolicyObjectContext";
-            this.PolicyObjectContext.Size = new System.Drawing.Size(210, 158);
-            this.PolicyObjectContext.Opening += new System.ComponentModel.CancelEventHandler(this.PolicyObjectContext_Opening);
-            this.PolicyObjectContext.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.PolicyObjectContext_ItemClicked);
+            PolicyObjectContext.ImageScalingSize = new Size(20, 20);
+            PolicyObjectContext.Items.AddRange(new ToolStripItem[] { CmeCopyToClipboard, CmeCatOpen, CmePolEdit, CmeAllDetails, CmeAllDetailsFormatted, CmePolInspectElements, CmePolSpolFragment });
+            PolicyObjectContext.Name = "PolicyObjectContext";
+            PolicyObjectContext.Size = new Size(249, 172);
+            PolicyObjectContext.Opening += PolicyObjectContext_Opening;
+            PolicyObjectContext.ItemClicked += PolicyObjectContext_ItemClicked;
             // 
             // CmeCopyToClipboard
             // 
-            this.CmeCopyToClipboard.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.Cme2CopyId,
-            this.Cme2CopyName,
-            this.Cme2CopyRegPathLC,
-            this.Cme2CopyRegPathCU});
-            this.CmeCopyToClipboard.Name = "CmeCopyToClipboard";
-            this.CmeCopyToClipboard.Size = new System.Drawing.Size(209, 22);
-            this.CmeCopyToClipboard.Tag = "P";
-            this.CmeCopyToClipboard.Text = "Copy value";
-            this.CmeCopyToClipboard.DropDownOpening += new System.EventHandler(this.PolicyObjectContext_DropdownOpening);
-            this.CmeCopyToClipboard.DropDownItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.PolicyObjectContext_ItemClicked);
+            CmeCopyToClipboard.DropDownItems.AddRange(new ToolStripItem[] { Cme2CopyId, Cme2CopyName, Cme2CopyRegPathLC, Cme2CopyRegPathCU });
+            CmeCopyToClipboard.Name = "CmeCopyToClipboard";
+            CmeCopyToClipboard.Size = new Size(248, 24);
+            CmeCopyToClipboard.Tag = "P";
+            CmeCopyToClipboard.Text = "Copy value";
+            CmeCopyToClipboard.DropDownOpening += PolicyObjectContext_DropdownOpening;
+            CmeCopyToClipboard.DropDownItemClicked += PolicyObjectContext_ItemClicked;
             // 
             // Cme2CopyId
             // 
-            this.Cme2CopyId.Name = "Cme2CopyId";
-            this.Cme2CopyId.Size = new System.Drawing.Size(171, 22);
-            this.Cme2CopyId.Text = "ID";
+            Cme2CopyId.Name = "Cme2CopyId";
+            Cme2CopyId.Size = new Size(212, 26);
+            Cme2CopyId.Text = "ID";
             // 
             // Cme2CopyName
             // 
-            this.Cme2CopyName.Name = "Cme2CopyName";
-            this.Cme2CopyName.Size = new System.Drawing.Size(171, 22);
-            this.Cme2CopyName.Text = "Name";
+            Cme2CopyName.Name = "Cme2CopyName";
+            Cme2CopyName.Size = new Size(212, 26);
+            Cme2CopyName.Text = "Name";
             // 
             // Cme2CopyRegPathLC
             // 
-            this.Cme2CopyRegPathLC.Name = "Cme2CopyRegPathLC";
-            this.Cme2CopyRegPathLC.Size = new System.Drawing.Size(171, 22);
-            this.Cme2CopyRegPathLC.Tag = "P-LM";
-            this.Cme2CopyRegPathLC.Text = "Registry Path - LM";
+            Cme2CopyRegPathLC.Name = "Cme2CopyRegPathLC";
+            Cme2CopyRegPathLC.Size = new Size(212, 26);
+            Cme2CopyRegPathLC.Tag = "P-LM";
+            Cme2CopyRegPathLC.Text = "Registry Path - LM";
             // 
             // Cme2CopyRegPathCU
             // 
-            this.Cme2CopyRegPathCU.Name = "Cme2CopyRegPathCU";
-            this.Cme2CopyRegPathCU.Size = new System.Drawing.Size(171, 22);
-            this.Cme2CopyRegPathCU.Tag = "P-CU";
-            this.Cme2CopyRegPathCU.Text = "Registry Path - CU";
+            Cme2CopyRegPathCU.Name = "Cme2CopyRegPathCU";
+            Cme2CopyRegPathCU.Size = new Size(212, 26);
+            Cme2CopyRegPathCU.Tag = "P-CU";
+            Cme2CopyRegPathCU.Text = "Registry Path - CU";
             // 
             // CmeCatOpen
             // 
-            this.CmeCatOpen.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.CmeCatOpen.Name = "CmeCatOpen";
-            this.CmeCatOpen.Size = new System.Drawing.Size(209, 22);
-            this.CmeCatOpen.Tag = "C";
-            this.CmeCatOpen.Text = "Open";
+            CmeCatOpen.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            CmeCatOpen.Name = "CmeCatOpen";
+            CmeCatOpen.Size = new Size(248, 24);
+            CmeCatOpen.Tag = "C";
+            CmeCatOpen.Text = "Open";
             // 
             // CmePolEdit
             // 
-            this.CmePolEdit.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.CmePolEdit.Name = "CmePolEdit";
-            this.CmePolEdit.Size = new System.Drawing.Size(209, 22);
-            this.CmePolEdit.Tag = "P";
-            this.CmePolEdit.Text = "Edit";
+            CmePolEdit.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            CmePolEdit.Name = "CmePolEdit";
+            CmePolEdit.Size = new Size(248, 24);
+            CmePolEdit.Tag = "P";
+            CmePolEdit.Text = "Edit";
             // 
             // CmeAllDetails
             // 
-            this.CmeAllDetails.Name = "CmeAllDetails";
-            this.CmeAllDetails.Size = new System.Drawing.Size(209, 22);
-            this.CmeAllDetails.Text = "Details";
+            CmeAllDetails.Name = "CmeAllDetails";
+            CmeAllDetails.Size = new Size(248, 24);
+            CmeAllDetails.Text = "Details";
             // 
             // CmeAllDetailsFormatted
             // 
-            this.CmeAllDetailsFormatted.Name = "CmeAllDetailsFormatted";
-            this.CmeAllDetailsFormatted.Size = new System.Drawing.Size(209, 22);
-            this.CmeAllDetailsFormatted.Tag = "P";
-            this.CmeAllDetailsFormatted.Text = "Details - Formatted";
+            CmeAllDetailsFormatted.Name = "CmeAllDetailsFormatted";
+            CmeAllDetailsFormatted.Size = new Size(248, 24);
+            CmeAllDetailsFormatted.Tag = "P";
+            CmeAllDetailsFormatted.Text = "Details - Formatted";
             // 
             // CmePolInspectElements
             // 
-            this.CmePolInspectElements.Name = "CmePolInspectElements";
-            this.CmePolInspectElements.Size = new System.Drawing.Size(209, 22);
-            this.CmePolInspectElements.Tag = "P";
-            this.CmePolInspectElements.Text = "Element Inspector";
+            CmePolInspectElements.Name = "CmePolInspectElements";
+            CmePolInspectElements.Size = new Size(248, 24);
+            CmePolInspectElements.Tag = "P";
+            CmePolInspectElements.Text = "Element Inspector";
             // 
             // CmePolSpolFragment
             // 
-            this.CmePolSpolFragment.Name = "CmePolSpolFragment";
-            this.CmePolSpolFragment.Size = new System.Drawing.Size(209, 22);
-            this.CmePolSpolFragment.Tag = "P";
-            this.CmePolSpolFragment.Text = "Semantic Policy Fragment";
+            CmePolSpolFragment.Name = "CmePolSpolFragment";
+            CmePolSpolFragment.Size = new Size(248, 24);
+            CmePolSpolFragment.Tag = "P";
+            CmePolSpolFragment.Text = "Semantic Policy Fragment";
             // 
-            // PolicyIcons will be populated at runtime from disk (PNG files)
-            this.PolicyIcons.TransparentColor = System.Drawing.Color.Transparent;
+            // PolicyIcons
+            // 
+            PolicyIcons.ColorDepth = ColorDepth.Depth32Bit;
+            PolicyIcons.ImageSize = new Size(16, 16);
+            PolicyIcons.TransparentColor = Color.Transparent;
             // 
             // panel2
             // 
-            this.panel2.AutoSize = true;
-            this.panel2.Controls.Add(this.ComboAppliesTo);
-            this.panel2.Dock = System.Windows.Forms.DockStyle.Top;
-            this.panel2.Location = new System.Drawing.Point(0, 0);
-            this.panel2.Margin = new System.Windows.Forms.Padding(2);
-            this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(300, 20);
-            this.panel2.TabIndex = 3;
+            panel2.AutoSize = true;
+            panel2.Controls.Add(ComboAppliesTo);
+            panel2.Dock = DockStyle.Top;
+            panel2.Location = new Point(0, 0);
+            panel2.Margin = new Padding(0); // remove gap left/top
+            panel2.Name = "panel2";
+            panel2.Size = new Size(469, 28);
+            panel2.TabIndex = 3;
             // 
             // ComboAppliesTo
             // 
-            this.ComboAppliesTo.Dock = System.Windows.Forms.DockStyle.Top;
-            this.ComboAppliesTo.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.ComboAppliesTo.Items.AddRange(new object[] {
-            "User or Computer",
-            "User",
-            "Computer"});
-            this.ComboAppliesTo.Location = new System.Drawing.Point(0, 0);
-            this.ComboAppliesTo.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.ComboAppliesTo.Name = "ComboAppliesTo";
-            this.ComboAppliesTo.Size = new System.Drawing.Size(300, 20);
-            this.ComboAppliesTo.TabIndex = 1;
-            this.ComboAppliesTo.SelectedIndexChanged += new System.EventHandler(this.ComboAppliesTo_SelectedIndexChanged);
+            ComboAppliesTo.Dock = DockStyle.Top;
+            ComboAppliesTo.DropDownStyle = ComboBoxStyle.DropDownList;
+            ComboAppliesTo.Items.AddRange(new object[] { "User or Computer", "User", "Computer" });
+            ComboAppliesTo.Location = new Point(0, 0);
+            ComboAppliesTo.Margin = new Padding(5, 2, 5, 2);
+            ComboAppliesTo.Name = "ComboAppliesTo";
+            ComboAppliesTo.Size = new Size(469, 28);
+            ComboAppliesTo.TabIndex = 1;
+            ComboAppliesTo.SelectedIndexChanged += ComboAppliesTo_SelectedIndexChanged;
             // 
             // panel1
             // 
-            this.panel1.AutoScroll = true;
-            this.panel1.AutoSize = true;
-            this.panel1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.panel1.Controls.Add(this.PoliciesGrid);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(0, 0);
-            this.panel1.Margin = new System.Windows.Forms.Padding(2);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(642, 586);
-            this.panel1.TabIndex = 4;
+            panel1.AutoScroll = true;
+            panel1.AutoSize = false; // Disable AutoSize to prevent cumulative shrink during DPI changes
+            panel1.AutoSizeMode = AutoSizeMode.GrowOnly;
+            panel1.Controls.Add(PoliciesGrid);
+            panel1.Dock = DockStyle.Fill;
+            panel1.Location = new Point(0, 0);
+            panel1.Margin = new Padding(0); // flush to splitter edges
+            panel1.Padding = new Padding(0);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(1002, 915);
+            panel1.TabIndex = 4;
             // 
             // PoliciesGrid
             // 
-            this.PoliciesGrid.AllowUserToAddRows = false;
-            this.PoliciesGrid.AllowUserToDeleteRows = false;
-            this.PoliciesGrid.AllowUserToResizeRows = false;
-            this.PoliciesGrid.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
-            this.PoliciesGrid.BackgroundColor = System.Drawing.SystemColors.Window;
-            this.PoliciesGrid.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.PoliciesGrid.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.None;
-            this.PoliciesGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.PoliciesGrid.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.State,
-            this.Icon,
-            this._Name,
-            this.ID,
-            this.Comment});
-            this.PoliciesGrid.ContextMenuStrip = this.PolicyObjectContext;
-            this.PoliciesGrid.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PoliciesGrid.Location = new System.Drawing.Point(0, 0);
-            this.PoliciesGrid.Margin = new System.Windows.Forms.Padding(2);
-            this.PoliciesGrid.MultiSelect = false;
-            this.PoliciesGrid.Name = "PoliciesGrid";
-            this.PoliciesGrid.ReadOnly = true;
-            this.PoliciesGrid.RowHeadersVisible = false;
-            this.PoliciesGrid.RowHeadersWidth = 51;
-            this.PoliciesGrid.RowHeadersWidthSizeMode = System.Windows.Forms.DataGridViewRowHeadersWidthSizeMode.DisableResizing;
-            this.PoliciesGrid.RowTemplate.Height = 18;
-            this.PoliciesGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.PoliciesGrid.Size = new System.Drawing.Size(642, 586);
-            this.PoliciesGrid.TabIndex = 4;
-            this.PoliciesGrid.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.PoliciesGrid_CellContentClick);
-            this.PoliciesGrid.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.PoliciesGrid_CellContentClick);
-            this.PoliciesGrid.CellContentDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.PoliciesGrid_CellContentDoubleClick);
-            this.PoliciesGrid.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.PoliciesGrid_CellContentDoubleClick);
-            this.PoliciesGrid.SelectionChanged += new System.EventHandler(this.PoliciesGrid_SelectionChanged);
+            PoliciesGrid.AllowUserToAddRows = false;
+            PoliciesGrid.AllowUserToDeleteRows = false;
+            PoliciesGrid.AllowUserToResizeRows = false;
+            PoliciesGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            PoliciesGrid.BackgroundColor = SystemColors.Window;
+            PoliciesGrid.BorderStyle = BorderStyle.None;
+            PoliciesGrid.CellBorderStyle = DataGridViewCellBorderStyle.None;
+            PoliciesGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            PoliciesGrid.Columns.AddRange(new DataGridViewColumn[] { State, Icon, _Name, ID, Comment });
+            PoliciesGrid.ContextMenuStrip = PolicyObjectContext;
+            PoliciesGrid.Dock = DockStyle.Fill;
+            PoliciesGrid.Location = new Point(0, 0);
+            PoliciesGrid.Margin = new Padding(2);
+            PoliciesGrid.MultiSelect = false;
+            PoliciesGrid.Name = "PoliciesGrid";
+            PoliciesGrid.ReadOnly = true;
+            PoliciesGrid.RowHeadersVisible = false;
+            PoliciesGrid.RowHeadersWidth = 51;
+            PoliciesGrid.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
+            PoliciesGrid.RowTemplate.Height = 22;
+            PoliciesGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            PoliciesGrid.Size = new Size(1002, 915);
+            PoliciesGrid.TabIndex = 4;
+            PoliciesGrid.CellClick += PoliciesGrid_CellContentClick;
+            PoliciesGrid.CellContentClick += PoliciesGrid_CellContentClick;
+            PoliciesGrid.CellContentDoubleClick += PoliciesGrid_CellContentDoubleClick;
+            PoliciesGrid.CellDoubleClick += PoliciesGrid_CellContentDoubleClick;
+            PoliciesGrid.SelectionChanged += PoliciesGrid_SelectionChanged;
+            PoliciesGrid.EnableHeadersVisualStyles = false;
+            DataGridViewCellStyle dataGridViewHeaderStyle = new DataGridViewCellStyle();
+            dataGridViewHeaderStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewHeaderStyle.BackColor = Color.FromArgb(245, 245, 245);
+            dataGridViewHeaderStyle.ForeColor = Color.Black;
+            dataGridViewHeaderStyle.Padding = new Padding(6, 2, 6, 2); // tighter vertical padding to match combo height
+            dataGridViewHeaderStyle.WrapMode = DataGridViewTriState.True;
+            dataGridViewHeaderStyle.Font = PoliciesGrid.ColumnHeadersDefaultCellStyle.Font;
+            dataGridViewHeaderStyle.SelectionBackColor = dataGridViewHeaderStyle.BackColor; // suppress blue highlight
+            dataGridViewHeaderStyle.SelectionForeColor = dataGridViewHeaderStyle.ForeColor;
+            PoliciesGrid.ColumnHeadersDefaultCellStyle = dataGridViewHeaderStyle;
+            PoliciesGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+            PoliciesGrid.ColumnHeadersHeight = 28; // align with ComboAppliesTo
+            DataGridViewCellStyle dataGridViewAltStyle = new DataGridViewCellStyle();
+            dataGridViewAltStyle.BackColor = Color.FromArgb(250, 250, 250);
+            PoliciesGrid.AlternatingRowsDefaultCellStyle = dataGridViewAltStyle;
             // 
             // State
             // 
-            this.State.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
-            this.State.ContextMenuStrip = this.PolicyObjectContext;
-            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle3.Padding = new System.Windows.Forms.Padding(5, 0, 5, 0);
-            this.State.DefaultCellStyle = dataGridViewCellStyle3;
-            this.State.Frozen = true;
-            this.State.HeaderText = "State";
-            this.State.MinimumWidth = 6;
-            this.State.Name = "State";
-            this.State.ReadOnly = true;
-            this.State.Width = 57;
+            State.AutoSizeMode = DataGridViewAutoSizeColumnMode.DisplayedCells;
+            State.ContextMenuStrip = PolicyObjectContext;
+            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle1.Padding = new Padding(5, 0, 5, 0);
+            State.DefaultCellStyle = dataGridViewCellStyle1;
+            State.Frozen = true;
+            State.HeaderText = "State";
+            State.MinimumWidth = 6;
+            State.Name = "State";
+            State.ReadOnly = true;
+            State.Width = 72;
             // 
             // Icon
             // 
-            this.Icon.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
-            this.Icon.ContextMenuStrip = this.PolicyObjectContext;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle1.NullValue = "null";
-            this.Icon.DefaultCellStyle = dataGridViewCellStyle1;
-            this.Icon.HeaderText = " ";
-            this.Icon.ImageLayout = System.Windows.Forms.DataGridViewImageCellLayout.Zoom;
-            this.Icon.MinimumWidth = 6;
-            this.Icon.Name = "Icon";
-            this.Icon.ReadOnly = true;
-            this.Icon.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.Icon.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            this.Icon.Width = 34;
+            Icon.AutoSizeMode = DataGridViewAutoSizeColumnMode.DisplayedCells;
+            Icon.ContextMenuStrip = PolicyObjectContext;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.NullValue = "null";
+            Icon.DefaultCellStyle = dataGridViewCellStyle2;
+            Icon.HeaderText = " ";
+            Icon.ImageLayout = DataGridViewImageCellLayout.Zoom;
+            Icon.MinimumWidth = 6;
+            Icon.Name = "Icon";
+            Icon.ReadOnly = true;
+            Icon.Resizable = DataGridViewTriState.True;
+            Icon.SortMode = DataGridViewColumnSortMode.Automatic;
+            Icon.Width = 42;
             // 
             // _Name
             // 
-            this._Name.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this._Name.ContextMenuStrip = this.PolicyObjectContext;
-            this._Name.FillWeight = 26.31579F;
-            this._Name.HeaderText = "Name";
-            this._Name.MinimumWidth = 6;
-            this._Name.Name = "_Name";
-            this._Name.ReadOnly = true;
+            _Name.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            _Name.ContextMenuStrip = PolicyObjectContext;
+            _Name.FillWeight = 26.31579F;
+            _Name.HeaderText = "Name";
+            _Name.MinimumWidth = 6;
+            _Name.Name = "_Name";
+            _Name.ReadOnly = true;
             // 
             // ID
             // 
-            this.ID.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.ID.ContextMenuStrip = this.PolicyObjectContext;
-            this.ID.FillWeight = 13.15789F;
-            this.ID.HeaderText = "ID";
-            this.ID.MinimumWidth = 6;
-            this.ID.Name = "ID";
-            this.ID.ReadOnly = true;
+            ID.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            ID.ContextMenuStrip = PolicyObjectContext;
+            ID.FillWeight = 13.15789F;
+            ID.HeaderText = "ID";
+            ID.MinimumWidth = 6;
+            ID.Name = "ID";
+            ID.ReadOnly = true;
             // 
             // Comment
             // 
-            this.Comment.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
-            this.Comment.ContextMenuStrip = this.PolicyObjectContext;
-            this.Comment.FillWeight = 210.5263F;
-            this.Comment.HeaderText = "Comment";
-            this.Comment.MinimumWidth = 6;
-            this.Comment.Name = "Comment";
-            this.Comment.ReadOnly = true;
-            this.Comment.Visible = false;
-            this.Comment.Width = 125;
+            Comment.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            Comment.ContextMenuStrip = PolicyObjectContext;
+            Comment.FillWeight = 210.5263F;
+            Comment.HeaderText = "Comment";
+            Comment.MinimumWidth = 6;
+            Comment.Name = "Comment";
+            Comment.ReadOnly = true;
+            Comment.Visible = false;
+            Comment.Width = 125;
             // 
-            // SettingInfoPanel
-            // 
-            this.SettingInfoPanel.AutoScroll = true;
-            this.SettingInfoPanel.Controls.Add(this.PolicyInfoTable);
-            this.SettingInfoPanel.Dock = System.Windows.Forms.DockStyle.Right;
-            this.SettingInfoPanel.Location = new System.Drawing.Point(642, 0);
-            this.SettingInfoPanel.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.SettingInfoPanel.Name = "SettingInfoPanel";
-            this.SettingInfoPanel.Size = new System.Drawing.Size(240, 586);
-            this.SettingInfoPanel.TabIndex = 0;
-            this.SettingInfoPanel.ClientSizeChanged += new System.EventHandler(this.SettingInfoPanel_ClientSizeChanged);
-            this.SettingInfoPanel.SizeChanged += new System.EventHandler(this.SettingInfoPanel_ClientSizeChanged);
+            // SettingInfoPanel (docked Right, resizable via SettingInfoSplitter)
+            SettingInfoPanel.AutoScroll = true;
+            SettingInfoPanel.Controls.Add(PolicyInfoTable);
+            SettingInfoPanel.Dock = DockStyle.Right;
+            SettingInfoPanel.Location = new Point(1225, 30);
+            SettingInfoPanel.Margin = new Padding(0);
+            SettingInfoPanel.Padding = new Padding(12, 10, 12, 10);
+            SettingInfoPanel.Name = "SettingInfoPanel";
+            SettingInfoPanel.Size = new Size(320, 925); // reduced default width
+            SettingInfoPanel.TabIndex = 0;
+            SettingInfoPanel.ClientSizeChanged += SettingInfoPanel_ClientSizeChanged;
+            SettingInfoPanel.SizeChanged += SettingInfoPanel_ClientSizeChanged;
+
+            // SettingInfoSplitter
+            SettingInfoSplitter.Dock = DockStyle.Right;
+            SettingInfoSplitter.MinExtra = 400;
+            SettingInfoSplitter.MinSize = 220;
+            SettingInfoSplitter.Width = 3; // slimmer
+            SettingInfoSplitter.BackColor = Color.FromArgb(235, 235, 235); // lighter, less prominent
+            SettingInfoSplitter.TabStop = false;
+            SettingInfoSplitter.Cursor = Cursors.VSplit;
+            SettingInfoSplitter.SplitterMoved += SettingInfoSplitter_SplitterMoved;
+            // Removed MouseDown/Up handlers; left pane width now fixed via SplitContainer.FixedPanel
             // 
             // PolicyInfoTable
             // 
-            this.PolicyInfoTable.AutoSize = true;
-            this.PolicyInfoTable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.PolicyInfoTable.ColumnCount = 1;
-            this.PolicyInfoTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.PolicyInfoTable.Controls.Add(this.PolicyIsPrefTable, 0, 2);
-            this.PolicyInfoTable.Controls.Add(this.PolicySupportedLabel, 0, 1);
-            this.PolicyInfoTable.Controls.Add(this.PolicyTitleLabel, 0, 0);
-            this.PolicyInfoTable.Controls.Add(this.PolicyDescLabel, 0, 4);
-            this.PolicyInfoTable.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PolicyInfoTable.Location = new System.Drawing.Point(0, 0);
-            this.PolicyInfoTable.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.PolicyInfoTable.Name = "PolicyInfoTable";
-            this.PolicyInfoTable.RowCount = 5;
-            this.PolicyInfoTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.PolicyInfoTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.PolicyInfoTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.PolicyInfoTable.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 8F));
-            this.PolicyInfoTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.PolicyInfoTable.Size = new System.Drawing.Size(240, 586);
-            this.PolicyInfoTable.TabIndex = 0;
+            PolicyInfoTable.AutoSize = true;
+            PolicyInfoTable.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            PolicyInfoTable.ColumnCount = 1;
+            PolicyInfoTable.ColumnStyles.Add(new ColumnStyle());
+            PolicyInfoTable.Controls.Add(PolicyIsPrefTable, 0, 2);
+            PolicyInfoTable.Controls.Add(PolicySupportedLabel, 0, 1);
+            PolicyInfoTable.Controls.Add(PolicyTitleLabel, 0, 0);
+            PolicyInfoTable.Controls.Add(PolicyDescLabel, 0, 4);
+            PolicyInfoTable.Dock = DockStyle.Fill;
+            PolicyInfoTable.Location = new Point(0, 0);
+            PolicyInfoTable.Margin = new Padding(0);
+            PolicyInfoTable.Name = "PolicyInfoTable";
+            PolicyInfoTable.RowCount = 5;
+            PolicyInfoTable.RowStyles.Add(new RowStyle());
+            PolicyInfoTable.RowStyles.Add(new RowStyle());
+            PolicyInfoTable.RowStyles.Add(new RowStyle());
+            PolicyInfoTable.RowStyles.Add(new RowStyle(SizeType.Absolute, 12F));
+            PolicyInfoTable.RowStyles.Add(new RowStyle());
+            PolicyInfoTable.Size = new Size(375, 915);
+            PolicyInfoTable.TabIndex = 0;
             // 
             // PolicyIsPrefTable
             // 
-            this.PolicyIsPrefTable.AutoSize = true;
-            this.PolicyIsPrefTable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.PolicyIsPrefTable.ColumnCount = 2;
-            this.PolicyIsPrefTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.PolicyIsPrefTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.PolicyIsPrefTable.Controls.Add(this.PictureBox1, 0, 0);
-            this.PolicyIsPrefTable.Controls.Add(this.PolicyIsPrefLabel, 1, 0);
-            this.PolicyIsPrefTable.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PolicyIsPrefTable.Location = new System.Drawing.Point(3, 86);
-            this.PolicyIsPrefTable.Margin = new System.Windows.Forms.Padding(3, 2, 0, 22);
-            this.PolicyIsPrefTable.Name = "PolicyIsPrefTable";
-            this.PolicyIsPrefTable.RowCount = 1;
-            this.PolicyIsPrefTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.PolicyIsPrefTable.Size = new System.Drawing.Size(239, 20);
-            this.PolicyIsPrefTable.TabIndex = 4;
+            PolicyIsPrefTable.AutoSize = true;
+            PolicyIsPrefTable.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            PolicyIsPrefTable.ColumnCount = 2;
+            PolicyIsPrefTable.ColumnStyles.Add(new ColumnStyle());
+            PolicyIsPrefTable.ColumnStyles.Add(new ColumnStyle());
+            PolicyIsPrefTable.Controls.Add(PictureBox1, 0, 0);
+            PolicyIsPrefTable.Controls.Add(PolicyIsPrefLabel, 1, 0);
+            PolicyIsPrefTable.Dock = DockStyle.Fill;
+            PolicyIsPrefTable.Location = new Point(5, 85);
+            PolicyIsPrefTable.Margin = new Padding(0, 8, 0, 16);
+            PolicyIsPrefTable.Name = "PolicyIsPrefTable";
+            PolicyIsPrefTable.RowCount = 1;
+            PolicyIsPrefTable.RowStyles.Add(new RowStyle());
+            PolicyIsPrefTable.Size = new Size(374, 29);
+            PolicyIsPrefTable.TabIndex = 4;
             // 
             // PictureBox1
             // 
-            this.PictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("PictureBox1.Image")));
-            this.PictureBox1.Location = new System.Drawing.Point(3, 2);
-            this.PictureBox1.Margin = new System.Windows.Forms.Padding(3, 2, 0, 2);
-            this.PictureBox1.Name = "PictureBox1";
-            this.PictureBox1.Size = new System.Drawing.Size(16, 16);
-            this.PictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
-            this.PictureBox1.TabIndex = 0;
-            this.PictureBox1.TabStop = false;
+            PictureBox1.Image = (Image)resources.GetObject("PictureBox1.Image");
+            PictureBox1.Location = new Point(5, 2);
+            PictureBox1.Margin = new Padding(5, 2, 0, 2);
+            PictureBox1.Name = "PictureBox1";
+            PictureBox1.Size = new Size(16, 16);
+            PictureBox1.SizeMode = PictureBoxSizeMode.AutoSize;
+            PictureBox1.TabIndex = 0;
+            PictureBox1.TabStop = false;
             // 
             // PolicyIsPrefLabel
             // 
-            this.PolicyIsPrefLabel.BackColor = System.Drawing.SystemColors.Window;
-            this.PolicyIsPrefLabel.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.PolicyIsPrefLabel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PolicyIsPrefLabel.Location = new System.Drawing.Point(21, 2);
-            this.PolicyIsPrefLabel.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.PolicyIsPrefLabel.Multiline = true;
-            this.PolicyIsPrefLabel.Name = "PolicyIsPrefLabel";
-            this.PolicyIsPrefLabel.ReadOnly = true;
-            this.PolicyIsPrefLabel.Size = new System.Drawing.Size(216, 16);
-            this.PolicyIsPrefLabel.TabIndex = 1;
+            PolicyIsPrefLabel.BackColor = SystemColors.Window;
+            PolicyIsPrefLabel.BorderStyle = BorderStyle.None;
+            PolicyIsPrefLabel.Dock = DockStyle.Fill;
+            PolicyIsPrefLabel.Location = new Point(23, 2);
+            PolicyIsPrefLabel.Margin = new Padding(2);
+            PolicyIsPrefLabel.Multiline = true;
+            PolicyIsPrefLabel.Name = "PolicyIsPrefLabel";
+            PolicyIsPrefLabel.ReadOnly = true;
+            PolicyIsPrefLabel.Size = new Size(349, 25);
+            PolicyIsPrefLabel.TabIndex = 1;
             // 
             // PolicySupportedLabel
             // 
-            this.PolicySupportedLabel.BackColor = System.Drawing.SystemColors.Window;
-            this.PolicySupportedLabel.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.PolicySupportedLabel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PolicySupportedLabel.Location = new System.Drawing.Point(2, 46);
-            this.PolicySupportedLabel.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.PolicySupportedLabel.Multiline = true;
-            this.PolicySupportedLabel.AutoSize = false;
-            this.PolicySupportedLabel.WordWrap = true;
-            this.PolicySupportedLabel.Name = "PolicySupportedLabel";
-            this.PolicySupportedLabel.ReadOnly = true;
-            this.PolicySupportedLabel.Size = new System.Drawing.Size(238, 40);
-            this.PolicySupportedLabel.TabIndex = 6;
-            this.PolicySupportedLabel.Text = "Policy Supported";
+            PolicySupportedLabel.BackColor = SystemColors.Window;
+            PolicySupportedLabel.BorderStyle = BorderStyle.None;
+            PolicySupportedLabel.Dock = DockStyle.Fill;
+            PolicySupportedLabel.Location = new Point(2, 19);
+            PolicySupportedLabel.Margin = new Padding(2);
+            PolicySupportedLabel.Multiline = true;
+            PolicySupportedLabel.Name = "PolicySupportedLabel";
+            PolicySupportedLabel.ReadOnly = true;
+            PolicySupportedLabel.Size = new Size(375, 62);
+            PolicySupportedLabel.TabIndex = 6;
+            PolicySupportedLabel.Text = "Policy Supported";
             // 
             // PolicyTitleLabel
             // 
-            this.PolicyTitleLabel.BackColor = System.Drawing.SystemColors.Window;
-            this.PolicyTitleLabel.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.PolicyTitleLabel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PolicyTitleLabel.Font = new System.Drawing.Font("MS UI Gothic", 7.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
-            this.PolicyTitleLabel.Location = new System.Drawing.Point(2, 2);
-            this.PolicyTitleLabel.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.PolicyTitleLabel.MinimumSize = new System.Drawing.Size(0, 24);
-            this.PolicyTitleLabel.Multiline = false;
-            this.PolicyTitleLabel.Name = "PolicyTitleLabel";
-            this.PolicyTitleLabel.ReadOnly = true;
-            this.PolicyTitleLabel.Size = new System.Drawing.Size(238, 24);
-            this.PolicyTitleLabel.TabIndex = 7;
-            this.PolicyTitleLabel.Text = "Policy Title";
-            // 
-            // InfoStrip
-            // 
-            this.InfoStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
-            this.InfoStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            ToolStripStatusLabel1,
-            this.ComputerSourceLabel,
-            ToolStripStatusLabel2,
-            this.UserSourceLabel,
-            this.AppVersion});
-            this.InfoStrip.Location = new System.Drawing.Point(0, 609);
-            this.InfoStrip.Name = "InfoStrip";
-            this.InfoStrip.Padding = new System.Windows.Forms.Padding(1, 0, 15, 0);
-            this.InfoStrip.Size = new System.Drawing.Size(1186, 22);
-            this.InfoStrip.TabIndex = 2;
-            this.InfoStrip.Text = "StatusStrip1";
-            // 
-            // ComputerSourceLabel
-            // 
-            this.ComputerSourceLabel.Name = "ComputerSourceLabel";
-            this.ComputerSourceLabel.Size = new System.Drawing.Size(83, 17);
-            this.ComputerSourceLabel.Text = "Computer info";
-            // 
-            // UserSourceLabel
-            // 
-            this.UserSourceLabel.Name = "UserSourceLabel";
-            this.UserSourceLabel.Size = new System.Drawing.Size(54, 17);
-            this.UserSourceLabel.Text = "User info";
-            // 
-            // AppVersion
-            // 
-            this.AppVersion.Name = "AppVersion";
-            this.AppVersion.Size = new System.Drawing.Size(862, 17);
-            this.AppVersion.Spring = true;
-            this.AppVersion.Text = "version";
-            this.AppVersion.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.AppVersion.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
+            PolicyTitleLabel.BackColor = SystemColors.Window;
+            PolicyTitleLabel.BorderStyle = BorderStyle.None;
+            PolicyTitleLabel.Dock = DockStyle.Fill;
+            PolicyTitleLabel.Font = new Font("MS UI Gothic", 7.8F, FontStyle.Bold, GraphicsUnit.Point, 128);
+            PolicyTitleLabel.Location = new Point(2, 2);
+            PolicyTitleLabel.Margin = new Padding(2);
+            PolicyTitleLabel.MinimumSize = new Size(0, 24);
+            PolicyTitleLabel.Name = "PolicyTitleLabel";
+            PolicyTitleLabel.ReadOnly = true;
+            PolicyTitleLabel.Size = new Size(375, 24);
+            PolicyTitleLabel.TabIndex = 7;
+            PolicyTitleLabel.Text = "Policy Title";
             // 
             // PolicyDescLabel
             // 
-            this.PolicyDescLabel.BackColor = System.Drawing.SystemColors.Window;
-            this.PolicyDescLabel.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.PolicyDescLabel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PolicyDescLabel.Location = new System.Drawing.Point(3, 139);
-            this.PolicyDescLabel.Name = "PolicyDescLabel";
-            this.PolicyDescLabel.ReadOnly = true;
-            this.PolicyDescLabel.Size = new System.Drawing.Size(236, 444);
-            this.PolicyDescLabel.TabIndex = 8;
-            this.PolicyDescLabel.Text = "Policy Desc";
-            this.PolicyDescLabel.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.PolicyDescLabel_LinkClicked);
+            PolicyDescLabel.BackColor = SystemColors.Window;
+            PolicyDescLabel.BorderStyle = BorderStyle.None;
+            PolicyDescLabel.Dock = DockStyle.Fill;
+            PolicyDescLabel.Location = new Point(5, 166);
+            PolicyDescLabel.Margin = new Padding(2, 8, 2, 2);
+            PolicyDescLabel.Name = "PolicyDescLabel";
+            PolicyDescLabel.ReadOnly = true;
+            PolicyDescLabel.Size = new Size(369, 744);
+            PolicyDescLabel.TabIndex = 8;
+            PolicyDescLabel.Text = "Policy Desc";
+            PolicyDescLabel.LinkClicked += PolicyDescLabel_LinkClicked;
+            // 
+            // InfoStrip
+            // 
+            InfoStrip.ImageScalingSize = new Size(20, 20);
+            InfoStrip.Items.AddRange(new ToolStripItem[] { ToolStripStatusLabel1, ComputerSourceLabel, ToolStripStatusLabel2, UserSourceLabel, AppVersion });
+            InfoStrip.Location = new Point(0, 960);
+            InfoStrip.Name = "InfoStrip";
+            InfoStrip.Padding = new Padding(8, 0, 12, 0);
+            InfoStrip.SizingGrip = false;
+            InfoStrip.BackColor = Color.FromArgb(250, 250, 250);
+            InfoStrip.Size = new Size(1852, 26);
+            InfoStrip.TabIndex = 2;
+            InfoStrip.Text = "StatusStrip1";
+            // 
+            // ComputerSourceLabel
+            // 
+            ComputerSourceLabel.Name = "ComputerSourceLabel";
+            ComputerSourceLabel.Size = new Size(105, 20);
+            ComputerSourceLabel.Text = "Computer info";
+            // 
+            // UserSourceLabel
+            // 
+            UserSourceLabel.Name = "UserSourceLabel";
+            UserSourceLabel.Size = new Size(68, 20);
+            UserSourceLabel.Text = "User info";
+            // 
+            // AppVersion
+            // 
+            AppVersion.Name = "AppVersion";
+            AppVersion.Size = new Size(1441, 20);
+            AppVersion.Spring = true;
+            AppVersion.Text = "version";
+            AppVersion.TextAlign = ContentAlignment.MiddleRight;
+            AppVersion.Click += AboutToolStripMenuItem_Click;
             // 
             // Main
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(1186, 631);
-            this.Controls.Add(this.InfoStrip);
-            this.Controls.Add(this.MainMenu);
-            this.Controls.Add(this.SplitContainer);
-            this.MainMenuStrip = this.MainMenu;
-            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.MinimumSize = new System.Drawing.Size(638, 369);
-            this.Name = "Main";
-            this.ShowIcon = false;
-            this.Text = "Policy Plus";
-            this.Closed += new System.EventHandler(this.Main_Closed);
-            this.Load += new System.EventHandler(this.Main_Load);
-            this.Shown += new System.EventHandler(this.Main_Shown);
-            this.MainMenu.ResumeLayout(false);
-            this.MainMenu.PerformLayout();
-            this.SplitContainer.Panel1.ResumeLayout(false);
-            this.SplitContainer.Panel1.PerformLayout();
-            this.SplitContainer.Panel2.ResumeLayout(false);
-            this.SplitContainer.Panel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.SplitContainer)).EndInit();
-            this.SplitContainer.ResumeLayout(false);
-            this.panel3.ResumeLayout(false);
-            this.PolicyObjectContext.ResumeLayout(false);
-            this.panel2.ResumeLayout(false);
-            this.panel1.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.PoliciesGrid)).EndInit();
-            this.SettingInfoPanel.ResumeLayout(false);
-            this.SettingInfoPanel.PerformLayout();
-            this.PolicyInfoTable.ResumeLayout(false);
-            this.PolicyInfoTable.PerformLayout();
-            this.PolicyIsPrefTable.ResumeLayout(false);
-            this.PolicyIsPrefTable.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.PictureBox1)).EndInit();
-            this.InfoStrip.ResumeLayout(false);
-            this.InfoStrip.PerformLayout();
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(96F, 96F);
+            AutoScaleMode = AutoScaleMode.Dpi;
+            ClientSize = new Size(1600, 900);
+            Controls.Add(SplitContainer);
+            Controls.Add(SettingInfoSplitter); // splitter sits to left of info panel
+            Controls.Add(SettingInfoPanel);
+            Controls.Add(InfoStrip);
+            Controls.Add(MainMenu);
+            MainMenuStrip = MainMenu;
+            Margin = new Padding(5, 2, 5, 2);
+            MinimumSize = new Size(987, 549);
+            Name = "Main";
+            BackColor = Color.White;
+            ShowIcon = false;
+            Text = "Policy Plus";
+            Closed += Main_Closed;
+            Load += Main_Load;
+            Shown += Main_Shown;
+            MainMenu.ResumeLayout(false);
+            MainMenu.PerformLayout();
+            SplitContainer.Panel1.ResumeLayout(false);
+            SplitContainer.Panel1.PerformLayout();
+            SplitContainer.Panel2.ResumeLayout(false);
+            SplitContainer.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)SplitContainer).EndInit();
+            SplitContainer.ResumeLayout(false);
+            panel3.ResumeLayout(false);
+            PolicyObjectContext.ResumeLayout(false);
+            panel2.ResumeLayout(false);
+            panel1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)PoliciesGrid).EndInit();
+            SettingInfoPanel.ResumeLayout(false);
+            SettingInfoPanel.PerformLayout();
+            PolicyInfoTable.ResumeLayout(false);
+            PolicyInfoTable.PerformLayout();
+            PolicyIsPrefTable.ResumeLayout(false);
+            PolicyIsPrefTable.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)PictureBox1).EndInit();
+            InfoStrip.ResumeLayout(false);
+            InfoStrip.PerformLayout();
+            ResumeLayout(false);
+            PerformLayout();
 
         }
 
@@ -1040,5 +1009,6 @@ namespace PolicyPlus.UI.Main
         private TextBox PolicySupportedLabel;
         private TextBox PolicyTitleLabel;
         private RichTextBox PolicyDescLabel;
+    private Splitter SettingInfoSplitter;
     }
 }

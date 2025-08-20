@@ -26,6 +26,7 @@
     <ApplicationIcon>icon.ico</ApplicationIcon>
   <ApplicationManifest>app.manifest</ApplicationManifest>
   <EnableWindowsFormsHighDpiAutoResizing>true</EnableWindowsFormsHighDpiAutoResizing>
+  <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <AssemblyTitle>Policy Plus</AssemblyTitle>
     <Product>Policy Plus</Product>
     <Copyright>Copyright © Ben Nordick 2016-2021, modified by tttza 2022</Copyright>

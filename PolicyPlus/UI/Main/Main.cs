@@ -39,9 +39,19 @@ namespace PolicyPlus.UI.Main
         private Dictionary<PolicyPlusCategory, TreeNode> CategoryNodes = new Dictionary<PolicyPlusCategory, TreeNode>();
         private bool ViewEmptyCategories = false;
         private AdmxPolicySection ViewPolicyTypes = AdmxPolicySection.Both;
-        private bool ViewFilteredOnly = false;
+    private bool ViewFilteredOnly = false;
 
-        private void Main_Load(object sender, EventArgs e)
+    // Simplified DPI fields
+    private bool _baselineCaptured = false;
+    private float _baselineDpi = 96f;
+    private int _baselineSplitterDistance;
+    private int _baselineInfoWidth;
+    private DateTime _startTime = DateTime.UtcNow;
+    private bool _inDpiTransition = false;
+    private bool _initialSizeAdjusted = false;
+    // Left pane width is kept constant by SplitContainer.FixedPanel=Panel1; no manual lock needed.
+
+    private void Main_Load(object sender, EventArgs e)
         {
             // Create the configuration manager (for the Registry)
             Configuration = new ConfigurationStorage(RegistryHive.CurrentUser, @"Software\Policy Plus");
@@ -70,7 +80,7 @@ namespace PolicyPlus.UI.Main
             PopulateAdmxUi();
         }
 
-        private void Main_Shown(object sender, EventArgs e)
+    private void Main_Shown(object sender, EventArgs e)
         {
             // Check whether ADMX files probably need to be downloaded
             if (Convert.ToInt32(Configuration.GetValue("CheckedPolicyDefinitions", 0)) == 0)
@@ -85,6 +95,127 @@ namespace PolicyPlus.UI.Main
                 }
             }
         }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            AdjustInitialSizeOnce();
+            ApplyInitialColumnRatios();
+            CaptureBaselineIfNeeded();
+            AlignPoliciesHeaderHeight();
+            this.DpiChanged += Main_DpiChanged;
+            this.SplitContainer.SplitterMoved += SplitContainer_SplitterMoved;
+        }
+
+        private void ApplyInitialColumnRatios()
+        {
+            // Only apply once, before baseline capture
+            if (_baselineCaptured) return;
+            if (SplitContainer == null || SettingInfoPanel == null) return;
+            try
+            {
+                int total = this.ClientSize.Width; // includes right panel + splitter + splitcontainer
+                if (total <= 0) return;
+                int desiredRight = (int)Math.Round(total * 0.2); // ratio 2/10
+                // Respect existing minimums
+                desiredRight = Math.Max(SettingInfoSplitter?.MinSize ?? 220, desiredRight);
+                int splitterW = SettingInfoSplitter?.Width ?? 0;
+                SettingInfoPanel.Width = desiredRight; // DockStyle.Right
+                // Now remaining width is for splitcontainer (left+center)
+                int remaining = this.ClientSize.Width - desiredRight - splitterW;
+                if (remaining < 300) return; // too narrow; skip
+                int desiredLeftAbsolute = (int)Math.Round(total * 0.15); // 1.5/10 (previously 3/10) to make left pane narrower
+                // Ensure left does not consume all remaining (leave at least 200 for center)
+                if (desiredLeftAbsolute > remaining - 200)
+                    desiredLeftAbsolute = Math.Max(100, remaining - 200);
+                // SplitterDistance is left width inside splitcontainer
+                SplitContainer.SplitterDistance = desiredLeftAbsolute;
+            }
+            catch { }
+        }
+
+        private void AdjustInitialSizeOnce()
+        {
+            if (_initialSizeAdjusted) return;
+            if (WindowState != FormWindowState.Normal) return; // don't override maximized etc.
+            try
+            {
+                var wa = Screen.FromControl(this).WorkingArea;
+                int targetW = Math.Min((int)(wa.Width * 0.8), 1500);
+                int targetH = Math.Min((int)(wa.Height * 0.8), 860);
+                // Only shrink; if current size already smaller, keep it.
+                if (this.ClientSize.Width > targetW || this.ClientSize.Height > targetH)
+                {
+                    this.ClientSize = new Size(Math.Min(this.ClientSize.Width, targetW), Math.Min(this.ClientSize.Height, targetH));
+                }
+                _initialSizeAdjusted = true;
+            }
+            catch { }
+        }
+
+        private void CaptureBaselineIfNeeded()
+        {
+            if (_baselineCaptured) return;
+            _baselineCaptured = true;
+            _baselineDpi = this.DeviceDpi;
+            _baselineSplitterDistance = SplitContainer?.SplitterDistance ?? 0;
+            _baselineInfoWidth = SettingInfoPanel?.Width ?? 0;
+        }
+
+        private void Main_DpiChanged(object sender, DpiChangedEventArgs e)
+        {
+            _inDpiTransition = true;
+            BeginInvoke(new Action(() => {
+                ApplyScaledLayout(e.DeviceDpiNew);
+                _inDpiTransition = false;
+            }));
+        }
+
+        private void SplitContainer_SplitterMoved(object sender, SplitterEventArgs e)
+        {
+            bool mouseDown = (Control.MouseButtons & MouseButtons.Left) != 0;
+            if (!mouseDown || _inDpiTransition) return;
+            // User established a new baseline reference widths
+            _baselineSplitterDistance = SplitContainer.SplitterDistance;
+            _baselineInfoWidth = SettingInfoPanel.Width;
+        }
+
+        private void SettingInfoSplitter_SplitterMoved(object sender, SplitterEventArgs e)
+        {
+            bool mouseDown = (Control.MouseButtons & MouseButtons.Left) != 0;
+            if (!mouseDown || _inDpiTransition) return;
+            // Update baseline info width only (left side fixed by FixedPanel)
+            _baselineInfoWidth = SettingInfoPanel.Width;
+        }
+        private void ApplyScaledLayout(int newDpi)
+        {
+            if (!_baselineCaptured) return;
+            if (SplitContainer == null || SettingInfoPanel == null) return;
+            double scale = newDpi / _baselineDpi;
+            int desiredInfo = Math.Max(150, (int)Math.Round(_baselineInfoWidth * scale));
+            int desiredSplitter = Math.Max(100, (int)Math.Round(_baselineSplitterDistance * scale));
+            SuspendLayout();
+            SettingInfoPanel.Width = desiredInfo; // right docked
+            SplitContainer.SplitterDistance = desiredSplitter;
+            AlignPoliciesHeaderHeight();
+            ResumeLayout();
+        }
+
+        private void AlignPoliciesHeaderHeight()
+        {
+            try
+            {
+                if (PoliciesGrid == null || ComboAppliesTo == null) return;
+                int comboH = ComboAppliesTo.Height;
+                if (comboH >= 16 && PoliciesGrid.ColumnHeadersHeight != comboH)
+                {
+                    PoliciesGrid.ColumnHeadersHeight = comboH; // keep header flush with combo
+                }
+            }
+            catch { }
+        }
+
+    // Removed temporary debug logging method (LogSimple) used during DPI refactor.
 
         public void OpenLastAdmxSource()
         {
