@@ -27,7 +27,7 @@ namespace PolicyPlus
                     {
                         MainSourcePath = Environment.ExpandEnvironmentVariables(@"%SYSTEMROOT%\System32\GroupPolicy\" + (IsUser ? "User" : "Machine") + @"\Registry.pol");
                         GptIniPath = Environment.ExpandEnvironmentVariables(@"%SYSTEMROOT%\System32\GroupPolicy\gpt.ini");
-                        break;
+                        break; // prevent fall-through
                     }
 
                 case PolicyLoaderSource.LocalRegistry:

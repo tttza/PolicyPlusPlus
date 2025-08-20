@@ -1072,8 +1072,8 @@ namespace PolicyPlus.UI.Main
         private Panel panel2;
         private ToolStripStatusLabel AppVersion;
         private DataGridView PoliciesGrid;
-        private DataGridViewTextBoxColumn State;
-        private DataGridViewImageColumn Icon;
+    private DataGridViewTextBoxColumn State;
+    private new DataGridViewImageColumn Icon; // 'new' to avoid CS0108 name hiding warning
         private DataGridViewTextBoxColumn _Name;
         private DataGridViewTextBoxColumn ID;
         private DataGridViewTextBoxColumn Comment;

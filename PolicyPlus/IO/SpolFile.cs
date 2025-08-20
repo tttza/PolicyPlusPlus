@@ -115,7 +115,6 @@ namespace PolicyPlus
                                 default:
                                     {
                                         throw new Exception(@"Unknown comment escape sequence \" + escapedCommentText[n + 1] + ".");
-                                        break;
                                     }
                             }
 

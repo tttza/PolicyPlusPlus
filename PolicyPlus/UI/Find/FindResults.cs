@@ -136,11 +136,7 @@ namespace PolicyPlus.UI.Find
                 }
             }
 
-            object localVolatileRead() { object argaddress = CancelDueToFormClose; var ret = System.Threading.Thread.VolatileRead(ref argaddress); return ret; }
-
-            object localVolatileRead1() { object argaddress = CancelDueToFormClose; var ret = System.Threading.Thread.VolatileRead(ref argaddress); return ret; }
-
-            if (stoppedByCancel && Convert.ToBoolean(localVolatileRead1()))
+            if (stoppedByCancel && CancelDueToFormClose)
                 return; // Avoid accessing a disposed object
             Invoke(new Action(() =>
             {

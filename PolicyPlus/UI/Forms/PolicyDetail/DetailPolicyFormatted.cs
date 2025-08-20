@@ -15,15 +15,12 @@ namespace PolicyPlus.UI.PolicyDetail
 {
     public partial class DetailPolicyFormatted
     {
-        private IPolicySource CompPolSource, UserPolSource;
         private string RegString;
         private string RegFileString;
         private bool isRegFileStringShowing;
         public DetailPolicyFormatted()
         {
             InitializeComponent();
-            this.CompPolSource = CompPolSource;
-            this.UserPolSource = UserPolSource;
         }
 
         private PolicyPlusPolicy SelectedPolicy;
