@@ -24,7 +24,6 @@
     <UseWindowsForms>true</UseWindowsForms>
   <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <ApplicationIcon>icon.ico</ApplicationIcon>
-  <!-- Migrated manifest out of legacy VB 'My Project' folder -->
   <ApplicationManifest>app.manifest</ApplicationManifest>
   <EnableWindowsFormsHighDpiAutoResizing>true</EnableWindowsFormsHighDpiAutoResizing>
     <AssemblyTitle>Policy Plus</AssemblyTitle>
@@ -69,24 +68,6 @@
     <Import Include="System.Windows.Forms" />
     <Import Include="System.Linq" />
     <Import Include="System.Threading.Tasks" />
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.8">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.8 %28x86 および x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="icon.ico" />
-  <None Remove="My Project\**" />
-  <Compile Remove="My Project\**" />
-  <EmbeddedResource Remove="My Project\**" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="images\*.png" />
