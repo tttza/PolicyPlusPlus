@@ -12,6 +12,8 @@ namespace PolicyPlus.UI.PolicyDetail
         public EditSetting()
         {
             InitializeComponent();
+            try { splitContainer1.SplitterMoved += (s, e) => AdjustComboWidthsToPanel(); } catch { }
+            try { ExtraOptionsPanel.SizeChanged += (s, e) => AdjustComboWidthsToPanel(); } catch { }
         }
 
         private PolicyPlusPolicy CurrentSetting;
@@ -28,6 +30,7 @@ namespace PolicyPlus.UI.PolicyDetail
         private PolicyLoader CurrentLoader;
         private Dictionary<string, string> CurrentComments;
         private bool ChangesMade; // To either side
+    private bool _splitInitialized;
 
         private void CancelButton_Click(object sender, EventArgs e)
         {
@@ -92,6 +95,18 @@ namespace PolicyPlus.UI.PolicyDetail
 
             PreparePolicyState();
             StateRadiosChanged(null, null);
+
+            if (!_splitInitialized && splitContainer1 != null)
+            {
+                int total = splitContainer1.ClientSize.Width;
+                int half = (total - splitContainer1.SplitterWidth) / 2;
+                if (half > 50)
+                {
+                    try { splitContainer1.SplitterDistance = half; } catch { }
+                }
+                _splitInitialized = true;
+            }
+            AdjustComboWidthsToPanel(); // ensure post-splitter width cap
         }
 
         private void AdjustHeaderHeight()
@@ -145,6 +160,8 @@ namespace PolicyPlus.UI.PolicyDetail
                     labelControl.Anchor = AnchorStyles.Left;
                     Control.Anchor = AnchorStyles.Left;
                     flowPanel.Controls.Add(labelControl);
+                    flowPanel.SetFlowBreak(labelControl, true);
+                    Control.Margin = new Padding(3, 0, 3, 6);
                     flowPanel.Controls.Add(Control);
                     ResizableControls.Add(flowPanel);
                 }
@@ -283,7 +300,21 @@ namespace PolicyPlus.UI.PolicyDetail
                                             combobox.SelectedItem = map;
                                         itemId += 1;
                                     }
-                                    combobox.Width = maxWidth;
+                                    // Preserve full content width for popup
+                                    int contentWidth = maxWidth;
+                                    // Cap control width so it stays within panel (account for panel padding)
+                                    int cap = Math.Max(50, ExtraOptionsPanel.ClientSize.Width - ExtraOptionsPanel.Padding.Horizontal - 4);
+                                    combobox.Width = Math.Min(contentWidth, cap);
+                                    // Allow dropdown (popup) to expand beyond control up to screen working area
+                                    try
+                                    {
+                                        int screenLimit = Screen.FromControl(this).WorkingArea.Width - 40; // margin from edge
+                                        combobox.DropDownWidth = Math.Min(contentWidth, screenLimit);
+                                    }
+                                    catch
+                                    {
+                                        combobox.DropDownWidth = contentWidth; // fallback
+                                    }
                                 }
                                 addControl(pres.ID, combobox, dropdownPres.Label);
                                 break;
@@ -322,6 +353,7 @@ namespace PolicyPlus.UI.PolicyDetail
                 OptionsTableResized();
             }
         }
+
 
         public void PreparePolicyState()
         {
@@ -501,6 +533,16 @@ namespace PolicyPlus.UI.PolicyDetail
                 }
             }
             return options;
+        }
+
+        private void AdjustComboWidthsToPanel()
+        {
+            if (ElementControls == null || ExtraOptionsPanel == null) return;
+            int cap = Math.Max(50, ExtraOptionsPanel.ClientSize.Width - ExtraOptionsPanel.Padding.Horizontal - 4);
+            foreach (var cb in ElementControls.Values.OfType<ComboBox>())
+            {
+                if (cb.Width > cap) cb.Width = cap;
+            }
         }
 
         public DialogResult PresentDialog(PolicyPlusPolicy Policy, AdmxPolicySection Section, AdmxBundle Workspace, IPolicySource CompPolSource, IPolicySource UserPolSource, PolicyLoader CompPolLoader, PolicyLoader UserPolLoader, Dictionary<string, string> CompComments, Dictionary<string, string> UserComments, string languageCode)

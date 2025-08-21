@@ -35,6 +35,7 @@ namespace PolicyPlus.UI.PolicyDetail
         private void InitializeComponent()
         {
             System.Windows.Forms.Label SectionLabel;
+            System.Windows.Forms.Panel bottomButtonsPanel;
             this.CommentLabel = new System.Windows.Forms.Label();
             this.SupportedLabel = new System.Windows.Forms.Label();
             this.SettingNameLabel = new System.Windows.Forms.Label();
@@ -65,6 +66,11 @@ namespace PolicyPlus.UI.PolicyDetail
             this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.panel_table = new System.Windows.Forms.Panel();
             SectionLabel = new System.Windows.Forms.Label();
+            bottomButtonsPanel = new System.Windows.Forms.Panel();
+            System.Windows.Forms.TableLayoutPanel bottomButtonsLayout;
+            System.Windows.Forms.TableLayoutPanel sectionTable;
+            System.Windows.Forms.FlowLayoutPanel radiosFlow;
+            bottomButtonsLayout = new System.Windows.Forms.TableLayoutPanel();
             this.ExtraOptionsPanel.SuspendLayout();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -127,13 +133,13 @@ namespace PolicyPlus.UI.PolicyDetail
             this.SupportedLabel.TabIndex = 4;
             this.SupportedLabel.Text = "Supported on";
             this.SupportedLabel.TextAlign = System.Drawing.ContentAlignment.TopRight;
-            this.SupportedLabel.Click += new System.EventHandler(this.SupportedLabel_Click);
+            this.SupportedLabel.Click += SupportedLabel_Click;
             // 
             // SettingNameLabel
             // 
             this.SettingNameLabel.AutoEllipsis = true;
             this.SettingNameLabel.AutoSize = false;
-            this.SettingNameLabel.Dock = System.Windows.Forms.DockStyle.Top;
+            this.SettingNameLabel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.SettingNameLabel.Location = new System.Drawing.Point(0, 0);
             this.SettingNameLabel.Name = "SettingNameLabel";
             this.SettingNameLabel.Padding = new System.Windows.Forms.Padding(0, 2, 0, 2);
@@ -169,53 +175,52 @@ namespace PolicyPlus.UI.PolicyDetail
             // NotConfiguredOption
             // 
             this.NotConfiguredOption.AutoSize = true;
-            this.NotConfiguredOption.Location = new System.Drawing.Point(8, 30);
-            this.NotConfiguredOption.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.NotConfiguredOption.Margin = new System.Windows.Forms.Padding(0, 0, 0, 0);
             this.NotConfiguredOption.Name = "NotConfiguredOption";
             this.NotConfiguredOption.Size = new System.Drawing.Size(100, 16);
             this.NotConfiguredOption.TabIndex = 1;
             this.NotConfiguredOption.TabStop = true;
             this.NotConfiguredOption.Text = "Not Configured";
             this.NotConfiguredOption.UseVisualStyleBackColor = true;
-            this.NotConfiguredOption.CheckedChanged += new System.EventHandler(this.StateRadiosChanged);
+            this.NotConfiguredOption.CheckedChanged += StateRadiosChanged;
             // 
             // EnabledOption
             // 
             this.EnabledOption.AutoSize = true;
-            this.EnabledOption.Location = new System.Drawing.Point(8, 52);
-            this.EnabledOption.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.EnabledOption.Margin = new System.Windows.Forms.Padding(0, 4, 0, 0);
             this.EnabledOption.Name = "EnabledOption";
             this.EnabledOption.Size = new System.Drawing.Size(63, 16);
             this.EnabledOption.TabIndex = 2;
             this.EnabledOption.TabStop = true;
             this.EnabledOption.Text = "Enabled";
             this.EnabledOption.UseVisualStyleBackColor = true;
-            this.EnabledOption.CheckedChanged += new System.EventHandler(this.StateRadiosChanged);
+            this.EnabledOption.CheckedChanged += StateRadiosChanged;
             // 
             // DisabledOption
             // 
             this.DisabledOption.AutoSize = true;
-            this.DisabledOption.Location = new System.Drawing.Point(8, 73);
-            this.DisabledOption.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.DisabledOption.Margin = new System.Windows.Forms.Padding(0, 4, 0, 0);
             this.DisabledOption.Name = "DisabledOption";
             this.DisabledOption.Size = new System.Drawing.Size(67, 16);
             this.DisabledOption.TabIndex = 3;
             this.DisabledOption.TabStop = true;
             this.DisabledOption.Text = "Disabled";
             this.DisabledOption.UseVisualStyleBackColor = true;
-            this.DisabledOption.CheckedChanged += new System.EventHandler(this.StateRadiosChanged);
+            this.DisabledOption.CheckedChanged += StateRadiosChanged;
             // 
             // ExtraOptionsPanel
             // 
             this.ExtraOptionsPanel.AutoScroll = true;
-            this.ExtraOptionsPanel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.ExtraOptionsPanel.AutoSize = false;
+            this.ExtraOptionsPanel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowOnly;
             this.ExtraOptionsPanel.BackColor = System.Drawing.Color.White;
             this.ExtraOptionsPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.ExtraOptionsPanel.Controls.Add(this.ExtraOptionsTable);
             this.ExtraOptionsPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ExtraOptionsPanel.Location = new System.Drawing.Point(0, 0);
-            this.ExtraOptionsPanel.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.ExtraOptionsPanel.MinimumSize = new System.Drawing.Size(10, 10);
+            this.ExtraOptionsPanel.Margin = new System.Windows.Forms.Padding(0);
+            this.ExtraOptionsPanel.Padding = new System.Windows.Forms.Padding(6,4,6,6); // add inner padding to reduce perceived width of controls
+            this.ExtraOptionsPanel.MinimumSize = new System.Drawing.Size(100, 100);
             this.ExtraOptionsPanel.Name = "ExtraOptionsPanel";
             this.ExtraOptionsPanel.Size = new System.Drawing.Size(312, 228);
             this.ExtraOptionsPanel.TabIndex = 8;
@@ -239,28 +244,24 @@ namespace PolicyPlus.UI.PolicyDetail
             // 
             // CloseButton
             // 
-            this.CloseButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.CloseButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CloseButton.Location = new System.Drawing.Point(471, 370);
-            this.CloseButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.CloseButton.Margin = new System.Windows.Forms.Padding(8, 8, 8, 8);
             this.CloseButton.Name = "CloseButton";
-            this.CloseButton.Size = new System.Drawing.Size(75, 22);
+            this.CloseButton.Size = new System.Drawing.Size(75, 28);
             this.CloseButton.TabIndex = 104;
             this.CloseButton.Text = "Cancel";
             this.CloseButton.UseVisualStyleBackColor = true;
-            this.CloseButton.Click += new System.EventHandler(this.CancelButton_Click);
+            this.CloseButton.Click += CancelButton_Click;
             // 
             // OkButton
             // 
-            this.OkButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.OkButton.Location = new System.Drawing.Point(390, 370);
-            this.OkButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.OkButton.Margin = new System.Windows.Forms.Padding(8);
             this.OkButton.Name = "OkButton";
-            this.OkButton.Size = new System.Drawing.Size(75, 22);
+            this.OkButton.Size = new System.Drawing.Size(75, 28);
             this.OkButton.TabIndex = 103;
             this.OkButton.Text = "OK";
             this.OkButton.UseVisualStyleBackColor = true;
-            this.OkButton.Click += new System.EventHandler(this.OkButton_Click);
+            this.OkButton.Click += OkButton_Click;
             // 
             // SectionDropdown
             // 
@@ -274,42 +275,61 @@ namespace PolicyPlus.UI.PolicyDetail
             this.SectionDropdown.Name = "SectionDropdown";
             this.SectionDropdown.Size = new System.Drawing.Size(112, 20);
             this.SectionDropdown.TabIndex = 4;
-            this.SectionDropdown.SelectedIndexChanged += new System.EventHandler(this.SectionDropdown_SelectedIndexChanged);
+            this.SectionDropdown.SelectedIndexChanged += SectionDropdown_SelectedIndexChanged;
             // 
             // ApplyButton
             // 
-            this.ApplyButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.ApplyButton.Location = new System.Drawing.Point(552, 370);
-            this.ApplyButton.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.ApplyButton.Margin = new System.Windows.Forms.Padding(8);
             this.ApplyButton.Name = "ApplyButton";
-            this.ApplyButton.Size = new System.Drawing.Size(75, 22);
+            this.ApplyButton.Size = new System.Drawing.Size(75, 28);
             this.ApplyButton.TabIndex = 105;
             this.ApplyButton.Text = "Apply";
             this.ApplyButton.UseVisualStyleBackColor = true;
-            this.ApplyButton.Click += new System.EventHandler(this.ApplyButton_Click);
+            this.ApplyButton.Click += ApplyButton_Click;
             // 
             // ViewDetailFormattedBtn
             // 
-            this.ViewDetailFormattedBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.ViewDetailFormattedBtn.Location = new System.Drawing.Point(10, 370);
-            this.ViewDetailFormattedBtn.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.ViewDetailFormattedBtn.Margin = new System.Windows.Forms.Padding(8, 8, 8, 8);
             this.ViewDetailFormattedBtn.Name = "ViewDetailFormattedBtn";
-            this.ViewDetailFormattedBtn.Size = new System.Drawing.Size(114, 22);
+            this.ViewDetailFormattedBtn.Size = new System.Drawing.Size(114, 28);
             this.ViewDetailFormattedBtn.TabIndex = 106;
-            this.ViewDetailFormattedBtn.Text = "View Detail (Apply)";
+            this.ViewDetailFormattedBtn.Text = "View Detail";
             this.ViewDetailFormattedBtn.UseVisualStyleBackColor = true;
-            this.ViewDetailFormattedBtn.Click += new System.EventHandler(this.ViewDetailFormattedBtn_Click);
+            this.ViewDetailFormattedBtn.Click += ViewDetailFormattedBtn_Click;
             // 
             // panel1
             // 
-            this.panel1.Controls.Add(SectionLabel);
-            this.panel1.Controls.Add(this.SectionDropdown);
-            this.panel1.Controls.Add(this.DisabledOption);
-            this.panel1.Controls.Add(this.EnabledOption);
-            this.panel1.Controls.Add(this.NotConfiguredOption);
+            sectionTable = new System.Windows.Forms.TableLayoutPanel();
+            sectionTable.AutoSize = true;
+            sectionTable.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            sectionTable.ColumnCount = 2;
+            sectionTable.RowCount = 1;
+            sectionTable.Dock = System.Windows.Forms.DockStyle.Top;
+            sectionTable.Padding = new System.Windows.Forms.Padding(8,4,8,0);
+            sectionTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            sectionTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            SectionLabel.Margin = new System.Windows.Forms.Padding(0,4,8,0);
+            SectionLabel.AutoSize = true;
+            this.SectionDropdown.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.SectionDropdown.Margin = new System.Windows.Forms.Padding(0,2,0,0);
+            sectionTable.Controls.Add(SectionLabel,0,0);
+            sectionTable.Controls.Add(this.SectionDropdown,1,0);
+            radiosFlow = new System.Windows.Forms.FlowLayoutPanel();
+            radiosFlow.AutoSize = true;
+            radiosFlow.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            radiosFlow.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
+            radiosFlow.WrapContents = false;
+            radiosFlow.Dock = System.Windows.Forms.DockStyle.Top;
+            radiosFlow.Padding = new System.Windows.Forms.Padding(8,4,8,4);
+            radiosFlow.Controls.Add(this.NotConfiguredOption);
+            radiosFlow.Controls.Add(this.EnabledOption);
+            radiosFlow.Controls.Add(this.DisabledOption);
+            this.panel1.Controls.Clear();
+            this.panel1.Controls.Add(radiosFlow);
+            this.panel1.Controls.Add(sectionTable);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
-            this.panel1.Margin = new System.Windows.Forms.Padding(2);
+            this.panel1.Margin = new System.Windows.Forms.Padding(0);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(208, 102);
             this.panel1.TabIndex = 107;
@@ -319,7 +339,7 @@ namespace PolicyPlus.UI.PolicyDetail
             this.panel2.Controls.Add(this.splitContainer4);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel2.Location = new System.Drawing.Point(0, 0);
-            this.panel2.Margin = new System.Windows.Forms.Padding(2);
+            this.panel2.Margin = new System.Windows.Forms.Padding(0);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(415, 102);
             this.panel2.TabIndex = 108;
@@ -429,8 +449,9 @@ namespace PolicyPlus.UI.PolicyDetail
             // 
             // splitContainer1
             // 
-            this.splitContainer1.Location = new System.Drawing.Point(4, 137);
-            this.splitContainer1.Margin = new System.Windows.Forms.Padding(2);
+            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer1.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer1.Margin = new System.Windows.Forms.Padding(0);
             this.splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
@@ -441,7 +462,7 @@ namespace PolicyPlus.UI.PolicyDetail
             // 
             this.splitContainer1.Panel2.Controls.Add(this.HelpTextbox);
             this.splitContainer1.Size = new System.Drawing.Size(626, 228);
-            this.splitContainer1.SplitterDistance = 312;
+            this.splitContainer1.SplitterDistance = this.splitContainer1.Width / 2;
             this.splitContainer1.SplitterWidth = 5;
             this.splitContainer1.TabIndex = 109;
             // 
@@ -463,7 +484,7 @@ namespace PolicyPlus.UI.PolicyDetail
             // 
             this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.splitContainer2.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer2.Margin = new System.Windows.Forms.Padding(2);
+            this.splitContainer2.Margin = new System.Windows.Forms.Padding(0);
             this.splitContainer2.Name = "splitContainer2";
             // 
             // splitContainer2.Panel1
@@ -480,8 +501,9 @@ namespace PolicyPlus.UI.PolicyDetail
             // 
             // splitContainer3
             // 
-            this.splitContainer3.Location = new System.Drawing.Point(6, 4);
-            this.splitContainer3.Margin = new System.Windows.Forms.Padding(2);
+            this.splitContainer3.Dock = System.Windows.Forms.DockStyle.Top;
+            this.splitContainer3.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer3.Margin = new System.Windows.Forms.Padding(0);
             this.splitContainer3.Name = "splitContainer3";
             this.splitContainer3.Orientation = System.Windows.Forms.Orientation.Horizontal;
             // 
@@ -493,15 +515,15 @@ namespace PolicyPlus.UI.PolicyDetail
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.splitContainer2);
-            this.splitContainer3.Size = new System.Drawing.Size(626, 130);
+            this.splitContainer3.Size = new System.Drawing.Size(626, 150);
             this.splitContainer3.SplitterDistance = 26;
             this.splitContainer3.SplitterWidth = 3;
             this.splitContainer3.TabIndex = 111;
             // 
             // panel_table
             // 
-            this.panel_table.AutoSize = true;
-            this.panel_table.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.panel_table.AutoSize = false;
+            this.panel_table.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowOnly;
             this.panel_table.Controls.Add(this.ExtraOptionsPanel);
             this.panel_table.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel_table.Location = new System.Drawing.Point(0, 0);
@@ -509,6 +531,39 @@ namespace PolicyPlus.UI.PolicyDetail
             this.panel_table.Name = "panel_table";
             this.panel_table.Size = new System.Drawing.Size(312, 228);
             this.panel_table.TabIndex = 9;
+
+            // 
+            // bottomButtonsPanel
+            // 
+            bottomButtonsPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
+            bottomButtonsPanel.Height = 40;
+            bottomButtonsPanel.Padding = new System.Windows.Forms.Padding(8, 4, 8, 4);
+            bottomButtonsPanel.Controls.Add(bottomButtonsLayout);
+            // 
+            // bottomButtonsLayout
+            // 
+            bottomButtonsLayout.Dock = System.Windows.Forms.DockStyle.Fill;
+            bottomButtonsLayout.ColumnCount = 6;
+            bottomButtonsLayout.RowCount = 1;
+            bottomButtonsLayout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            bottomButtonsLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle()); // View Detail
+            bottomButtonsLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F)); // filler
+            bottomButtonsLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle()); // OK
+            bottomButtonsLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle()); // Cancel
+            bottomButtonsLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle()); // Apply
+            bottomButtonsLayout.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 0F)); // spacer (unused)
+            bottomButtonsLayout.Controls.Add(this.ViewDetailFormattedBtn, 0, 0);
+            bottomButtonsLayout.Controls.Add(this.OkButton, 2, 0);
+            bottomButtonsLayout.Controls.Add(this.CloseButton, 3, 0);
+            bottomButtonsLayout.Controls.Add(this.ApplyButton, 4, 0);
+            this.ViewDetailFormattedBtn.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.OkButton.Anchor = System.Windows.Forms.AnchorStyles.Right;
+            this.CloseButton.Anchor = System.Windows.Forms.AnchorStyles.Right;
+            this.ApplyButton.Anchor = System.Windows.Forms.AnchorStyles.Right;
+            this.ViewDetailFormattedBtn.Margin = new System.Windows.Forms.Padding(0, 4, 12, 4);
+            this.OkButton.Margin = new System.Windows.Forms.Padding(0, 4, 8, 4);
+            this.CloseButton.Margin = new System.Windows.Forms.Padding(0, 4, 8, 4);
+            this.ApplyButton.Margin = new System.Windows.Forms.Padding(0, 4, 0, 4);
             // 
             // EditSetting
             // 
@@ -517,12 +572,17 @@ namespace PolicyPlus.UI.PolicyDetail
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.CancelButton = this.CloseButton;
             this.ClientSize = new System.Drawing.Size(639, 402);
-            this.Controls.Add(this.ViewDetailFormattedBtn);
-            this.Controls.Add(this.ApplyButton);
-            this.Controls.Add(this.OkButton);
-            this.Controls.Add(this.CloseButton);
-            this.Controls.Add(this.splitContainer1);
-            this.Controls.Add(this.splitContainer3);
+            var mainContentPanel = new System.Windows.Forms.Panel();
+            mainContentPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            mainContentPanel.Padding = new System.Windows.Forms.Padding(12, 4, 12, 0);
+            mainContentPanel.BackColor = this.BackColor;
+            this.splitContainer3.Parent = null;
+            this.splitContainer1.Parent = null;
+            mainContentPanel.Controls.Add(this.splitContainer1); // add fill after header so order reversed below
+            mainContentPanel.Controls.SetChildIndex(this.splitContainer1, 1); // ensure header at index 0
+            mainContentPanel.Controls.Add(this.splitContainer3);
+            this.Controls.Add(mainContentPanel);
+            this.Controls.Add(bottomButtonsPanel);
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
@@ -534,7 +594,6 @@ namespace PolicyPlus.UI.PolicyDetail
             this.Text = "Edit Policy Setting";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.EditSetting_FormClosed);
             this.Shown += new System.EventHandler(this.EditSetting_Shown);
-            this.Resize += new System.EventHandler(this.EditSetting_Resize);
             this.ExtraOptionsPanel.ResumeLayout(false);
             this.ExtraOptionsPanel.PerformLayout();
             this.panel1.ResumeLayout(false);
