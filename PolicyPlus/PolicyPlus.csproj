@@ -73,4 +73,30 @@
   <ItemGroup>
     <EmbeddedResource Include="images\*.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Core\AdmxStructures.cs" />
+    <Compile Remove="Core\CompiledStructures.cs" />
+    <Compile Remove="Core\PolicyProcessing.cs" />
+    <Compile Remove="Core\PolicyStructures.cs" />
+    <Compile Remove="Core\PresentationStructures.cs" />
+    <Compile Remove="Utils\BitReinterpretation.cs" />
+    <Compile Remove="IO\PolicySource.cs" />
+  <Compile Remove="IO\PolicyLoader.cs" />
+  <Compile Remove="IO\RegFile.cs" />
+    <Compile Remove="IO\CmtxFile.cs" />
+    <Compile Remove="IO\ConfigurationStorage.cs" />
+    <Compile Remove="IO\SpolFile.cs" />
+  <Compile Remove="Admx\AdmxBundle.cs" />
+  <Compile Remove="Admx\AdmxFile.cs" />
+  <Compile Remove="Admx\AdmlFile.cs" />
+  <Compile Remove="Utils\XmlExtensions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PolicyPlus.Core\PolicyPlus.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Helpers\PInvoke.cs" />
+    <Compile Remove="Helpers\Privilege.cs" />
+    <Compile Remove="Utils\SystemInfo.cs" />
+  </ItemGroup>
 </Project>

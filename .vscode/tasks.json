@@ -55,6 +55,54 @@
 				"$msCompile"
 			],
 			"group": "build"
+		},
+		{
+			"label": "dotnet build (Debug)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"PolicyPlusMod.sln",
+				"-c",
+				"Debug"
+			],
+			"group": "build"
+		},
+		{
+			"label": "dotnet build (Debug)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"PolicyPlusMod.sln",
+				"-c",
+				"Debug"
+			],
+			"group": "build"
+		},
+		{
+			"label": "dotnet build (Debug)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"PolicyPlusMod.sln",
+				"-c",
+				"Debug"
+			],
+			"group": "build"
+		},
+		{
+			"label": "dotnet build (Debug)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"PolicyPlusMod.sln",
+				"-c",
+				"Debug"
+			],
+			"group": "build"
 		}
 	]
 }

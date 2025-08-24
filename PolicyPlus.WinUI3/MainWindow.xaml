@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="PolicyPlus.WinUI3.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:PolicyPlus.WinUI3"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="PolicyPlus">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid Background="{ThemeResource WindowBackground}">
+        <StackPanel Spacing="8" Padding="16">
+            <TextBlock Text="PolicyPlus (WinUI 3 preview shell)" FontSize="18" />
+            <TextBlock Text="Dark Mode is enabled via App.RequestedTheme = Dark." />
+        </StackPanel>
+    </Grid>
+</Window>

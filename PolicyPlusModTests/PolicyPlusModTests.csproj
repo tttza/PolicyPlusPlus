@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PolicyPlus\PolicyPlus.csproj" />
+  <ProjectReference Include="..\PolicyPlus.Core\PolicyPlus.Core.csproj" />
   </ItemGroup>
 
 </Project>

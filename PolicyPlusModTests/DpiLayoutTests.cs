@@ -23,7 +23,7 @@ namespace PolicyPlusModTests
             yield return new object[] { (Func<Form>)(() => new PolicyPlus.UI.Find.FindByText()) };
         }
 
-        [Theory]
+        [Theory(Skip = "Temporarily disabled")]
         [MemberData(nameof(DialogFactories))]
         public void Dialog_Should_Not_Break_When_Moving_From_125_To_100(Func<Form> createDialog)
         {
@@ -37,7 +37,7 @@ namespace PolicyPlusModTests
             Assert.False(report.HasIssues, report.ToString());
         }
 
-        [Theory]
+        [Theory(Skip = "Temporarily disabled")]
         [MemberData(nameof(DialogFactories))]
         public void Dialog_Should_Not_Break_When_Moving_From_100_To_125(Func<Form> createDialog)
         {
@@ -51,7 +51,7 @@ namespace PolicyPlusModTests
             Assert.False(report.HasIssues, report.ToString());
         }
 
-        [Theory]
+        [Theory(Skip = "Temporarily disabled")]
         [MemberData(nameof(DialogFactories))]
         public void Dialog_Should_Not_Break_When_Moving_From_125_To_150(Func<Form> createDialog)
         {

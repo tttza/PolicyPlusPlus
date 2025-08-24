@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "PolicyPlus.WinUI3 (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "PolicyPlus.WinUI3 (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
