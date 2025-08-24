@@ -42,6 +42,34 @@ namespace PolicyPlus.UI.PolicyDetail
 
         private void EditSetting_Shown(object sender, EventArgs e)
         {
+            if (CurrentSetting == null)
+            {
+                // Minimal initialization when no policy is bound (e.g., design-time or headless tests)
+                SettingNameLabel.Text = Text?.Trim().Length > 0 ? Text : "Edit Setting";
+                AdjustHeaderHeight();
+                SupportedTextbox.Text = string.Empty;
+                HelpTextbox.Text = string.Empty;
+                SectionDropdown.Enabled = false;
+                ExtraOptionsPanel.HorizontalScroll.Maximum = 0;
+                ExtraOptionsPanel.VerticalScroll.Visible = true;
+                ExtraOptionsPanel.AutoScroll = true;
+                ExtraOptionsTable.Controls.Clear();
+                ExtraOptionsTable.RowCount = 0;
+
+                if (!_splitInitialized && splitContainer1 != null)
+                {
+                    int total = splitContainer1.ClientSize.Width;
+                    int half = (total - splitContainer1.SplitterWidth) / 2;
+                    if (half > 50)
+                    {
+                        try { splitContainer1.SplitterDistance = half; } catch { }
+                    }
+                    _splitInitialized = true;
+                }
+                AdjustComboWidthsToPanel();
+                return;
+            }
+
             SettingNameLabel.Text = CurrentSetting.DisplayName;
             AdjustHeaderHeight();
             if (CurrentSetting.SupportedOn is null)
