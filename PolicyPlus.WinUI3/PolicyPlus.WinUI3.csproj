@@ -6,12 +6,15 @@
     <RootNamespace>PolicyPlus.WinUI3</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x86;x64;ARM64</Platforms>
-    <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+  <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
     <WindowsPackageType>None</WindowsPackageType>
     <PublishProfile>win-$(Platform).pubxml</PublishProfile>
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
+  <!-- Ensure consistent default platform/RID when building the solution from CLI -->
+  <PlatformTarget Condition="'$(PlatformTarget)' == ''">x64</PlatformTarget>
+  <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,6 +42,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4948" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PolicyPlus.Core\PolicyPlus.Core.csproj" />
   </ItemGroup>
 
   <!--
