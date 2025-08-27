@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+    xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
     xmlns:converters="using:PolicyPlus.WinUI3.Converters"
     mc:Ignorable="d"
     Title="PolicyPlus">
@@ -75,11 +76,10 @@
                 <Button x:Name="BtnViewFormatted" Content="View formatted..." Click="BtnViewFormatted_Click"/>
             </StackPanel>
 
-            <!-- Main area -->
             <Grid Grid.Row="3" Margin="8">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="260"/>
-                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition x:Name="CategoryColumn" Width="260" MinWidth="140"/>
+                    <ColumnDefinition Width="8"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Grid Grid.Column="0">
@@ -96,10 +96,14 @@
                         </controls:TreeView.ItemTemplate>
                     </controls:TreeView>
                 </Grid>
+                <toolkit:GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Width="8" HorizontalAlignment="Stretch"/>
+
                 <Grid Grid.Column="2">
+                    <!-- Default 7:3 split; user-resizable via splitter placed above the policy name block -->
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="7*"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="3*"/>
                     </Grid.RowDefinitions>
                     <ListView x:Name="PolicyList" Grid.Row="0" DisplayMemberPath="DisplayName" SelectionChanged="PolicyList_SelectionChanged" IsItemClickEnabled="False" DoubleTapped="PolicyList_DoubleTapped" RightTapped="PolicyList_RightTapped">
                         <ListView.ItemContainerStyle>
@@ -122,23 +126,29 @@
                             </Style>
                         </ListView.ItemContainerStyle>
                     </ListView>
-                    <Border Grid.Row="1" Margin="0,8,0,0" Padding="12" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}" CornerRadius="4">
-                        <StackPanel Spacing="2">
-                            <RichTextBlock x:Name="DetailTitle" FontSize="16" FontWeight="SemiBold" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
-                            <RichTextBlock x:Name="DetailId" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
-                            <RichTextBlock x:Name="DetailCategory" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
-                            <RichTextBlock x:Name="DetailApplies" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
-                            <RichTextBlock x:Name="DetailSupported" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
-                            <ScrollViewer x:Name="DetailExplainScroll" VerticalScrollBarVisibility="Auto" Margin="0,8,0,0" MaxHeight="{Binding ElementName=RootGrid, Path=ActualHeight, Converter={StaticResource ScaleConverter}, ConverterParameter=0.3}">
+                    <toolkit:GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Height="8" HorizontalAlignment="Stretch"/>
+                    <Border Grid.Row="2" Margin="0,8,0,0" Padding="12" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}" CornerRadius="4" MinHeight="80">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Spacing="2">
+                                <RichTextBlock x:Name="DetailTitle" FontSize="16" FontWeight="SemiBold" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
+                                <RichTextBlock x:Name="DetailId" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
+                                <RichTextBlock x:Name="DetailCategory" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
+                                <RichTextBlock x:Name="DetailApplies" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
+                                <RichTextBlock x:Name="DetailSupported" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ScrollViewer Grid.Row="1" x:Name="DetailExplainScroll" VerticalScrollBarVisibility="Auto">
                                 <RichTextBlock x:Name="DetailExplain" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
                             </ScrollViewer>
-                        </StackPanel>
+                        </Grid>
                     </Border>
                 </Grid>
             </Grid>
         </Grid>
 
-        <!-- Busy overlay -->
         <Grid x:Name="BusyOverlay" Background="#80000000" Visibility="Collapsed" Grid.RowSpan="2">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
                 <controls:ProgressRing IsActive="True" Width="48" Height="48"/>
