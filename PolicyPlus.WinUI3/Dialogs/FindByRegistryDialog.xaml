@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="PolicyPlus.WinUI3.Dialogs.FindByRegistryDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Find by registry"
+    PrimaryButtonText="Search"
+    SecondaryButtonText="Cancel"
+    DefaultButton="Primary"
+    MinWidth="480">
+    <StackPanel Spacing="12">
+        <TextBlock Text="Search policies by referenced registry key/value. Wildcards (* and ?) are supported." TextWrapping="Wrap"/>
+        <StackPanel>
+            <TextBlock Text="Key pattern"/>
+            <TextBox x:Name="KeyPatternBox" PlaceholderText="e.g., Software\Policies\* or empty"/>
+        </StackPanel>
+        <StackPanel>
+            <TextBlock Text="Value name pattern"/>
+            <TextBox x:Name="ValuePatternBox" PlaceholderText="e.g., DisableTelemetry or *Telemetry* or empty"/>
+        </StackPanel>
+    </StackPanel>
+</ContentDialog>

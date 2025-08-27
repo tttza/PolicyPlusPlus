@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="PolicyPlus.WinUI3.Dialogs.EditSettingDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+    Title="Edit setting"
+    PrimaryButtonText="OK"
+    SecondaryButtonText="Cancel"
+    DefaultButton="Primary"
+    MinWidth="680">
+    <Grid RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header with action -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="SettingTitle" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Content="View formatted..." Click="ViewDetailFormattedBtn_Click" />
+        </Grid>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12">
+            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <TextBlock Text="Section:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="SectionSelector" Width="140" SelectionChanged="SectionSelector_SelectionChanged">
+                    <ComboBoxItem Content="Computer"/>
+                    <ComboBoxItem Content="User"/>
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <RadioButton x:Name="OptNotConfigured" Content="Not Configured" GroupName="State" Checked="StateRadio_Checked"/>
+                <RadioButton x:Name="OptEnabled" Content="Enabled" GroupName="State" Checked="StateRadio_Checked"/>
+                <RadioButton x:Name="OptDisabled" Content="Disabled" GroupName="State" Checked="StateRadio_Checked"/>
+            </StackPanel>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="2" MaxHeight="320">
+            <StackPanel x:Name="OptionsPanel" Spacing="8"/>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="3" Spacing="4">
+            <TextBlock Text="Comment"/>
+            <TextBox x:Name="CommentBox" AcceptsReturn="True" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="4" x:Name="SupportedText" Opacity="0.7"/>
+    </Grid>
+</ContentDialog>

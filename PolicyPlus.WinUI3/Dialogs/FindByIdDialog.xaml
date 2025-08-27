@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="PolicyPlus.WinUI3.Dialogs.FindByIdDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Find by ID"
+    PrimaryButtonText="Find"
+    CloseButtonText="Cancel"
+    DefaultButton="Primary"
+    MinWidth="420">
+    <StackPanel Spacing="12">
+        <TextBlock Text="Enter policy ID (e.g., Microsoft.Policies.SomeId). Partial match optional." TextWrapping="Wrap"/>
+        <TextBox x:Name="IdText" PlaceholderText="ID or part of it"/>
+        <CheckBox x:Name="ChkPartial" Content="Partial match" IsChecked="True"/>
+    </StackPanel>
+</ContentDialog>

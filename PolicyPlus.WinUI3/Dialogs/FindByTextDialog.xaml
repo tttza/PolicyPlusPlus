@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="PolicyPlus.WinUI3.Dialogs.FindByTextDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Find by text"
+    PrimaryButtonText="Find"
+    CloseButtonText="Cancel"
+    DefaultButton="Primary">
+    <StackPanel Spacing="12">
+        <TextBox x:Name="QueryText" PlaceholderText="Enter search terms..."/>
+        <StackPanel Orientation="Horizontal" Spacing="16">
+            <StackPanel>
+                <CheckBox x:Name="ChkTitle" Content="Title" IsChecked="True"/>
+                <CheckBox x:Name="ChkDescription" Content="Description" IsChecked="True"/>
+                <CheckBox x:Name="ChkId" Content="Policy ID"/>
+            </StackPanel>
+            <StackPanel>
+                <CheckBox x:Name="ChkPartial" Content="Partial match"/>
+                <CheckBox x:Name="ChkRegName" Content="Registry value name"/>
+            </StackPanel>
+        </StackPanel>
+        <TextBlock Opacity="0.7" Text="Use * and ? for wildcards. Use quotes for exact phrases."/>
+    </StackPanel>
+</ContentDialog>

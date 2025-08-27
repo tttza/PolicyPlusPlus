@@ -26,6 +26,7 @@ namespace PolicyPlus.WinUI3
     /// </summary>
     public partial class App : Application
     {
+        public static Window? Window { get; private set; }
         private Window? _window;
 
         /// <summary>
@@ -35,7 +36,7 @@ namespace PolicyPlus.WinUI3
         public App()
         {
             InitializeComponent();
-            RequestedTheme = ApplicationTheme.Dark;
+            // Respect system theme by default; don't force a theme here.
         }
 
         /// <summary>
@@ -44,8 +45,8 @@ namespace PolicyPlus.WinUI3
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
-            _window = new MainWindow();
-            _window.Activate();
+            Window = new MainWindow();
+            Window.Activate();
         }
     }
 }
