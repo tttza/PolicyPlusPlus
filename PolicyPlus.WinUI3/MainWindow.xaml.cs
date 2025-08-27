@@ -575,6 +575,12 @@ namespace PolicyPlus.WinUI3
         private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
         {
             _selectedCategory = null;
+            if (CategoryTree != null)
+            {
+                // Clear visual selection
+                CategoryTree.SelectedNode = null;
+                try { CategoryTree.SelectedNodes?.Clear(); } catch { }
+            }
             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty, null);
         }
 
