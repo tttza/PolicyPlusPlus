@@ -65,6 +65,7 @@
                     <controls:MenuBarItem Title="Options">
                         <MenuFlyoutItem Text="Language..." Click="BtnLanguage_Click" />
                         <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Write to temp .pol" IsChecked="{Binding IsChecked, ElementName=ChkUseTempPol, Mode=TwoWay}" Click="ToggleTempPolMenu_Click" />
+                        <ToggleMenuFlyoutItem x:Name="ToggleHideEmptyMenu" Text="Hide empty categories" IsChecked="True" Click="ToggleHideEmptyMenu_Click" />
                     </controls:MenuBarItem>
                 </controls:MenuBar>
 

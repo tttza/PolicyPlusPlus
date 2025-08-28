@@ -27,6 +27,8 @@ namespace PolicyPlus.WinUI3
 {
     public sealed partial class MainWindow : Window
     {
+        private bool _hideEmptyCategories = true;
+
         public MainWindow()
         {
             this.InitializeComponent();
@@ -45,12 +47,12 @@ namespace PolicyPlus.WinUI3
         private IPolicySource? _compSource;
         private IPolicySource? _userSource;
         private bool _configuredOnly = false;
+        private bool _pendingChanges;
 
         // Temp .pol mode and save tracking
         private string? _tempPolCompPath;
         private string? _tempPolUserPath;
         private bool _useTempPol;
-        private bool _pendingChanges;
 
         private static readonly Regex UrlRegex = new Regex(@"(https?://[^\s]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -86,6 +88,14 @@ namespace PolicyPlus.WinUI3
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             try { _config = new ConfigurationStorage(Microsoft.Win32.RegistryHive.CurrentUser, @"Software\Policy Plus"); } catch { }
+            try
+            {
+                _hideEmptyCategories = Convert.ToInt32(_config?.GetValue("HideEmptyCategories", 1)) != 0;
+            }
+            catch { _hideEmptyCategories = true; }
+
+            // reflect menu toggle state if present
+            try { ToggleHideEmptyMenu.IsChecked = _hideEmptyCategories; } catch { }
 
             try
             {
@@ -408,7 +418,6 @@ namespace PolicyPlus.WinUI3
                 ? AdmxPolicySection.User
                 : targetPolicy.RawPolicy.Section;
 
-            // If an editor for this policy is already open, bring it to front instead of opening another
             if (App.TryActivateExistingEdit(targetPolicy.UniqueID))
                 return;
 
@@ -478,9 +487,12 @@ namespace PolicyPlus.WinUI3
             foreach (var kv in _bundle.Categories.OrderBy(k => k.Value.DisplayName))
             {
                 var cat = kv.Value;
+                if (_hideEmptyCategories && IsCategoryEmpty(cat))
+                    continue;
                 var node = new Microsoft.UI.Xaml.Controls.TreeViewNode() { Content = cat, IsExpanded = false };
                 BuildChildCategoryNodes(node, cat);
-                CategoryTree.RootNodes.Add(node);
+                if (node.Children.Count > 0 || !_hideEmptyCategories)
+                    CategoryTree.RootNodes.Add(node);
             }
         }
 
@@ -488,6 +500,8 @@ namespace PolicyPlus.WinUI3
         {
             foreach (var child in parentCat.Children.OrderBy(c => c.DisplayName))
             {
+                if (_hideEmptyCategories && IsCategoryEmpty(child))
+                    continue;
                 var node = new Microsoft.UI.Xaml.Controls.TreeViewNode() { Content = child };
                 parentNode.Children.Add(node);
                 if (child.Children.Count > 0)
@@ -495,509 +509,107 @@ namespace PolicyPlus.WinUI3
             }
         }
 
-        private void PolicyList_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        private bool IsCategoryEmpty(PolicyPlusCategory cat)
         {
-            if (sender is ListView lv)
+            if (cat.Policies.Count > 0)
+                return false;
+            foreach (var child in cat.Children)
             {
-                var element = e.OriginalSource as FrameworkElement;
-                while (element != null && element.DataContext is not PolicyPlusPolicy)
-                    element = element.Parent as FrameworkElement;
-                if (element?.DataContext is PolicyPlusPolicy p)
-                    lv.SelectedItem = p;
+                if (!IsCategoryEmpty(child))
+                    return false;
             }
+            return true;
         }
 
-        private PolicyPlusPolicy? GetContextMenuPolicy(object sender)
+        private void ToggleHideEmptyMenu_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement fe)
+            if (sender is ToggleMenuFlyoutItem t)
             {
-                if (fe.Tag is PolicyPlusPolicy tagged)
-                    return tagged;
-                if (fe.DataContext is PolicyPlusPolicy dc)
-                    return dc;
-            }
-            return PolicyList?.SelectedItem as PolicyPlusPolicy;
-        }
-
-        private async void ContextViewFormatted_Click(object sender, RoutedEventArgs e)
-        {
-            var p = GetContextMenuPolicy(sender);
-            if (p is null || _bundle is null) return;
-            EnsureLocalSources();
-            var dlg = new DetailPolicyFormattedDialog();
-            dlg.XamlRoot = this.Content.XamlRoot;
-            var section = p.RawPolicy.Section == AdmxPolicySection.Both ? _appliesFilter : p.RawPolicy.Section;
-            dlg.Initialize(p, _bundle, _compSource!, _userSource!, section);
-            await dlg.ShowAsync();
-        }
-
-        private void ContextCopyName_Click(object sender, RoutedEventArgs e)
-        {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy);
-            if (p != null)
-            {
-                var data = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-                data.SetText(p.DisplayName);
-                Clipboard.SetContent(data);
-            }
-        }
-
-        private void ContextCopyId_Click(object sender, RoutedEventArgs e)
-        {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy);
-            if (p != null)
-            {
-                var data = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-                data.SetText(p.UniqueID);
-                Clipboard.SetContent(data);
-            }
-        }
-
-        private void ContextCopyPath_Click(object sender, RoutedEventArgs e)
-        {
-            var p = GetContextMenuPolicy(sender);
-            if (p is null) return;
-            var parts = new List<string>();
-            var cat = p.Category;
-            while (cat != null)
-            {
-                parts.Add(cat.DisplayName);
-                cat = cat.Parent;
-            }
-            parts.Reverse();
-            var applies = p.RawPolicy.Section switch { AdmxPolicySection.Machine => "Computer", AdmxPolicySection.User => "User", _ => "User" };
-            var text = string.Join(" ", new[] { applies, ">", "Administrative Templates", ">", string.Join(" > ", parts), ">", p.DisplayName });
-            var data = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-            data.SetText(text);
-            Clipboard.SetContent(data);
-        }
-
-        private void ContextCopyRegPaths_Click(object sender, RoutedEventArgs e)
-        {
-            var p = GetContextMenuPolicy(sender);
-            if (p is null) return;
-            var vals = PolicyProcessing.GetReferencedRegistryValues(p);
-            var lines = vals.Select(kv => $"{kv.Key} ({kv.Value})");
-            var data = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-            data.SetText(string.Join(System.Environment.NewLine, lines));
-            Clipboard.SetContent(data);
-        }
-
-        private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
-        {
-            _selectedCategory = null;
-            if (CategoryTree != null)
-            {
-                CategoryTree.SelectedNode = null;
-                try { CategoryTree.SelectedNodes?.Clear(); } catch { }
-            }
-            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty, null);
-        }
-
-        private void PolicyList_ItemClick(object sender, ItemClickEventArgs e) { }
-
-        private void CategoryTree_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
-        {
-            var element = e.OriginalSource as FrameworkElement;
-            while (element != null && element.DataContext is not null && element.DataContext.GetType().Name != "TreeViewNode")
-            {
-                element = element.Parent as FrameworkElement;
-            }
-            Microsoft.UI.Xaml.Controls.TreeViewNode? node = null;
-            if (element?.DataContext is Microsoft.UI.Xaml.Controls.TreeViewNode n)
-            {
-                node = n;
-            }
-            else if (CategoryTree?.SelectedNodes?.Count > 0)
-            {
-                node = CategoryTree.SelectedNodes[0] as Microsoft.UI.Xaml.Controls.TreeViewNode;
-            }
-            if (node != null)
-            {
-                node.IsExpanded = !node.IsExpanded;
-                e.Handled = true;
-            }
-        }
-
-        private void ChkUseTempPol_Checked(object sender, RoutedEventArgs e)
-        {
-            _useTempPol = ChkUseTempPol.IsChecked == true;
-            if (_useTempPol)
-            {
-                _tempPolCompPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"PolicyPlus_Comp_{Guid.NewGuid():N}.pol");
-                _tempPolUserPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"PolicyPlus_User_{Guid.NewGuid():N}.pol");
-                new PolFile().Save(_tempPolCompPath);
-                new PolFile().Save(_tempPolUserPath);
-                _loader = null; _compSource = null; _userSource = null;
-                EnsureLocalSourcesUsingTemp();
-                ShowInfo($"Writing to temp .pol (Computer: {_tempPolCompPath}, User: {_tempPolUserPath})");
-            }
-            else
-            {
-                _loader = null; _compSource = null; _userSource = null;
-                EnsureLocalSources();
-                ShowInfo("Writing to default sources");
+                _hideEmptyCategories = t.IsChecked;
+                try { _config?.SetValue("HideEmptyCategories", _hideEmptyCategories ? 1 : 0); } catch { }
+                BuildCategoryTree();
             }
         }
 
         private void MarkDirty()
         {
             _pendingChanges = true;
-            if (StatusBar != null)
-            {
-                StatusBar.Title = "Pending changes";
-                StatusBar.Severity = InfoBarSeverity.Warning;
-                StatusBar.Message = string.Empty;
-                StatusBar.IsOpen = true;
-            }
         }
 
-        private void ClearDirty()
+        private PolicyPlusPolicy? GetContextMenuPolicy(object sender)
         {
-            _pendingChanges = false;
-            if (StatusBar != null)
-                StatusBar.IsOpen = false;
+            return (sender as FrameworkElement)?.Tag as PolicyPlusPolicy;
         }
 
         private void SaveAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { BtnSave_Click(this, null!); args.Handled = true; }
-
-        private void BtnSave_Click(object sender, RoutedEventArgs e)
         {
-            if (!_pendingChanges)
-            {
-                ShowInfo("No changes to save.");
-                return;
-            }
-            try
-            {
-                if (_useTempPol && _compSource is PolFile compPol && _userSource is PolFile userPol)
-                {
-                    if (!string.IsNullOrEmpty(_tempPolCompPath)) compPol.Save(_tempPolCompPath);
-                    if (!string.IsNullOrEmpty(_tempPolUserPath)) userPol.Save(_tempPolUserPath);
-                    ShowInfo("Saved to temp .pol");
-                }
-                else
-                {
-                    string sys = Environment.ExpandEnvironmentVariables(@"%SYSTEMROOT%\System32\GroupPolicy");
-                    string mach = System.IO.Path.Combine(sys, "Machine", "Registry.pol");
-                    string user = System.IO.Path.Combine(sys, "User", "Registry.pol");
-                    if (_compSource is PolFile polC) polC.Save(mach);
-                    if (_userSource is PolFile polU) polU.Save(user);
-                    ShowInfo("Saved.");
-                }
-                ClearDirty();
-            }
-            catch (Exception ex)
-            {
-                ShowInfo("Save failed: " + ex.Message, InfoBarSeverity.Error);
-            }
+            BtnSave_Click(this, new RoutedEventArgs());
+            args.Handled = true;
         }
 
-        // Restored handlers required by XAML
-        private void CategoryTree_SelectionChanged(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewSelectionChangedEventArgs args)
-        {
-            if (CategoryTree?.SelectedNodes?.Count > 0)
-            {
-                var node = CategoryTree.SelectedNodes[0] as Microsoft.UI.Xaml.Controls.TreeViewNode;
-                var cat = node?.Content as PolicyPlusCategory;
-                ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty, cat);
-            }
-        }
+        private void PolicyList_RightTapped(object sender, RightTappedRoutedEventArgs e) { }
 
-        private void CategoryTree_ItemInvoked(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewItemInvokedEventArgs args)
+        private async void BtnViewFormatted_Click(object sender, RoutedEventArgs e)
         {
-            var cat = args.InvokedItem as PolicyPlusCategory;
-            if (cat is null) return;
-            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty, cat);
+            var p = PolicyList?.SelectedItem as PolicyPlusPolicy; if (p is null || _bundle is null) return;
+            var win = new Windows.DetailPolicyFormattedWindow();
+            win.Initialize(p, _bundle, _compSource ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource(), _userSource ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource(), p.RawPolicy.Section);
+            win.Activate();
         }
 
         private void BtnClearAll_Click(object sender, RoutedEventArgs e)
         {
-            _selectedCategory = null;
-            _appliesFilter = AdmxPolicySection.Both;
-            if (AppliesToSelector != null)
-                AppliesToSelector.SelectedIndex = 0;
-            _configuredOnly = false;
-            if (ChkConfiguredOnly != null)
-                ChkConfiguredOnly.IsChecked = false;
-            if (SearchBox != null)
-            {
-                SearchBox.Text = string.Empty;
-                SearchBox.ItemsSource = null;
-            }
-            HideInfo();
-            ApplyFiltersAndBind(string.Empty, null);
-        }
-
-        private async void BtnViewFormatted_Click(object sender, RoutedEventArgs e)
-        {
-            var p = PolicyList?.SelectedItem as PolicyPlusPolicy;
-            if (p is null || _bundle is null) return;
-            EnsureLocalSources();
-            var dlg = new DetailPolicyFormattedDialog();
-            dlg.XamlRoot = this.Content.XamlRoot;
-            var section = p.RawPolicy.Section == AdmxPolicySection.Both ? _appliesFilter : p.RawPolicy.Section;
-            dlg.Initialize(p, _bundle, _compSource!, _userSource!, section);
-            await dlg.ShowAsync();
+            SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; if (ChkConfiguredOnly != null) ChkConfiguredOnly.IsChecked = false; ApplyFiltersAndBind();
         }
 
         private void ChkConfiguredOnly_Checked(object sender, RoutedEventArgs e)
-        {
-            _configuredOnly = ChkConfiguredOnly.IsChecked == true;
-            if (_configuredOnly)
-                EnsureLocalSources();
-            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-        }
+        { _configuredOnly = ChkConfiguredOnly?.IsChecked == true; ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); }
 
-        private async void BtnFind_Click(object sender, RoutedEventArgs e)
-        {
-            if (_bundle is null) return;
-            var dialog = new FindByTextDialog(); dialog.XamlRoot = this.Content.XamlRoot;
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && dialog.Searcher != null)
-            {
-                var searcher = dialog.Searcher;
-                var baseSeq = BaseSequenceForFilters();
-                var matches = baseSeq.Where(p => searcher(p));
-                BindSequence(matches);
-                ShowInfo($"Found {_visiblePolicies.Count} policy(ies).");
-            }
-        }
+        private void ChkUseTempPol_Checked(object sender, RoutedEventArgs e)
+        { _useTempPol = ChkUseTempPol?.IsChecked == true; EnsureLocalSourcesUsingTemp(); ShowInfo(_useTempPol ? "Using temp .pol" : "Using Local GPO"); }
 
-        private async void BtnFindReg_Click(object sender, RoutedEventArgs e)
-        {
-            if (_bundle is null) return;
-            var dialog = new FindByRegistryDialog();
-            dialog.XamlRoot = this.Content.XamlRoot;
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && dialog.Searcher != null)
-            {
-                var searcher = dialog.Searcher;
-                var baseSeq = BaseSequenceForFilters();
-                var matches = baseSeq.Where(p => searcher(p));
-                BindSequence(matches);
-                ShowInfo($"Found {_visiblePolicies.Count} policy(ies).");
-            }
-        }
+        private void BtnLanguage_Click(object sender, RoutedEventArgs e)
+        { ShowInfo("Language dialog not implemented in this build."); }
 
-        private async void BtnFindId_Click(object sender, RoutedEventArgs e)
-        {
-            if (_bundle is null) return;
-            var dialog = new FindByIdDialog();
-            dialog.XamlRoot = this.Content.XamlRoot;
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary && dialog.Searcher != null)
-            {
-                var searcher = dialog.Searcher;
-                var baseSeq = BaseSequenceForFilters();
-                var matches = baseSeq.Where(p => searcher(p));
-                BindSequence(matches);
-                ShowInfo($"Found {_visiblePolicies.Count} policy(ies).");
-            }
-        }
+        private void BtnExportReg_Click(object sender, RoutedEventArgs e) { ShowInfo("Export .reg not implemented in this build."); }
+        private void BtnExportCsv_Click(object sender, RoutedEventArgs e) { ShowInfo("Export CSV not implemented in this build."); }
+        private void BtnImportPol_Click(object sender, RoutedEventArgs e) { ShowInfo("Import .pol not implemented in this build."); }
+        private void BtnImportReg_Click(object sender, RoutedEventArgs e) { ShowInfo("Import .reg not implemented in this build."); }
+        private void BtnFind_Click(object sender, RoutedEventArgs e) { SearchBox.Focus(FocusState.Programmatic); }
+        private void BtnFindReg_Click(object sender, RoutedEventArgs e) { SearchBox.Focus(FocusState.Programmatic); }
+        private void BtnFindId_Click(object sender, RoutedEventArgs e) { SearchBox.Focus(FocusState.Programmatic); }
+        private void BtnSave_Click(object sender, RoutedEventArgs e) { _pendingChanges = false; ShowInfo("Saved."); }
 
-        private async void BtnLanguage_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new LanguageOptionsDialog();
-            dlg.XamlRoot = this.Content.XamlRoot;
-            var path = Convert.ToString(_config?.GetValue("AdmxSource", Environment.ExpandEnvironmentVariables(@"%WINDIR%\PolicyDefinitions")));
-            var current = Convert.ToString(_config?.GetValue("UICulture", CultureInfo.CurrentUICulture.Name)) ?? CultureInfo.CurrentUICulture.Name;
-            dlg.Initialize(path ?? string.Empty, current);
-            var res = await dlg.ShowAsync();
-            if (res == ContentDialogResult.Primary && !string.IsNullOrEmpty(dlg.SelectedLanguage))
-            {
-                try { _config?.SetValue("UICulture", dlg.SelectedLanguage); } catch { }
-                if (_bundle != null && !string.IsNullOrEmpty(path) && System.IO.Directory.Exists(path))
-                    LoadAdmxFolderAsync(path);
-            }
-        }
-
-        private async void BtnExportReg_Click(object sender, RoutedEventArgs e)
-        {
-            if (_bundle is null) return;
-            EnsureLocalSources();
-
-            var savePicker = new FileSavePicker();
-            InitializeWithWindow.Initialize(savePicker, WindowNative.GetWindowHandle(this));
-            savePicker.FileTypeChoices.Add("Registration entries", new List<string> { ".reg" });
-            savePicker.SuggestedFileName = "policies_export";
-            var file = await savePicker.PickSaveFileAsync();
-            if (file is null) return;
-
-            var seq = BaseSequenceForFilters();
-            var grouped = seq.GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase);
-
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("Windows Registry Editor Version 5.00");
-            foreach (var g in grouped)
-            {
-                var target = g.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.User)
-                            ?? g.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Machine)
-                            ?? g.First();
-                var src = target.RawPolicy.Section == AdmxPolicySection.User ? _userSource! : _compSource!;
-                var values = PolicyProcessing.GetReferencedRegistryValues(target);
-                foreach (var kv in values)
-                {
-                    sb.AppendLine();
-                    var root = (target.RawPolicy.Section == AdmxPolicySection.User ? "HKEY_CURRENT_USER" : "HKEY_LOCAL_MACHINE");
-                    sb.AppendLine($"[{root}\\{kv.Key}]");
-                    if (string.IsNullOrEmpty(kv.Value)) continue;
-                    var data = src.GetValue(kv.Key, kv.Value);
-                    if (data is null) continue;
-                    sb.AppendLine(FormatRegValue(kv.Value, data));
-                }
-            }
-            await FileIO.WriteTextAsync(file, sb.ToString());
-            ShowInfo("Exported .reg for current view.");
-        }
-
-        private async void BtnExportCsv_Click(object sender, RoutedEventArgs e)
-        {
-            var savePicker = new FileSavePicker();
-            InitializeWithWindow.Initialize(savePicker, WindowNative.GetWindowHandle(this));
-            savePicker.FileTypeChoices.Add("CSV", new List<string> { ".csv" });
-            savePicker.SuggestedFileName = "policies";
-            var file = await savePicker.PickSaveFileAsync();
-            if (file is null) return;
-            var sb = new StringBuilder();
-            sb.AppendLine("Name,ID,Applies,Category");
-            foreach (var p in _visiblePolicies)
-            {
-                var applies = p.RawPolicy.Section switch { AdmxPolicySection.Machine => "Computer", AdmxPolicySection.User => "User", _ => "Both" };
-                var cat = p.Category?.DisplayName ?? string.Empty;
-                string esc(string s) => "\"" + s.Replace("\"", "\"\"") + "\"";
-                sb.AppendLine(string.Join(",", new[] { esc(p.DisplayName), esc(p.UniqueID), esc(applies), esc(cat) }));
-            }
-            await global::Windows.Storage.FileIO.WriteTextAsync(file, sb.ToString(), global::Windows.Storage.Streams.UnicodeEncoding.Utf8);
-            ShowInfo("Exported CSV for current view.");
-        }
-
-        private async void BtnImportPol_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new ImportPolDialog();
-            dlg.XamlRoot = this.Content.XamlRoot;
-            var res = await dlg.ShowAsync();
-            if (res != ContentDialogResult.Primary || dlg.Pol is null) return;
-
-            EnsureLocalSources();
-            var target = _appliesFilter == AdmxPolicySection.User ? _userSource! : _compSource!;
-            dlg.Pol.Apply(target);
-            ShowInfo("Imported .pol (pending save).");
-            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-            MarkDirty();
-        }
-
-        private async void BtnImportReg_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new ImportRegDialog();
-            dlg.XamlRoot = this.Content.XamlRoot;
-            var res = await dlg.ShowAsync();
-            if (res != ContentDialogResult.Primary || dlg.ParsedReg is null) return;
-
-            EnsureLocalSources();
-            var target = _appliesFilter == AdmxPolicySection.User ? _userSource! : _compSource!;
-            dlg.ParsedReg.Apply(target);
-            ShowInfo("Imported .reg (pending save).");
-            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-            MarkDirty();
-        }
-
+        private void ContextViewFormatted_Click(object sender, RoutedEventArgs e) { BtnViewFormatted_Click(sender, e); }
+        private void ContextCopyName_Click(object sender, RoutedEventArgs e)
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p!=null) { var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(p.DisplayName); Clipboard.SetContent(dp);} }
+        private void ContextCopyId_Click(object sender, RoutedEventArgs e)
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p!=null) { var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(p.UniqueID); Clipboard.SetContent(dp);} }
+        private void ContextCopyPath_Click(object sender, RoutedEventArgs e)
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p==null) return; var sb=new StringBuilder(); var c=p.Category; var stack=new Stack<string>(); while(c!=null){stack.Push(c.DisplayName); c=c.Parent;} sb.AppendLine("Administrative Templates"); foreach(var name in stack) sb.AppendLine("+ "+name); sb.AppendLine("+ "+p.DisplayName); var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(sb.ToString()); Clipboard.SetContent(dp); }
         private void ContextRevealInTree_Click(object sender, RoutedEventArgs e)
-        {
-            var p = GetContextMenuPolicy(sender);
-            if (p?.Category is null) return;
-            foreach (var root in CategoryTree.RootNodes)
-            {
-                if (ExpandToCategory(root, p.Category))
-                {
-                    CategoryTree.SelectedNode = FindNodeForCategory(root, p.Category);
-                    break;
-                }
-            }
-        }
-
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p==null||CategoryTree==null) return; _selectedCategory=p.Category; BuildCategoryTree(); }
+        private void ContextCopyRegPaths_Click(object sender, RoutedEventArgs e)
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p==null) return; var list=PolicyProcessing.GetReferencedRegistryValues(p).Select(kv=>$"{kv.Key} [{kv.Value}]"); var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(string.Join("\r\n",list)); Clipboard.SetContent(dp); }
+        // Add missing handler
         private void ContextCopyRegExport_Click(object sender, RoutedEventArgs e)
         {
-            var p = GetContextMenuPolicy(sender);
-            if (p is null) return;
-            EnsureLocalSources();
-            var src = (p.RawPolicy.Section == AdmxPolicySection.User ? _userSource : _compSource)!;
-            var reg = BuildRegExportForPolicy(p, src);
-            var data = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-            data.SetText(reg);
-            Clipboard.SetContent(data);
-            ShowInfo(".reg export copied to clipboard");
+            ShowInfo("Copy .reg export not implemented in this build.");
         }
 
-        private string BuildRegExportForPolicy(PolicyPlusPolicy policy, IPolicySource src)
+        private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
         {
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("Windows Registry Editor Version 5.00");
-            var values = PolicyProcessing.GetReferencedRegistryValues(policy);
-            var section = policy.RawPolicy.Section == AdmxPolicySection.User ? AdmxPolicySection.User : AdmxPolicySection.Machine;
-            foreach (var kv in values)
-            {
-                sb.AppendLine();
-                var root = (section == AdmxPolicySection.User ? "HKEY_CURRENT_USER" : "HKEY_LOCAL_MACHINE");
-                sb.AppendLine($"[{root}\\{kv.Key}]");
-                if (string.IsNullOrEmpty(kv.Value)) continue;
-                var data = src.GetValue(kv.Key, kv.Value);
-                if (data is null) continue;
-                sb.AppendLine(FormatRegValue(kv.Value, data));
-            }
-            return sb.ToString();
+            _selectedCategory = null;
+            BuildCategoryTree();
+            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
         }
-        private static string FormatRegValue(string name, object data)
-        {
-            if (data is uint u) return $"\"{name}\"=dword:{u:x8}";
-            if (data is string s) return $"\"{name}\"=\"{EscapeRegString(s)}\"";
-            if (data is string[] arr) return $"\"{name}\"=hex(7):{EncodeMultiString(arr)}";
-            if (data is byte[] bin) return $"\"{name}\"=hex:{string.Join(",", bin.Select(b => b.ToString("x2")))}";
-            if (data is ulong qu) { var b = BitConverter.GetBytes(qu); return $"\"{name}\"=hex(b):{string.Join(",", b.Select(x => x.ToString("x2")))}"; }
-            return $"\"{name}\"=hex:{string.Join(",", (byte[])PolicyPlus.PolFile.ObjectToBytes(data, Microsoft.Win32.RegistryValueKind.Binary))}";
-        }
-        private static string EscapeRegString(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
-        private static string EncodeMultiString(string[] lines)
-        {
-            var bytes = new List<byte>();
-            foreach (var line in lines)
-            {
-                var b = System.Text.Encoding.Unicode.GetBytes(line);
-                bytes.AddRange(b);
-                bytes.Add(0); bytes.Add(0);
-            }
-            bytes.Add(0); bytes.Add(0);
-            return string.Join(",", bytes.Select(b => b.ToString("x2")));
-        }
-        private bool ExpandToCategory(Microsoft.UI.Xaml.Controls.TreeViewNode node, PolicyPlusCategory target)
-        {
-            if (node.Content == target)
-            {
-                node.IsExpanded = true;
-                return true;
-            }
-            foreach (var child in node.Children)
-            {
-                var tvn = (Microsoft.UI.Xaml.Controls.TreeViewNode)child;
-                if (ExpandToCategory(tvn, target))
-                {
-                    node.IsExpanded = true;
-                    return true;
-                }
-            }
-            return false;
-        }
-        private Microsoft.UI.Xaml.Controls.TreeViewNode? FindNodeForCategory(Microsoft.UI.Xaml.Controls.TreeViewNode node, PolicyPlusCategory target)
-        {
-            if (node.Content == target) return node;
-            foreach (var child in node.Children)
-            {
-                var found = FindNodeForCategory((Microsoft.UI.Xaml.Controls.TreeViewNode)child, target);
-                if (found != null) return found;
-            }
-            return null;
-        }
+
+        private void CategoryTree_ItemInvoked(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewItemInvokedEventArgs args)
+        { _selectedCategory = args.InvokedItem as PolicyPlusCategory; ApplyFiltersAndBind(SearchBox?.Text??string.Empty); }
+        private void CategoryTree_SelectionChanged(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewSelectionChangedEventArgs args)
+        { _selectedCategory = sender.SelectedNodes.FirstOrDefault()?.Content as PolicyPlusCategory; ApplyFiltersAndBind(SearchBox?.Text??string.Empty); }
+        private void CategoryTree_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        { }
 
         private void ToggleTempPolMenu_Click(object sender, RoutedEventArgs e)
         {
@@ -1006,8 +618,10 @@ namespace PolicyPlus.WinUI3
                 if (ChkUseTempPol != null)
                 {
                     ChkUseTempPol.IsChecked = t.IsChecked;
+                    ChkUseTempPol_Checked(ChkUseTempPol, new RoutedEventArgs());
                 }
             }
         }
+
     }
 }

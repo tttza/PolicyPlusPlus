@@ -4,6 +4,7 @@ using System;
 using System.Runtime.InteropServices;
 using WinRT.Interop;
 using Windows.Graphics;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace PolicyPlus.WinUI3.Utils
 {
@@ -55,5 +56,10 @@ namespace PolicyPlus.WinUI3.Utils
             }
             catch { }
         }
+    }
+
+    public static class DataPackageExtensions
+    {
+        public static T Also<T>(this T obj, System.Action<T> act) { act(obj); return obj; }
     }
 }
