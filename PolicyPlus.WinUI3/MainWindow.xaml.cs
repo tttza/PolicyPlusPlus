@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using PolicyPlus.WinUI3.Dialogs;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
+using Microsoft.UI.Xaml.Controls; // TreeView
 using Windows.Storage;
 using System.Globalization;
 using System.Text;
@@ -467,7 +468,7 @@ namespace PolicyPlus.WinUI3
 
         private async void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == Windows.System.VirtualKey.Enter)
+            if (e.Key == global::Windows.System.VirtualKey.Enter)
             {
                 var p = PolicyList?.SelectedItem as PolicyPlusPolicy;
                 if (p != null)
@@ -792,7 +793,7 @@ namespace PolicyPlus.WinUI3
                 string esc(string s) => "\"" + s.Replace("\"", "\"\"") + "\"";
                 sb.AppendLine(string.Join(",", new[] { esc(p.DisplayName), esc(p.UniqueID), esc(applies), esc(cat) }));
             }
-            await FileIO.WriteTextAsync(file, sb.ToString(), Windows.Storage.Streams.UnicodeEncoding.Utf8);
+            await global::Windows.Storage.FileIO.WriteTextAsync(file, sb.ToString(), global::Windows.Storage.Streams.UnicodeEncoding.Utf8);
             ShowInfo("Exported CSV for current view.");
         }
 

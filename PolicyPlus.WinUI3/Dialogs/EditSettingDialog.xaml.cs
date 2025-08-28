@@ -5,6 +5,7 @@ using Microsoft.UI.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using PolicyPlus.WinUI3.Windows;
 
 namespace PolicyPlus.WinUI3.Dialogs
 {
@@ -21,10 +22,25 @@ namespace PolicyPlus.WinUI3.Dialogs
         private Dictionary<string, string>? _userComments;
         private Dictionary<string, FrameworkElement> _elementControls = new();
 
+        // Track child editor windows and dialog state
+        private readonly List<ListEditorWindow> _childEditors = new();
+        private bool _dialogOpen;
+
         public EditSettingDialog()
         {
             this.InitializeComponent();
             this.PrimaryButtonClick += EditSettingDialog_PrimaryButtonClick;
+            this.Opened += (s, e) => _dialogOpen = true;
+            this.Closed += (s, e) =>
+            {
+                _dialogOpen = false;
+                // Ensure any child editors are closed to avoid dangling handlers
+                foreach (var w in _childEditors.ToArray())
+                {
+                    try { w.Close(); } catch { }
+                }
+                _childEditors.Clear();
+            };
         }
 
         public void Initialize(PolicyPlusPolicy policy, AdmxPolicySection section, AdmxBundle bundle,
@@ -50,6 +66,8 @@ namespace PolicyPlus.WinUI3.Dialogs
 
             BuildElements();
             LoadStateFromSource();
+            // Ensure controls including Edit buttons reflect current state (Enabled only)
+            StateRadio_Checked(this, null!);
         }
 
         private (IPolicySource src, PolicyLoader loader, Dictionary<string, string>? comments) GetCurrent()
@@ -121,7 +139,6 @@ namespace PolicyPlus.WinUI3.Dialogs
                             var p = (ComboBoxPresentationElement)pres;
                             var e = (TextPolicyElement)elemDict[pres.ID];
                             var acb = new AutoSuggestBox { Text = p.DefaultText ?? string.Empty };
-                            // suggestions: add to ItemsSource for now
                             acb.ItemsSource = p.Suggestions;
                             control = acb;
                             label = p.Label;
@@ -148,18 +165,22 @@ namespace PolicyPlus.WinUI3.Dialogs
                             var e = (ListPolicyElement)elemDict[pres.ID];
                             var btn = new Button { Content = "Edit..." };
                             btn.Tag = null;
-                            btn.Click += async (s, e2) =>
+                            btn.Click += (s, e2) =>
                             {
-                                var dlg = new ListEditorDialog();
-                                dlg.XamlRoot = this.XamlRoot;
-                                dlg.Initialize(p.Label, e.UserProvidesNames, btn.Tag);
-                                var r = await dlg.ShowAsync();
-                                if (r == ContentDialogResult.Primary)
+                                var win = new ListEditorWindow();
+                                _childEditors.Add(win);
+                                win.Closed += (ss, ee) => _childEditors.Remove(win);
+                                win.Initialize(p.Label, e.UserProvidesNames, btn.Tag);
+                                win.Finished += (ss, ok) =>
                                 {
-                                    btn.Tag = dlg.Result;
-                                    if (dlg.CountText != null)
-                                        btn.Content = dlg.CountText;
-                                }
+                                    // Guard against parent dialog being closed while editor is open
+                                    if (!_dialogOpen) return;
+                                    if (!ok) return;
+                                    btn.Tag = win.Result;
+                                    if (win.CountText != null)
+                                        btn.Content = win.CountText;
+                                };
+                                win.Activate();
                             };
                             control = btn;
                             label = p.Label;
@@ -318,6 +339,7 @@ namespace PolicyPlus.WinUI3.Dialogs
             var selected = (SectionSelector.SelectedItem as ComboBoxItem)?.Content?.ToString();
             _currentSection = selected == "User" ? AdmxPolicySection.User : AdmxPolicySection.Machine;
             LoadStateFromSource();
+            StateRadio_Checked(this, null!);
         }
 
         private void StateRadio_Checked(object sender, RoutedEventArgs e)
@@ -333,7 +355,7 @@ namespace PolicyPlus.WinUI3.Dialogs
             dialog.XamlRoot = this.XamlRoot;
             var section = _policy.RawPolicy.Section == AdmxPolicySection.Both ? _currentSection : _policy.RawPolicy.Section;
             dialog.Initialize(_policy, _bundle, _compSource, _userSource, section);
-            await dialog.ShowAsync();
+            await dialog.ShowAsync(ContentDialogPlacement.InPlace);
         }
 
         private class ComboItem
