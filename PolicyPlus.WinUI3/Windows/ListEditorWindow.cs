@@ -48,6 +48,8 @@ namespace PolicyPlus.WinUI3.Windows
 
             WindowHelpers.Resize(this, 560, 480);
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
+            this.Closed += (s, e) => App.UnregisterWindow(this);
+            App.RegisterWindow(this);
         }
 
         public void BringToFront() => WindowHelpers.BringToFront(this);

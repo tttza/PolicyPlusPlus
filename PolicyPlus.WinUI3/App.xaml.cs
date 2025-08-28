@@ -27,7 +27,7 @@ namespace PolicyPlus.WinUI3
     public partial class App : Application
     {
         public static Window? Window { get; private set; }
-        private Window? _window;
+        private static readonly HashSet<Window> _secondaryWindows = new();
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
@@ -46,7 +46,26 @@ namespace PolicyPlus.WinUI3
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             Window = new MainWindow();
+            Window.Closed += (s, e) => CloseAllSecondaryWindows();
             Window.Activate();
+        }
+
+        public static void RegisterWindow(Window w)
+        {
+            if (w == Window) return;
+            _secondaryWindows.Add(w);
+        }
+        public static void UnregisterWindow(Window w)
+        {
+            _secondaryWindows.Remove(w);
+        }
+        public static void CloseAllSecondaryWindows()
+        {
+            foreach (var w in _secondaryWindows.ToArray())
+            {
+                try { w.Close(); } catch { }
+            }
+            _secondaryWindows.Clear();
         }
     }
 }

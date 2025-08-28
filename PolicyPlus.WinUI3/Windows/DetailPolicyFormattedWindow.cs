@@ -81,6 +81,8 @@ namespace PolicyPlus.WinUI3.Windows
             this.Content = root;
             TryResize(820, 600);
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
+            this.Closed += (s, e) => App.UnregisterWindow(this);
+            App.RegisterWindow(this);
         }
 
         public void BringToFront() => WindowHelpers.BringToFront(this);

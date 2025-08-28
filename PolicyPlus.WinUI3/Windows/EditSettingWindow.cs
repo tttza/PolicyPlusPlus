@@ -29,9 +29,9 @@ namespace PolicyPlus.WinUI3.Windows
         private TextBlock SettingTitle = new TextBlock { FontSize = 18, FontWeight = FontWeights.SemiBold };
         private ComboBox SectionSelector = new ComboBox { Width = 220 };
         private RadioButton OptNotConfigured = new RadioButton { Content = "Not Configured", GroupName = "State" };
-        private RadioButton OptEnabled = new RadioButton { Content = "Enable", GroupName = "State" };
-        private RadioButton OptDisabled = new RadioButton { Content = "Disable", GroupName = "State" };
-        private TextBox CommentBox = new TextBox();
+        private RadioButton OptEnabled = new RadioButton { Content = "Enabled", GroupName = "State" };
+        private RadioButton OptDisabled = new RadioButton { Content = "Disabled", GroupName = "State" };
+        private TextBox CommentBox = new TextBox { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 56 };
         private TextBox SupportedBox = new TextBox { IsReadOnly = true };
         private StackPanel OptionsPanel = new StackPanel { Spacing = 8 };
         private TextBox ExplainBox = new TextBox { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, IsReadOnly = true };
@@ -52,6 +52,8 @@ namespace PolicyPlus.WinUI3.Windows
             Content = BuildLayout();
             WindowHelpers.Resize(this, 1400, 900);
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
+            this.Closed += (s, e) => App.UnregisterWindow(this);
+            App.RegisterWindow(this);
 
             SectionSelector.SelectionChanged += SectionSelector_SelectionChanged;
             OptNotConfigured.Checked += StateRadio_Checked;
@@ -79,13 +81,13 @@ namespace PolicyPlus.WinUI3.Windows
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
+            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             Grid.SetRow(SettingTitle, 0); Grid.SetColumnSpan(SettingTitle, 2); root.Children.Add(SettingTitle);
 
             var header = new Grid { ColumnSpacing = 20 };
             header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             Grid.SetRow(header, 1); Grid.SetColumnSpan(header, 2); root.Children.Add(header);
 
             var leftHead = new StackPanel { Spacing = 8 };
@@ -103,8 +105,12 @@ namespace PolicyPlus.WinUI3.Windows
             rightHead.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             rightHead.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             rightHead.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            rightHead.Children.Add(new TextBlock { Text = "Comment", VerticalAlignment = VerticalAlignment.Center });
-            Grid.SetColumn(CommentBox, 1); rightHead.Children.Add(CommentBox);
+            rightHead.Children.Add(new TextBlock { Text = "Comment", VerticalAlignment = VerticalAlignment.Top });
+            Grid.SetColumn(CommentBox, 1);
+            // Enable scrollbars for multi-line comment
+            ScrollViewer.SetVerticalScrollBarVisibility(CommentBox, ScrollBarVisibility.Auto);
+            ScrollViewer.SetHorizontalScrollBarVisibility(CommentBox, ScrollBarVisibility.Disabled);
+            rightHead.Children.Add(CommentBox);
             var sup = new TextBlock { Text = "Supported on", VerticalAlignment = VerticalAlignment.Center };
             Grid.SetRow(sup, 1); rightHead.Children.Add(sup);
             Grid.SetRow(SupportedBox, 1); Grid.SetColumn(SupportedBox, 1); rightHead.Children.Add(SupportedBox);
@@ -112,10 +118,10 @@ namespace PolicyPlus.WinUI3.Windows
 
             var middle = new Grid { ColumnSpacing = 20 };
             middle.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            middle.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
+            middle.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             Grid.SetRow(middle, 2); Grid.SetColumnSpan(middle, 2); root.Children.Add(middle);
 
-            var optScroll = new ScrollViewer { MaxHeight = 600, Content = OptionsPanel };
+            var optScroll = new ScrollViewer { MaxHeight = 600, Content = OptionsPanel, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalScrollMode = ScrollMode.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
             Grid.SetColumn(optScroll, 0); middle.Children.Add(optScroll);
             var expScroll = new ScrollViewer { MaxHeight = 600, Content = ExplainBox };
             Grid.SetColumn(expScroll, 1); middle.Children.Add(expScroll);
@@ -216,12 +222,25 @@ namespace PolicyPlus.WinUI3.Windows
                         {
                             var p = (DropDownPresentationElement)pres;
                             var e = (EnumPolicyElement)elemDict[pres.ID];
-                            var cb = new ComboBox();
-                            foreach (var (item, idx) in e.Items.Select((it, ix) => (it, ix)))
+                            var cb = new ComboBox { MinWidth = 160 };
+                            int selectedIdx = 0;
+                            int curIdx = 0;
+                            foreach (var enumItem in e.Items)
                             {
-                                cb.Items.Add(new ComboItem { Id = idx, Text = _bundle.ResolveString(item.DisplayCode, _policy.RawPolicy.DefinedIn) });
+                                var text = _bundle.ResolveString(enumItem.DisplayCode, _policy.RawPolicy.DefinedIn);
+                                var cbi = new ComboBoxItem { Content = string.IsNullOrWhiteSpace(text) ? enumItem.DisplayCode : text };
+                                cb.Items.Add(cbi);
+                                if (p.DefaultItemID.HasValue && curIdx == p.DefaultItemID.Value)
+                                    selectedIdx = curIdx;
+                                curIdx++;
                             }
-                            if (p.DefaultItemID.HasValue) cb.SelectedIndex = p.DefaultItemID.Value;
+                            if (cb.Items.Count > 0)
+                                cb.SelectedIndex = selectedIdx;
+                            cb.Loaded += (s, e2) =>
+                            {
+                                if (cb.SelectedIndex < 0 && cb.Items.Count > 0)
+                                    cb.SelectedIndex = selectedIdx;
+                            };
                             control = cb; label = p.Label; break;
                         }
                     case "listBox":
@@ -255,7 +274,11 @@ namespace PolicyPlus.WinUI3.Windows
                 }
                 if (control != null)
                 {
-                    if (!string.IsNullOrEmpty(label)) OptionsPanel.Children.Add(new TextBlock { Text = label, FontWeight = FontWeights.SemiBold });
+                    if (!string.IsNullOrEmpty(label))
+                    {
+                        var lbl = new TextBlock { Text = label, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+                        OptionsPanel.Children.Add(lbl);
+                    }
                     OptionsPanel.Children.Add(control);
                     _elementControls[pres.ID] = control;
                 }
