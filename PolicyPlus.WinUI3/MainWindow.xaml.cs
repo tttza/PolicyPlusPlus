@@ -22,6 +22,8 @@ using System.Text.RegularExpressions;
 using Windows.System;
 using Microsoft.UI.Xaml.Documents;
 using PolicyPlus.WinUI3.Windows;
+using Microsoft.UI.Dispatching;
+using System.Threading;
 
 namespace PolicyPlus.WinUI3
 {
@@ -55,6 +57,12 @@ namespace PolicyPlus.WinUI3
         private bool _useTempPol;
 
         private static readonly System.Text.RegularExpressions.Regex UrlRegex = new(@"(https?://[^\s]+)", System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        // Prevents SelectionChanged from re-applying category during programmatic tree updates
+        private bool _suppressCategorySelectionChanged;
+
+        // Debounce category select to avoid double-tap side effects
+        private CancellationTokenSource? _categorySelectCts;
 
         private static void SetPlainText(RichTextBlock rtb, string text)
         {
@@ -480,17 +488,34 @@ namespace PolicyPlus.WinUI3
         private void BuildCategoryTree()
         {
             if (CategoryTree == null) return;
-            CategoryTree.RootNodes.Clear();
-            if (_bundle is null) return;
-            foreach (var kv in _bundle.Categories.OrderBy(k => k.Value.DisplayName))
+            _suppressCategorySelectionChanged = true;
+            try
             {
-                var cat = kv.Value;
-                if (_hideEmptyCategories && IsCategoryEmpty(cat))
-                    continue;
-                var node = new Microsoft.UI.Xaml.Controls.TreeViewNode() { Content = cat, IsExpanded = false };
-                BuildChildCategoryNodes(node, cat);
-                if (node.Children.Count > 0 || !_hideEmptyCategories)
-                    CategoryTree.RootNodes.Add(node);
+                var oldMode = CategoryTree.SelectionMode;
+                CategoryTree.SelectionMode = Microsoft.UI.Xaml.Controls.TreeViewSelectionMode.None;
+
+                CategoryTree.RootNodes.Clear();
+                if (_bundle is null)
+                {
+                    CategoryTree.SelectionMode = oldMode;
+                    return;
+                }
+                foreach (var kv in _bundle.Categories.OrderBy(k => k.Value.DisplayName))
+                {
+                    var cat = kv.Value;
+                    if (_hideEmptyCategories && IsCategoryEmpty(cat))
+                        continue;
+                    var node = new Microsoft.UI.Xaml.Controls.TreeViewNode() { Content = cat, IsExpanded = false };
+                    BuildChildCategoryNodes(node, cat);
+                    if (node.Children.Count > 0 || !_hideEmptyCategories)
+                        CategoryTree.RootNodes.Add(node);
+                }
+
+                CategoryTree.SelectionMode = oldMode;
+            }
+            finally
+            {
+                _suppressCategorySelectionChanged = false;
             }
         }
 
@@ -598,16 +623,94 @@ namespace PolicyPlus.WinUI3
         private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
         {
             _selectedCategory = null;
-            BuildCategoryTree();
+            _categorySelectCts?.Cancel();
+            if (CategoryTree != null)
+            {
+                _suppressCategorySelectionChanged = true;
+                var old = CategoryTree.SelectionMode;
+                CategoryTree.SelectionMode = Microsoft.UI.Xaml.Controls.TreeViewSelectionMode.None;
+                BuildCategoryTree();
+                CategoryTree.SelectionMode = old; // clears any selection
+                _suppressCategorySelectionChanged = false;
+            }
             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
         }
 
         private void CategoryTree_ItemInvoked(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewItemInvokedEventArgs args)
-        { _selectedCategory = args.InvokedItem as PolicyPlusCategory; ApplyFiltersAndBind(SearchBox?.Text??string.Empty); }
+        {
+            var cat = args.InvokedItem as PolicyPlusCategory;
+            ScheduleApplyCategory(cat);
+        }
+
         private void CategoryTree_SelectionChanged(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewSelectionChangedEventArgs args)
-        { _selectedCategory = sender.SelectedNodes.FirstOrDefault()?.Content as PolicyPlusCategory; ApplyFiltersAndBind(SearchBox?.Text??string.Empty); }
+        {
+            if (_suppressCategorySelectionChanged) return;
+            if (sender.SelectedNodes != null && sender.SelectedNodes.Count > 0)
+            {
+                var cat = sender.SelectedNodes.FirstOrDefault()?.Content as PolicyPlusCategory;
+                ScheduleApplyCategory(cat);
+            }
+            // If no selected nodes, keep current _selectedCategory (don't clear filter)
+        }
+
         private void CategoryTree_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
-        { }
+        {
+            if (CategoryTree == null) return;
+            // Cancel any pending category apply since this is a double-tap
+            _categorySelectCts?.Cancel();
+
+            // Find the TreeViewItem container that was double-tapped
+            var src = e.OriginalSource as DependencyObject;
+            TreeViewItem? container = null;
+            while (src != null && container == null)
+            {
+                container = src as TreeViewItem;
+                src = VisualTreeHelper.GetParent(src);
+            }
+            if (container == null) return;
+
+            // Get the corresponding node and toggle expansion
+            var node = CategoryTree.NodeFromContainer(container);
+            if (node != null)
+            {
+                _suppressCategorySelectionChanged = true;
+                node.IsExpanded = !node.IsExpanded;
+                _suppressCategorySelectionChanged = false;
+
+                // Apply filter for the double-tapped category as well
+                if (node.Content is PolicyPlusCategory cat)
+                {
+                    _selectedCategory = cat;
+                    ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+                }
+                e.Handled = true;
+            }
+        }
+
+        private void ScheduleApplyCategory(PolicyPlusCategory? cat)
+        {
+            if (cat == null) return;
+            _categorySelectCts?.Cancel();
+            var cts = new CancellationTokenSource();
+            _categorySelectCts = cts;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(250, cts.Token);
+                    if (cts.IsCancellationRequested) return;
+                    _ = DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (!cts.IsCancellationRequested)
+                        {
+                            _selectedCategory = cat;
+                            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+                        }
+                    });
+                }
+                catch (TaskCanceledException) { }
+            });
+        }
 
         private void ToggleTempPolMenu_Click(object sender, RoutedEventArgs e)
         {

@@ -36,7 +36,10 @@
       <TextBox x:Name="PathBox" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Consolas"/>
     </ScrollViewer>
     <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Vertical" Spacing="6" VerticalAlignment="Top">
-      <Button x:Name="CopyPathBtn" Content="Copy" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36"/>
+      <!-- Copy icon button -->
+      <Button x:Name="CopyPathBtn" ToolTipService.ToolTip="Copy" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
+        <FontIcon Glyph="&#xE8C8;"/>
+      </Button>
     </StackPanel>
 
     <!-- Registry Value -->
@@ -45,8 +48,14 @@
       <TextBox x:Name="RegBox" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Consolas"/>
     </ScrollViewer>
     <StackPanel Grid.Row="4" Grid.Column="2" Orientation="Vertical" Spacing="6" VerticalAlignment="Top">
-      <Button x:Name="ToggleViewBtn" Content="Toggle" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36"/>
-      <Button x:Name="CopyRegBtn" Content="Copy" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36"/>
+      <!-- Toggle icon button: use Sync glyph -->
+      <Button x:Name="ToggleViewBtn" ToolTipService.ToolTip="Toggle" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
+        <FontIcon Glyph="&#xE895;"/>
+      </Button>
+      <!-- Copy icon button -->
+      <Button x:Name="CopyRegBtn" ToolTipService.ToolTip="Copy" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
+        <FontIcon Glyph="&#xE8C8;"/>
+      </Button>
     </StackPanel>
 
     <!-- Footer -->
