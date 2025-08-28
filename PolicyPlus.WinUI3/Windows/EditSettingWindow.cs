@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using WinRT.Interop;
 using PolicyPlus.WinUI3.Utils;
+using PolicyPlus.WinUI3.Services;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -328,21 +329,54 @@ namespace PolicyPlus.WinUI3.Windows
         private void SaveToSource()
         {
             var (src, loader, comments) = GetCurrent();
-            PolicyProcessing.ForgetPolicy(src, _policy);
+            // Do not write to sources here; enqueue only
+            string action = "Clear";
+            string details = string.Empty;
+            PolicyState desired = PolicyState.NotConfigured;
+            Dictionary<string, object>? options = null;
+
             if (OptEnabled.IsChecked == true)
             {
-                var options = CollectOptions();
-                PolicyProcessing.SetPolicyState(src, _policy, PolicyState.Enabled, options);
+                options = CollectOptions();
+                desired = PolicyState.Enabled;
+                action = "Enable";
+                details = BuildDetailsForPending(options);
             }
             else if (OptDisabled.IsChecked == true)
             {
-                PolicyProcessing.SetPolicyState(src, _policy, PolicyState.Disabled, null);
+                desired = PolicyState.Disabled;
+                action = "Disable";
+                details = "Disabled";
             }
+            else
+            {
+                desired = PolicyState.NotConfigured;
+                action = "Clear";
+                details = "Not Configured";
+            }
+
             if (comments != null)
             {
                 var text = CommentBox.Text ?? string.Empty;
                 if (string.IsNullOrEmpty(text)) comments.Remove(_policy.UniqueID); else comments[_policy.UniqueID] = text;
             }
+
+            try
+            {
+                var scope = (_currentSection == AdmxPolicySection.User) ? "User" : "Computer";
+                PendingChangesService.Instance.Add(new PendingChange
+                {
+                    PolicyId = _policy.UniqueID,
+                    PolicyName = _policy.DisplayName ?? _policy.UniqueID,
+                    Scope = scope,
+                    Action = action,
+                    Details = details,
+                    DesiredState = desired,
+                    Options = options
+                });
+            }
+            catch { }
+
             Saved?.Invoke(this, EventArgs.Empty);
         }
 
@@ -377,29 +411,54 @@ namespace PolicyPlus.WinUI3.Windows
             {
                 PolicyProcessing.SetPolicyState(previewTarget, _policy, PolicyState.Disabled, null);
             }
-            else
-            {
-                // Not Configured: leave preview empty so values appear as not set
-            }
 
             var win = new DetailPolicyFormattedWindow();
-            _childWindows.Add(win);
-            win.Closed += (s, ee) => _childWindows.Remove(win);
-            var section = _policy.RawPolicy.Section == AdmxPolicySection.Both ? _currentSection : _policy.RawPolicy.Section;
-            // Pass the preview sources so the detail window reads from the in-memory state
-            win.Initialize(_policy, _bundle, previewComp, previewUser, section);
+            var compSrc = (IPolicySource)previewComp;
+            var userSrc = (IPolicySource)previewUser;
+            win.Initialize(_policy, _bundle, compSrc, userSrc, targetSection);
             win.Activate();
             WindowHelpers.BringToFront(win);
         }
 
-        private void ApplyBtn_Click(object sender, RoutedEventArgs e) => SaveToSource();
-        private void OkBtn_Click(object sender, RoutedEventArgs e) { SaveToSource(); Close(); }
-
-        public void BringToFront()
+        private void ApplyBtn_Click(object sender, RoutedEventArgs e)
         {
-            WindowHelpers.BringToFront(this);
+            SaveToSource();
         }
 
-        private class ComboItem { public int Id { get; set; } public string Text { get; set; } = string.Empty; public override string ToString() => Text; }
+        private void OkBtn_Click(object sender, RoutedEventArgs e)
+        {
+            SaveToSource();
+            this.Close();
+        }
+
+        private string BuildDetailsForPending(Dictionary<string, object> options)
+        {
+            try
+            {
+                var parts = new List<string>();
+                foreach (var kv in PolicyProcessing.GetReferencedRegistryValues(_policy))
+                {
+                    parts.Add(kv.Key + (string.IsNullOrEmpty(kv.Value) ? string.Empty : $" ({kv.Value})"));
+                }
+                if (options != null && options.Count > 0)
+                {
+                    parts.Add("Options: " + string.Join(", ", options.Select(k => k.Key + "=" + FormatOpt(k.Value))));
+                }
+                return string.Join("; ", parts);
+            }
+            catch { return string.Empty; }
+        }
+
+        private static string FormatOpt(object v)
+        {
+            return v switch
+            {
+                null => string.Empty,
+                bool b => b ? "true" : "false",
+                string s => s,
+                System.Collections.IEnumerable e when e is not string => string.Join("|", e.Cast<object>().Select(o => o?.ToString() ?? string.Empty)),
+                _ => v.ToString() ?? string.Empty
+            };
+        }
     }
 }

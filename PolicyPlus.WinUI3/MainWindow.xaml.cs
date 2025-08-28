@@ -25,17 +25,14 @@ using PolicyPlus.WinUI3.Windows;
 using Microsoft.UI.Dispatching;
 using System.Threading;
 using Microsoft.UI.Xaml.Media.Animation;
+using PolicyPlus.WinUI3.Utils;
+using PolicyPlus.WinUI3.Services;
 
 namespace PolicyPlus.WinUI3
 {
     public sealed partial class MainWindow : Window
     {
         private bool _hideEmptyCategories = true;
-
-        public MainWindow()
-        {
-            this.InitializeComponent();
-        }
 
         // State fields
         private PolicyLoader? _loader;
@@ -68,12 +65,47 @@ namespace PolicyPlus.WinUI3
         // Auto-close InfoBar cancellation
         private CancellationTokenSource? _infoBarCloseCts;
 
-        private static void SetPlainText(RichTextBlock rtb, string text)
+        private TextBlock? _unsavedIndicator;
+
+        public MainWindow()
         {
-            rtb.Blocks.Clear();
-            var p = new Paragraph();
-            p.Inlines.Add(new Run { Text = text ?? string.Empty });
-            rtb.Blocks.Add(p);
+            this.InitializeComponent();
+            HookPendingQueue();
+        }
+
+        private void HookPendingQueue()
+        {
+            try
+            {
+                PendingChangesWindow.ChangesAppliedOrDiscarded += (_, __) => UpdateUnsavedIndicator();
+                PendingChangesService.Instance.Pending.CollectionChanged += (_, __) => UpdateUnsavedIndicator();
+                UpdateUnsavedIndicator();
+            }
+            catch { }
+        }
+
+        private void UpdateUnsavedIndicator()
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (_unsavedIndicator == null)
+                {
+                    _unsavedIndicator = new TextBlock { Text = "? Unsaved changes", Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed) };
+                    try
+                    {
+                        var panel = LoaderInfo?.Parent as StackPanel;
+                        if (panel != null)
+                        {
+                            panel.Children.Add(_unsavedIndicator);
+                        }
+                    }
+                    catch { }
+                }
+                if (_unsavedIndicator != null)
+                {
+                    _unsavedIndicator.Visibility = (PendingChangesService.Instance.Pending.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
+                }
+            });
         }
 
         private void ShowInfo(string message, InfoBarSeverity severity = InfoBarSeverity.Informational)
@@ -393,6 +425,14 @@ namespace PolicyPlus.WinUI3
             SetExplanationText(p.DisplayExplanation ?? string.Empty);
         }
 
+        private static void SetPlainText(RichTextBlock rtb, string text)
+        {
+            rtb.Blocks.Clear();
+            var p = new Paragraph();
+            p.Inlines.Add(new Run { Text = text ?? string.Empty });
+            rtb.Blocks.Add(p);
+        }
+
         private static bool IsInsideDoubleQuotes(string s, int index)
         {
             bool inQuote = false;
@@ -502,115 +542,12 @@ namespace PolicyPlus.WinUI3
                 new Dictionary<string, string>(), new Dictionary<string, string>());
             win.Saved += (s, e) => MarkDirty();
             win.Activate();
-            win.BringToFront();
+            WindowHelpers.BringToFront(win);
 
             if (ensureFront)
             {
                 await Task.Delay(150);
-                try { win.BringToFront(); } catch { }
-            }
-        }
-
-        private async void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == global::Windows.System.VirtualKey.Enter)
-            {
-                var p = PolicyList?.SelectedItem as PolicyPlusPolicy;
-                if (p != null)
-                {
-                    e.Handled = true;
-                    await OpenEditDialogForPolicyAsync(p, ensureFront: true);
-                }
-            }
-        }
-
-        private void PolicyList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
-        {
-            var p = PolicyList?.SelectedItem as PolicyPlusPolicy;
-            if (p is null) return;
-            e.Handled = true;
-            OpenEditDialogForPolicyAsync(p, ensureFront: true);
-        }
-
-        private async void BtnEditSelected_Click(object sender, RoutedEventArgs e)
-        {
-            var p = PolicyList?.SelectedItem as PolicyPlusPolicy;
-            if (p is null) return;
-            await OpenEditDialogForPolicyAsync(p, ensureFront: false);
-        }
-
-        private async void ContextEdit_Click(object sender, RoutedEventArgs e)
-        {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy);
-            if (p != null) await OpenEditDialogForPolicyAsync(p, ensureFront: false);
-        }
-
-        private void BuildCategoryTree()
-        {
-            if (CategoryTree == null) return;
-            _suppressCategorySelectionChanged = true;
-            try
-            {
-                var oldMode = CategoryTree.SelectionMode;
-                CategoryTree.SelectionMode = Microsoft.UI.Xaml.Controls.TreeViewSelectionMode.None;
-
-                CategoryTree.RootNodes.Clear();
-                if (_bundle is null)
-                {
-                    CategoryTree.SelectionMode = oldMode;
-                    return;
-                }
-                foreach (var kv in _bundle.Categories.OrderBy(k => k.Value.DisplayName))
-                {
-                    var cat = kv.Value;
-                    if (_hideEmptyCategories && IsCategoryEmpty(cat))
-                        continue;
-                    var node = new Microsoft.UI.Xaml.Controls.TreeViewNode() { Content = cat, IsExpanded = false };
-                    BuildChildCategoryNodes(node, cat);
-                    if (node.Children.Count > 0 || !_hideEmptyCategories)
-                        CategoryTree.RootNodes.Add(node);
-                }
-
-                CategoryTree.SelectionMode = oldMode;
-            }
-            finally
-            {
-                _suppressCategorySelectionChanged = false;
-            }
-        }
-
-        private void BuildChildCategoryNodes(Microsoft.UI.Xaml.Controls.TreeViewNode parentNode, PolicyPlusCategory parentCat)
-        {
-            foreach (var child in parentCat.Children.OrderBy(c => c.DisplayName))
-            {
-                if (_hideEmptyCategories && IsCategoryEmpty(child))
-                    continue;
-                var node = new Microsoft.UI.Xaml.Controls.TreeViewNode() { Content = child };
-                parentNode.Children.Add(node);
-                if (child.Children.Count > 0)
-                    BuildChildCategoryNodes(node, child);
-            }
-        }
-
-        private bool IsCategoryEmpty(PolicyPlusCategory cat)
-        {
-            if (cat.Policies.Count > 0)
-                return false;
-            foreach (var child in cat.Children)
-            {
-                if (!IsCategoryEmpty(child))
-                    return false;
-            }
-            return true;
-        }
-
-        private void ToggleHideEmptyMenu_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is ToggleMenuFlyoutItem t)
-            {
-                _hideEmptyCategories = t.IsChecked;
-                try { _config?.SetValue("HideEmptyCategories", _hideEmptyCategories ? 1 : 0); } catch { }
-                BuildCategoryTree();
+                try { WindowHelpers.BringToFront(win); } catch { }
             }
         }
 
@@ -674,11 +611,8 @@ namespace PolicyPlus.WinUI3
         { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p==null||CategoryTree==null) return; _selectedCategory=p.Category; BuildCategoryTree(); }
         private void ContextCopyRegPaths_Click(object sender, RoutedEventArgs e)
         { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p==null) return; var list=PolicyProcessing.GetReferencedRegistryValues(p).Select(kv=>$"{kv.Key} [{kv.Value}]"); var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(string.Join("\r\n",list)); Clipboard.SetContent(dp); }
-        // Add missing handler
         private void ContextCopyRegExport_Click(object sender, RoutedEventArgs e)
-        {
-            ShowInfo("Copy .reg export not implemented in this build.");
-        }
+        { ShowInfo("Copy .reg export not implemented in this build."); }
 
         private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
         {
@@ -784,5 +718,109 @@ namespace PolicyPlus.WinUI3
             }
         }
 
+        private void BuildCategoryTree()
+        {
+            if (CategoryTree == null || _bundle == null) return;
+            _suppressCategorySelectionChanged = true;
+            try
+            {
+                var oldMode = CategoryTree.SelectionMode;
+                CategoryTree.SelectionMode = Microsoft.UI.Xaml.Controls.TreeViewSelectionMode.None;
+
+                CategoryTree.RootNodes.Clear();
+                foreach (var kv in _bundle.Categories.OrderBy(k => k.Value.DisplayName))
+                {
+                    var cat = kv.Value;
+                    if (_hideEmptyCategories && IsCategoryEmpty(cat))
+                        continue;
+                    var node = new Microsoft.UI.Xaml.Controls.TreeViewNode() { Content = cat, IsExpanded = false };
+                    BuildChildCategoryNodes(node, cat);
+                    if (node.Children.Count > 0 || !_hideEmptyCategories)
+                        CategoryTree.RootNodes.Add(node);
+                }
+
+                CategoryTree.SelectionMode = oldMode;
+            }
+            finally
+            {
+                _suppressCategorySelectionChanged = false;
+            }
+        }
+
+        private void BuildChildCategoryNodes(Microsoft.UI.Xaml.Controls.TreeViewNode parentNode, PolicyPlusCategory parentCat)
+        {
+            foreach (var child in parentCat.Children.OrderBy(c => c.DisplayName))
+            {
+                if (_hideEmptyCategories && IsCategoryEmpty(child))
+                    continue;
+                var node = new Microsoft.UI.Xaml.Controls.TreeViewNode() { Content = child };
+                parentNode.Children.Add(node);
+                if (child.Children.Count > 0)
+                    BuildChildCategoryNodes(node, child);
+            }
+        }
+
+        private bool IsCategoryEmpty(PolicyPlusCategory cat)
+        {
+            if (cat.Policies.Count > 0)
+                return false;
+            foreach (var child in cat.Children)
+            {
+                if (!IsCategoryEmpty(child))
+                    return false;
+            }
+            return true;
+        }
+
+        private void BtnPendingChanges_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new PendingChangesWindow();
+            win.Activate();
+            try { WindowHelpers.BringToFront(win); } catch { }
+        }
+
+        private async void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == global::Windows.System.VirtualKey.Enter)
+            {
+                var p = PolicyList?.SelectedItem as PolicyPlusPolicy;
+                if (p != null)
+                {
+                    e.Handled = true;
+                    await OpenEditDialogForPolicyAsync(p, ensureFront: true);
+                }
+            }
+        }
+
+        private void PolicyList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            var p = PolicyList?.SelectedItem as PolicyPlusPolicy;
+            if (p is null) return;
+            e.Handled = true;
+            _ = OpenEditDialogForPolicyAsync(p, ensureFront: true);
+        }
+
+        private async void BtnEditSelected_Click(object sender, RoutedEventArgs e)
+        {
+            var p = PolicyList?.SelectedItem as PolicyPlusPolicy;
+            if (p is null) return;
+            await OpenEditDialogForPolicyAsync(p, ensureFront: false);
+        }
+
+        private async void ContextEdit_Click(object sender, RoutedEventArgs e)
+        {
+            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy);
+            if (p != null) await OpenEditDialogForPolicyAsync(p, ensureFront: false);
+        }
+
+        private void ToggleHideEmptyMenu_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is ToggleMenuFlyoutItem t)
+            {
+                _hideEmptyCategories = t.IsChecked;
+                try { _config?.SetValue("HideEmptyCategories", _hideEmptyCategories ? 1 : 0); } catch { }
+                BuildCategoryTree();
+            }
+        }
     }
 }

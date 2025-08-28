@@ -76,6 +76,10 @@
                         <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Write to temp .pol" IsChecked="{Binding IsChecked, ElementName=ChkUseTempPol, Mode=TwoWay}" Click="ToggleTempPolMenu_Click" />
                         <ToggleMenuFlyoutItem x:Name="ToggleHideEmptyMenu" Text="Hide empty categories" IsChecked="True" Click="ToggleHideEmptyMenu_Click" />
                     </controls:MenuBarItem>
+                    <!-- New menu for Pending/History -->
+                    <controls:MenuBarItem Title="Changes">
+                        <MenuFlyoutItem Text="Pending/History..." Click="BtnPendingChanges_Click" />
+                    </controls:MenuBarItem>
                 </controls:MenuBar>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -110,6 +114,8 @@
                 <Button x:Name="BtnClearAll" Content="Clear all filters" Click="BtnClearAll_Click"/>
                 <Button x:Name="BtnEditSelected" Content="Edit selected..." Click="BtnEditSelected_Click"/>
                 <Button x:Name="BtnViewFormatted" Content="View formatted..." Click="BtnViewFormatted_Click"/>
+                <!-- New toolbar button -->
+                <Button x:Name="BtnShowPending" Content="Pending changes..." Click="BtnPendingChanges_Click"/>
             </StackPanel>
 
             <Grid Grid.Row="3" Margin="8">
