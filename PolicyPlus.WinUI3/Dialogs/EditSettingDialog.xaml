@@ -4,54 +4,90 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls"
-    Title="Edit setting"
+    Title="Edit Policy Setting"
     PrimaryButtonText="OK"
     SecondaryButtonText="Cancel"
     DefaultButton="Primary"
-    MinWidth="680">
-    <Grid RowSpacing="12">
+    MinWidth="800"
+    MaxWidth="1600">
+    <Grid RowSpacing="8" ColumnSpacing="20" Padding="12">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
+        <!-- Give much more space to the right (explanation) -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="2*" />
+        </Grid.ColumnDefinitions>
 
-        <!-- Header with action -->
-        <Grid Grid.Row="0">
+        <!-- Title of the policy -->
+        <TextBlock x:Name="SettingTitle" Grid.Row="0" Grid.ColumnSpan="2" FontSize="18" FontWeight="SemiBold"/>
+
+        <!-- Top form row -->
+        <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnSpacing="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="2*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="Editing for" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="SectionSelector" Width="220" SelectionChanged="SectionSelector_SelectionChanged">
+                        <ComboBoxItem Content="Computer"/>
+                        <ComboBoxItem Content="User"/>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Spacing="4">
+                    <RadioButton x:Name="OptNotConfigured" Content="Not Configured" GroupName="State" Checked="StateRadio_Checked"/>
+                    <RadioButton x:Name="OptEnabled" Content="Enabled" GroupName="State" Checked="StateRadio_Checked"/>
+                    <RadioButton x:Name="OptDisabled" Content="Disabled" GroupName="State" Checked="StateRadio_Checked"/>
+                </StackPanel>
+            </StackPanel>
+            <Grid Grid.Column="1" ColumnSpacing="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Comment" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="CommentBox" HorizontalAlignment="Stretch"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Supported on" VerticalAlignment="Center"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="SupportedBox" IsReadOnly="True" HorizontalAlignment="Stretch"/>
+            </Grid>
+        </Grid>
+
+        <!-- Middle: left options, right explanation -->
+        <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnSpacing="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="2*" />
+            </Grid.ColumnDefinitions>
+            <ScrollViewer Grid.Column="0" MaxHeight="520">
+                <StackPanel x:Name="OptionsPanel" Spacing="8"/>
+            </ScrollViewer>
+            <ScrollViewer Grid.Column="1" MaxHeight="520">
+                <TextBox x:Name="ExplainBox" TextWrapping="Wrap" AcceptsReturn="True" IsReadOnly="True"/>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Bottom commands -->
+        <Grid Grid.Row="3" Grid.ColumnSpan="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock x:Name="SettingTitle" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Content="View formatted..." Click="ViewDetailFormattedBtn_Click" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button x:Name="ViewDetailApplyBtn" Content="View Detail (Apply)" Click="ViewDetailApplyBtn_Click"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <Button x:Name="ApplyBtn" Content="Apply" Click="ApplyBtn_Click"/>
+            </StackPanel>
         </Grid>
-
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12">
-            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                <TextBlock Text="Section:" VerticalAlignment="Center"/>
-                <ComboBox x:Name="SectionSelector" Width="140" SelectionChanged="SectionSelector_SelectionChanged">
-                    <ComboBoxItem Content="Computer"/>
-                    <ComboBoxItem Content="User"/>
-                </ComboBox>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Spacing="12">
-                <RadioButton x:Name="OptNotConfigured" Content="Not Configured" GroupName="State" Checked="StateRadio_Checked"/>
-                <RadioButton x:Name="OptEnabled" Content="Enabled" GroupName="State" Checked="StateRadio_Checked"/>
-                <RadioButton x:Name="OptDisabled" Content="Disabled" GroupName="State" Checked="StateRadio_Checked"/>
-            </StackPanel>
-        </StackPanel>
-
-        <ScrollViewer Grid.Row="2" MaxHeight="320">
-            <StackPanel x:Name="OptionsPanel" Spacing="8"/>
-        </ScrollViewer>
-
-        <StackPanel Grid.Row="3" Spacing="4">
-            <TextBlock Text="Comment"/>
-            <TextBox x:Name="CommentBox" AcceptsReturn="True" TextWrapping="Wrap"/>
-        </StackPanel>
-
-        <TextBlock Grid.Row="4" x:Name="SupportedText" Opacity="0.7"/>
     </Grid>
 </ContentDialog>

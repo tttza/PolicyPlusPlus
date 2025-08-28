@@ -9,6 +9,7 @@ using System.Text;
 using Microsoft.UI.Windowing;
 using WinRT.Interop;
 using Windows.Graphics;
+using PolicyPlus.WinUI3.Utils;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -79,18 +80,13 @@ namespace PolicyPlus.WinUI3.Windows
 
             this.Content = root;
             TryResize(820, 600);
+            this.Activated += (s, e) => WindowHelpers.BringToFront(this);
         }
 
+        public void BringToFront() => WindowHelpers.BringToFront(this);
         private void TryResize(int width, int height)
         {
-            try
-            {
-                var hwnd = WindowNative.GetWindowHandle(this);
-                var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-                var appWindow = AppWindow.GetFromWindowId(id);
-                appWindow?.Resize(new SizeInt32(width, height));
-            }
-            catch { }
+            WindowHelpers.Resize(this, width, height);
         }
 
         public void Initialize(PolicyPlusPolicy policy, AdmxBundle bundle, IPolicySource compSource, IPolicySource userSource, AdmxPolicySection section)

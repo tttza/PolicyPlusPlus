@@ -64,7 +64,8 @@ namespace PolicyPlus.WinUI3.Dialogs
             _userComments = userComments;
 
             SettingTitle.Text = policy.DisplayName;
-            SupportedText.Text = policy.SupportedOn is null ? string.Empty : policy.SupportedOn.DisplayName;
+            SupportedBox.Text = policy.SupportedOn is null ? string.Empty : policy.SupportedOn.DisplayName;
+            ExplainBox.Text = policy.DisplayExplanation ?? string.Empty;
 
             SectionSelector.IsEnabled = policy.RawPolicy.Section == AdmxPolicySection.Both;
             var def = section == AdmxPolicySection.Machine ? "Computer" : "User";
@@ -355,14 +356,20 @@ namespace PolicyPlus.WinUI3.Dialogs
                 ctrl.IsEnabled = enableOptions;
         }
 
-        private void ViewDetailFormattedBtn_Click(object sender, RoutedEventArgs e)
+        private void ViewDetailApplyBtn_Click(object sender, RoutedEventArgs e)
         {
+            SaveToSource();
             var win = new DetailPolicyFormattedWindow();
             _childWindows.Add(win);
             win.Closed += (s, ee) => _childWindows.Remove(win);
             var section = _policy.RawPolicy.Section == AdmxPolicySection.Both ? _currentSection : _policy.RawPolicy.Section;
             win.Initialize(_policy, _bundle, _compSource, _userSource, section);
             win.Activate();
+        }
+
+        private void ApplyBtn_Click(object sender, RoutedEventArgs e)
+        {
+            SaveToSource();
         }
 
         private class ComboItem

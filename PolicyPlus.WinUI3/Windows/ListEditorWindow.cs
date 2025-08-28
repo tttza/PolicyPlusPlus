@@ -7,6 +7,7 @@ using Microsoft.UI.Windowing;
 using WinRT.Interop;
 using Windows.Graphics;
 using Microsoft.UI.Xaml.Media;
+using PolicyPlus.WinUI3.Utils;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -45,20 +46,11 @@ namespace PolicyPlus.WinUI3.Windows
             root.Children.Add(buttonsRow);
             this.Content = root;
 
-            TryResize(560, 480);
+            WindowHelpers.Resize(this, 560, 480);
+            this.Activated += (s, e) => WindowHelpers.BringToFront(this);
         }
 
-        private void TryResize(int width, int height)
-        {
-            try
-            {
-                var hwnd = WindowNative.GetWindowHandle(this);
-                var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-                var appWindow = AppWindow.GetFromWindowId(id);
-                appWindow?.Resize(new SizeInt32(width, height));
-            }
-            catch { }
-        }
+        public void BringToFront() => WindowHelpers.BringToFront(this);
 
         public void Initialize(string label, bool userProvidesNames, object? initial)
         {
