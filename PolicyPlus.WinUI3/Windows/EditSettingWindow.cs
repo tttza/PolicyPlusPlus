@@ -27,7 +27,7 @@ namespace PolicyPlus.WinUI3.Windows
 
         // UI controls
         private TextBlock SettingTitle = new TextBlock { FontSize = 18, FontWeight = FontWeights.SemiBold };
-        private ComboBox SectionSelector = new ComboBox { Width = 220 };
+        private ComboBox SectionSelector = new ComboBox { Width = 160 };
         private RadioButton OptNotConfigured = new RadioButton { Content = "Not Configured", GroupName = "State" };
         private RadioButton OptEnabled = new RadioButton { Content = "Enabled", GroupName = "State" };
         private RadioButton OptDisabled = new RadioButton { Content = "Disabled", GroupName = "State" };
@@ -86,8 +86,8 @@ namespace PolicyPlus.WinUI3.Windows
             Grid.SetRow(SettingTitle, 0); Grid.SetColumnSpan(SettingTitle, 2); root.Children.Add(SettingTitle);
 
             var header = new Grid { ColumnSpacing = 20 };
-            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(7, GridUnitType.Star) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(13, GridUnitType.Star) });
             Grid.SetRow(header, 1); Grid.SetColumnSpan(header, 2); root.Children.Add(header);
 
             var leftHead = new StackPanel { Spacing = 8 };
@@ -117,8 +117,8 @@ namespace PolicyPlus.WinUI3.Windows
             Grid.SetColumn(rightHead, 1); header.Children.Add(rightHead);
 
             var middle = new Grid { ColumnSpacing = 20 };
-            middle.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            middle.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            middle.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(9, GridUnitType.Star) });
+            middle.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(11, GridUnitType.Star) });
             Grid.SetRow(middle, 2); Grid.SetColumnSpan(middle, 2); root.Children.Add(middle);
 
             var optScroll = new ScrollViewer { MaxHeight = 600, Content = OptionsPanel, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalScrollMode = ScrollMode.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
@@ -156,6 +156,11 @@ namespace PolicyPlus.WinUI3.Windows
             StateRadio_Checked(this, null!);
 
             WindowHelpers.BringToFront(this);
+            var tmr = this.DispatcherQueue.CreateTimer();
+            tmr.Interval = System.TimeSpan.FromMilliseconds(180);
+            tmr.IsRepeating = false;
+            tmr.Tick += (s, e) => { try { WindowHelpers.BringToFront(this); this.Activate(); } catch { } }; tmr.Start();
+            App.RegisterEditWindow(_policy.UniqueID, this);
         }
 
         private (IPolicySource src, PolicyLoader loader, Dictionary<string, string>? comments) GetCurrent()
@@ -250,7 +255,10 @@ namespace PolicyPlus.WinUI3.Windows
                             var btn = new Button { Content = "Edit..." };
                             btn.Click += (s, e2) =>
                             {
+                                string key = _policy.UniqueID + ":" + pres.ID;
+                                if (ListEditorWindow.TryActivateExisting(key)) return;
                                 var win = new ListEditorWindow();
+                                ListEditorWindow.Register(key, win);
                                 _childEditors.Add(win); _childWindows.Add(win);
                                 win.Closed += (ss, ee) => { _childEditors.Remove(win); _childWindows.Remove(win); };
                                 win.Initialize(p.Label, e.UserProvidesNames, btn.Tag);
@@ -262,6 +270,10 @@ namespace PolicyPlus.WinUI3.Windows
                                 };
                                 win.Activate();
                                 WindowHelpers.BringToFront(win);
+                                var t = win.DispatcherQueue.CreateTimer();
+                                t.Interval = System.TimeSpan.FromMilliseconds(180);
+                                t.IsRepeating = false;
+                                t.Tick += (sss, eee) => { try { WindowHelpers.BringToFront(win); win.Activate(); } catch { } }; t.Start();
                             };
                             control = btn; label = p.Label; break;
                         }

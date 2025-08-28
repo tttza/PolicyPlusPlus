@@ -408,6 +408,10 @@ namespace PolicyPlus.WinUI3
                 ? AdmxPolicySection.User
                 : targetPolicy.RawPolicy.Section;
 
+            // If an editor for this policy is already open, bring it to front instead of opening another
+            if (App.TryActivateExistingEdit(targetPolicy.UniqueID))
+                return;
+
             var compLoader = _useTempPol && _tempPolCompPath != null
                 ? new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolCompPath, false)
                 : new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
@@ -993,6 +997,17 @@ namespace PolicyPlus.WinUI3
                 if (found != null) return found;
             }
             return null;
+        }
+
+        private void ToggleTempPolMenu_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is ToggleMenuFlyoutItem t)
+            {
+                if (ChkUseTempPol != null)
+                {
+                    ChkUseTempPol.IsChecked = t.IsChecked;
+                }
+            }
         }
     }
 }

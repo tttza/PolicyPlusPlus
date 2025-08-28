@@ -15,6 +15,8 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using PolicyPlus.WinUI3.Windows;
+using PolicyPlus.WinUI3.Utils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -28,6 +30,7 @@ namespace PolicyPlus.WinUI3
     {
         public static Window? Window { get; private set; }
         private static readonly HashSet<Window> _secondaryWindows = new();
+        private static readonly Dictionary<string, EditSettingWindow> _openEditWindows = new();
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
@@ -36,7 +39,6 @@ namespace PolicyPlus.WinUI3
         public App()
         {
             InitializeComponent();
-            // Respect system theme by default; don't force a theme here.
         }
 
         /// <summary>
@@ -66,6 +68,33 @@ namespace PolicyPlus.WinUI3
                 try { w.Close(); } catch { }
             }
             _secondaryWindows.Clear();
+            _openEditWindows.Clear();
+        }
+
+        public static bool TryActivateExistingEdit(string policyId)
+        {
+            if (_openEditWindows.TryGetValue(policyId, out var win))
+            {
+                try
+                {
+                    WindowHelpers.BringToFront(win);
+                    win.Activate();
+                    var timer = win.DispatcherQueue.CreateTimer();
+                    timer.Interval = TimeSpan.FromMilliseconds(180);
+                    timer.IsRepeating = false;
+                    timer.Tick += (s, e) => { try { WindowHelpers.BringToFront(win); win.Activate(); } catch { } };
+                    timer.Start();
+                }
+                catch { }
+                return true;
+            }
+            return false;
+        }
+
+        public static void RegisterEditWindow(string policyId, EditSettingWindow win)
+        {
+            _openEditWindows[policyId] = win;
+            win.Closed += (s, e) => { _openEditWindows.Remove(policyId); };
         }
     }
 }

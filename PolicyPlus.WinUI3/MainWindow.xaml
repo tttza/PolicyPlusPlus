@@ -37,32 +37,50 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="8,8,8,0">
-                <TextBlock Text="Theme:" VerticalAlignment="Center"/>
-                <ComboBox x:Name="ThemeSelector" Width="160" SelectionChanged="ThemeSelector_SelectionChanged">
-                    <ComboBoxItem Content="System" IsSelected="True"/>
-                    <ComboBoxItem Content="Dark"/>
-                    <ComboBoxItem Content="Light"/>
-                </ComboBox>
-                <Button x:Name="BtnLoadLocalGpo" Content="Load Local GPO (Computer)" Click="BtnLoadLocalGpo_Click"/>
-                <TextBlock x:Name="LoaderInfo" VerticalAlignment="Center"/>
-                <Button x:Name="BtnFind" Content="Find..." Click="BtnFind_Click"/>
-                <Button x:Name="BtnFindReg" Content="Find by registry..." Click="BtnFindReg_Click"/>
-                <Button x:Name="BtnFindId" Content="Find by ID..." Click="BtnFindId_Click"/>
-                <TextBlock Text="|" VerticalAlignment="Center"/>
-                <Button x:Name="BtnLanguage" Content="Language..." Click="BtnLanguage_Click"/>
-                <Button x:Name="BtnExportReg" Content="Export .reg..." Click="BtnExportReg_Click"/>
-                <Button x:Name="BtnExportCsv" Content="Export CSV..." Click="BtnExportCsv_Click"/>
-                <TextBlock Text="|" VerticalAlignment="Center"/>
-                <Button x:Name="BtnImportPol" Content="Import .pol..." Click="BtnImportPol_Click"/>
-                <Button x:Name="BtnImportReg" Content="Import .reg..." Click="BtnImportReg_Click"/>
-                <TextBlock Text="|" VerticalAlignment="Center"/>
-                <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
-                <Button x:Name="BtnSave" Content="Save" Click="BtnSave_Click"/>
-            </StackPanel>
+            <!-- Menu bar and theme selector -->
+            <Grid Grid.Row="0" Margin="8,8,8,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <controls:MenuBar>
+                    <controls:MenuBarItem Title="File">
+                        <MenuFlyoutItem Text="Load Local GPO (Computer)" Click="BtnLoadLocalGpo_Click" />
+                        <MenuFlyoutItem Text="Load ADMX Folder..." Click="BtnLoadAdmxFolder_Click" />
+                        <MenuFlyoutSeparator/>
+                        <MenuFlyoutItem Text="Save" Click="BtnSave_Click" />
+                    </controls:MenuBarItem>
+                    <controls:MenuBarItem Title="Find">
+                        <MenuFlyoutItem Text="Find..." Click="BtnFind_Click" />
+                        <MenuFlyoutItem Text="Find by registry..." Click="BtnFindReg_Click" />
+                        <MenuFlyoutItem Text="Find by ID..." Click="BtnFindId_Click" />
+                    </controls:MenuBarItem>
+                    <controls:MenuBarItem Title="Import/Export">
+                        <MenuFlyoutItem Text="Export .reg..." Click="BtnExportReg_Click" />
+                        <MenuFlyoutItem Text="Export CSV..." Click="BtnExportCsv_Click" />
+                        <MenuFlyoutSeparator/>
+                        <MenuFlyoutItem Text="Import .pol..." Click="BtnImportPol_Click" />
+                        <MenuFlyoutItem Text="Import .reg..." Click="BtnImportReg_Click" />
+                    </controls:MenuBarItem>
+                    <controls:MenuBarItem Title="Options">
+                        <MenuFlyoutItem Text="Language..." Click="BtnLanguage_Click" />
+                        <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Write to temp .pol" IsChecked="{Binding IsChecked, ElementName=ChkUseTempPol, Mode=TwoWay}" Click="ToggleTempPolMenu_Click" />
+                    </controls:MenuBarItem>
+                </controls:MenuBar>
 
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="Theme:" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="ThemeSelector" Width="160" SelectionChanged="ThemeSelector_SelectionChanged">
+                        <ComboBoxItem Content="System" IsSelected="True"/>
+                        <ComboBoxItem Content="Dark"/>
+                        <ComboBoxItem Content="Light"/>
+                    </ComboBox>
+                    <TextBlock x:Name="LoaderInfo" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Filters and counts row (removed Load ADMX button) -->
             <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="8,4,8,0">
-                <Button x:Name="BtnLoadAdmxFolder" Content="Load ADMX Folder" Click="BtnLoadAdmxFolder_Click"/>
                 <TextBlock Text="Applies to:" VerticalAlignment="Center"/>
                 <ComboBox x:Name="AppliesToSelector" Width="140" SelectionChanged="AppliesToSelector_SelectionChanged">
                     <ComboBoxItem Content="Both" IsSelected="True"/>
@@ -73,6 +91,8 @@
                 <CheckBox x:Name="ChkConfiguredOnly" Content="Configured only" Checked="ChkConfiguredOnly_Checked" Unchecked="ChkConfiguredOnly_Checked"/>
                 <TextBlock Text="|" VerticalAlignment="Center"/>
                 <TextBlock x:Name="PolicyCount" VerticalAlignment="Center"/>
+                <!-- Keep hidden checkbox to mirror menu toggle state -->
+                <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Visibility="Collapsed" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
             </StackPanel>
 
             <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Margin="8,4,8,0">

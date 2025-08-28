@@ -13,6 +13,26 @@ namespace PolicyPlus.WinUI3.Windows
 {
     public sealed class ListEditorWindow : Window
     {
+        private static readonly Dictionary<string, ListEditorWindow> _openEditors = new();
+        public static bool TryActivateExisting(string key)
+        {
+            if (_openEditors.TryGetValue(key, out var w))
+            {
+                WindowHelpers.BringToFront(w); w.Activate();
+                var timer = w.DispatcherQueue.CreateTimer();
+                timer.Interval = TimeSpan.FromMilliseconds(180);
+                timer.IsRepeating = false;
+                timer.Tick += (s, e) => { try { WindowHelpers.BringToFront(w); w.Activate(); } catch { } }; timer.Start();
+                return true;
+            }
+            return false;
+        }
+        public static void Register(string key, ListEditorWindow w)
+        {
+            _openEditors[key] = w;
+            w.Closed += (s, e) => { _openEditors.Remove(key); };
+        }
+
         private bool _userProvidesNames;
         public object? Result { get; private set; }
         public string? CountText { get; private set; }
@@ -24,25 +44,17 @@ namespace PolicyPlus.WinUI3.Windows
         public ListEditorWindow()
         {
             this.Title = "Edit list";
-
             var root = new StackPanel { Spacing = 12, Padding = new Thickness(12) };
             root.Children.Add(HeaderText);
             root.Children.Add(ListItems);
-
             var buttonsRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            var addBtn = new Button { Content = "Add" };
-            addBtn.Click += (s, e) => AddRow(string.Empty);
-            var okBtn = new Button { Content = "OK" };
-            okBtn.Click += Ok_Click;
-            var cancelBtn = new Button { Content = "Cancel" };
-            cancelBtn.Click += Cancel_Click;
-
+            var addBtn = new Button { Content = "Add" }; addBtn.Click += (s, e) => AddRow(string.Empty);
+            var okBtn = new Button { Content = "OK" }; okBtn.Click += Ok_Click;
+            var cancelBtn = new Button { Content = "Cancel" }; cancelBtn.Click += Cancel_Click;
             buttonsRow.Children.Add(addBtn);
             var tail = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right };
-            tail.Children.Add(okBtn);
-            tail.Children.Add(cancelBtn);
+            tail.Children.Add(okBtn); tail.Children.Add(cancelBtn);
             buttonsRow.Children.Add(tail);
-
             root.Children.Add(buttonsRow);
             this.Content = root;
 
