@@ -16,6 +16,9 @@
     </Window.SystemBackdrop>
 
     <Grid x:Name="RootGrid" Background="{ThemeResource WindowBackground}" Loaded="Window_Loaded" KeyDown="RootGrid_KeyDown">
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="SaveAccelerator_Invoked"/>
+        </Grid.KeyboardAccelerators>
         <Grid.Resources>
             <converters:ScaleConverter x:Key="ScaleConverter"/>
         </Grid.Resources>
@@ -53,6 +56,9 @@
                 <TextBlock Text="|" VerticalAlignment="Center"/>
                 <Button x:Name="BtnImportPol" Content="Import .pol..." Click="BtnImportPol_Click"/>
                 <Button x:Name="BtnImportReg" Content="Import .reg..." Click="BtnImportReg_Click"/>
+                <TextBlock Text="|" VerticalAlignment="Center"/>
+                <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
+                <Button x:Name="BtnSave" Content="Save" Click="BtnSave_Click"/>
             </StackPanel>
 
             <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="8,4,8,0">

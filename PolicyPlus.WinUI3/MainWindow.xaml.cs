@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using PolicyPlus.WinUI3.Dialogs;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
-using Microsoft.UI.Xaml.Controls; // TreeView
 using Windows.Storage;
 using System.Globalization;
 using System.Text;
@@ -26,13 +25,12 @@ namespace PolicyPlus.WinUI3
 {
     public sealed partial class MainWindow : Window
     {
-        // Constructor was missing; without it XAML was never loaded.
         public MainWindow()
         {
             this.InitializeComponent();
         }
 
-        // Restored fields
+        // State fields
         private PolicyLoader? _loader;
         private AdmxBundle? _bundle;
         private List<PolicyPlusPolicy> _allPolicies = new();
@@ -45,6 +43,12 @@ namespace PolicyPlus.WinUI3
         private IPolicySource? _compSource;
         private IPolicySource? _userSource;
         private bool _configuredOnly = false;
+
+        // Temp .pol mode and save tracking
+        private string? _tempPolCompPath;
+        private string? _tempPolUserPath;
+        private bool _useTempPol;
+        private bool _pendingChanges;
 
         private static readonly Regex UrlRegex = new Regex(@"(https?://[^\s]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -59,6 +63,7 @@ namespace PolicyPlus.WinUI3
         private void ShowInfo(string message, InfoBarSeverity severity = InfoBarSeverity.Informational)
         {
             if (StatusBar == null) return;
+            StatusBar.Title = null;
             StatusBar.Severity = severity;
             StatusBar.Message = message;
             StatusBar.IsOpen = true;
@@ -154,7 +159,8 @@ namespace PolicyPlus.WinUI3
             _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
             _compSource = _loader.OpenSource();
             _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-            LoaderInfo.Text = _loader.GetDisplayInfo();
+            if (LoaderInfo != null)
+                LoaderInfo.Text = _loader.GetDisplayInfo();
             ShowInfo("Local GPO sources initialized.");
         }
 
@@ -211,6 +217,22 @@ namespace PolicyPlus.WinUI3
             }
         }
 
+        private void EnsureLocalSourcesUsingTemp()
+        {
+            if (!_useTempPol)
+            {
+                EnsureLocalSources();
+                return;
+            }
+            var compLoader = new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolCompPath ?? string.Empty, false);
+            var userLoader = new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolUserPath ?? string.Empty, true);
+            _compSource = compLoader.OpenSource();
+            _userSource = userLoader.OpenSource();
+            _loader = compLoader;
+            if (LoaderInfo != null)
+                LoaderInfo.Text = "Temp POL (Comp/User)";
+        }
+
         private IEnumerable<PolicyPlusPolicy> BaseSequenceForFilters()
         {
             IEnumerable<PolicyPlusPolicy> seq = _allPolicies;
@@ -243,8 +265,7 @@ namespace PolicyPlus.WinUI3
         private void ApplyFiltersAndBind(string query = "", PolicyPlusCategory? category = null)
         {
             if (PolicyList == null || PolicyCount == null) return;
-            if (category != null) _selectedCategory = category; // persist selection
-            else if (category == null && _selectedCategory != null) { /* keep current */ }
+            if (category != null) _selectedCategory = category;
             IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters();
             if (!string.IsNullOrWhiteSpace(query))
                 seq = seq.Where(p => p.DisplayName.Contains(query, StringComparison.InvariantCultureIgnoreCase) || p.UniqueID.Contains(query, StringComparison.InvariantCultureIgnoreCase));
@@ -321,7 +342,7 @@ namespace PolicyPlus.WinUI3
             foreach (Match m in UrlRegex.Matches(text))
             {
                 if (IsInsideDoubleQuotes(text, m.Index))
-                    continue; // do not hyperlink URLs inside quoted strings (e.g., JSON)
+                    continue;
 
                 if (m.Index > lastIndex)
                 {
@@ -377,24 +398,31 @@ namespace PolicyPlus.WinUI3
             _nameGroups.TryGetValue(displayName, out var groupList);
             groupList ??= _allPolicies.Where(p => string.Equals(p.DisplayName, displayName, StringComparison.InvariantCultureIgnoreCase)).ToList();
 
-            // Default to User. If both variants exist, pick User; else fallback to Machine; else keep representative.
             PolicyPlusPolicy targetPolicy = groupList.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.User)
                                         ?? groupList.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Machine)
                                         ?? representative;
 
-            // For Both-type policies, default to User section when opening.
             var initialSection = targetPolicy.RawPolicy.Section == AdmxPolicySection.Both
                 ? AdmxPolicySection.User
                 : targetPolicy.RawPolicy.Section;
 
             var dialog = new EditSettingDialog();
             dialog.XamlRoot = this.Content.XamlRoot;
+
+            var compLoader = _useTempPol && _tempPolCompPath != null
+                ? new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolCompPath, false)
+                : new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
+            var userLoader = _useTempPol && _tempPolUserPath != null
+                ? new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolUserPath, true)
+                : new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true);
+
             dialog.Initialize(targetPolicy,
                 initialSection,
                 _bundle, _compSource!, _userSource!,
-                new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false), new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true),
+                compLoader, userLoader,
                 new Dictionary<string, string>(), new Dictionary<string, string>());
             await dialog.ShowAsync();
+            MarkDirty();
         }
 
         private async void BtnFind_Click(object sender, RoutedEventArgs e)
@@ -405,7 +433,7 @@ namespace PolicyPlus.WinUI3
             if (result == ContentDialogResult.Primary && dialog.Searcher != null)
             {
                 var searcher = dialog.Searcher;
-                var baseSeq = BaseSequenceForFilters(); // constrain to selected category and applies filter
+                var baseSeq = BaseSequenceForFilters();
                 var matches = baseSeq.Where(p => searcher(p));
                 BindSequence(matches);
                 ShowInfo($"Found {_visiblePolicies.Count} policy(ies).");
@@ -436,6 +464,7 @@ namespace PolicyPlus.WinUI3
                     BuildChildCategoryNodes(node, child);
             }
         }
+
         private async void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
@@ -481,7 +510,7 @@ namespace PolicyPlus.WinUI3
                 while (element != null && element.DataContext is not PolicyPlusPolicy)
                     element = element.Parent as FrameworkElement;
                 if (element?.DataContext is PolicyPlusPolicy p)
-                    lv.SelectedItem = p; // select item under pointer
+                    lv.SelectedItem = p;
             }
         }
 
@@ -507,16 +536,11 @@ namespace PolicyPlus.WinUI3
         {
             var p = GetContextMenuPolicy(sender);
             if (p is null || _bundle is null) return;
-            if (_compSource is null || _userSource is null || _loader is null)
-            {
-                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-                _compSource = _loader.OpenSource();
-                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-            }
+            EnsureLocalSources();
             var dlg = new DetailPolicyFormattedDialog();
             dlg.XamlRoot = this.Content.XamlRoot;
             var section = p.RawPolicy.Section == AdmxPolicySection.Both ? _appliesFilter : p.RawPolicy.Section;
-            dlg.Initialize(p, _bundle, _compSource, _userSource, section);
+            dlg.Initialize(p, _bundle, _compSource!, _userSource!, section);
             await dlg.ShowAsync();
         }
 
@@ -577,7 +601,6 @@ namespace PolicyPlus.WinUI3
             _selectedCategory = null;
             if (CategoryTree != null)
             {
-                // Clear visual selection
                 CategoryTree.SelectedNode = null;
                 try { CategoryTree.SelectedNodes?.Clear(); } catch { }
             }
@@ -595,16 +618,11 @@ namespace PolicyPlus.WinUI3
         {
             var p = PolicyList?.SelectedItem as PolicyPlusPolicy;
             if (p is null || _bundle is null) return;
-            if (_compSource is null || _userSource is null || _loader is null)
-            {
-                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-                _compSource = _loader.OpenSource();
-                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-            }
+            EnsureLocalSources();
             var dlg = new DetailPolicyFormattedDialog();
             dlg.XamlRoot = this.Content.XamlRoot;
             var section = p.RawPolicy.Section == AdmxPolicySection.Both ? _appliesFilter : p.RawPolicy.Section;
-            dlg.Initialize(p, _bundle, _compSource, _userSource, section);
+            dlg.Initialize(p, _bundle, _compSource!, _userSource!, section);
             await dlg.ShowAsync();
         }
 
@@ -617,7 +635,8 @@ namespace PolicyPlus.WinUI3
             foreach (var kv in values)
             {
                 sb.AppendLine();
-                sb.AppendLine($"[{(section == AdmxPolicySection.User ? "HKEY_CURRENT_USER" : "HKEY_LOCAL_MACHINE")}\\{kv.Key}]");
+                var root = (section == AdmxPolicySection.User ? "HKEY_CURRENT_USER" : "HKEY_LOCAL_MACHINE");
+                sb.AppendLine($"[{root}\\{kv.Key}]");
                 if (string.IsNullOrEmpty(kv.Value)) continue;
                 var data = src.GetValue(kv.Key, kv.Value);
                 if (data is null) continue;
@@ -625,7 +644,6 @@ namespace PolicyPlus.WinUI3
             }
             return sb.ToString();
         }
-
         private static string FormatRegValue(string name, object data)
         {
             if (data is uint u) return $"\"{name}\"=dword:{u:x8}";
@@ -700,8 +718,7 @@ namespace PolicyPlus.WinUI3
         private async void BtnExportReg_Click(object sender, RoutedEventArgs e)
         {
             if (_bundle is null) return;
-            if (_compSource is null || _userSource is null || _loader is null)
-            { _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false); _compSource = _loader.OpenSource(); _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource(); }
+            EnsureLocalSources();
 
             var savePicker = new FileSavePicker();
             InitializeWithWindow.Initialize(savePicker, WindowNative.GetWindowHandle(this));
@@ -717,7 +734,6 @@ namespace PolicyPlus.WinUI3
             sb.AppendLine("Windows Registry Editor Version 5.00");
             foreach (var g in grouped)
             {
-                // default to user
                 var target = g.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.User)
                             ?? g.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Machine)
                             ?? g.First();
@@ -726,7 +742,8 @@ namespace PolicyPlus.WinUI3
                 foreach (var kv in values)
                 {
                     sb.AppendLine();
-                    sb.AppendLine($"[{(target.RawPolicy.Section == AdmxPolicySection.User ? "HKEY_CURRENT_USER" : "HKEY_LOCAL_MACHINE")}\\{kv.Key}]");
+                    var root = (target.RawPolicy.Section == AdmxPolicySection.User ? "HKEY_CURRENT_USER" : "HKEY_LOCAL_MACHINE");
+                    sb.AppendLine($"[{root}\\{kv.Key}]");
                     if (string.IsNullOrEmpty(kv.Value)) continue;
                     var data = src.GetValue(kv.Key, kv.Value);
                     if (data is null) continue;
@@ -749,12 +766,7 @@ namespace PolicyPlus.WinUI3
         {
             var p = GetContextMenuPolicy(sender);
             if (p is null) return;
-            if (_compSource is null || _userSource is null || _loader is null)
-            {
-                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-                _compSource = _loader.OpenSource();
-                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-            }
+            EnsureLocalSources();
             var src = (p.RawPolicy.Section == AdmxPolicySection.User ? _userSource : _compSource)!;
             var reg = BuildRegExportForPolicy(p, src);
             var data = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
@@ -788,7 +800,6 @@ namespace PolicyPlus.WinUI3
         {
             var p = GetContextMenuPolicy(sender);
             if (p?.Category is null) return;
-            // expand and select category in tree
             foreach (var root in CategoryTree.RootNodes)
             {
                 if (ExpandToCategory(root, p.Category))
@@ -837,11 +848,11 @@ namespace PolicyPlus.WinUI3
             if (res != ContentDialogResult.Primary || dlg.Pol is null) return;
 
             EnsureLocalSources();
-            // Apply imported POL into the currently selected applies target
             var target = _appliesFilter == AdmxPolicySection.User ? _userSource! : _compSource!;
             dlg.Pol.Apply(target);
-            ShowInfo("Imported .pol.");
+            ShowInfo("Imported .pol (pending save).");
             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+            MarkDirty();
         }
 
         private async void BtnImportReg_Click(object sender, RoutedEventArgs e)
@@ -854,40 +865,35 @@ namespace PolicyPlus.WinUI3
             EnsureLocalSources();
             var target = _appliesFilter == AdmxPolicySection.User ? _userSource! : _compSource!;
             dlg.ParsedReg.Apply(target);
-            ShowInfo("Imported .reg.");
+            ShowInfo("Imported .reg (pending save).");
             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+            MarkDirty();
         }
 
         private void BtnClearAll_Click(object sender, RoutedEventArgs e)
         {
-            // Reset category
             _selectedCategory = null;
-            // Reset applies filter
             _appliesFilter = AdmxPolicySection.Both;
             if (AppliesToSelector != null)
                 AppliesToSelector.SelectedIndex = 0;
-            // Reset configured-only
             _configuredOnly = false;
             if (ChkConfiguredOnly != null)
                 ChkConfiguredOnly.IsChecked = false;
-            // Reset search
             if (SearchBox != null)
             {
                 SearchBox.Text = string.Empty;
                 SearchBox.ItemsSource = null;
             }
-            // Clear status
             HideInfo();
-            // Rebind full sequence
             ApplyFiltersAndBind(string.Empty, null);
         }
+
         private void PolicyList_ItemClick(object sender, ItemClickEventArgs e)
         {
-            // no-op: opening on double-click only
         }
+
         private void CategoryTree_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-            // Toggle expand/collapse on the node under pointer
             var element = e.OriginalSource as FrameworkElement;
             while (element != null && element.DataContext is not null && element.DataContext.GetType().Name != "TreeViewNode")
             {
@@ -906,6 +912,82 @@ namespace PolicyPlus.WinUI3
             {
                 node.IsExpanded = !node.IsExpanded;
                 e.Handled = true;
+            }
+        }
+
+        private void ChkUseTempPol_Checked(object sender, RoutedEventArgs e)
+        {
+            _useTempPol = ChkUseTempPol.IsChecked == true;
+            if (_useTempPol)
+            {
+                _tempPolCompPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"PolicyPlus_Comp_{Guid.NewGuid():N}.pol");
+                _tempPolUserPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"PolicyPlus_User_{Guid.NewGuid():N}.pol");
+                new PolFile().Save(_tempPolCompPath);
+                new PolFile().Save(_tempPolUserPath);
+                _loader = null; _compSource = null; _userSource = null;
+                EnsureLocalSourcesUsingTemp();
+                ShowInfo($"Writing to temp .pol (Computer: {_tempPolCompPath}, User: {_tempPolUserPath})");
+            }
+            else
+            {
+                _loader = null; _compSource = null; _userSource = null;
+                EnsureLocalSources();
+                ShowInfo("Writing to default sources");
+            }
+        }
+
+        private void MarkDirty()
+        {
+            _pendingChanges = true;
+            if (StatusBar != null)
+            {
+                StatusBar.Title = "Pending changes";
+                StatusBar.Severity = InfoBarSeverity.Warning;
+                StatusBar.Message = string.Empty;
+                StatusBar.IsOpen = true;
+            }
+        }
+
+        private void ClearDirty()
+        {
+            _pendingChanges = false;
+            if (StatusBar != null)
+                StatusBar.IsOpen = false;
+        }
+
+        private void SaveAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { BtnSave_Click(this, null!); args.Handled = true; }
+
+        private void BtnSave_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_pendingChanges)
+            {
+                ShowInfo("No changes to save.");
+                return;
+            }
+            try
+            {
+                if (_useTempPol && _compSource is PolFile compPol && _userSource is PolFile userPol)
+                {
+                    if (!string.IsNullOrEmpty(_tempPolCompPath)) compPol.Save(_tempPolCompPath);
+                    if (!string.IsNullOrEmpty(_tempPolUserPath)) userPol.Save(_tempPolUserPath);
+                    ShowInfo("Saved to temp .pol");
+                }
+                else
+                {
+                    // Save to Local GPO pol files directly
+                    string sys = Environment.ExpandEnvironmentVariables(@"%SYSTEMROOT%\System32\GroupPolicy");
+                    string mach = System.IO.Path.Combine(sys, "Machine", "Registry.pol");
+                    string user = System.IO.Path.Combine(sys, "User", "Registry.pol");
+                    if (_compSource is PolFile polC) polC.Save(mach);
+                    if (_userSource is PolFile polU) polU.Save(user);
+                    ShowInfo("Saved.");
+                }
+                ClearDirty();
+            }
+            catch (Exception ex)
+            {
+                ShowInfo("Save failed: " + ex.Message, InfoBarSeverity.Error);
             }
         }
     }
