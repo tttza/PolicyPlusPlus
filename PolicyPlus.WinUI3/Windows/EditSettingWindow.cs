@@ -50,7 +50,7 @@ namespace PolicyPlus.WinUI3.Windows
         {
             Title = "Edit Policy Setting";
             Content = BuildLayout();
-            WindowHelpers.Resize(this, 1400, 900);
+            WindowHelpers.Resize(this, 800, 600);
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
             this.Closed += (s, e) => App.UnregisterWindow(this);
             App.RegisterWindow(this);
