@@ -79,7 +79,7 @@
         <ColumnDefinition Width="Auto"/>
       </Grid.ColumnDefinitions>
       <StackPanel Orientation="Horizontal" Spacing="8">
-        <Button x:Name="ViewDetailApplyBtn" Content="View Detail (Apply)" Style="{StaticResource PrimaryButtonStyle}"/>
+        <Button x:Name="ViewDetailApplyBtn" Content="Preview Details" ToolTipService.ToolTip="Open formatted details without saving" Style="{StaticResource PrimaryButtonStyle}"/>
       </StackPanel>
       <Button x:Name="ApplyBtn" Grid.Column="1" Content="Apply" Style="{StaticResource ApplyButtonStyle}"/>
       <Button x:Name="OkBtn" Grid.Column="2" Content="OK" Style="{StaticResource PrimaryButtonStyle}"/>

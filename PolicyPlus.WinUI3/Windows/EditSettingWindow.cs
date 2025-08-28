@@ -362,12 +362,32 @@ namespace PolicyPlus.WinUI3.Windows
 
         private void ViewDetailApplyBtn_Click(object sender, RoutedEventArgs e)
         {
-            SaveToSource();
+            // Build an in-memory preview without persisting changes
+            var previewComp = new PolicyPlus.PolFile();
+            var previewUser = new PolicyPlus.PolFile();
+            var targetSection = _policy.RawPolicy.Section == AdmxPolicySection.Both ? _currentSection : _policy.RawPolicy.Section;
+            var previewTarget = targetSection == AdmxPolicySection.User ? (IPolicySource)previewUser : (IPolicySource)previewComp;
+
+            if (OptEnabled.IsChecked == true)
+            {
+                var options = CollectOptions();
+                PolicyProcessing.SetPolicyState(previewTarget, _policy, PolicyState.Enabled, options);
+            }
+            else if (OptDisabled.IsChecked == true)
+            {
+                PolicyProcessing.SetPolicyState(previewTarget, _policy, PolicyState.Disabled, null);
+            }
+            else
+            {
+                // Not Configured: leave preview empty so values appear as not set
+            }
+
             var win = new DetailPolicyFormattedWindow();
             _childWindows.Add(win);
             win.Closed += (s, ee) => _childWindows.Remove(win);
             var section = _policy.RawPolicy.Section == AdmxPolicySection.Both ? _currentSection : _policy.RawPolicy.Section;
-            win.Initialize(_policy, _bundle, _compSource, _userSource, section);
+            // Pass the preview sources so the detail window reads from the in-memory state
+            win.Initialize(_policy, _bundle, previewComp, previewUser, section);
             win.Activate();
             WindowHelpers.BringToFront(win);
         }
