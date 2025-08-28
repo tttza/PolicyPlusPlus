@@ -39,7 +39,7 @@ namespace PolicyPlus.WinUI3
         private AdmxBundle? _bundle;
         private List<PolicyPlusPolicy> _allPolicies = new();
         private List<PolicyPlusPolicy> _visiblePolicies = new();
-        private Dictionary<string, List<PolicyPlusPolicy>> _nameGroups = new(StringComparer.InvariantCultureIgnoreCase);
+        private Dictionary<string, List<PolicyPlusPolicy>> _nameGroups = new(System.StringComparer.InvariantCultureIgnoreCase);
         private int _totalGroupCount = 0;
         private AdmxPolicySection _appliesFilter = AdmxPolicySection.Both;
         private PolicyPlusCategory? _selectedCategory = null;
@@ -54,7 +54,7 @@ namespace PolicyPlus.WinUI3
         private string? _tempPolUserPath;
         private bool _useTempPol;
 
-        private static readonly Regex UrlRegex = new Regex(@"(https?://[^\s]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly System.Text.RegularExpressions.Regex UrlRegex = new(@"(https?://[^\s]+)", System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
         private static void SetPlainText(RichTextBlock rtb, string text)
         {
@@ -101,6 +101,7 @@ namespace PolicyPlus.WinUI3
             {
                 var themePref = Convert.ToString(_config?.GetValue("Theme", "System")) ?? "System";
                 ApplyTheme(themePref);
+                App.SetGlobalTheme(themePref switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
                 var items = ThemeSelector?.Items?.OfType<ComboBoxItem>().ToList();
                 if (items != null)
                 {
@@ -129,7 +130,7 @@ namespace PolicyPlus.WinUI3
             try
             {
                 _bundle = new AdmxBundle();
-                var langPref = Convert.ToString(_config?.GetValue("UICulture", CultureInfo.CurrentUICulture.Name)) ?? CultureInfo.CurrentUICulture.Name;
+                var langPref = Convert.ToString(_config?.GetValue("UICulture", System.Globalization.CultureInfo.CurrentUICulture.Name)) ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
                 var fails = _bundle.LoadFolder(path, langPref);
                 if (fails.Any())
                     ShowInfo($"ADMX load completed with {fails.Count()} issue(s).", InfoBarSeverity.Warning);
@@ -137,7 +138,7 @@ namespace PolicyPlus.WinUI3
                     ShowInfo($"ADMX loaded ({langPref}).");
                 BuildCategoryTree();
                 _allPolicies = _bundle.Policies.Values.ToList();
-                _totalGroupCount = _allPolicies.GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).Count();
+                _totalGroupCount = _allPolicies.GroupBy(p => p.DisplayName, System.StringComparer.InvariantCultureIgnoreCase).Count();
                 ApplyFiltersAndBind();
             }
             finally
@@ -149,12 +150,9 @@ namespace PolicyPlus.WinUI3
         private void ApplyTheme(string pref)
         {
             if (RootGrid == null) return;
-            RootGrid.RequestedTheme = pref switch
-            {
-                "Light" => ElementTheme.Light,
-                "Dark" => ElementTheme.Dark,
-                _ => ElementTheme.Default
-            };
+            var theme = pref switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default };
+            RootGrid.RequestedTheme = theme;
+            App.SetGlobalTheme(theme);
         }
 
         private void ThemeSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -286,7 +284,7 @@ namespace PolicyPlus.WinUI3
 
         private void BindSequence(IEnumerable<PolicyPlusPolicy> seq)
         {
-            var grouped = seq.GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase);
+            var grouped = seq.GroupBy(p => p.DisplayName, System.StringComparer.InvariantCultureIgnoreCase);
             _nameGroups = grouped.ToDictionary(g => g.Key, g => g.ToList(), StringComparer.InvariantCultureIgnoreCase);
             _visiblePolicies = grouped.Select(PickRepresentative).OrderBy(p => p.DisplayName).ToList();
             PolicyList.ItemsSource = _visiblePolicies;

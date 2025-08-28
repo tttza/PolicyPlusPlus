@@ -10,8 +10,9 @@
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
   </PropertyGroup>
+
   <ItemGroup>
-    <Page Remove="Windows\ListEditorWindow.xaml" />
+    <None Remove="Resources\ThemeColors.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,6 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.250402" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.2.0" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4948" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
   </ItemGroup>
@@ -47,12 +49,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Windows\ListEditorWindow.xaml">
+    <Page Update="Resources\ThemeColors.xaml">
       <Generator>MSBuild:Compile</Generator>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
+    </Page>
     <Page Update="Dialogs\FindByRegistryDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -66,6 +65,13 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Update="Dialogs\ImportRegDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Remove="Windows\DetailPolicyFormattedWindow.xaml" />
+    <Page Include="Windows\DetailPolicyFormattedWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

@@ -18,44 +18,49 @@ using Windows.Foundation.Collections;
 using PolicyPlus.WinUI3.Windows;
 using PolicyPlus.WinUI3.Utils;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
-
 namespace PolicyPlus.WinUI3
 {
-    /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
-    /// </summary>
     public partial class App : Application
     {
         public static Window? Window { get; private set; }
         private static readonly HashSet<Window> _secondaryWindows = new();
         private static readonly Dictionary<string, EditSettingWindow> _openEditWindows = new();
 
-        /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
+        public static ElementTheme CurrentTheme { get; private set; } = ElementTheme.Default;
+        public static event EventHandler? ThemeChanged;
+
         public App()
         {
             InitializeComponent();
         }
 
-        /// <summary>
-        /// Invoked when the application is launched.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             Window = new MainWindow();
+            ApplyThemeTo(Window);
             Window.Closed += (s, e) => CloseAllSecondaryWindows();
             Window.Activate();
+        }
+
+        public static void SetGlobalTheme(ElementTheme theme)
+        {
+            CurrentTheme = theme;
+            if (Window != null) ApplyThemeTo(Window);
+            foreach (var w in _secondaryWindows) ApplyThemeTo(w);
+            ThemeChanged?.Invoke(null, EventArgs.Empty);
+        }
+
+        private static void ApplyThemeTo(Window w)
+        {
+            if (w.Content is FrameworkElement fe)
+                fe.RequestedTheme = CurrentTheme;
         }
 
         public static void RegisterWindow(Window w)
         {
             if (w == Window) return;
             _secondaryWindows.Add(w);
+            ApplyThemeTo(w);
         }
         public static void UnregisterWindow(Window w)
         {

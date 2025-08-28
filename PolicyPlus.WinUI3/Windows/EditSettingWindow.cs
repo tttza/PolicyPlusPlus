@@ -2,17 +2,19 @@ using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Documents;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Windows.Graphics;
+using System.Text.RegularExpressions;
 using WinRT.Interop;
 using PolicyPlus.WinUI3.Utils;
 
 namespace PolicyPlus.WinUI3.Windows
 {
-    public sealed class EditSettingWindow : Window
+    public sealed partial class EditSettingWindow : Window
     {
         // Data
         private PolicyPlusPolicy _policy = null!;
@@ -25,31 +27,22 @@ namespace PolicyPlus.WinUI3.Windows
         private Dictionary<string, string>? _compComments;
         private Dictionary<string, string>? _userComments;
 
-        // UI controls
-        private TextBlock SettingTitle = new TextBlock { FontSize = 18, FontWeight = FontWeights.SemiBold };
-        private ComboBox SectionSelector = new ComboBox { Width = 160 };
-        private RadioButton OptNotConfigured = new RadioButton { Content = "Not Configured", GroupName = "State" };
-        private RadioButton OptEnabled = new RadioButton { Content = "Enabled", GroupName = "State" };
-        private RadioButton OptDisabled = new RadioButton { Content = "Disabled", GroupName = "State" };
-        private TextBox CommentBox = new TextBox { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 56 };
-        private TextBox SupportedBox = new TextBox { IsReadOnly = true };
-        private StackPanel OptionsPanel = new StackPanel { Spacing = 8 };
-        private TextBox ExplainBox = new TextBox { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, IsReadOnly = true };
-        private Button ViewDetailApplyBtn = new Button { Content = "View Detail (Apply)" };
-        private Button ApplyBtn = new Button { Content = "Apply" };
-        private Button OkBtn = new Button { Content = "OK" };
-        private Button CancelBtn = new Button { Content = "Cancel" };
-
         private readonly Dictionary<string, FrameworkElement> _elementControls = new();
         private readonly List<ListEditorWindow> _childEditors = new();
         private readonly List<Window> _childWindows = new();
 
         public event EventHandler? Saved;
 
+        private static readonly Regex UrlRegex = new Regex(@"(https?://[^\s]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         public EditSettingWindow()
         {
+            InitializeComponent();
             Title = "Edit Policy Setting";
-            Content = BuildLayout();
+
+            ApplyWindowTheme();
+            App.ThemeChanged += (s, e) => ApplyWindowTheme();
+
             WindowHelpers.Resize(this, 800, 600);
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
             this.Closed += (s, e) => App.UnregisterWindow(this);
@@ -63,77 +56,18 @@ namespace PolicyPlus.WinUI3.Windows
             ApplyBtn.Click += ApplyBtn_Click;
             OkBtn.Click += OkBtn_Click;
             CancelBtn.Click += (s, e) => Close();
-
-            this.Closed += (s, e) =>
-            {
-                foreach (var w in _childEditors.ToArray()) { try { w.Close(); } catch { } }
-                _childEditors.Clear();
-                foreach (var w in _childWindows.ToArray()) { try { w.Close(); } catch { } }
-                _childWindows.Clear();
-            };
         }
 
-        private UIElement BuildLayout()
+        private void ApplyWindowTheme()
         {
-            var root = new Grid { RowSpacing = 8, ColumnSpacing = 20, Padding = new Thickness(12) };
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-            Grid.SetRow(SettingTitle, 0); Grid.SetColumnSpan(SettingTitle, 2); root.Children.Add(SettingTitle);
-
-            var header = new Grid { ColumnSpacing = 20 };
-            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(7, GridUnitType.Star) });
-            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(13, GridUnitType.Star) });
-            Grid.SetRow(header, 1); Grid.SetColumnSpan(header, 2); root.Children.Add(header);
-
-            var leftHead = new StackPanel { Spacing = 8 };
-            var editingRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
-            editingRow.Children.Add(new TextBlock { Text = "Editing for", VerticalAlignment = VerticalAlignment.Center });
-            SectionSelector.Items.Add(new ComboBoxItem { Content = "Computer" });
-            SectionSelector.Items.Add(new ComboBoxItem { Content = "User" });
-            editingRow.Children.Add(SectionSelector);
-            leftHead.Children.Add(editingRow);
-            leftHead.Children.Add(new StackPanel { Spacing = 4, Children = { OptNotConfigured, OptEnabled, OptDisabled } });
-            Grid.SetColumn(leftHead, 0); header.Children.Add(leftHead);
-
-            var rightHead = new Grid { ColumnSpacing = 8 };
-            rightHead.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            rightHead.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            rightHead.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            rightHead.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            rightHead.Children.Add(new TextBlock { Text = "Comment", VerticalAlignment = VerticalAlignment.Top });
-            Grid.SetColumn(CommentBox, 1);
-            // Enable scrollbars for multi-line comment
-            ScrollViewer.SetVerticalScrollBarVisibility(CommentBox, ScrollBarVisibility.Auto);
-            ScrollViewer.SetHorizontalScrollBarVisibility(CommentBox, ScrollBarVisibility.Disabled);
-            rightHead.Children.Add(CommentBox);
-            var sup = new TextBlock { Text = "Supported on", VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetRow(sup, 1); rightHead.Children.Add(sup);
-            Grid.SetRow(SupportedBox, 1); Grid.SetColumn(SupportedBox, 1); rightHead.Children.Add(SupportedBox);
-            Grid.SetColumn(rightHead, 1); header.Children.Add(rightHead);
-
-            var middle = new Grid { ColumnSpacing = 20 };
-            middle.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(9, GridUnitType.Star) });
-            middle.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(11, GridUnitType.Star) });
-            Grid.SetRow(middle, 2); Grid.SetColumnSpan(middle, 2); root.Children.Add(middle);
-
-            var optScroll = new ScrollViewer { MaxHeight = 600, Content = OptionsPanel, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalScrollMode = ScrollMode.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-            Grid.SetColumn(optScroll, 0); middle.Children.Add(optScroll);
-            var expScroll = new ScrollViewer { MaxHeight = 600, Content = ExplainBox };
-            Grid.SetColumn(expScroll, 1); middle.Children.Add(expScroll);
-
-            var bottom = new Grid(); bottom.ColumnDefinitions.Add(new ColumnDefinition()); bottom.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); bottom.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); bottom.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            bottom.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { ViewDetailApplyBtn } });
-            Grid.SetColumn(ApplyBtn, 1); bottom.Children.Add(ApplyBtn);
-            Grid.SetColumn(OkBtn, 2); bottom.Children.Add(OkBtn);
-            Grid.SetColumn(CancelBtn, 3); bottom.Children.Add(CancelBtn);
-            Grid.SetRow(bottom, 3); Grid.SetColumnSpan(bottom, 2); root.Children.Add(bottom);
-
-            return root;
+            if (Content is FrameworkElement fe)
+                fe.RequestedTheme = App.CurrentTheme;
+            // Force text boxes to theme-aware colors
+            var textBg = Application.Current.Resources["TextControlBackground"] as Brush;
+            var textFg = Application.Current.Resources["TextFillColorPrimaryBrush"] as Brush;
+            CommentBox.Background = textBg; CommentBox.Foreground = textFg;
+            SupportedBox.Background = textBg; SupportedBox.Foreground = textFg;
+            // RichTextBlock uses theme brushes automatically; no explicit background needed
         }
 
         public void Initialize(PolicyPlusPolicy policy, AdmxPolicySection section, AdmxBundle bundle,
@@ -146,7 +80,7 @@ namespace PolicyPlus.WinUI3.Windows
 
             SettingTitle.Text = policy.DisplayName;
             SupportedBox.Text = policy.SupportedOn is null ? string.Empty : policy.SupportedOn.DisplayName;
-            ExplainBox.Text = policy.DisplayExplanation ?? string.Empty;
+            SetExplanationText(policy.DisplayExplanation ?? string.Empty);
 
             SectionSelector.IsEnabled = policy.RawPolicy.Section == AdmxPolicySection.Both;
             SectionSelector.SelectedIndex = (section == AdmxPolicySection.Machine) ? 0 : 1;
@@ -161,6 +95,41 @@ namespace PolicyPlus.WinUI3.Windows
             tmr.IsRepeating = false;
             tmr.Tick += (s, e) => { try { WindowHelpers.BringToFront(this); this.Activate(); } catch { } }; tmr.Start();
             App.RegisterEditWindow(_policy.UniqueID, this);
+        }
+
+        private void SetExplanationText(string text)
+        {
+            ExplainText.Blocks.Clear();
+            var para = new Paragraph();
+            if (string.IsNullOrEmpty(text)) { ExplainText.Blocks.Add(para); return; }
+
+            int lastIndex = 0;
+            foreach (Match m in UrlRegex.Matches(text))
+            {
+                if (m.Index > lastIndex)
+                {
+                    var before = text.Substring(lastIndex, m.Index - lastIndex);
+                    para.Inlines.Add(new Run { Text = before });
+                }
+
+                string url = m.Value;
+                var link = new Hyperlink();
+                link.Inlines.Add(new Run { Text = url });
+                link.Click += async (s, e) =>
+                {
+                    if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                    {
+                        try { await global::Windows.System.Launcher.LaunchUriAsync(uri); } catch { }
+                    }
+                };
+                para.Inlines.Add(link);
+                lastIndex = m.Index + m.Length;
+            }
+            if (lastIndex < text.Length)
+            {
+                para.Inlines.Add(new Run { Text = text.Substring(lastIndex) });
+            }
+            ExplainText.Blocks.Add(para);
         }
 
         private (IPolicySource src, PolicyLoader loader, Dictionary<string, string>? comments) GetCurrent()

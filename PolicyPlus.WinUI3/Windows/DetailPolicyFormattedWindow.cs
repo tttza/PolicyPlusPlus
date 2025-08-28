@@ -13,23 +13,13 @@ using PolicyPlus.WinUI3.Utils;
 
 namespace PolicyPlus.WinUI3.Windows
 {
-    public sealed class DetailPolicyFormattedWindow : Window
+    public sealed partial class DetailPolicyFormattedWindow : Window
     {
         private PolicyPlusPolicy _policy = null!;
         private AdmxBundle _bundle = null!;
         private IPolicySource _compSource = null!;
         private IPolicySource _userSource = null!;
         private AdmxPolicySection _currentSection;
-
-        private TextBox NameBox = new TextBox { IsReadOnly = true };
-        private TextBox IdBox = new TextBox { IsReadOnly = true };
-        private TextBox DefinedInBox = new TextBox { IsReadOnly = true };
-        private TextBox PathBox = new TextBox { AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, FontFamily = new FontFamily("Consolas") };
-        private TextBox RegBox = new TextBox { AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, FontFamily = new FontFamily("Consolas") };
-        private Button CopyPathBtn = new Button { Content = new SymbolIcon(Symbol.Copy), MinWidth = 36, MinHeight = 36, Padding = new Thickness(8) };
-        private Button CopyRegBtn = new Button { Content = new SymbolIcon(Symbol.Copy), MinWidth = 36, MinHeight = 36, Padding = new Thickness(8) };
-        private Button ToggleViewBtn = new Button { Content = new SymbolIcon(Symbol.Sync), MinWidth = 36, MinHeight = 36, Padding = new Thickness(8) };
-        private Button CloseBtn = new Button { Content = "Close", MinWidth = 90 };
 
         private string _regFormattedCache = string.Empty;
         private string _regFileCache = string.Empty;
@@ -38,67 +28,35 @@ namespace PolicyPlus.WinUI3.Windows
         public DetailPolicyFormattedWindow()
         {
             this.Title = "Policy Details - Formatted";
-
-            var root = new Grid { RowSpacing = 6, ColumnSpacing = 8, Padding = new Thickness(10) };
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.ColumnDefinitions.Clear();
-            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
-            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            void addRow(int row, string label, Control box, FrameworkElement? sideEl = null)
-            {
-                var lbl = new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center };
-                Grid.SetRow(lbl, row); Grid.SetColumn(lbl, 0); root.Children.Add(lbl);
-                Grid.SetRow(box, row); Grid.SetColumn(box, 1); root.Children.Add(box);
-                if (sideEl != null)
-                { Grid.SetRow(sideEl, row); Grid.SetColumn(sideEl, 2); root.Children.Add(sideEl); }
-            }
-
-            addRow(0, "Name", NameBox);
-            addRow(1, "Unique ID", IdBox);
-            addRow(2, "Defined in", DefinedInBox);
-
-            var pathScroll = new ScrollViewer { Content = PathBox, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-            ToolTipService.SetToolTip(CopyPathBtn, "Copy");
-            var pathIcons = new StackPanel { Orientation = Orientation.Vertical, Spacing = 6, VerticalAlignment = VerticalAlignment.Top };
-            pathIcons.Children.Add(CopyPathBtn);
-            addRow(3, "Policy Path", pathScroll, pathIcons);
-
-            var regIcons = new StackPanel { Orientation = Orientation.Vertical, Spacing = 6, VerticalAlignment = VerticalAlignment.Top };
-            ToolTipService.SetToolTip(ToggleViewBtn, "Toggle Formatted/.reg");
-            ToolTipService.SetToolTip(CopyRegBtn, "Copy");
-            regIcons.Children.Add(ToggleViewBtn);
-            regIcons.Children.Add(CopyRegBtn);
-            var regScroll = new ScrollViewer { Content = RegBox, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-            addRow(4, "Registry Value", regScroll, regIcons);
-
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            buttons.Children.Add(CloseBtn);
-            Grid.SetRow(buttons, 5); Grid.SetColumnSpan(buttons, 3); root.Children.Add(buttons);
+            InitializeComponent();
 
             CopyPathBtn.Click += (s, e) => CopyToClipboard(PathBox.Text);
             CopyRegBtn.Click += (s, e) => CopyToClipboard(RegBox.Text);
             ToggleViewBtn.Click += ToggleViewBtn_Click;
             CloseBtn.Click += (s, e) => this.Close();
 
-            this.Content = root;
+            ApplyThemeResources();
+            App.ThemeChanged += (s, e) => ApplyThemeResources();
+
             TryResize(600, 520);
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
             this.Closed += (s, e) => App.UnregisterWindow(this);
             App.RegisterWindow(this);
         }
 
-        private void ToggleViewBtn_Click(object sender, RoutedEventArgs e)
+        private void ApplyThemeResources()
         {
-            _showRegFile = !_showRegFile;
-            RegBox.Text = _showRegFile ? _regFileCache : _regFormattedCache;
+            if (Content is FrameworkElement fe) fe.RequestedTheme = App.CurrentTheme;
+            var inputBg = (Brush)Application.Current.Resources["ControlFillColorDefaultBrush"]; var inputStroke = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"]; var inputFg = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
+            NameBox.Background = inputBg; NameBox.BorderBrush = inputStroke; NameBox.Foreground = inputFg;
+            IdBox.Background = inputBg; IdBox.BorderBrush = inputStroke; IdBox.Foreground = inputFg;
+            DefinedInBox.Background = inputBg; DefinedInBox.BorderBrush = inputStroke; DefinedInBox.Foreground = inputFg;
+            PathBox.Background = inputBg; PathBox.BorderBrush = inputStroke; PathBox.Foreground = inputFg;
+            RegBox.Background = inputBg; RegBox.BorderBrush = inputStroke; RegBox.Foreground = inputFg;
         }
+
+        private void ToggleViewBtn_Click(object sender, RoutedEventArgs e)
+        { _showRegFile = !_showRegFile; RegBox.Text = _showRegFile ? _regFileCache : _regFormattedCache; }
 
         private static void CopyToClipboard(string text)
         {
@@ -174,7 +132,7 @@ namespace PolicyPlus.WinUI3.Windows
                     var data = src.GetValue(kv.Key, kv.Value);
                     var (typeName, dataText) = GetTypeAndDataText(data);
                     sb.AppendLine($"–¼‘O: {kv.Value}");
-                    sb.AppendLine($"Ží—Þ: {typeName}");
+                    sb.AppendLine($"Œ^: {typeName}");
                     sb.AppendLine($"’l: {dataText}");
                 }
                 sb.AppendLine();
@@ -231,18 +189,12 @@ namespace PolicyPlus.WinUI3.Windows
             if (data is null) return ("(not set)", "");
             switch (data)
             {
-                case uint u:
-                    return ("REG_DWORD", $"0x{u:x8} ({u})");
-                case ulong uq:
-                    return ("REG_QWORD", $"0x{uq:x16} ({uq})");
-                case string s:
-                    return ("REG_SZ", s);
-                case string[] arr:
-                    return ("REG_MULTI_SZ", string.Join("; ", arr));
-                case byte[] bin:
-                    return ("REG_BINARY", string.Join(" ", bin.Select(b => b.ToString("x2"))));
-                default:
-                    return ("(unknown)", Convert.ToString(data) ?? string.Empty);
+                case uint u: return ("REG_DWORD", $"0x{u:x8} ({u})");
+                case ulong uq: return ("REG_QWORD", $"0x{uq:x16} ({uq})");
+                case string s: return ("REG_SZ", s);
+                case string[] arr: return ("REG_MULTI_SZ", string.Join("; ", arr));
+                case byte[] bin: return ("REG_BINARY", string.Join(" ", bin.Select(b => b.ToString("x2"))));
+                default: return ("(unknown)", Convert.ToString(data) ?? string.Empty);
             }
         }
 
@@ -251,11 +203,7 @@ namespace PolicyPlus.WinUI3.Windows
             if (cat == null) yield break;
             var stack = new Stack<string>();
             var cur = cat;
-            while (cur != null)
-            {
-                stack.Push(cur.DisplayName);
-                cur = cur.Parent;
-            }
+            while (cur != null) { stack.Push(cur.DisplayName); cur = cur.Parent; }
             foreach (var s in stack) yield return s;
         }
     }

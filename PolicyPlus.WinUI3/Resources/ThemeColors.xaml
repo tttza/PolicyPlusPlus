@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Accent and theme-specific brushes -->
+    <SolidColorBrush x:Key="AccentBrush" Color="{ThemeResource SystemAccentColor}" />
+
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="WindowBackground" Color="#FFFFFFFF" />
+            <!-- soften danger color -->
+            <SolidColorBrush x:Key="DangerBrush" Color="#FFB94A48" />
+            <SolidColorBrush x:Key="DangerForegroundBrush" Color="#FFFFFFFF" />
+            <!-- subtle apply color (green) -->
+            <SolidColorBrush x:Key="ApplyBrush" Color="#FF4CB07A" />
+            <SolidColorBrush x:Key="ApplyBrushHover" Color="#FF3FA56E" />
+            <SolidColorBrush x:Key="ApplyBrushPressed" Color="#FF369760" />
+            <SolidColorBrush x:Key="ApplyForegroundBrush" Color="#FFFFFFFF" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="WindowBackground" Color="#FF202020" />
+            <!-- soften danger color -->
+            <SolidColorBrush x:Key="DangerBrush" Color="#FF954544" />
+            <SolidColorBrush x:Key="DangerForegroundBrush" Color="#FFFFFFFF" />
+            <!-- subtle apply color (green) -->
+            <SolidColorBrush x:Key="ApplyBrush" Color="#FF3FA76A" />
+            <SolidColorBrush x:Key="ApplyBrushHover" Color="#FF349E60" />
+            <SolidColorBrush x:Key="ApplyBrushPressed" Color="#FF2D8E56" />
+            <SolidColorBrush x:Key="ApplyForegroundBrush" Color="#FFFFFFFF" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="HighContrast" />
+    </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>
