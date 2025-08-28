@@ -10,6 +10,9 @@
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
   </PropertyGroup>
+  <ItemGroup>
+    <Page Remove="Windows\ListEditorWindow.xaml" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="Assets\SplashScreen.scale-200.png" />
@@ -41,6 +44,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PolicyPlus.Core\PolicyPlus.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Windows\ListEditorWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

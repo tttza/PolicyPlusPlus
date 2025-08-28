@@ -24,6 +24,7 @@ namespace PolicyPlus.WinUI3.Dialogs
 
         // Track child editor windows and dialog state
         private readonly List<ListEditorWindow> _childEditors = new();
+        private readonly List<Window> _childWindows = new();
         private bool _dialogOpen;
 
         public EditSettingDialog()
@@ -34,12 +35,17 @@ namespace PolicyPlus.WinUI3.Dialogs
             this.Closed += (s, e) =>
             {
                 _dialogOpen = false;
-                // Ensure any child editors are closed to avoid dangling handlers
+                // Ensure any child editors and windows are closed to avoid dangling handlers
                 foreach (var w in _childEditors.ToArray())
                 {
                     try { w.Close(); } catch { }
                 }
                 _childEditors.Clear();
+                foreach (var w in _childWindows.ToArray())
+                {
+                    try { w.Close(); } catch { }
+                }
+                _childWindows.Clear();
             };
         }
 
@@ -169,11 +175,11 @@ namespace PolicyPlus.WinUI3.Dialogs
                             {
                                 var win = new ListEditorWindow();
                                 _childEditors.Add(win);
-                                win.Closed += (ss, ee) => _childEditors.Remove(win);
+                                _childWindows.Add(win);
+                                win.Closed += (ss, ee) => { _childEditors.Remove(win); _childWindows.Remove(win); };
                                 win.Initialize(p.Label, e.UserProvidesNames, btn.Tag);
                                 win.Finished += (ss, ok) =>
                                 {
-                                    // Guard against parent dialog being closed while editor is open
                                     if (!_dialogOpen) return;
                                     if (!ok) return;
                                     btn.Tag = win.Result;
@@ -349,13 +355,14 @@ namespace PolicyPlus.WinUI3.Dialogs
                 ctrl.IsEnabled = enableOptions;
         }
 
-        private async void ViewDetailFormattedBtn_Click(object sender, RoutedEventArgs e)
+        private void ViewDetailFormattedBtn_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new DetailPolicyFormattedDialog();
-            dialog.XamlRoot = this.XamlRoot;
+            var win = new DetailPolicyFormattedWindow();
+            _childWindows.Add(win);
+            win.Closed += (s, ee) => _childWindows.Remove(win);
             var section = _policy.RawPolicy.Section == AdmxPolicySection.Both ? _currentSection : _policy.RawPolicy.Section;
-            dialog.Initialize(_policy, _bundle, _compSource, _userSource, section);
-            await dialog.ShowAsync(ContentDialogPlacement.InPlace);
+            win.Initialize(_policy, _bundle, _compSource, _userSource, section);
+            win.Activate();
         }
 
         private class ComboItem
