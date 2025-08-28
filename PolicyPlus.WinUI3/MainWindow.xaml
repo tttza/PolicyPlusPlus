@@ -27,7 +27,16 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <controls:InfoBar x:Name="StatusBar" Grid.Row="0" IsOpen="False" Severity="Informational" />
+        <!-- Overlay InfoBar at the bottom, with denser background -->
+        <controls:InfoBar x:Name="StatusBar"
+                          Grid.RowSpan="2"
+                          VerticalAlignment="Bottom"
+                          HorizontalAlignment="Stretch"
+                          Margin="12"
+                          Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                          IsOpen="False"
+                          Severity="Informational"
+                          Canvas.ZIndex="5" />
 
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
@@ -176,7 +185,7 @@
             </Grid>
         </Grid>
 
-        <Grid x:Name="BusyOverlay" Background="#80000000" Visibility="Collapsed" Grid.RowSpan="2">
+        <Grid x:Name="BusyOverlay" Background="#80000000" Visibility="Collapsed" Grid.RowSpan="2" Canvas.ZIndex="10">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
                 <controls:ProgressRing IsActive="True" Width="48" Height="48"/>
                 <TextBlock Text="Loading..."/>
