@@ -9,6 +9,7 @@ using PolicyPlus.WinUI3.Services;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
+using System.Collections.Specialized;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -27,6 +28,29 @@ namespace PolicyPlus.WinUI3.Windows
             BtnApplyAll.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
             BtnDiscardAll.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
             BtnReapplySelected.Visibility = pendingActive ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void SubscribeCollectionChanges()
+        {
+            try
+            {
+                PendingChangesService.Instance.Pending.CollectionChanged += OnCollectionsChanged;
+                PendingChangesService.Instance.History.CollectionChanged += OnCollectionsChanged;
+            }
+            catch { }
+        }
+        private void UnsubscribeCollectionChanges()
+        {
+            try
+            {
+                PendingChangesService.Instance.Pending.CollectionChanged -= OnCollectionsChanged;
+                PendingChangesService.Instance.History.CollectionChanged -= OnCollectionsChanged;
+            }
+            catch { }
+        }
+        private void OnCollectionsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            DispatcherQueue.TryEnqueue(() => RefreshViews());
         }
 
         // Call once on loaded too
@@ -58,13 +82,15 @@ namespace PolicyPlus.WinUI3.Windows
             var main = App.Window as MainWindow;
             if (main != null)
             {
-                main.Saved += (s, e) => ShowLocalInfo("Saved.");
+                main.Saved += (s, e) => { ShowLocalInfo("Saved."); RefreshViews(); };
             }
 
             WindowHelpers.Resize(this, 900, 640);
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
-            this.Closed += (s, e) => App.UnregisterWindow(this);
+            this.Closed += (s, e) => { UnsubscribeCollectionChanges(); App.UnregisterWindow(this); };
             App.RegisterWindow(this);
+
+            SubscribeCollectionChanges();
         }
 
         private async void ShowLocalInfo(string message)
@@ -146,6 +172,12 @@ namespace PolicyPlus.WinUI3.Windows
             }
         }
 
+        private void BtnSaveAll_Click(object sender, RoutedEventArgs e)
+        {
+            // Save all pending changes
+            ApplySelected(PendingChangesService.Instance.Pending.ToArray());
+        }
+
         private void BtnApplySelected_Click(object sender, RoutedEventArgs e)
         {
             var items = PendingList.SelectedItems;
@@ -165,6 +197,15 @@ namespace PolicyPlus.WinUI3.Windows
             RefreshViews();
             ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
             NotifyDiscarded(arr.Length);
+        }
+
+        private void BtnDiscardAll_Click(object sender, RoutedEventArgs e)
+        {
+            int count = PendingChangesService.Instance.Pending.Count;
+            PendingChangesService.Instance.DiscardAll();
+            RefreshViews();
+            ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
+            NotifyDiscarded(count);
         }
 
         private void Pending_ContextApply_Click(object sender, RoutedEventArgs e)
@@ -270,20 +311,6 @@ namespace PolicyPlus.WinUI3.Windows
             if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput) RefreshViews();
         }
 
-        private void BtnApplyAll_Click(object sender, RoutedEventArgs e)
-        {
-            ApplySelected(PendingChangesService.Instance.Pending.ToArray());
-        }
-
-        private void BtnDiscardAll_Click(object sender, RoutedEventArgs e)
-        {
-            int count = PendingChangesService.Instance.Pending.Count;
-            PendingChangesService.Instance.DiscardAll();
-            RefreshViews();
-            ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
-            NotifyDiscarded(count);
-        }
-
         private void ApplyThemeResources()
         {
             if (Content is FrameworkElement fe) fe.RequestedTheme = App.CurrentTheme;
@@ -327,7 +354,7 @@ namespace PolicyPlus.WinUI3.Windows
 
         private async void NotifyApplied(int count)
         {
-            var msg = count == 1 ? "1 change applied." : $"{count} changes applied.";
+            var msg = count == 1 ? "1 change saved." : $"{count} changes saved.";
             ShowLocalInfo(msg);
             if (App.Window is MainWindow mw)
             {
@@ -370,7 +397,6 @@ namespace PolicyPlus.WinUI3.Windows
             {
                 PolicyProcessing.SetPolicyState(src, pol, PolicyState.Disabled, null);
             }
-            // NotConfigured -> cleared only
 
             PendingChangesService.Instance.History.Add(new HistoryRecord
             {

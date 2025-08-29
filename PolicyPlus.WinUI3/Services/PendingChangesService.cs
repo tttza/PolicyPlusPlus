@@ -59,6 +59,14 @@ namespace PolicyPlus.WinUI3.Services
                 existing.Options = change.Options;
                 existing.PolicyName = change.PolicyName;
                 existing.CreatedAt = DateTime.Now;
+
+                // Force a collection changed so bindings refresh (list uses a projection)
+                var idx = Pending.IndexOf(existing);
+                if (idx >= 0)
+                {
+                    Pending.RemoveAt(idx);
+                    Pending.Insert(idx, existing);
+                }
             }
             else
             {

@@ -450,7 +450,19 @@ namespace PolicyPlus.WinUI3.Windows
             }
             catch { }
 
-            // Pending window listens to the Pending collection changed and will refresh
+            try
+            {
+                // If a PendingChangesWindow is open, refresh it proactively
+                if (App.Window is MainWindow main)
+                {
+                    foreach (var field in typeof(App).GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static))
+                    {
+                        // no direct list, but we can find a window by type among current windows is not straightforward in WinUI
+                    }
+                }
+            }
+            catch { }
+
             Saved?.Invoke(this, EventArgs.Empty);
         }
 
@@ -548,12 +560,28 @@ namespace PolicyPlus.WinUI3.Windows
         private void ApplyBtn_Click(object sender, RoutedEventArgs e)
         {
             try { SaveToSource(); } catch { }
+            try
+            {
+                if (App.Window is MainWindow mw)
+                {
+                    mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Queued.", InfoBarSeverity.Informational });
+                }
+            }
+            catch { }
         }
 
         private void OkBtn_Click(object sender, RoutedEventArgs e)
         {
             try { SaveToSource(); } catch { }
             Close();
+            try
+            {
+                if (App.Window is MainWindow mw)
+                {
+                    mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Queued.", InfoBarSeverity.Informational });
+                }
+            }
+            catch { }
         }
     }
 }
