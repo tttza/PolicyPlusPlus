@@ -53,8 +53,8 @@
             <Button x:Name="BtnExportPending" Content="Export..." Click="BtnExportPending_Click"/>
         </StackPanel>
 
-        <controls:TabView Grid.Row="2" x:Name="MainTabs" TabWidthMode="Equal">
-            <controls:TabViewItem Header="Pending">
+        <controls:TabView Grid.Row="2" x:Name="MainTabs" TabWidthMode="Equal" IsAddTabButtonVisible="False" CanReorderTabs="False" CanDragTabs="False" SelectedIndex="0">
+            <controls:TabViewItem Header="Pending" IsClosable="False">
                 <Grid Padding="4">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -111,7 +111,7 @@
                 </Grid>
             </controls:TabViewItem>
 
-            <controls:TabViewItem Header="History">
+            <controls:TabViewItem Header="History" IsClosable="False">
                 <Grid Padding="4">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

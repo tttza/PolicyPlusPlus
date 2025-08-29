@@ -90,6 +90,7 @@
                         <ComboBoxItem Content="Light"/>
                     </ComboBox>
                     <TextBlock x:Name="LoaderInfo" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="UnsavedIndicator" Text="• Unsaved changes" Foreground="OrangeRed" Visibility="Collapsed" VerticalAlignment="Center"/>
                 </StackPanel>
             </Grid>
 

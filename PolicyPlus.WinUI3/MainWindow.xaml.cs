@@ -65,8 +65,6 @@ namespace PolicyPlus.WinUI3
         // Auto-close InfoBar cancellation
         private CancellationTokenSource? _infoBarCloseCts;
 
-        private TextBlock? _unsavedIndicator;
-
         public MainWindow()
         {
             this.InitializeComponent();
@@ -88,22 +86,9 @@ namespace PolicyPlus.WinUI3
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                if (_unsavedIndicator == null)
+                if (UnsavedIndicator != null)
                 {
-                    _unsavedIndicator = new TextBlock { Text = "? Unsaved changes", Foreground = new SolidColorBrush(Microsoft.UI.Colors.OrangeRed) };
-                    try
-                    {
-                        var panel = LoaderInfo?.Parent as StackPanel;
-                        if (panel != null)
-                        {
-                            panel.Children.Add(_unsavedIndicator);
-                        }
-                    }
-                    catch { }
-                }
-                if (_unsavedIndicator != null)
-                {
-                    _unsavedIndicator.Visibility = (PendingChangesService.Instance.Pending.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
+                    UnsavedIndicator.Visibility = (PendingChangesService.Instance.Pending.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
                 }
             });
         }
