@@ -11,7 +11,8 @@ namespace PolicyPlus.WinUI3.Services
         public string PolicyName { get; set; } = string.Empty;
         public string Scope { get; set; } = "Both"; // Computer/User/Both
         public string Action { get; set; } = "Set"; // UI label: Set/Delete/Enable/Disable/Clear
-        public string Details { get; set; } = string.Empty;
+        public string Details { get; set; } = string.Empty; // short, human-friendly summary
+        public string DetailsFull { get; set; } = string.Empty; // expanded, multiline tooltip/preview
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // For application
@@ -24,9 +25,10 @@ namespace PolicyPlus.WinUI3.Services
         public string PolicyId { get; set; } = string.Empty;
         public string PolicyName { get; set; } = string.Empty;
         public string Scope { get; set; } = string.Empty;
-        public string Action { get; set; } = string.Empty; // Enable/Disable/Clear/Revert
-        public string Result { get; set; } = string.Empty; // Applied/Discarded/Reverted
-        public string Details { get; set; } = string.Empty;
+        public string Action { get; set; } = string.Empty; // Enable/Disable/Clear/Reapply
+        public string Result { get; set; } = string.Empty; // Applied/Discarded/Reapplied
+        public string Details { get; set; } = string.Empty; // short summary
+        public string DetailsFull { get; set; } = string.Empty; // expanded
         public DateTime AppliedAt { get; set; } = DateTime.Now;
 
         // Exact state snapshot to allow precise restore
@@ -52,6 +54,7 @@ namespace PolicyPlus.WinUI3.Services
             {
                 existing.Action = change.Action;
                 existing.Details = change.Details;
+                existing.DetailsFull = change.DetailsFull;
                 existing.DesiredState = change.DesiredState;
                 existing.Options = change.Options;
                 existing.PolicyName = change.PolicyName;
@@ -75,6 +78,7 @@ namespace PolicyPlus.WinUI3.Services
                     Action = c.Action,
                     Result = "Discarded",
                     Details = c.Details,
+                    DetailsFull = c.DetailsFull,
                     AppliedAt = DateTime.Now,
                     DesiredState = c.DesiredState,
                     Options = c.Options
@@ -95,6 +99,7 @@ namespace PolicyPlus.WinUI3.Services
                     Action = c.Action,
                     Result = "Applied",
                     Details = c.Details,
+                    DetailsFull = c.DetailsFull,
                     AppliedAt = DateTime.Now,
                     DesiredState = c.DesiredState,
                     Options = c.Options

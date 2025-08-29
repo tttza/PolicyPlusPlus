@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Documents;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using WinRT.Interop;
 using PolicyPlus.WinUI3.Utils;
@@ -88,6 +89,7 @@ namespace PolicyPlus.WinUI3.Windows
 
             BuildElements();
             LoadStateFromSource();
+            ApplyPendingOverlayFromQueue();
             StateRadio_Checked(this, null!);
 
             WindowHelpers.BringToFront(this);
@@ -96,6 +98,73 @@ namespace PolicyPlus.WinUI3.Windows
             tmr.IsRepeating = false;
             tmr.Tick += (s, e) => { try { WindowHelpers.BringToFront(this); this.Activate(); } catch { } }; tmr.Start();
             App.RegisterEditWindow(_policy.UniqueID, this);
+        }
+
+        private void ApplyPendingOverlayFromQueue()
+        {
+            try
+            {
+                var scope = (_currentSection == AdmxPolicySection.User) ? "User" : "Computer";
+                var change = PendingChangesService.Instance.Pending.FirstOrDefault(p => string.Equals(p.PolicyId, _policy.UniqueID, StringComparison.OrdinalIgnoreCase)
+                                                                                    && string.Equals(p.Scope, scope, StringComparison.OrdinalIgnoreCase));
+                if (change == null) return;
+
+                // Apply desired state
+                if (change.DesiredState == PolicyState.Enabled)
+                {
+                    OptEnabled.IsChecked = true;
+                }
+                else if (change.DesiredState == PolicyState.Disabled)
+                {
+                    OptDisabled.IsChecked = true;
+                }
+                else
+                {
+                    OptNotConfigured.IsChecked = true;
+                }
+
+                // Apply option values if any
+                if (change.Options != null)
+                    ApplyOptionsToControls(change.Options);
+            }
+            catch { }
+        }
+
+        private void ApplyOptionsToControls(Dictionary<string, object> options)
+        {
+            foreach (var kv in options)
+            {
+                if (!_elementControls.TryGetValue(kv.Key, out var ctrl)) continue;
+                var val = kv.Value;
+                switch (ctrl)
+                {
+                    case NumberBox nb:
+                        if (val is uint u) nb.Value = u;
+                        else if (val is int i) nb.Value = i;
+                        else if (val is string s && double.TryParse(s, out var d)) nb.Value = d;
+                        break;
+                    case TextBox tb:
+                        if (val is string s1) tb.Text = s1;
+                        else if (val is string[] arr) tb.Text = string.Join("\r\n", arr);
+                        break;
+                    case AutoSuggestBox asb:
+                        asb.Text = Convert.ToString(val) ?? string.Empty;
+                        break;
+                    case ComboBox cb:
+                        if (val is int idx && idx >= -1 && idx < cb.Items.Count) cb.SelectedIndex = idx;
+                        break;
+                    case CheckBox ch:
+                        if (val is bool b) ch.IsChecked = b; else ch.IsChecked = (Convert.ToString(val)?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
+                        break;
+                    case Button btn:
+                        // list editor data
+                        if (val is List<string> list)
+                        { btn.Tag = list; btn.Content = $"Edit... ({list.Count})"; }
+                        else if (val is IEnumerable<KeyValuePair<string, string>> kvpList)
+                        { var l = kvpList.ToList(); btn.Tag = l; btn.Content = $"Edit... ({l.Count})"; }
+                        break;
+                }
+            }
         }
 
         private void SetExplanationText(string text)
@@ -329,9 +398,10 @@ namespace PolicyPlus.WinUI3.Windows
         private void SaveToSource()
         {
             var (src, loader, comments) = GetCurrent();
-            // Do not write to sources here; enqueue only
+
             string action = "Clear";
             string details = string.Empty;
+            string detailsFull = string.Empty;
             PolicyState desired = PolicyState.NotConfigured;
             Dictionary<string, object>? options = null;
 
@@ -340,19 +410,21 @@ namespace PolicyPlus.WinUI3.Windows
                 options = CollectOptions();
                 desired = PolicyState.Enabled;
                 action = "Enable";
-                details = BuildDetailsForPending(options);
+                (details, detailsFull) = BuildDetailsForPending(options);
             }
             else if (OptDisabled.IsChecked == true)
             {
                 desired = PolicyState.Disabled;
                 action = "Disable";
                 details = "Disabled";
+                detailsFull = $"Disabled";
             }
             else
             {
                 desired = PolicyState.NotConfigured;
                 action = "Clear";
                 details = "Not Configured";
+                detailsFull = $"Not Configured";
             }
 
             if (comments != null)
@@ -371,94 +443,117 @@ namespace PolicyPlus.WinUI3.Windows
                     Scope = scope,
                     Action = action,
                     Details = details,
+                    DetailsFull = detailsFull,
                     DesiredState = desired,
                     Options = options
                 });
             }
             catch { }
 
+            // Pending window listens to the Pending collection changed and will refresh
             Saved?.Invoke(this, EventArgs.Empty);
+        }
+
+        private (string shortText, string longText) BuildDetailsForPending(Dictionary<string, object> options)
+        {
+            try
+            {
+                var shortSb = new StringBuilder();
+                shortSb.Append("Enable");
+                if (options != null && options.Count > 0)
+                {
+                    var pairs = options.Select(kv => kv.Key + "=" + FormatOpt(kv.Value));
+                    shortSb.Append(": ");
+                    shortSb.Append(string.Join(", ", pairs.Take(4)));
+                    if (options.Count > 4) shortSb.Append($" (+{options.Count - 4} more)");
+                }
+
+                var longSb = new StringBuilder();
+                // Omit policy name and scope per request
+                longSb.AppendLine("Registry values:");
+                foreach (var kv in PolicyProcessing.GetReferencedRegistryValues(_policy))
+                {
+                    longSb.AppendLine("  ? " + kv.Key + (string.IsNullOrEmpty(kv.Value) ? string.Empty : $" ({kv.Value})"));
+                }
+                if (options != null && options.Count > 0)
+                {
+                    longSb.AppendLine("Options:");
+                    foreach (var kv in options)
+                        longSb.AppendLine("  - " + kv.Key + " = " + FormatOpt(kv.Value));
+                }
+                return (shortSb.ToString(), longSb.ToString());
+            }
+            catch { return (string.Empty, string.Empty); }
+        }
+
+        private static string FormatOpt(object v)
+        {
+            if (v == null) return string.Empty;
+            if (v is string s) return s;
+            if (v is bool b) return b ? "true" : "false";
+
+            // Common list and map shapes coming from CollectOptions
+            if (v is IEnumerable<string> strList) return string.Join(", ", strList);
+            if (v is IEnumerable<KeyValuePair<string, string>> kvList)
+                return string.Join(", ", kvList.Select(kv => kv.Key + "=" + kv.Value));
+
+            if (v is Array arr)
+            {
+                var items = arr.Cast<object>().Select(o => Convert.ToString(o) ?? string.Empty);
+                return string.Join(", ", items);
+            }
+
+            if (v is System.Collections.IEnumerable en && v is not string)
+            {
+                var items = en.Cast<object>().Select(FormatOpt);
+                return string.Join(", ", items);
+            }
+
+            return Convert.ToString(v) ?? string.Empty;
         }
 
         private void SectionSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var selected = (SectionSelector.SelectedItem as ComboBoxItem)?.Content?.ToString();
-            _currentSection = selected == "User" ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+            _currentSection = SectionSelector.SelectedIndex == 1 ? AdmxPolicySection.User : AdmxPolicySection.Machine;
             LoadStateFromSource();
-            StateRadio_Checked(this, null!);
         }
 
         private void StateRadio_Checked(object sender, RoutedEventArgs e)
         {
             bool enableOptions = OptEnabled.IsChecked == true;
-            foreach (var ctrl in _elementControls.Values.OfType<Control>()) ctrl.IsEnabled = enableOptions;
+            ToggleChildrenEnabled(OptionsPanel, enableOptions);
+        }
+
+        private static void ToggleChildrenEnabled(Panel panel, bool enabled)
+        {
+            if (panel == null) return;
+            foreach (var child in panel.Children)
+            {
+                if (child is Control ctrl) ctrl.IsEnabled = enabled;
+                else if (child is Panel p) ToggleChildrenEnabled(p, enabled);
+            }
         }
 
         private void ViewDetailApplyBtn_Click(object sender, RoutedEventArgs e)
         {
-            // Build an in-memory preview without persisting changes
-            var previewComp = new PolicyPlus.PolFile();
-            var previewUser = new PolicyPlus.PolFile();
-            var targetSection = _policy.RawPolicy.Section == AdmxPolicySection.Both ? _currentSection : _policy.RawPolicy.Section;
-            var previewTarget = targetSection == AdmxPolicySection.User ? (IPolicySource)previewUser : (IPolicySource)previewComp;
-
-            if (OptEnabled.IsChecked == true)
+            try
             {
-                var options = CollectOptions();
-                PolicyProcessing.SetPolicyState(previewTarget, _policy, PolicyState.Enabled, options);
+                var win = new DetailPolicyFormattedWindow();
+                win.Initialize(_policy, _bundle, _compSource, _userSource, _currentSection);
+                win.Activate();
             }
-            else if (OptDisabled.IsChecked == true)
-            {
-                PolicyProcessing.SetPolicyState(previewTarget, _policy, PolicyState.Disabled, null);
-            }
-
-            var win = new DetailPolicyFormattedWindow();
-            var compSrc = (IPolicySource)previewComp;
-            var userSrc = (IPolicySource)previewUser;
-            win.Initialize(_policy, _bundle, compSrc, userSrc, targetSection);
-            win.Activate();
-            WindowHelpers.BringToFront(win);
+            catch { }
         }
 
         private void ApplyBtn_Click(object sender, RoutedEventArgs e)
         {
-            SaveToSource();
+            try { SaveToSource(); } catch { }
         }
 
         private void OkBtn_Click(object sender, RoutedEventArgs e)
         {
-            SaveToSource();
-            this.Close();
-        }
-
-        private string BuildDetailsForPending(Dictionary<string, object> options)
-        {
-            try
-            {
-                var parts = new List<string>();
-                foreach (var kv in PolicyProcessing.GetReferencedRegistryValues(_policy))
-                {
-                    parts.Add(kv.Key + (string.IsNullOrEmpty(kv.Value) ? string.Empty : $" ({kv.Value})"));
-                }
-                if (options != null && options.Count > 0)
-                {
-                    parts.Add("Options: " + string.Join(", ", options.Select(k => k.Key + "=" + FormatOpt(k.Value))));
-                }
-                return string.Join("; ", parts);
-            }
-            catch { return string.Empty; }
-        }
-
-        private static string FormatOpt(object v)
-        {
-            return v switch
-            {
-                null => string.Empty,
-                bool b => b ? "true" : "false",
-                string s => s,
-                System.Collections.IEnumerable e when e is not string => string.Join("|", e.Cast<object>().Select(o => o?.ToString() ?? string.Empty)),
-                _ => v.ToString() ?? string.Empty
-            };
+            try { SaveToSource(); } catch { }
+            Close();
         }
     }
 }

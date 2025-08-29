@@ -7,6 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls"
     xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
+    xmlns:conv="using:PolicyPlus.WinUI3.Converters"
     mc:Ignorable="d"
     Title="Pending changes">
 
@@ -15,6 +16,17 @@
     </Window.SystemBackdrop>
 
     <Grid x:Name="RootGrid" Background="{ThemeResource WindowBackground}" Padding="12" MinWidth="720" MinHeight="480">
+        <Grid.Resources>
+            <conv:BoolToVisibilityConverter x:Key="BoolToVisibility"/>
+            <conv:BoolToAngleConverter x:Key="BoolToAngle"/>
+            <Style x:Key="FlatToggle" TargetType="ToggleButton">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            </Style>
+        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -76,8 +88,8 @@
                     <Grid Grid.Row="0" Margin="0,0,0,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="3*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="120"/>
                             <ColumnDefinition Width="5*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Policy" FontWeight="SemiBold"/>
@@ -86,20 +98,32 @@
                         <TextBlock Grid.Column="3" Text="Details" FontWeight="SemiBold" Margin="12,0,0,0"/>
                     </Grid>
 
-                    <ListView Grid.Row="1" x:Name="PendingList" SelectionMode="Extended">
+                    <ListView Grid.Row="1" x:Name="PendingList" SelectionMode="Extended" DoubleTapped="PendingList_DoubleTapped">
                         <ListView.ItemTemplate>
                             <DataTemplate>
                                 <Grid ColumnSpacing="12">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="3*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="120"/>
                                         <ColumnDefinition Width="5*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding PolicyName}" TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Grid.Column="1" Text="{Binding Action}"/>
                                     <TextBlock Grid.Column="2" Text="{Binding Scope}"/>
-                                    <TextBlock Grid.Column="3" Text="{Binding Details}" TextWrapping="Wrap"/>
+                                    <StackPanel Grid.Column="3" Spacing="4">
+                                        <ToggleButton x:Name="Tgl" Style="{StaticResource FlatToggle}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Stretch">
+                                                <FontIcon Glyph="&#xE76C;" FontFamily="Segoe MDL2 Assets" RenderTransformOrigin="0.5,0.5">
+                                                    <FontIcon.RenderTransform>
+                                                        <RotateTransform Angle="{Binding IsChecked, ElementName=Tgl, Converter={StaticResource BoolToAngle}}"/>
+                                                    </FontIcon.RenderTransform>
+                                                </FontIcon>
+                                                <TextBlock Text="{Binding Details}" TextWrapping="WrapWholeWords" HorizontalAlignment="Left"/>
+                                            </StackPanel>
+                                        </ToggleButton>
+                                        <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85" Visibility="{Binding IsChecked, ElementName=Tgl, Converter={StaticResource BoolToVisibility}}"/>
+                                    </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
@@ -157,8 +181,8 @@
                         <Grid Grid.Row="0" Margin="0,0,0,4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="3*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition Width="120"/>
                                 <ColumnDefinition Width="2*"/>
                                 <ColumnDefinition Width="5*"/>
                             </Grid.ColumnDefinitions>
@@ -169,14 +193,14 @@
                             <TextBlock Grid.Column="4" Text="Details" FontWeight="SemiBold" Margin="12,0,0,0"/>
                         </Grid>
 
-                        <ListView Grid.Row="1" x:Name="HistoryList" SelectionMode="Extended">
+                        <ListView Grid.Row="1" x:Name="HistoryList" SelectionMode="Extended" DoubleTapped="HistoryList_DoubleTapped">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="3*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="140"/>
+                                            <ColumnDefinition Width="120"/>
                                             <ColumnDefinition Width="2*"/>
                                             <ColumnDefinition Width="5*"/>
                                         </Grid.ColumnDefinitions>
@@ -184,25 +208,22 @@
                                         <TextBlock Grid.Column="1" Text="{Binding Action}"/>
                                         <TextBlock Grid.Column="2" Text="{Binding Scope}"/>
                                         <TextBlock Grid.Column="3" Text="{Binding AppliedAt}"/>
-                                        <TextBlock Grid.Column="4" Text="{Binding Details}" TextWrapping="Wrap"/>
+                                        <StackPanel Grid.Column="4" Spacing="4">
+                                            <ToggleButton x:Name="Tgl2" Style="{StaticResource FlatToggle}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Stretch">
+                                                    <FontIcon Glyph="&#xE76C;" FontFamily="Segoe MDL2 Assets">
+                                                        <FontIcon.RenderTransform>
+                                                            <RotateTransform Angle="{Binding IsChecked, ElementName=Tgl2, Converter={StaticResource BoolToAngle}}"/>
+                                                        </FontIcon.RenderTransform>
+                                                    </FontIcon>
+                                                    <TextBlock Text="{Binding Details}" TextWrapping="WrapWholeWords" HorizontalAlignment="Left"/>
+                                                </StackPanel>
+                                            </ToggleButton>
+                                            <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85" Visibility="{Binding IsChecked, ElementName=Tgl2, Converter={StaticResource BoolToVisibility}}"/>
+                                        </StackPanel>
                                     </Grid>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
-                            <ListView.ItemContainerStyle>
-                                <Style TargetType="ListViewItem">
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                    <Setter Property="ContextFlyout">
-                                        <Setter.Value>
-                                            <MenuFlyout>
-                                                <MenuFlyoutItem Text="Reapply" Click="History_ContextReapply_Click"/>
-                                                <MenuFlyoutSeparator/>
-                                                <MenuFlyoutItem Text="Copy name" Click="History_ContextCopyName_Click"/>
-                                                <MenuFlyoutItem Text="Copy registry path" Click="History_ContextCopyRegPath_Click"/>
-                                            </MenuFlyout>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </ListView.ItemContainerStyle>
                         </ListView>
                     </Grid>
                 </Grid>

@@ -397,5 +397,25 @@ namespace PolicyPlus.WinUI3.Windows
             var items = HistoryList.SelectedItems; if (items == null || items.Count == 0) return;
             for (int i = 0; i < items.Count; i++) if (items[i] is HistoryRecord h) ExecuteReapply(h);
         }
+
+        private async void PendingList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        {
+            if ((sender as ListView)?.SelectedItem is PendingChange c)
+            {
+                var section = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+                var main = App.Window as MainWindow; if (main == null) return;
+                await main.OpenEditDialogForPolicyIdAsync(c.PolicyId, section, true);
+            }
+        }
+
+        private async void HistoryList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        {
+            if ((sender as ListView)?.SelectedItem is HistoryRecord h)
+            {
+                var section = string.Equals(h.Scope, "User", StringComparison.OrdinalIgnoreCase) ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+                var main = App.Window as MainWindow; if (main == null) return;
+                await main.OpenEditDialogForPolicyIdAsync(h.PolicyId, section, true);
+            }
+        }
     }
 }
