@@ -7,6 +7,8 @@ using System.Linq;
 using PolicyPlus.WinUI3.Utils;
 using PolicyPlus.WinUI3.Services;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -30,16 +32,33 @@ namespace PolicyPlus.WinUI3.Windows
             BtnDiscardSelected.Click += BtnDiscardSelected_Click;
             BtnClearFilters.Click += (s, e) => { if (SearchBox!=null) SearchBox.Text = string.Empty; if (ScopeFilter!=null) ScopeFilter.SelectedIndex = 0; if (OperationFilter!=null) OperationFilter.SelectedIndex = 0; if (HistoryTimeRange!=null) HistoryTimeRange.SelectedIndex = 0; if (HistoryType!=null) HistoryType.SelectedIndex = 0; if (HistorySearch!=null) HistorySearch.Text = string.Empty; RefreshViews(); };
             BtnExportPending.Click += BtnExportPending_Click;
-            BtnApplyAll.Click += BtnApplyAll_Click;
-            BtnDiscardAll.Click += BtnDiscardAll_Click;
 
             if (RootGrid != null)
                 RootGrid.Loaded += (s, e) => RefreshViews();
+
+            PendingList.DoubleTapped += (s, e) => Pending_ContextView_Click(s, e);
+
+            // Listen to main window save to surface info here too
+            var main = App.Window as MainWindow;
+            if (main != null)
+            {
+                main.Saved += (s, e) => ShowLocalInfo("Saved.");
+            }
 
             WindowHelpers.Resize(this, 900, 640);
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
             this.Closed += (s, e) => App.UnregisterWindow(this);
             App.RegisterWindow(this);
+        }
+
+        private async void ShowLocalInfo(string message)
+        {
+            if (LocalStatusBar == null) return;
+            LocalStatusBar.Message = message;
+            LocalStatusBar.Severity = InfoBarSeverity.Success;
+            LocalStatusBar.IsOpen = true;
+            await System.Threading.Tasks.Task.Delay(2500);
+            LocalStatusBar.IsOpen = false;
         }
 
         private void RefreshViews()
@@ -111,42 +130,6 @@ namespace PolicyPlus.WinUI3.Windows
             }
         }
 
-        private void ApplySelected(IEnumerable<PendingChange> items)
-        {
-            if (items == null) return;
-            // Resolve sources from App main window
-            var main = App.Window as MainWindow;
-            var compSrcField = typeof(MainWindow).GetField("_compSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var userSrcField = typeof(MainWindow).GetField("_userSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var bundleField = typeof(MainWindow).GetField("_bundle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var compSrc = (IPolicySource?)compSrcField?.GetValue(main);
-            var userSrc = (IPolicySource?)userSrcField?.GetValue(main);
-            var bundle = (AdmxBundle?)bundleField?.GetValue(main);
-            if (bundle == null) return;
-
-            foreach (var c in items.ToList())
-            {
-                if (string.IsNullOrEmpty(c.PolicyId)) continue;
-                if (!bundle.Policies.TryGetValue(c.PolicyId, out var pol)) continue;
-                var src = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? userSrc : compSrc;
-                if (src == null) continue;
-                PolicyProcessing.ForgetPolicy(src, pol);
-                if (c.DesiredState == PolicyState.Enabled)
-                {
-                    PolicyProcessing.SetPolicyState(src, pol, PolicyState.Enabled, c.Options);
-                }
-                else if (c.DesiredState == PolicyState.Disabled)
-                {
-                    PolicyProcessing.SetPolicyState(src, pol, PolicyState.Disabled, null);
-                }
-                // NotConfigured means just clearing; ForgetPolicy already did it
-            }
-
-            PendingChangesService.Instance.Applied(items.ToArray());
-            RefreshViews();
-            ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
-        }
-
         private void BtnApplySelected_Click(object sender, RoutedEventArgs e)
         {
             var items = PendingList.SelectedItems;
@@ -165,6 +148,7 @@ namespace PolicyPlus.WinUI3.Windows
             PendingChangesService.Instance.Discard(arr);
             RefreshViews();
             ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
+            NotifyDiscarded(arr.Length);
         }
 
         private void Pending_ContextApply_Click(object sender, RoutedEventArgs e)
@@ -181,12 +165,26 @@ namespace PolicyPlus.WinUI3.Windows
             {
                 PendingChangesService.Instance.Discard(c);
                 RefreshViews();
+                ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
             }
         }
 
         private void Pending_ContextView_Click(object sender, RoutedEventArgs e)
         {
-            // Placeholder: could open DetailPolicyFormattedWindow for the policy
+            if ((sender as FrameworkElement)?.DataContext is not PendingChange c) return;
+
+            var main = App.Window as MainWindow;
+            var bundleField = typeof(MainWindow).GetField("_bundle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var compField = typeof(MainWindow).GetField("_compSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var userField = typeof(MainWindow).GetField("_userSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var bundle = (AdmxBundle?)bundleField?.GetValue(main);
+            var compSrc = (IPolicySource?)compField?.GetValue(main);
+            var userSrc = (IPolicySource?)userField?.GetValue(main);
+            if (bundle == null || !bundle.Policies.TryGetValue(c.PolicyId, out var pol)) return;
+            var section = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+            var dlg = new DetailPolicyFormattedWindow();
+            dlg.Initialize(pol, bundle, compSrc ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource(), userSrc ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource(), section);
+            dlg.Activate();
         }
 
         private void Pending_ContextCopyRegPath_Click(object sender, RoutedEventArgs e)
@@ -219,6 +217,30 @@ namespace PolicyPlus.WinUI3.Windows
             }
         }
 
+        private async void BtnExportPending_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+                var picker = new FileSavePicker();
+                InitializeWithWindow.Initialize(picker, hwnd);
+                picker.FileTypeChoices.Add("CSV", new List<string> { ".csv" });
+                picker.SuggestedFileName = "pending";
+                var file = await picker.PickSaveFileAsync();
+                if (file == null) return;
+
+                var rows = new List<string>();
+                rows.Add("PolicyId,PolicyName,Scope,Action,Details");
+                foreach (var c in _pendingView)
+                {
+                    string esc(string s) => '"' + (s ?? string.Empty).Replace("\"", "\"\"") + '"';
+                    rows.Add(string.Join(",", new[] { esc(c.PolicyId), esc(c.PolicyName), esc(c.Scope), esc(c.Action), esc(c.Details) }));
+                }
+                await global::Windows.Storage.FileIO.WriteLinesAsync(file, rows);
+            }
+            catch { }
+        }
+
         private void SearchBox_TextChanged(object sender, AutoSuggestBoxTextChangedEventArgs e)
         {
             if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput) RefreshViews();
@@ -232,11 +254,6 @@ namespace PolicyPlus.WinUI3.Windows
             if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput) RefreshViews();
         }
 
-        private void BtnExportPending_Click(object sender, RoutedEventArgs e)
-        {
-            // Placeholder: implement exporting of current pending view
-        }
-
         private void BtnApplyAll_Click(object sender, RoutedEventArgs e)
         {
             ApplySelected(PendingChangesService.Instance.Pending.ToArray());
@@ -244,14 +261,74 @@ namespace PolicyPlus.WinUI3.Windows
 
         private void BtnDiscardAll_Click(object sender, RoutedEventArgs e)
         {
+            int count = PendingChangesService.Instance.Pending.Count;
             PendingChangesService.Instance.DiscardAll();
             RefreshViews();
             ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
+            NotifyDiscarded(count);
         }
 
         private void ApplyThemeResources()
         {
             if (Content is FrameworkElement fe) fe.RequestedTheme = App.CurrentTheme;
+        }
+
+        private void ApplySelected(IEnumerable<PendingChange> items)
+        {
+            if (items == null) return;
+            var main = App.Window as MainWindow;
+            var compSrcField = typeof(MainWindow).GetField("_compSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var userSrcField = typeof(MainWindow).GetField("_userSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var bundleField = typeof(MainWindow).GetField("_bundle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var compSrc = (IPolicySource?)compSrcField?.GetValue(main);
+            var userSrc = (IPolicySource?)userSrcField?.GetValue(main);
+            var bundle = (AdmxBundle?)bundleField?.GetValue(main);
+            if (bundle == null) return;
+
+            var appliedList = items.ToList();
+            foreach (var c in appliedList)
+            {
+                if (string.IsNullOrEmpty(c.PolicyId)) continue;
+                if (!bundle.Policies.TryGetValue(c.PolicyId, out var pol)) continue;
+                var src = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? userSrc : compSrc;
+                if (src == null) continue;
+                PolicyProcessing.ForgetPolicy(src, pol);
+                if (c.DesiredState == PolicyState.Enabled)
+                {
+                    PolicyProcessing.SetPolicyState(src, pol, PolicyState.Enabled, c.Options);
+                }
+                else if (c.DesiredState == PolicyState.Disabled)
+                {
+                    PolicyProcessing.SetPolicyState(src, pol, PolicyState.Disabled, null);
+                }
+            }
+
+            PendingChangesService.Instance.Applied(appliedList.ToArray());
+            RefreshViews();
+            ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
+            NotifyApplied(appliedList.Count);
+        }
+
+        private async void NotifyApplied(int count)
+        {
+            var msg = count == 1 ? "1 change applied." : $"{count} changes applied.";
+            ShowLocalInfo(msg);
+            if (App.Window is MainWindow mw)
+            {
+                try { mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { msg, InfoBarSeverity.Success }); } catch { }
+            }
+            await System.Threading.Tasks.Task.CompletedTask;
+        }
+
+        private async void NotifyDiscarded(int count)
+        {
+            var msg = count == 1 ? "1 change discarded." : $"{count} changes discarded.";
+            ShowLocalInfo(msg);
+            if (App.Window is MainWindow mw)
+            {
+                try { mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { msg, InfoBarSeverity.Informational }); } catch { }
+            }
+            await System.Threading.Tasks.Task.CompletedTask;
         }
     }
 }

@@ -39,7 +39,25 @@ namespace PolicyPlus.WinUI3.Services
 
         private PendingChangesService() { }
 
-        public void Add(PendingChange change) => Pending.Add(change);
+        public void Add(PendingChange change)
+        {
+            if (change == null) return;
+            var existing = Pending.FirstOrDefault(p => string.Equals(p.PolicyId, change.PolicyId, StringComparison.OrdinalIgnoreCase)
+                                                    && string.Equals(p.Scope, change.Scope, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+            {
+                existing.Action = change.Action;
+                existing.Details = change.Details;
+                existing.DesiredState = change.DesiredState;
+                existing.Options = change.Options;
+                existing.PolicyName = change.PolicyName;
+                existing.CreatedAt = DateTime.Now;
+            }
+            else
+            {
+                Pending.Add(change);
+            }
+        }
 
         public void Discard(params PendingChange[] changes)
         {

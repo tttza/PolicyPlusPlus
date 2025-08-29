@@ -32,6 +32,8 @@ namespace PolicyPlus.WinUI3
 {
     public sealed partial class MainWindow : Window
     {
+        public event EventHandler? Saved;
+
         private bool _hideEmptyCategories = true;
 
         // State fields
@@ -583,7 +585,28 @@ namespace PolicyPlus.WinUI3
         private void BtnFind_Click(object sender, RoutedEventArgs e) { SearchBox.Focus(FocusState.Programmatic); }
         private void BtnFindReg_Click(object sender, RoutedEventArgs e) { SearchBox.Focus(FocusState.Programmatic); }
         private void BtnFindId_Click(object sender, RoutedEventArgs e) { SearchBox.Focus(FocusState.Programmatic); }
-        private void BtnSave_Click(object sender, RoutedEventArgs e) { _pendingChanges = false; ShowInfo("Saved."); }
+        private void BtnSave_Click(object sender, RoutedEventArgs e)
+        {
+            // Apply all pending changes and clear the queue
+            try
+            {
+                var pending = PendingChangesService.Instance.Pending.ToArray();
+                if (pending.Length > 0)
+                {
+                    var win = new PendingChangesWindow();
+                    // Reuse its application logic
+                    var applyMethod = typeof(PendingChangesWindow).GetMethod("ApplySelected", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    applyMethod?.Invoke(win, new object[] { pending });
+                    win.Close();
+                }
+            }
+            catch { }
+
+            _pendingChanges = false;
+            UpdateUnsavedIndicator();
+            ShowInfo("Saved.", InfoBarSeverity.Success);
+            try { Saved?.Invoke(this, EventArgs.Empty); } catch { }
+        }
 
         private void ContextViewFormatted_Click(object sender, RoutedEventArgs e) { BtnViewFormatted_Click(sender, e); }
         private void ContextCopyName_Click(object sender, RoutedEventArgs e)

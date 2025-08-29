@@ -22,6 +22,16 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <controls:InfoBar x:Name="LocalStatusBar"
+                          Grid.RowSpan="4"
+                          VerticalAlignment="Bottom"
+                          HorizontalAlignment="Stretch"
+                          Margin="12"
+                          Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                          IsOpen="False"
+                          Severity="Informational"
+                          Canvas.ZIndex="5" />
+
         <Grid Grid.Row="0" Margin="0,0,0,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
@@ -39,10 +49,11 @@
                     <ComboBoxItem Content="User"/>
                 </ComboBox>
                 <TextBlock Text="Operation:" VerticalAlignment="Center"/>
-                <ComboBox x:Name="OperationFilter" Width="140" SelectionChanged="OperationFilter_SelectionChanged">
+                <ComboBox x:Name="OperationFilter" Width="180" SelectionChanged="OperationFilter_SelectionChanged">
                     <ComboBoxItem Content="All" IsSelected="True"/>
-                    <ComboBoxItem Content="Set"/>
-                    <ComboBoxItem Content="Delete"/>
+                    <ComboBoxItem Content="Enable"/>
+                    <ComboBoxItem Content="Disable"/>
+                    <ComboBoxItem Content="Clear"/>
                 </ComboBox>
             </StackPanel>
         </Grid>
@@ -130,7 +141,7 @@
                         <ComboBox x:Name="HistoryType" Width="160" SelectionChanged="HistoryFilter_Changed">
                             <ComboBoxItem Content="All" IsSelected="True"/>
                             <ComboBoxItem Content="Applied"/>
-                            <ComboBoxItem Content="Reverted"/>
+                            <ComboBoxItem Content="Discarded"/>
                         </ComboBox>
                         <AutoSuggestBox x:Name="HistorySearch" Width="280" QueryIcon="Find" PlaceholderText="Search history (policy, path)" TextChanged="HistorySearch_TextChanged"/>
                     </StackPanel>
@@ -175,6 +186,19 @@
                                     </Grid>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="ContextFlyout">
+                                        <Setter.Value>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem Text="Copy name" Click="History_ContextCopyName_Click"/>
+                                                <MenuFlyoutItem Text="Copy registry path" Click="History_ContextCopyRegPath_Click"/>
+                                            </MenuFlyout>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListView.ItemContainerStyle>
                         </ListView>
                     </Grid>
                 </Grid>
