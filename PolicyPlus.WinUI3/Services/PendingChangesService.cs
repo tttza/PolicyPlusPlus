@@ -24,10 +24,14 @@ namespace PolicyPlus.WinUI3.Services
         public string PolicyId { get; set; } = string.Empty;
         public string PolicyName { get; set; } = string.Empty;
         public string Scope { get; set; } = string.Empty;
-        public string Action { get; set; } = string.Empty; // Applied/Discarded or Enable/Disable/Clear
-        public string Result { get; set; } = string.Empty; // Applied/Discarded
+        public string Action { get; set; } = string.Empty; // Enable/Disable/Clear/Revert
+        public string Result { get; set; } = string.Empty; // Applied/Discarded/Reverted
         public string Details { get; set; } = string.Empty;
         public DateTime AppliedAt { get; set; } = DateTime.Now;
+
+        // Exact state snapshot to allow precise restore
+        public PolicyState DesiredState { get; set; } = PolicyState.NotConfigured;
+        public Dictionary<string, object>? Options { get; set; }
     }
 
     public sealed class PendingChangesService
@@ -71,7 +75,9 @@ namespace PolicyPlus.WinUI3.Services
                     Action = c.Action,
                     Result = "Discarded",
                     Details = c.Details,
-                    AppliedAt = DateTime.Now
+                    AppliedAt = DateTime.Now,
+                    DesiredState = c.DesiredState,
+                    Options = c.Options
                 });
                 Pending.Remove(c);
             }
@@ -89,7 +95,9 @@ namespace PolicyPlus.WinUI3.Services
                     Action = c.Action,
                     Result = "Applied",
                     Details = c.Details,
-                    AppliedAt = DateTime.Now
+                    AppliedAt = DateTime.Now,
+                    DesiredState = c.DesiredState,
+                    Options = c.Options
                 });
                 Pending.Remove(c);
             }

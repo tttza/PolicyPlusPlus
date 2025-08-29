@@ -24,7 +24,7 @@
 
         <controls:InfoBar x:Name="LocalStatusBar"
                           Grid.RowSpan="4"
-                          VerticalAlignment="Bottom"
+                          VerticalAlignment="Top"
                           HorizontalAlignment="Stretch"
                           Margin="12"
                           Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
@@ -32,6 +32,7 @@
                           Severity="Informational"
                           Canvas.ZIndex="5" />
 
+        <!-- header and filters -->
         <Grid Grid.Row="0" Margin="0,0,0,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
@@ -64,8 +65,8 @@
             <Button x:Name="BtnExportPending" Content="Export..." Click="BtnExportPending_Click"/>
         </StackPanel>
 
-        <controls:TabView Grid.Row="2" x:Name="MainTabs" TabWidthMode="Equal" IsAddTabButtonVisible="False" CanReorderTabs="False" CanDragTabs="False" SelectedIndex="0">
-            <controls:TabViewItem Header="Pending" IsClosable="False">
+        <controls:TabView Grid.Row="2" x:Name="MainTabs" TabWidthMode="Equal" IsAddTabButtonVisible="False" CanReorderTabs="False" CanDragTabs="False" SelectedIndex="0" SelectionChanged="MainTabs_SelectionChanged">
+            <controls:TabViewItem x:Name="PendingTab" Header="Pending" IsClosable="False">
                 <Grid Padding="4">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -122,7 +123,7 @@
                 </Grid>
             </controls:TabViewItem>
 
-            <controls:TabViewItem Header="History" IsClosable="False">
+            <controls:TabViewItem x:Name="HistoryTab" Header="History" IsClosable="False">
                 <Grid Padding="4">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -142,6 +143,7 @@
                             <ComboBoxItem Content="All" IsSelected="True"/>
                             <ComboBoxItem Content="Applied"/>
                             <ComboBoxItem Content="Discarded"/>
+                            <ComboBoxItem Content="Reapplied"/>
                         </ComboBox>
                         <AutoSuggestBox x:Name="HistorySearch" Width="280" QueryIcon="Find" PlaceholderText="Search history (policy, path)" TextChanged="HistorySearch_TextChanged"/>
                     </StackPanel>
@@ -192,6 +194,8 @@
                                     <Setter Property="ContextFlyout">
                                         <Setter.Value>
                                             <MenuFlyout>
+                                                <MenuFlyoutItem Text="Reapply" Click="History_ContextReapply_Click"/>
+                                                <MenuFlyoutSeparator/>
                                                 <MenuFlyoutItem Text="Copy name" Click="History_ContextCopyName_Click"/>
                                                 <MenuFlyoutItem Text="Copy registry path" Click="History_ContextCopyRegPath_Click"/>
                                             </MenuFlyout>
@@ -219,6 +223,7 @@
             </StackPanel>
             <Button x:Name="BtnApplyAll" Grid.Column="1" Content="Apply all" Click="BtnApplyAll_Click"/>
             <Button x:Name="BtnDiscardAll" Grid.Column="2" Content="Discard all" Click="BtnDiscardAll_Click"/>
+            <Button x:Name="BtnReapplySelected" Grid.Column="3" Content="Reapply selected" Click="BtnReapplySelected_Click"/>
             <Button x:Name="BtnClose" Grid.Column="4" Content="Close"/>
         </Grid>
     </Grid>

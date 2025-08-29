@@ -19,6 +19,22 @@ namespace PolicyPlus.WinUI3.Windows
         private List<PendingChange> _pendingView = new();
         private List<HistoryRecord> _historyView = new();
 
+        private void MainTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            bool pendingActive = MainTabs.SelectedItem == PendingTab;
+            BtnApplySelected.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
+            BtnDiscardSelected.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
+            BtnApplyAll.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
+            BtnDiscardAll.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
+            BtnReapplySelected.Visibility = pendingActive ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        // Call once on loaded too
+        private void PendingChangesWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            MainTabs_SelectionChanged(MainTabs, null);
+        }
+
         public PendingChangesWindow()
         {
             InitializeComponent();
@@ -34,7 +50,7 @@ namespace PolicyPlus.WinUI3.Windows
             BtnExportPending.Click += BtnExportPending_Click;
 
             if (RootGrid != null)
-                RootGrid.Loaded += (s, e) => RefreshViews();
+                RootGrid.Loaded += (s, e) => { RefreshViews(); PendingChangesWindow_Loaded(s, e); };
 
             PendingList.DoubleTapped += (s, e) => Pending_ContextView_Click(s, e);
 
@@ -329,6 +345,57 @@ namespace PolicyPlus.WinUI3.Windows
                 try { mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { msg, InfoBarSeverity.Informational }); } catch { }
             }
             await System.Threading.Tasks.Task.CompletedTask;
+        }
+
+        private void ExecuteReapply(HistoryRecord h)
+        {
+            if (h == null || string.IsNullOrEmpty(h.PolicyId)) return;
+            var main = App.Window as MainWindow;
+            var compSrcField = typeof(MainWindow).GetField("_compSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var userSrcField = typeof(MainWindow).GetField("_userSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var bundleField = typeof(MainWindow).GetField("_bundle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var compSrc = (IPolicySource?)compSrcField?.GetValue(main);
+            var userSrc = (IPolicySource?)userSrcField?.GetValue(main);
+            var bundle = (AdmxBundle?)bundleField?.GetValue(main);
+            if (bundle == null || !bundle.Policies.TryGetValue(h.PolicyId, out var pol)) return;
+            var src = string.Equals(h.Scope, "User", StringComparison.OrdinalIgnoreCase) ? userSrc : compSrc;
+            if (src == null) return;
+
+            PolicyProcessing.ForgetPolicy(src, pol);
+            if (h.DesiredState == PolicyState.Enabled)
+            {
+                PolicyProcessing.SetPolicyState(src, pol, PolicyState.Enabled, h.Options);
+            }
+            else if (h.DesiredState == PolicyState.Disabled)
+            {
+                PolicyProcessing.SetPolicyState(src, pol, PolicyState.Disabled, null);
+            }
+            // NotConfigured -> cleared only
+
+            PendingChangesService.Instance.History.Add(new HistoryRecord
+            {
+                PolicyId = h.PolicyId,
+                PolicyName = h.PolicyName,
+                Scope = h.Scope,
+                Action = "Reapply",
+                Result = "Reapplied",
+                Details = h.Details,
+                AppliedAt = DateTime.Now,
+                DesiredState = h.DesiredState,
+                Options = h.Options
+            });
+
+            RefreshViews();
+            ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
+            ShowLocalInfo("Reapplied.");
+        }
+
+        private void History_ContextReapply_Click(object sender, RoutedEventArgs e)
+        { if ((sender as FrameworkElement)?.DataContext is HistoryRecord h) ExecuteReapply(h); }
+        private void BtnReapplySelected_Click(object sender, RoutedEventArgs e)
+        {
+            var items = HistoryList.SelectedItems; if (items == null || items.Count == 0) return;
+            for (int i = 0; i < items.Count; i++) if (items[i] is HistoryRecord h) ExecuteReapply(h);
         }
     }
 }
