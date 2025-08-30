@@ -21,6 +21,7 @@
         </Grid.KeyboardAccelerators>
         <Grid.Resources>
             <converters:ScaleConverter x:Key="ScaleConverter"/>
+            <converters:CategoryVisibilityConverter x:Key="CategoryVisibilityConverter"/>
         </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -148,7 +149,19 @@
                         <RowDefinition Height="8"/>
                         <RowDefinition Height="3*"/>
                     </Grid.RowDefinitions>
-                    <ListView x:Name="PolicyList" Grid.Row="0" DisplayMemberPath="DisplayName" SelectionChanged="PolicyList_SelectionChanged" IsItemClickEnabled="False" DoubleTapped="PolicyList_DoubleTapped" RightTapped="PolicyList_RightTapped">
+                    <ListView x:Name="PolicyList" Grid.Row="0" SelectionChanged="PolicyList_SelectionChanged" IsItemClickEnabled="False" DoubleTapped="PolicyList_DoubleTapped" RightTapped="PolicyList_RightTapped">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon Grid.Column="0" Glyph="&#xE8B7;" Opacity="0.8" Visibility="{Binding Converter={StaticResource CategoryVisibilityConverter}}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding DisplayName}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="ContextFlyout">

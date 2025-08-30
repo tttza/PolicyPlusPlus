@@ -278,7 +278,8 @@ namespace PolicyPlus.WinUI3
             if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
                 var q = (SearchBox.Text ?? string.Empty).Trim();
-                var baseSeq = BaseSequenceForFilters();
+                // Suggestions should search recursively within the selected category
+                var baseSeq = BaseSequenceForFilters(includeSubcategories: true);
                 var suggestions = baseSeq.Where(p => p.DisplayName.Contains(q, StringComparison.InvariantCultureIgnoreCase))
                                          .Take(10)
                                          .Select(p => p.DisplayName)
@@ -330,19 +331,31 @@ namespace PolicyPlus.WinUI3
                 LoaderInfo.Text = "Temp POL (Comp/User)";
         }
 
-        private IEnumerable<PolicyPlusPolicy> BaseSequenceForFilters()
+        private IEnumerable<PolicyPlusPolicy> BaseSequenceForFilters(bool includeSubcategories)
         {
             IEnumerable<PolicyPlusPolicy> seq = _allPolicies;
             if (_appliesFilter == AdmxPolicySection.Machine)
                 seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both);
             else if (_appliesFilter == AdmxPolicySection.User)
                 seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both);
+
             if (_selectedCategory is not null)
             {
-                var allowed = new HashSet<string>();
-                CollectPoliciesRecursive(_selectedCategory, allowed);
-                seq = seq.Where(p => allowed.Contains(p.UniqueID));
+                // If searching, include subcategories; otherwise we'll handle category view separately
+                if (includeSubcategories)
+                {
+                    var allowed = new HashSet<string>();
+                    CollectPoliciesRecursive(_selectedCategory, allowed);
+                    seq = seq.Where(p => allowed.Contains(p.UniqueID));
+                }
+                else
+                {
+                    // Only policies directly under the selected category
+                    var direct = new HashSet<string>(_selectedCategory.Policies.Select(p => p.UniqueID));
+                    seq = seq.Where(p => direct.Contains(p.UniqueID));
+                }
             }
+
             if (_configuredOnly)
             {
                 EnsureLocalSources();
@@ -363,18 +376,44 @@ namespace PolicyPlus.WinUI3
         {
             if (PolicyList == null || PolicyCount == null) return;
             if (category != null) _selectedCategory = category;
-            IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters();
-            if (!string.IsNullOrWhiteSpace(query))
+
+            UpdateSearchPlaceholder();
+
+            bool searching = !string.IsNullOrWhiteSpace(query);
+            IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(includeSubcategories: searching);
+            if (searching)
                 seq = seq.Where(p => p.DisplayName.Contains(query, StringComparison.InvariantCultureIgnoreCase) || p.UniqueID.Contains(query, StringComparison.InvariantCultureIgnoreCase));
-            BindSequence(seq);
+
+            BindSequenceEnhanced(seq, searching);
         }
 
-        private void BindSequence(IEnumerable<PolicyPlusPolicy> seq)
+        private void BindSequenceEnhanced(IEnumerable<PolicyPlusPolicy> seq, bool searching)
         {
+            // Group policies by display name for dedup like before
             var grouped = seq.GroupBy(p => p.DisplayName, System.StringComparer.InvariantCultureIgnoreCase);
             _nameGroups = grouped.ToDictionary(g => g.Key, g => g.ToList(), StringComparer.InvariantCultureIgnoreCase);
-            _visiblePolicies = grouped.Select(PickRepresentative).OrderBy(p => p.DisplayName).ToList();
-            PolicyList.ItemsSource = _visiblePolicies;
+            var representatives = grouped.Select(PickRepresentative).OrderBy(p => p.DisplayName).ToList();
+
+            _visiblePolicies = representatives;
+
+            // If a category is selected and not searching, prepend its subcategories to the list view
+            if (!searching && _selectedCategory != null)
+            {
+                var items = new List<object>();
+                var children = _selectedCategory.Children
+                    .Where(c => !_hideEmptyCategories || !IsCategoryEmpty(c))
+                    .OrderBy(c => c.DisplayName)
+                    .Cast<object>()
+                    .ToList();
+                items.AddRange(children);
+                items.AddRange(representatives);
+                PolicyList.ItemsSource = items;
+            }
+            else
+            {
+                PolicyList.ItemsSource = representatives;
+            }
+
             PolicyCount.Text = $"{_visiblePolicies.Count} / {_totalGroupCount} policies";
             SetDetails(null);
         }
@@ -609,7 +648,7 @@ namespace PolicyPlus.WinUI3
 
         private void BtnClearAll_Click(object sender, RoutedEventArgs e)
         {
-            SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; if (ChkConfiguredOnly != null) ChkConfiguredOnly.IsChecked = false; ApplyFiltersAndBind();
+            SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; if (ChkConfiguredOnly != null) ChkConfiguredOnly.IsChecked = false; UpdateSearchPlaceholder(); ApplyFiltersAndBind();
         }
 
         private void ChkConfiguredOnly_Checked(object sender, RoutedEventArgs e)
@@ -659,7 +698,7 @@ namespace PolicyPlus.WinUI3
         private void ContextCopyPath_Click(object sender, RoutedEventArgs e)
         { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p==null) return; var sb=new StringBuilder(); var c=p.Category; var stack=new Stack<string>(); while(c!=null){stack.Push(c.DisplayName); c=c.Parent;} sb.AppendLine("Administrative Templates"); foreach(var name in stack) sb.AppendLine("+ "+name); sb.AppendLine("+ "+p.DisplayName); var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(sb.ToString()); Clipboard.SetContent(dp); }
         private void ContextRevealInTree_Click(object sender, RoutedEventArgs e)
-        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p==null||CategoryTree==null) return; _selectedCategory=p.Category; BuildCategoryTree(); }
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p==null||CategoryTree==null) return; _selectedCategory=p.Category; SelectCategoryInTree(_selectedCategory); UpdateSearchPlaceholder(); ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); }
         private void ContextCopyRegPaths_Click(object sender, RoutedEventArgs e)
         { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p==null) return; var list=PolicyProcessing.GetReferencedRegistryValues(p).Select(kv=>$"{kv.Key} [{kv.Value}]"); var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(string.Join("\r\n",list)); Clipboard.SetContent(dp); }
         private void ContextCopyRegExport_Click(object sender, RoutedEventArgs e)
@@ -678,13 +717,18 @@ namespace PolicyPlus.WinUI3
                 CategoryTree.SelectionMode = old; // clears any selection
                 _suppressCategorySelectionChanged = false;
             }
+            UpdateSearchPlaceholder();
             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
         }
 
         private void CategoryTree_ItemInvoked(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewItemInvokedEventArgs args)
         {
             var cat = args.InvokedItem as PolicyPlusCategory;
-            ScheduleApplyCategory(cat);
+            if (cat == null) return;
+            _selectedCategory = cat;
+            UpdateSearchPlaceholder();
+            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+            SelectCategoryInTree(cat);
         }
 
         private void CategoryTree_SelectionChanged(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewSelectionChangedEventArgs args)
@@ -704,31 +748,22 @@ namespace PolicyPlus.WinUI3
             // Cancel any pending category apply since this is a double-tap
             _categorySelectCts?.Cancel();
 
-            // Find the TreeViewItem container that was double-tapped
-            var src = e.OriginalSource as DependencyObject;
-            TreeViewItem? container = null;
-            while (src != null && container == null)
-            {
-                container = src as TreeViewItem;
-                src = VisualTreeHelper.GetParent(src);
-            }
-            if (container == null) return;
+            // Resolve the bound item in the simplest and most reliable way
+            object? item = (e.OriginalSource as FrameworkElement)?.DataContext ?? PolicyList?.SelectedItem;
 
-            // Get the corresponding node and toggle expansion
-            var node = CategoryTree.NodeFromContainer(container);
-            if (node != null)
+            if (item is PolicyPlusPolicy pol)
             {
-                _suppressCategorySelectionChanged = true;
-                node.IsExpanded = !node.IsExpanded;
-                _suppressCategorySelectionChanged = false;
-
-                // Apply filter for the double-tapped category as well
-                if (node.Content is PolicyPlusCategory cat)
-                {
-                    _selectedCategory = cat;
-                    ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-                }
                 e.Handled = true;
+                _ = OpenEditDialogForPolicyAsync(pol, ensureFront: true);
+                return;
+            }
+            if (item is PolicyPlusCategory cat)
+            {
+                e.Handled = true;
+                _selectedCategory = cat;
+                UpdateSearchPlaceholder();
+                ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+                SelectCategoryInTree(cat);
             }
         }
 
@@ -749,6 +784,7 @@ namespace PolicyPlus.WinUI3
                         if (!cts.IsCancellationRequested)
                         {
                             _selectedCategory = cat;
+                            UpdateSearchPlaceholder();
                             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
                         }
                     });
@@ -761,11 +797,8 @@ namespace PolicyPlus.WinUI3
         {
             if (sender is ToggleMenuFlyoutItem t)
             {
-                if (ChkUseTempPol != null)
-                {
-                    ChkUseTempPol.IsChecked = t.IsChecked;
-                    ChkUseTempPol_Checked(ChkUseTempPol, new RoutedEventArgs());
-                }
+                ChkUseTempPol.IsChecked = t.IsChecked;
+                ChkUseTempPol_Checked(ChkUseTempPol, new RoutedEventArgs());
             }
         }
 
@@ -791,6 +824,11 @@ namespace PolicyPlus.WinUI3
                 }
 
                 CategoryTree.SelectionMode = oldMode;
+
+                if (_selectedCategory != null)
+                {
+                    SelectCategoryInTree(_selectedCategory);
+                }
             }
             finally
             {
@@ -809,6 +847,62 @@ namespace PolicyPlus.WinUI3
                 if (child.Children.Count > 0)
                     BuildChildCategoryNodes(node, child);
             }
+        }
+
+        private void SelectCategoryInTree(PolicyPlusCategory? category)
+        {
+            if (CategoryTree == null || category == null) return;
+            _suppressCategorySelectionChanged = true;
+            try
+            {
+                // Find the TreeViewNode for the category anywhere in the tree
+                Microsoft.UI.Xaml.Controls.TreeViewNode? target = FindNodeByCategory(CategoryTree.RootNodes, category.UniqueID);
+                if (target == null) return;
+
+                // Expand parents so the node is realized
+                var parent = target.Parent;
+                while (parent != null)
+                {
+                    parent.IsExpanded = true;
+                    parent = parent.Parent;
+                }
+
+                // Select the node directly
+                CategoryTree.SelectedNode = target;
+
+                // Bring into view (after layout if needed)
+                CategoryTree.UpdateLayout();
+                var container = CategoryTree.ContainerFromNode(target) as TreeViewItem;
+                if (container != null)
+                {
+                    container.StartBringIntoView();
+                }
+                else
+                {
+                    _ = DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        await Task.Delay(100);
+                        var c2 = CategoryTree.ContainerFromNode(target) as TreeViewItem;
+                        c2?.StartBringIntoView();
+                    });
+                }
+            }
+            finally
+            {
+                _suppressCategorySelectionChanged = false;
+            }
+        }
+
+        private Microsoft.UI.Xaml.Controls.TreeViewNode? FindNodeByCategory(System.Collections.Generic.IList<Microsoft.UI.Xaml.Controls.TreeViewNode> nodes, string uniqueId)
+        {
+            foreach (var n in nodes)
+            {
+                if (n.Content is PolicyPlusCategory pc && string.Equals(pc.UniqueID, uniqueId, StringComparison.InvariantCultureIgnoreCase))
+                    return n;
+                var child = FindNodeByCategory(n.Children, uniqueId);
+                if (child != null) return child;
+            }
+            return null;
         }
 
         private bool IsCategoryEmpty(PolicyPlusCategory cat)
@@ -840,15 +934,49 @@ namespace PolicyPlus.WinUI3
                     e.Handled = true;
                     await OpenEditDialogForPolicyAsync(p, ensureFront: true);
                 }
+                else if (PolicyList?.SelectedItem is PolicyPlusCategory cat)
+                {
+                    e.Handled = true;
+                    _selectedCategory = cat;
+                    UpdateSearchPlaceholder();
+                    ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+                }
             }
         }
 
         private void PolicyList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-            var p = PolicyList?.SelectedItem as PolicyPlusPolicy;
-            if (p is null) return;
-            e.Handled = true;
-            _ = OpenEditDialogForPolicyAsync(p, ensureFront: true);
+            // Resolve the bound item in the simplest and most reliable way
+            object? item = (e.OriginalSource as FrameworkElement)?.DataContext ?? PolicyList?.SelectedItem;
+
+            if (item is PolicyPlusPolicy pol)
+            {
+                e.Handled = true;
+                _ = OpenEditDialogForPolicyAsync(pol, ensureFront: true);
+                return;
+            }
+            if (item is PolicyPlusCategory cat)
+            {
+                e.Handled = true;
+                _selectedCategory = cat;
+                UpdateSearchPlaceholder();
+                ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+                SelectCategoryInTree(cat);
+            }
+        }
+
+        private void UpdateSearchPlaceholder()
+        {
+            if (SearchBox == null) return;
+            if (_selectedCategory != null)
+                SearchBox.PlaceholderText = $"Search Policies (name, id) in {_selectedCategory.DisplayName}";
+            else
+                SearchBox.PlaceholderText = "Search policies (name, id)";
+        }
+
+        private void PolicyList_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            // no-op: switched to double-click only
         }
 
         private async void BtnEditSelected_Click(object sender, RoutedEventArgs e)
@@ -871,6 +999,7 @@ namespace PolicyPlus.WinUI3
                 _hideEmptyCategories = t.IsChecked;
                 try { _config?.SetValue("HideEmptyCategories", _hideEmptyCategories ? 1 : 0); } catch { }
                 BuildCategoryTree();
+                ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
             }
         }
     }
