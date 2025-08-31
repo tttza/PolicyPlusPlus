@@ -490,7 +490,7 @@ namespace PolicyPlus.WinUI3
 
             if (_selectedCategory is not null)
             {
-                // If searching, include subcategories; otherwise we'll handle category view separately
+                // If searching or configured-only, include subcategories; otherwise handle category view separately
                 if (includeSubcategories)
                 {
                     var allowed = new HashSet<string>();
@@ -531,22 +531,23 @@ namespace PolicyPlus.WinUI3
             UpdateSearchPlaceholder();
 
             bool searching = !string.IsNullOrWhiteSpace(query);
-            IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(includeSubcategories: searching);
+            bool flat = searching || _configuredOnly;
+            IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(includeSubcategories: flat);
             if (searching)
                 seq = seq.Where(p => p.DisplayName.Contains(query, StringComparison.InvariantCultureIgnoreCase) || p.UniqueID.Contains(query, StringComparison.InvariantCultureIgnoreCase));
 
-            BindSequenceEnhanced(seq, searching);
+            BindSequenceEnhanced(seq, flat);
 
             RestoreScrollPosition();
         }
 
-        private void BindSequenceEnhanced(IEnumerable<PolicyPlusPolicy> seq, bool searching)
+        private void BindSequenceEnhanced(IEnumerable<PolicyPlusPolicy> seq, bool flat)
         {
             EnsureLocalSources();
 
-            if (searching)
+            if (flat)
             {
-                // Show all individual policies when searching (do not group duplicates)
+                // Show all individual policies when searching or configured-only (flat list)
                 var ordered = seq.OrderBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
                                  .ThenBy(p => p.UniqueID, StringComparer.InvariantCultureIgnoreCase)
                                  .ToList();
@@ -561,7 +562,7 @@ namespace PolicyPlus.WinUI3
                 return;
             }
 
-            // Group policies by display name (original behavior when not searching)
+            // Group policies by display name (original behavior when not searching and not configured-only)
             var grouped = seq.GroupBy(p => p.DisplayName, System.StringComparer.InvariantCultureIgnoreCase);
             _nameGroups = grouped.ToDictionary(g => g.Key, g => g.ToList(), StringComparer.InvariantCultureIgnoreCase);
             var representatives = grouped.Select(PickRepresentative).OrderBy(p => p.DisplayName).ToList();
@@ -575,7 +576,7 @@ namespace PolicyPlus.WinUI3
                 return (object)PolicyListRow.FromGroup(p, groupList, _compSource, _userSource);
             }).ToList<object>();
 
-            // If a category is selected and not searching, prepend its subcategories to the list view
+            // If a category is selected and not flat, prepend its subcategories to the list view
             if (_selectedCategory != null && !_configuredOnly)
             {
                 var items = new List<object>();
