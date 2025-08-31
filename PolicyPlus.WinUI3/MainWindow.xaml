@@ -165,15 +165,36 @@
                                     <FontIcon Grid.Column="0" Glyph="&#xE8B7;" Opacity="0.8" Visibility="{Binding IsCategory, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                     <!-- Stacked icons for User/Computer with darker base icon -->
                                     <Grid Grid.Column="1" Margin="0,0,8,0" Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
-                                        <FontIcon Glyph="&#xE77B;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.85"/>
-                                        <FontIcon Glyph="{Binding UserGlyph}" Foreground="{ThemeResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <FontIcon Glyph="&#xE77B;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
+                                        <!-- Thicken glyph by overlaying slight offsets -->
+                                        <FontIcon Glyph="{Binding UserGlyph}" Foreground="{Binding UserBrush}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <FontIcon.RenderTransform>
+                                                <TranslateTransform X="-0.35" Y="0"/>
+                                            </FontIcon.RenderTransform>
+                                        </FontIcon>
+                                        <FontIcon Glyph="{Binding UserGlyph}" Foreground="{Binding UserBrush}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <FontIcon.RenderTransform>
+                                                <TranslateTransform X="0.35" Y="0"/>
+                                            </FontIcon.RenderTransform>
+                                        </FontIcon>
+                                        <FontIcon Glyph="{Binding UserGlyph}" Foreground="{Binding UserBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="User"/>
                                         </ToolTipService.ToolTip>
                                     </Grid>
                                     <Grid Grid.Column="2" Margin="0,0,8,0" Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
-                                        <FontIcon Glyph="&#xE211;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.85"/>
-                                        <FontIcon Glyph="{Binding ComputerGlyph}" Foreground="{ThemeResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <FontIcon Glyph="&#xE211;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
+                                        <FontIcon Glyph="{Binding ComputerGlyph}" Foreground="{Binding ComputerBrush}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <FontIcon.RenderTransform>
+                                                <TranslateTransform X="-0.35" Y="0"/>
+                                            </FontIcon.RenderTransform>
+                                        </FontIcon>
+                                        <FontIcon Glyph="{Binding ComputerGlyph}" Foreground="{Binding ComputerBrush}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <FontIcon.RenderTransform>
+                                                <TranslateTransform X="0.35" Y="0"/>
+                                            </FontIcon.RenderTransform>
+                                        </FontIcon>
+                                        <FontIcon Glyph="{Binding ComputerGlyph}" Foreground="{Binding ComputerBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="Computer"/>
                                         </ToolTipService.ToolTip>

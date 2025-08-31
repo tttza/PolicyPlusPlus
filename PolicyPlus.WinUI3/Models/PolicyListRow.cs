@@ -1,6 +1,9 @@
 using PolicyPlus;
 using PolicyPlus.WinUI3.Services;
 using System.Linq;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI; // Colors
 
 namespace PolicyPlus.WinUI3.Models
 {
@@ -19,13 +22,17 @@ namespace PolicyPlus.WinUI3.Models
         public bool ComputerEnabled { get; }
         public bool ComputerDisabled { get; }
 
-        // Glyphs for the icons (FontIcon expects a single-character string)
+        // Glyphs
         public string UserGlyph { get; }
         public string ComputerGlyph { get; }
 
+        // Brushes for glyph coloring
+        public Brush UserBrush { get; }
+        public Brush ComputerBrush { get; }
+
         private PolicyListRow(string displayName, bool isCategory, PolicyPlusPolicy? policy, PolicyPlusCategory? category,
             bool userConfigured, bool computerConfigured, bool userEnabled, bool userDisabled, bool compEnabled, bool compDisabled,
-            string userGlyph, string compGlyph)
+            string userGlyph, string compGlyph, Brush userBrush, Brush compBrush)
         {
             DisplayName = displayName;
             IsCategory = isCategory;
@@ -39,10 +46,23 @@ namespace PolicyPlus.WinUI3.Models
             ComputerDisabled = compDisabled;
             UserGlyph = userGlyph;
             ComputerGlyph = compGlyph;
+            UserBrush = userBrush;
+            ComputerBrush = compBrush;
         }
 
         public static PolicyListRow FromCategory(PolicyPlusCategory c)
-            => new PolicyListRow(c.DisplayName, true, null, c, false, false, false, false, false, false, string.Empty, string.Empty);
+            => new PolicyListRow(c.DisplayName, true, null, c, false, false, false, false, false, false, string.Empty, string.Empty, new SolidColorBrush(Colors.Transparent), new SolidColorBrush(Colors.Transparent));
+
+        private static Brush GetBrush(string key, global::Windows.UI.Color fallback)
+        {
+            try
+            {
+                var obj = Application.Current?.Resources?[key];
+                if (obj is Brush b) return b;
+            }
+            catch { }
+            return new SolidColorBrush(fallback);
+        }
 
         public static PolicyListRow FromPolicy(PolicyPlusPolicy p, IPolicySource? comp, IPolicySource? user)
         {
@@ -88,7 +108,13 @@ namespace PolicyPlus.WinUI3.Models
             string userGlyph = userEn ? "\uE73E" : (userDis ? "\uE711" : string.Empty);
             string compGlyph = compEn ? "\uE73E" : (compDis ? "\uE711" : string.Empty);
 
-            return new PolicyListRow(p.DisplayName, false, p, null, userCfg, compCfg, userEn, userDis, compEn, compDis, userGlyph, compGlyph);
+            // Choose colors: Enabled -> ApplyBrush (green), Disabled -> DangerBrush (red)
+            Brush apply = GetBrush("ApplyBrush", Colors.SeaGreen);
+            Brush danger = GetBrush("DangerBrush", Colors.IndianRed);
+            Brush userBrush = userEn ? apply : danger;
+            Brush compBrush = compEn ? apply : danger;
+
+            return new PolicyListRow(p.DisplayName, false, p, null, userCfg, compCfg, userEn, userDis, compEn, compDis, userGlyph, compGlyph, userBrush, compBrush);
         }
     }
 }
