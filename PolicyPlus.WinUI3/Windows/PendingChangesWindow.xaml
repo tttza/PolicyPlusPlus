@@ -249,6 +249,13 @@
                 <Button x:Name="BtnReapplySelected" Grid.Column="3" Content="Reapply &amp; Save selected" Click="BtnReapplySelected_Click"/>
                 <Button x:Name="BtnClose" Grid.Column="4" Content="Close"/>
             </Grid>
+
+            <Grid x:Name="SavingOverlay" Background="#80000000" Visibility="Collapsed" Canvas.ZIndex="99">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                    <controls:ProgressRing IsActive="True" Width="48" Height="48"/>
+                    <TextBlock Text="Saving..."/>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

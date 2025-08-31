@@ -331,9 +331,15 @@ namespace PolicyPlus.WinUI3.Windows
             if (Content is FrameworkElement fe) fe.RequestedTheme = App.CurrentTheme;
         }
 
+        private void SetSaving(bool saving)
+        {
+            try { if (SavingOverlay != null) SavingOverlay.Visibility = saving ? Visibility.Visible : Visibility.Collapsed; } catch { }
+        }
+
         private async void ApplySelected(IEnumerable<PendingChange> items)
         {
             if (items == null) return;
+            SetSaving(true);
             var main = App.Window as MainWindow;
             var compSrcField = typeof(MainWindow).GetField("_compSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var userSrcField = typeof(MainWindow).GetField("_userSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -341,14 +347,14 @@ namespace PolicyPlus.WinUI3.Windows
             var compSrc = (IPolicySource?)compSrcField?.GetValue(main);
             var userSrc = (IPolicySource?)userSrcField?.GetValue(main);
             var bundle = (AdmxBundle?)bundleField?.GetValue(main);
-            if (bundle == null) return;
+            if (bundle == null) { SetSaving(false); return; }
 
             var appliedList = items.ToList();
             bool wroteOk = true; string? writeErr = null;
 
             await Task.Run(async () =>
             {
-                // Always base changes on actual Local GPO POL files
+                // Build Local GPO buffers
                 PolFile? compPolBuffer = null;
                 PolFile? userPolBuffer = null;
                 try { compPolBuffer = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource() as PolFile; } catch { compPolBuffer = new PolFile(); }
@@ -362,13 +368,9 @@ namespace PolicyPlus.WinUI3.Windows
                     if (target == null) continue;
                     PolicyProcessing.ForgetPolicy(target, pol);
                     if (c.DesiredState == PolicyState.Enabled)
-                    {
                         PolicyProcessing.SetPolicyState(target, pol, PolicyState.Enabled, c.Options ?? new Dictionary<string, object>());
-                    }
                     else if (c.DesiredState == PolicyState.Disabled)
-                    {
                         PolicyProcessing.SetPolicyState(target, pol, PolicyState.Disabled, new Dictionary<string, object>());
-                    }
                 }
 
                 try
@@ -379,15 +381,13 @@ namespace PolicyPlus.WinUI3.Windows
                     if (compPolBuffer != null)
                     {
                         using var ms = new MemoryStream();
-                        using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true))
-                        { compPolBuffer.Save(bw); }
+                        using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true)) { compPolBuffer.Save(bw); }
                         compBase64 = Convert.ToBase64String(ms.ToArray());
                     }
                     if (userPolBuffer != null)
                     {
                         using var ms2 = new MemoryStream();
-                        using (var bw2 = new BinaryWriter(ms2, System.Text.Encoding.Unicode, true))
-                        { userPolBuffer.Save(bw2); }
+                        using (var bw2 = new BinaryWriter(ms2, System.Text.Encoding.Unicode, true)) { userPolBuffer.Save(bw2); }
                         userBase64 = Convert.ToBase64String(ms2.ToArray());
                     }
 
@@ -397,10 +397,21 @@ namespace PolicyPlus.WinUI3.Windows
                 catch (Exception ex) { wroteOk = false; writeErr = ex.Message; }
             }).ConfigureAwait(true);
 
-            PendingChangesService.Instance.Applied(appliedList.ToArray());
-            RefreshViews();
-            ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
-            if (!wroteOk && !string.IsNullOrEmpty(writeErr)) ShowLocalInfo("Save failed: " + writeErr); else NotifyApplied(appliedList.Count);
+            // after Task.Run completes
+            if (wroteOk)
+            {
+                PendingChangesService.Instance.Applied(appliedList.ToArray());
+                try { main?.RefreshLocalSources(); } catch { }
+                RefreshViews();
+                ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
+                NotifyApplied(appliedList.Count);
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(writeErr)) ShowLocalInfo("Save failed: " + writeErr);
+            }
+
+            SetSaving(false);
         }
 
         private async void NotifyApplied(int count)

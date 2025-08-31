@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using System.IO.Pipes; // ensure visibility of Acl helper
 
 namespace PolicyPlus.WinUI3
 {
@@ -18,34 +17,41 @@ namespace PolicyPlus.WinUI3
         [DllImport("userenv.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
         private static extern bool RefreshPolicyEx(bool IsMachine, uint Options);
 
+        private static volatile bool s_logEnabled = false;
+
         private static string HostLogPath
         {
             get
             {
                 try
                 {
-                    var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "PolicyPlus");
-                    Directory.CreateDirectory(dir);
-                    return Path.Combine(dir, "host.log");
+                    var dir = Path.GetTempPath();
+                    return Path.Combine(dir, "PolicyPlus_host.log");
                 }
-                catch
-                {
-                    try
-                    {
-                        var dir = Path.GetTempPath();
-                        return Path.Combine(dir, "PolicyPlus_host.log");
-                    }
-                    catch { return "C:\\PolicyPlus_host.log"; }
-                }
+                catch { return "C:\\PolicyPlus_host.log"; }
             }
         }
         private static void Log(string msg)
         {
+            if (!s_logEnabled) return;
             try { File.AppendAllText(HostLogPath, DateTime.Now.ToString("s") + " [" + Environment.ProcessId + "] " + msg + Environment.NewLine); } catch { }
         }
 
         public static int Run(string pipeName)
         {
+            // Determine logging preference
+            try
+            {
+                var cmd = Environment.GetCommandLineArgs();
+                foreach (var a in cmd) { if (string.Equals(a, "--log", StringComparison.OrdinalIgnoreCase)) { s_logEnabled = true; break; } }
+                if (!s_logEnabled)
+                {
+                    var ev = Environment.GetEnvironmentVariable("POLICYPLUS_HOST_LOG");
+                    s_logEnabled = string.Equals(ev, "1", StringComparison.OrdinalIgnoreCase) || string.Equals(ev, "true", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            catch { }
+
             Log("Host starting. Pipe=" + pipeName);
             try
             {

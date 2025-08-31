@@ -40,7 +40,7 @@ namespace PolicyPlus.WinUI3.Services
                 FileName = GetCurrentExePath(),
                 UseShellExecute = true,
                 Verb = "runas",
-                Arguments = "--elevation-host " + _pipeName,
+                Arguments = "--elevation-host " + _pipeName + (IsHostLoggingEnabled() ? " --log" : string.Empty),
                 WindowStyle = ProcessWindowStyle.Hidden
             };
 
@@ -73,6 +73,16 @@ namespace PolicyPlus.WinUI3.Services
             _reader = new StreamReader(_client, Encoding.UTF8, false, 4096, leaveOpen: true);
             _writer = new StreamWriter(_client, Encoding.UTF8, 4096, leaveOpen: true) { AutoFlush = true, NewLine = "\n" };
             _connected = true;
+        }
+
+        private static bool IsHostLoggingEnabled()
+        {
+            try
+            {
+                var ev = Environment.GetEnvironmentVariable("POLICYPLUS_HOST_LOG");
+                return string.Equals(ev, "1", StringComparison.OrdinalIgnoreCase) || string.Equals(ev, "true", StringComparison.OrdinalIgnoreCase);
+            }
+            catch { return false; }
         }
 
         public async Task<(bool ok, string? error)> WriteLocalGpoBytesAsync(string? machinePolBase64, string? userPolBase64, bool triggerRefresh = true)
