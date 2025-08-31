@@ -12,6 +12,7 @@ using WinRT.Interop;
 using System.Collections.Specialized;
 using System.IO;
 using System.Threading.Tasks;
+using PolicyPlus; // Core
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -341,63 +342,38 @@ namespace PolicyPlus.WinUI3.Windows
             if (items == null) return;
             SetSaving(true);
             var main = App.Window as MainWindow;
-            var compSrcField = typeof(MainWindow).GetField("_compSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var userSrcField = typeof(MainWindow).GetField("_userSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var bundleField = typeof(MainWindow).GetField("_bundle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var compSrc = (IPolicySource?)compSrcField?.GetValue(main);
-            var userSrc = (IPolicySource?)userSrcField?.GetValue(main);
             var bundle = (AdmxBundle?)bundleField?.GetValue(main);
             if (bundle == null) { SetSaving(false); return; }
 
             var appliedList = items.ToList();
             bool wroteOk = true; string? writeErr = null;
 
-            await Task.Run(async () =>
+            // Build POL buffers using Core pipeline
+            (string? compBase64, string? userBase64) = (null, null);
+            await Task.Run(() =>
             {
-                // Build Local GPO buffers
-                PolFile? compPolBuffer = null;
-                PolFile? userPolBuffer = null;
-                try { compPolBuffer = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource() as PolFile; } catch { compPolBuffer = new PolFile(); }
-                try { userPolBuffer = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource() as PolFile; } catch { userPolBuffer = new PolFile(); }
-
-                foreach (var c in appliedList)
-                {
-                    if (string.IsNullOrEmpty(c.PolicyId)) continue;
-                    if (!bundle.Policies.TryGetValue(c.PolicyId, out var pol)) continue;
-                    var target = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? (IPolicySource?)userPolBuffer : (IPolicySource?)compPolBuffer;
-                    if (target == null) continue;
-                    PolicyProcessing.ForgetPolicy(target, pol);
-                    if (c.DesiredState == PolicyState.Enabled)
-                        PolicyProcessing.SetPolicyState(target, pol, PolicyState.Enabled, c.Options ?? new Dictionary<string, object>());
-                    else if (c.DesiredState == PolicyState.Disabled)
-                        PolicyProcessing.SetPolicyState(target, pol, PolicyState.Disabled, new Dictionary<string, object>());
-                }
-
                 try
                 {
-                    string? compBase64 = null;
-                    string? userBase64 = null;
-
-                    if (compPolBuffer != null)
+                    var requests = appliedList.Select(c => new PolicyChangeRequest
                     {
-                        using var ms = new MemoryStream();
-                        using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true)) { compPolBuffer.Save(bw); }
-                        compBase64 = Convert.ToBase64String(ms.ToArray());
-                    }
-                    if (userPolBuffer != null)
-                    {
-                        using var ms2 = new MemoryStream();
-                        using (var bw2 = new BinaryWriter(ms2, System.Text.Encoding.Unicode, true)) { userPolBuffer.Save(bw2); }
-                        userBase64 = Convert.ToBase64String(ms2.ToArray());
-                    }
-
-                    var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(compBase64, userBase64, triggerRefresh: true).ConfigureAwait(false);
-                    if (!res.ok) { wroteOk = false; writeErr = res.error; }
+                        PolicyId = c.PolicyId,
+                        Scope = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? PolicyTargetScope.User : PolicyTargetScope.Machine,
+                        DesiredState = c.DesiredState,
+                        Options = c.Options
+                    }).ToList();
+                    var b64 = PolicySavePipeline.BuildLocalGpoBase64(bundle, requests);
+                    compBase64 = b64.machineBase64; userBase64 = b64.userBase64;
                 }
                 catch (Exception ex) { wroteOk = false; writeErr = ex.Message; }
             }).ConfigureAwait(true);
 
-            // after Task.Run completes
+            if (wroteOk)
+            {
+                var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(compBase64, userBase64, triggerRefresh: true);
+                if (!res.ok) { wroteOk = false; writeErr = res.error; }
+            }
+
             if (wroteOk)
             {
                 PendingChangesService.Instance.Applied(appliedList.ToArray());

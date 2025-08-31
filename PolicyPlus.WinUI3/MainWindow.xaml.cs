@@ -28,6 +28,7 @@ using PolicyPlus.WinUI3.Utils;
 using PolicyPlus.WinUI3.Services;
 using PolicyPlus.WinUI3.Models;
 using System.IO;
+using PolicyPlus; // Core pipeline
 
 namespace PolicyPlus.WinUI3
 {
@@ -859,52 +860,26 @@ namespace PolicyPlus.WinUI3
             if (items == null || items.Length == 0) return (true, null);
             if (_bundle == null) return (false, "No ADMX bundle loaded");
 
-            bool wroteOk = true; string? writeErr = null;
-            await Task.Run(async () =>
+            (string? compBase64, string? userBase64) = (null, null);
+            try
             {
-                PolFile? compPolBuffer = null;
-                PolFile? userPolBuffer = null;
-                try { compPolBuffer = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource() as PolFile; } catch { compPolBuffer = new PolFile(); }
-                try { userPolBuffer = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource() as PolFile; } catch { userPolBuffer = new PolFile(); }
-
-                foreach (var c in items)
+                var requests = items.Select(c => new PolicyChangeRequest
                 {
-                    if (string.IsNullOrEmpty(c.PolicyId)) continue;
-                    if (!_bundle.Policies.TryGetValue(c.PolicyId, out var pol)) continue;
-                    var target = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? (IPolicySource?)userPolBuffer : (IPolicySource?)compPolBuffer;
-                    if (target == null) continue;
-                    PolicyProcessing.ForgetPolicy(target, pol);
-                    if (c.DesiredState == PolicyState.Enabled)
-                        PolicyProcessing.SetPolicyState(target, pol, PolicyState.Enabled, c.Options ?? new Dictionary<string, object>());
-                    else if (c.DesiredState == PolicyState.Disabled)
-                        PolicyProcessing.SetPolicyState(target, pol, PolicyState.Disabled, new Dictionary<string, object>());
-                }
+                    PolicyId = c.PolicyId,
+                    Scope = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? PolicyTargetScope.User : PolicyTargetScope.Machine,
+                    DesiredState = c.DesiredState,
+                    Options = c.Options
+                }).ToList();
+                var b64 = PolicySavePipeline.BuildLocalGpoBase64(_bundle, requests);
+                compBase64 = b64.machineBase64; userBase64 = b64.userBase64;
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message);
+            }
 
-                try
-                {
-                    string? compBase64 = null;
-                    string? userBase64 = null;
-
-                    if (compPolBuffer != null)
-                    {
-                        using var ms = new MemoryStream();
-                        using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true)) { compPolBuffer.Save(bw); }
-                        compBase64 = Convert.ToBase64String(ms.ToArray());
-                    }
-                    if (userPolBuffer != null)
-                    {
-                        using var ms2 = new MemoryStream();
-                        using (var bw2 = new BinaryWriter(ms2, System.Text.Encoding.Unicode, true)) { userPolBuffer.Save(bw2); }
-                        userBase64 = Convert.ToBase64String(ms2.ToArray());
-                    }
-
-                    var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(compBase64, userBase64, triggerRefresh: true).ConfigureAwait(false);
-                    if (!res.ok) { wroteOk = false; writeErr = res.error; }
-                }
-                catch (Exception ex) { wroteOk = false; writeErr = ex.Message; }
-            });
-
-            return (wroteOk, writeErr);
+            var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(compBase64, userBase64, triggerRefresh: true);
+            return (res.ok, res.error);
         }
 
         private async void BtnSave_Click(object sender, RoutedEventArgs e)
