@@ -569,7 +569,7 @@ namespace PolicyPlus.WinUI3.Windows
                 if (desired == PolicyState.Enabled)
                     opts = CollectOptions();
 
-                PolicyProcessing.SetPolicyState(preview, _policy, desired, opts);
+                PolicyProcessing.SetPolicyState(preview, _policy, desired, opts ?? new Dictionary<string, object>());
 
                 var win = new DetailPolicyFormattedWindow();
                 // Feed the preview source for both scopes; Initialize will pick current section

@@ -4,7 +4,7 @@ using System;
 
 namespace PolicyPlus.WinUI3.Converters
 {
-    public sealed class NotBoolToVisibilityConverter : IValueConverter
+    public sealed partial class NotBoolToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

@@ -4,7 +4,7 @@ using PolicyPlus;
 
 namespace PolicyPlus.WinUI3
 {
-    public sealed class SectionToTextConverter : IValueConverter
+    public sealed partial class SectionToTextConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

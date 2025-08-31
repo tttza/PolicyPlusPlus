@@ -5,7 +5,7 @@ using PolicyPlus;
 
 namespace PolicyPlus.WinUI3.Converters
 {
-    public sealed class CategoryVisibilityConverter : IValueConverter
+    public sealed partial class CategoryVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

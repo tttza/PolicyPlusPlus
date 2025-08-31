@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using PolicyPlus.WinUI3.Dialogs;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
-using Microsoft.UI.Xaml.Controls; // TreeView
 using Windows.Storage;
 using System.Globalization;
 using System.Text;
@@ -28,7 +27,6 @@ using Microsoft.UI.Xaml.Media.Animation;
 using PolicyPlus.WinUI3.Utils;
 using PolicyPlus.WinUI3.Services;
 using PolicyPlus.WinUI3.Models;
-using Windows.UI.ViewManagement;
 
 namespace PolicyPlus.WinUI3
 {
@@ -51,11 +49,10 @@ namespace PolicyPlus.WinUI3
         private IPolicySource? _compSource;
         private IPolicySource? _userSource;
         private bool _configuredOnly = false;
-        private bool _pendingChanges;
 
         // Temp .pol mode and save tracking
-        private string? _tempPolCompPath;
-        private string? _tempPolUserPath;
+        private string? _tempPolCompPath = null;
+        private string? _tempPolUserPath = null;
         private bool _useTempPol;
 
         private static readonly System.Text.RegularExpressions.Regex UrlRegex = new(@"(https?://[^\s]+)", System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
@@ -134,7 +131,7 @@ namespace PolicyPlus.WinUI3
                 var app = GetFlag("ColAppliesFlag"); if (app != null) Set(ColAppliesKey, app.IsChecked == true);
                 var sup = GetFlag("ColSupportedFlag"); if (sup != null) Set(ColSupportedKey, sup.IsChecked == true);
                 var us = GetFlag("ColUserStateFlag"); if (us != null) Set(ColUserStateKey, us.IsChecked == true);
-                var cs = GetFlag("ColCompStateKey"); if (cs != null) Set(ColCompStateKey, cs.IsChecked == true);
+                var cs = GetFlag("ColCompStateFlag"); if (cs != null) Set(ColCompStateKey, cs.IsChecked == true);
             }
             catch { }
         }
@@ -286,11 +283,12 @@ namespace PolicyPlus.WinUI3
                 var themePref = Convert.ToString(_config?.GetValue("Theme", "System")) ?? "System";
                 ApplyTheme(themePref);
                 App.SetGlobalTheme(themePref switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
-                var items = ThemeSelector?.Items?.OfType<ComboBoxItem>().ToList();
-                if (items != null)
+                var itemsObj = ThemeSelector?.Items;
+                if (itemsObj != null)
                 {
+                    var items = itemsObj.OfType<ComboBoxItem>().ToList();
                     var match = items.FirstOrDefault(i => string.Equals(Convert.ToString(i.Content), themePref, StringComparison.OrdinalIgnoreCase));
-                    if (match != null) ThemeSelector.SelectedItem = match;
+                    if (match != null) ThemeSelector!.SelectedItem = match;
                 }
             }
             catch { }
@@ -381,6 +379,7 @@ namespace PolicyPlus.WinUI3
             {
                 SetBusy(false);
             }
+            await System.Threading.Tasks.Task.CompletedTask;
         }
 
         private void ApplyTheme(string pref)
@@ -703,9 +702,10 @@ namespace PolicyPlus.WinUI3
                 PrimaryButtonText = "Computer",
                 SecondaryButtonText = "User",
                 CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = this.Content.XamlRoot
+                DefaultButton = ContentDialogButton.Primary
             };
+            var xr = RootGrid?.XamlRoot ?? (this.Content as FrameworkElement)?.XamlRoot;
+            if (xr != null) dlg.XamlRoot = xr;
             var res = await dlg.ShowAsync();
             if (res == ContentDialogResult.Primary) return AdmxPolicySection.Machine;
             if (res == ContentDialogResult.Secondary) return AdmxPolicySection.User;
@@ -802,7 +802,7 @@ namespace PolicyPlus.WinUI3
 
         private void MarkDirty()
         {
-            _pendingChanges = true;
+            UpdateUnsavedIndicator();
         }
 
         private PolicyPlusPolicy? GetContextMenuPolicy(object sender)
@@ -824,7 +824,7 @@ namespace PolicyPlus.WinUI3
 
         private void PolicyList_RightTapped(object sender, RightTappedRoutedEventArgs e) { }
 
-        private async void BtnViewFormatted_Click(object sender, RoutedEventArgs e)
+        private void BtnViewFormatted_Click(object sender, RoutedEventArgs e)
         {
             var row = PolicyList?.SelectedItem as PolicyListRow; var p = row?.Policy; if (p is null || _bundle is null) return;
             var win = new Windows.DetailPolicyFormattedWindow();
@@ -870,7 +870,6 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
 
-            _pendingChanges = false;
             UpdateUnsavedIndicator();
             ShowInfo("Saved.", InfoBarSeverity.Success);
             try { Saved?.Invoke(this, EventArgs.Empty); } catch { }
@@ -1194,7 +1193,8 @@ namespace PolicyPlus.WinUI3
 
         private void UpdateSearchPlaceholder()
         {
-            if (SearchBox == null) return;
+            if (SearchBox == null)
+                return;
             if (_selectedCategory != null)
                 SearchBox.PlaceholderText = $"Search policies (name, id) in {_selectedCategory.DisplayName}";
             else

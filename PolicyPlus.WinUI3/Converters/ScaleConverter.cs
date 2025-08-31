@@ -3,7 +3,7 @@ using System;
 
 namespace PolicyPlus.WinUI3.Converters
 {
-    public sealed class ScaleConverter : IValueConverter
+    public sealed partial class ScaleConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

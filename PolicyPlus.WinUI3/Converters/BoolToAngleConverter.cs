@@ -3,7 +3,7 @@ using System;
 
 namespace PolicyPlus.WinUI3.Converters
 {
-    public sealed class BoolToAngleConverter : IValueConverter
+    public sealed partial class BoolToAngleConverter : IValueConverter
     {
         // False -> 0 (right), True -> 90 (down)
         public object Convert(object value, Type targetType, object parameter, string language)

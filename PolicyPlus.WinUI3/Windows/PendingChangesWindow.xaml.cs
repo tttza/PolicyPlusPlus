@@ -22,7 +22,17 @@ namespace PolicyPlus.WinUI3.Windows
 
         private void MainTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            bool pendingActive = MainTabs.SelectedItem == PendingTab;
+            bool pendingActive = (MainTabs.SelectedItem as TabViewItem) == PendingTab;
+            BtnApplySelected.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
+            BtnDiscardSelected.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
+            BtnApplyAll.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
+            BtnDiscardAll.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
+            BtnReapplySelected.Visibility = pendingActive ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void ApplyTabSelectionUi()
+        {
+            bool pendingActive = (MainTabs.SelectedItem as TabViewItem) == PendingTab;
             BtnApplySelected.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
             BtnDiscardSelected.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
             BtnApplyAll.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
@@ -56,7 +66,7 @@ namespace PolicyPlus.WinUI3.Windows
         // Call once on loaded too
         private void PendingChangesWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            MainTabs_SelectionChanged(MainTabs, null);
+            ApplyTabSelectionUi();
         }
 
         public PendingChangesWindow()
@@ -91,7 +101,7 @@ namespace PolicyPlus.WinUI3.Windows
             this.Closed += (s, e) => { UnsubscribeCollectionChanges(); App.UnregisterWindow(this); };
             App.RegisterWindow(this);
 
-            try { ScaleHelper.Attach(this, ScaleHost, RootShell); } catch { }
+            try { ScaleHelper.Attach(this, ScaleHost, RootShell!); } catch { }
 
             SubscribeCollectionChanges();
         }
@@ -341,11 +351,11 @@ namespace PolicyPlus.WinUI3.Windows
                 PolicyProcessing.ForgetPolicy(src, pol);
                 if (c.DesiredState == PolicyState.Enabled)
                 {
-                    PolicyProcessing.SetPolicyState(src, pol, PolicyState.Enabled, c.Options);
+                    PolicyProcessing.SetPolicyState(src, pol, PolicyState.Enabled, c.Options ?? new Dictionary<string, object>());
                 }
                 else if (c.DesiredState == PolicyState.Disabled)
                 {
-                    PolicyProcessing.SetPolicyState(src, pol, PolicyState.Disabled, null);
+                    PolicyProcessing.SetPolicyState(src, pol, PolicyState.Disabled, new Dictionary<string, object>());
                 }
             }
 
@@ -394,11 +404,11 @@ namespace PolicyPlus.WinUI3.Windows
             PolicyProcessing.ForgetPolicy(src, pol);
             if (h.DesiredState == PolicyState.Enabled)
             {
-                PolicyProcessing.SetPolicyState(src, pol, PolicyState.Enabled, h.Options);
+                PolicyProcessing.SetPolicyState(src, pol, PolicyState.Enabled, h.Options ?? new Dictionary<string, object>());
             }
             else if (h.DesiredState == PolicyState.Disabled)
             {
-                PolicyProcessing.SetPolicyState(src, pol, PolicyState.Disabled, null);
+                PolicyProcessing.SetPolicyState(src, pol, PolicyState.Disabled, new Dictionary<string, object>());
             }
 
             PendingChangesService.Instance.History.Add(new HistoryRecord

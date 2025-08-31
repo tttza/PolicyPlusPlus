@@ -3,7 +3,7 @@ using System;
 
 namespace PolicyPlus.WinUI3.Converters
 {
-    public sealed class BoolPairToGlyphConverter : IValueConverter
+    public sealed partial class BoolPairToGlyphConverter : IValueConverter
     {
         // Maps (enabled, disabled) -> glyph
         // enabled=true  -> check glyph E73E
