@@ -6,6 +6,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Security.Principal;
+using System.Security.Cryptography;
 
 namespace PolicyPlus.WinUI3.Services
 {
@@ -21,6 +23,8 @@ namespace PolicyPlus.WinUI3.Services
         private bool _connected;
         private readonly SemaphoreSlim _ioLock = new(1, 1);
         private Process? _hostProc;
+        private string? _clientSid;
+        private string? _authToken;
 
         private ElevationService() { }
 
@@ -29,18 +33,37 @@ namespace PolicyPlus.WinUI3.Services
             try { return Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule!.FileName; } catch { return Process.GetCurrentProcess().MainModule!.FileName; }
         }
 
+        private static bool IsHostLoggingEnabled()
+        {
+            try
+            {
+                var ev = Environment.GetEnvironmentVariable("POLICYPLUS_HOST_LOG");
+                return string.Equals(ev, "1", StringComparison.OrdinalIgnoreCase) || string.Equals(ev, "true", StringComparison.OrdinalIgnoreCase);
+            }
+            catch { return false; }
+        }
+
         private async Task EnsureHostAsync()
         {
             if (_connected && _client != null && _client.IsConnected) return;
 
             _pipeName = ("PolicyPlusElevate-" + Guid.NewGuid().ToString("N"));
+            _clientSid = WindowsIdentity.GetCurrent()?.User?.Value;
+            if (string.IsNullOrEmpty(_clientSid)) throw new InvalidOperationException("Cannot determine caller SID");
+            _authToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+            var args = new StringBuilder();
+            args.Append("--elevation-host ").Append(_pipeName);
+            args.Append(" --client-sid \"").Append(_clientSid.Replace("\"", "")).Append("\"");
+            args.Append(" --auth ").Append(_authToken);
+            if (IsHostLoggingEnabled()) args.Append(" --log");
 
             var psi = new ProcessStartInfo
             {
                 FileName = GetCurrentExePath(),
                 UseShellExecute = true,
                 Verb = "runas",
-                Arguments = "--elevation-host " + _pipeName + (IsHostLoggingEnabled() ? " --log" : string.Empty),
+                Arguments = args.ToString(),
                 WindowStyle = ProcessWindowStyle.Hidden
             };
 
@@ -49,7 +72,6 @@ namespace PolicyPlus.WinUI3.Services
 
             _client = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
 
-            // Retry connect up to ~5 seconds
             var sw = Stopwatch.StartNew();
             Exception? last = null;
             while (sw.Elapsed < TimeSpan.FromSeconds(5))
@@ -75,16 +97,6 @@ namespace PolicyPlus.WinUI3.Services
             _connected = true;
         }
 
-        private static bool IsHostLoggingEnabled()
-        {
-            try
-            {
-                var ev = Environment.GetEnvironmentVariable("POLICYPLUS_HOST_LOG");
-                return string.Equals(ev, "1", StringComparison.OrdinalIgnoreCase) || string.Equals(ev, "true", StringComparison.OrdinalIgnoreCase);
-            }
-            catch { return false; }
-        }
-
         public async Task<(bool ok, string? error)> WriteLocalGpoBytesAsync(string? machinePolBase64, string? userPolBase64, bool triggerRefresh = true)
         {
             await _ioLock.WaitAsync().ConfigureAwait(false);
@@ -96,6 +108,7 @@ namespace PolicyPlus.WinUI3.Services
                 var payload = new
                 {
                     op = "write-local-gpo",
+                    auth = _authToken,
                     machinePol = (string?)null,
                     userPol = (string?)null,
                     machineBytes = machinePolBase64,
@@ -132,7 +145,6 @@ namespace PolicyPlus.WinUI3.Services
 
         public async Task<(bool ok, string? error)> WriteLocalGpoAsync(string? machinePolTempPath, string? userPolTempPath, bool triggerRefresh = true)
         {
-            // Legacy path-based call retained for compatibility
             string? machineBytes = null;
             string? userBytes = null;
             try { if (!string.IsNullOrEmpty(machinePolTempPath) && File.Exists(machinePolTempPath)) machineBytes = Convert.ToBase64String(await File.ReadAllBytesAsync(machinePolTempPath).ConfigureAwait(false)); } catch { }
@@ -147,7 +159,7 @@ namespace PolicyPlus.WinUI3.Services
             {
                 if (_connected && _writer != null && _reader != null)
                 {
-                    var json = JsonSerializer.Serialize(new { op = "shutdown" });
+                    var json = JsonSerializer.Serialize(new { op = "shutdown", auth = _authToken });
                     try { await _writer.WriteLineAsync(json).ConfigureAwait(false); } catch { }
                     try { await _writer.FlushAsync().ConfigureAwait(false); } catch { }
                     try { await Task.Delay(200).ConfigureAwait(false); } catch { }

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.IO.Pipes; // Acl helper
 
 namespace PolicyPlus.WinUI3
 {
@@ -18,52 +19,42 @@ namespace PolicyPlus.WinUI3
         private static extern bool RefreshPolicyEx(bool IsMachine, uint Options);
 
         private static volatile bool s_logEnabled = false;
+        private static string? s_clientSid;
+        private static string? s_authToken;
 
-        private static string HostLogPath
-        {
-            get
-            {
-                try
-                {
-                    var dir = Path.GetTempPath();
-                    return Path.Combine(dir, "PolicyPlus_host.log");
-                }
-                catch { return "C:\\PolicyPlus_host.log"; }
-            }
-        }
+        private static string HostLogPath => Path.Combine(Path.GetTempPath(), "PolicyPlus_host.log");
         private static void Log(string msg)
-        {
-            if (!s_logEnabled) return;
-            try { File.AppendAllText(HostLogPath, DateTime.Now.ToString("s") + " [" + Environment.ProcessId + "] " + msg + Environment.NewLine); } catch { }
-        }
+        { if (!s_logEnabled) return; try { File.AppendAllText(HostLogPath, DateTime.Now.ToString("s") + " [" + Environment.ProcessId + "] " + msg + Environment.NewLine); } catch { } }
 
         public static int Run(string pipeName)
         {
-            // Determine logging preference
             try
             {
                 var cmd = Environment.GetCommandLineArgs();
-                foreach (var a in cmd) { if (string.Equals(a, "--log", StringComparison.OrdinalIgnoreCase)) { s_logEnabled = true; break; } }
-                if (!s_logEnabled)
+                for (int i = 0; i < cmd.Length; i++)
                 {
-                    var ev = Environment.GetEnvironmentVariable("POLICYPLUS_HOST_LOG");
-                    s_logEnabled = string.Equals(ev, "1", StringComparison.OrdinalIgnoreCase) || string.Equals(ev, "true", StringComparison.OrdinalIgnoreCase);
+                    if (string.Equals(cmd[i], "--client-sid", StringComparison.OrdinalIgnoreCase) && i + 1 < cmd.Length) s_clientSid = cmd[i + 1];
+                    if (string.Equals(cmd[i], "--auth", StringComparison.OrdinalIgnoreCase) && i + 1 < cmd.Length) s_authToken = cmd[i + 1];
+                    if (string.Equals(cmd[i], "--log", StringComparison.OrdinalIgnoreCase)) s_logEnabled = true;
                 }
             }
             catch { }
 
-            Log("Host starting. Pipe=" + pipeName);
+            if (string.IsNullOrEmpty(s_clientSid) || string.IsNullOrEmpty(s_authToken))
+            { Log("Missing client-sid or auth"); return 1; }
+
+            Log("Host starting. Pipe=" + pipeName + ", clientSid=" + s_clientSid);
             try
             {
                 var ps = new PipeSecurity();
                 try
                 {
-                    ps.AddAccessRule(new PipeAccessRule(new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null), PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance | PipeAccessRights.Synchronize, AccessControlType.Allow));
+                    var sid = new SecurityIdentifier(s_clientSid);
+                    ps.AddAccessRule(new PipeAccessRule(sid, PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance | PipeAccessRights.Synchronize, AccessControlType.Allow));
                     var me = WindowsIdentity.GetCurrent();
-                    if (me?.User != null)
-                        ps.AddAccessRule(new PipeAccessRule(me.User, PipeAccessRights.FullControl, AccessControlType.Allow));
+                    if (me?.User != null) ps.AddAccessRule(new PipeAccessRule(me.User, PipeAccessRights.FullControl, AccessControlType.Allow));
                 }
-                catch (Exception ex) { Log("PipeSecurity setup failed: " + ex.Message); }
+                catch (Exception ex) { Log("PipeSecurity setup failed: " + ex.Message); return 1; }
 
                 using var server = NamedPipeServerStreamAcl.Create(
                     pipeName,
@@ -83,22 +74,23 @@ namespace PolicyPlus.WinUI3
 
                 while (true)
                 {
-                    string? line = reader.ReadLine();
+                    string? line = ReadLineLimited(reader, 8 * 1024 * 1024);
                     if (line == null) { Log("Client disconnected."); break; }
                     try
                     {
-                        Log("Received: " + (line.Length > 400 ? line.Substring(0, 400) + "..." : line));
                         using var doc = JsonDocument.Parse(line);
                         var root = doc.RootElement;
+                        var auth = root.TryGetProperty("auth", out var a) ? a.GetString() : null;
+                        if (!string.Equals(auth, s_authToken, StringComparison.Ordinal))
+                        { Log("Auth failed"); writer.WriteLine("{\"ok\":false,\"error\":\"unauthorized\"}"); break; }
+
                         var op = root.GetProperty("op").GetString();
                         if (string.Equals(op, "write-local-gpo", StringComparison.OrdinalIgnoreCase))
                         {
                             string? machineBytes = root.TryGetProperty("machineBytes", out var mb) ? mb.GetString() : null;
                             string? userBytes = root.TryGetProperty("userBytes", out var ub) ? ub.GetString() : null;
                             bool refresh = root.TryGetProperty("refresh", out var r) && r.GetBoolean();
-                            Log($"write-local-gpo machineBytes={(machineBytes?.Length ?? 0)} userBytes={(userBytes?.Length ?? 0)} refresh={refresh}");
                             var (ok, error) = WriteLocalGpo(machineBytes, userBytes);
-                            Log($"write result ok={ok} err={(error ?? "")} ");
                             writer.WriteLine(JsonSerializer.Serialize(new { ok, error }));
                             if (ok && refresh)
                             {
@@ -111,19 +103,16 @@ namespace PolicyPlus.WinUI3
                         }
                         else if (string.Equals(op, "shutdown", StringComparison.OrdinalIgnoreCase))
                         {
-                            Log("Shutdown requested");
                             writer.WriteLine("{\"ok\":true}");
                             break;
                         }
                         else
                         {
-                            Log("Unknown op: " + op);
                             writer.WriteLine("{\"ok\":false,\"error\":\"unknown op\"}");
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log("Error handling request: " + ex);
                         try { writer.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.ToString() })); } catch { }
                     }
                 }
@@ -135,6 +124,26 @@ namespace PolicyPlus.WinUI3
             }
             Log("Host exiting.");
             return 0;
+        }
+
+        private static string? ReadLineLimited(StreamReader reader, int maxBytes)
+        {
+            var ms = new MemoryStream();
+            while (true)
+            {
+                int ch = reader.Read();
+                if (ch < 0) return null;
+                if (ch == '\n') break;
+                ms.WriteByte((byte)ch);
+                if (ms.Length > maxBytes) throw new IOException("request too large");
+            }
+            return Encoding.UTF8.GetString(ms.ToArray());
+        }
+
+        private static bool IsPolBytes(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length < 8) return false;
+            return bytes[0] == (byte)'P' && bytes[1] == (byte)'R' && bytes[2] == (byte)'e' && bytes[3] == (byte)'g';
         }
 
         private static (bool ok, string? error) WriteLocalGpo(string? machineBytes, string? userBytes)
@@ -151,7 +160,7 @@ namespace PolicyPlus.WinUI3
                 if (!string.IsNullOrEmpty(machineBytes))
                 {
                     var bytes = Convert.FromBase64String(machineBytes);
-                    Log($"Writing machine pol to {machinePol}, {bytes.Length} bytes");
+                    if (!IsPolBytes(bytes)) return (false, "invalid machine pol bytes");
                     using var fs = new FileStream(machinePol, FileMode.Create, FileAccess.Write, FileShare.None);
                     fs.Write(bytes, 0, bytes.Length);
                     fs.Flush(true);
@@ -159,7 +168,7 @@ namespace PolicyPlus.WinUI3
                 if (!string.IsNullOrEmpty(userBytes))
                 {
                     var bytes = Convert.FromBase64String(userBytes);
-                    Log($"Writing user pol to {userPol}, {bytes.Length} bytes");
+                    if (!IsPolBytes(bytes)) return (false, "invalid user pol bytes");
                     using var fs = new FileStream(userPol, FileMode.Create, FileAccess.Write, FileShare.None);
                     fs.Write(bytes, 0, bytes.Length);
                     fs.Flush(true);
@@ -167,15 +176,10 @@ namespace PolicyPlus.WinUI3
 
                 var gptIni = Path.Combine(gpRoot, "gpt.ini");
                 UpdateGptIni(gptIni);
-                Log("Updated gpt.ini at " + gptIni);
-
                 return (true, null);
             }
             catch (Exception ex)
-            {
-                Log("WriteLocalGpo failed: " + ex);
-                return (false, ex.ToString());
-            }
+            { return (false, ex.ToString()); }
         }
 
         private static void UpdateGptIni(string gptIniPath)
