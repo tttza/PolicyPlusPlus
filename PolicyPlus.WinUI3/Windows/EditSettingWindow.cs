@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using WinRT.Interop;
 using PolicyPlus.WinUI3.Utils;
 using PolicyPlus.WinUI3.Services;
+using PolicyPlus; // for PolFile, PolicyProcessing
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -559,8 +560,20 @@ namespace PolicyPlus.WinUI3.Windows
         {
             try
             {
+                // Build a temporary preview source reflecting current UI selections
+                var preview = new PolFile();
+                var desired = OptEnabled.IsChecked == true ? PolicyState.Enabled
+                              : OptDisabled.IsChecked == true ? PolicyState.Disabled
+                              : PolicyState.NotConfigured;
+                Dictionary<string, object>? opts = null;
+                if (desired == PolicyState.Enabled)
+                    opts = CollectOptions();
+
+                PolicyProcessing.SetPolicyState(preview, _policy, desired, opts);
+
                 var win = new DetailPolicyFormattedWindow();
-                win.Initialize(_policy, _bundle, _compSource, _userSource, _currentSection);
+                // Feed the preview source for both scopes; Initialize will pick current section
+                win.Initialize(_policy, _bundle, preview, preview, _currentSection);
                 win.Activate();
             }
             catch { }

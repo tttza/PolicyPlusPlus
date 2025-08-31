@@ -1196,7 +1196,7 @@ namespace PolicyPlus.WinUI3
         {
             if (SearchBox == null) return;
             if (_selectedCategory != null)
-                SearchBox.PlaceholderText = $"Search Policies (name, id) in {_selectedCategory.DisplayName}";
+                SearchBox.PlaceholderText = $"Search policies (name, id) in {_selectedCategory.DisplayName}";
             else
                 SearchBox.PlaceholderText = "Search policies (name, id)";
         }

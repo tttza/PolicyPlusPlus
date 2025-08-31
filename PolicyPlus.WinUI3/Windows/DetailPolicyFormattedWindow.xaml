@@ -10,51 +10,62 @@
     </Window.SystemBackdrop>
 
     <Grid x:Name="ScaleHost">
-        <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="12" MinWidth="560" MinHeight="440">
+        <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="10" RowSpacing="6" ColumnSpacing="8">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="140"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-            <Grid Grid.Row="0" ColumnSpacing="12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="Policy details" FontSize="18" FontWeight="SemiBold"/>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBox x:Name="NameBox" IsReadOnly="True"/>
-                        <TextBox x:Name="IdBox" IsReadOnly="True" Width="240"/>
-                        <TextBox x:Name="DefinedInBox" IsReadOnly="True" Width="200"/>
-                    </StackPanel>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
-                    <Button x:Name="CopyPathBtn" Content="Copy path"/>
-                    <Button x:Name="CopyRegBtn" Content="Copy reg"/>
-                </StackPanel>
-                <Button Grid.Column="2" x:Name="ToggleViewBtn" Content="Toggle view"/>
-            </Grid>
+            <!-- Name -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center"/>
+            <TextBox x:Name="NameBox" Grid.Row="0" Grid.Column="1" IsReadOnly="True"/>
 
-            <Grid Grid.Row="1" ColumnSpacing="8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBox x:Name="PathBox" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" Height="120"/>
-                <TextBox x:Name="RegBox" Grid.Row="1" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"/>
-            </Grid>
+            <!-- Unique ID -->
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Unique ID" VerticalAlignment="Center"/>
+            <TextBox x:Name="IdBox" Grid.Row="1" Grid.Column="1" IsReadOnly="True"/>
 
-            <Grid Grid.Row="2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button x:Name="CloseBtn" Content="Close"/>
-                </StackPanel>
-            </Grid>
+            <!-- Defined in -->
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Defined in" VerticalAlignment="Center"/>
+            <TextBox x:Name="DefinedInBox" Grid.Row="2" Grid.Column="1" IsReadOnly="True"/>
+
+            <!-- Policy Path -->
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Policy Path" VerticalAlignment="Top"/>
+            <ScrollViewer Grid.Row="3" Grid.Column="1" VerticalScrollBarVisibility="Auto" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}">
+                <TextBox x:Name="PathBox" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Consolas"/>
+            </ScrollViewer>
+            <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Vertical" Spacing="6" VerticalAlignment="Top">
+                <Button x:Name="CopyPathBtn" ToolTipService.ToolTip="Copy" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
+                    <FontIcon Glyph="&#xE8C8;"/>
+                </Button>
+            </StackPanel>
+
+            <!-- Registry Value -->
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Registry Value" VerticalAlignment="Top"/>
+            <ScrollViewer Grid.Row="4" Grid.Column="1" VerticalScrollBarVisibility="Auto" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}">
+                <TextBox x:Name="RegBox" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Consolas"/>
+            </ScrollViewer>
+            <StackPanel Grid.Row="4" Grid.Column="2" Orientation="Vertical" Spacing="6" VerticalAlignment="Top">
+                <Button x:Name="ToggleViewBtn" ToolTipService.ToolTip="Toggle" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
+                    <FontIcon Glyph="&#xE895;"/>
+                </Button>
+                <Button x:Name="CopyRegBtn" ToolTipService.ToolTip="Copy" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
+                    <FontIcon Glyph="&#xE8C8;"/>
+                </Button>
+            </StackPanel>
+
+            <!-- Footer -->
+            <StackPanel Grid.Row="5" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="CloseBtn" Content="Close" Style="{StaticResource PrimaryButtonStyle}" MinWidth="90"/>
+            </StackPanel>
         </Grid>
     </Grid>
 </Window>
