@@ -17,6 +17,7 @@ using Windows.Foundation;
 using Windows.Foundation.Collections;
 using PolicyPlus.WinUI3.Windows;
 using PolicyPlus.WinUI3.Utils;
+using PolicyPlus.WinUI3.Services;
 
 namespace PolicyPlus.WinUI3
 {
@@ -29,20 +30,38 @@ namespace PolicyPlus.WinUI3
         public static ElementTheme CurrentTheme { get; private set; } = ElementTheme.Default;
         public static event EventHandler? ThemeChanged;
 
-        // Global UI scale (1.0 = 100%)
         public static double CurrentScale { get; private set; } = 1.0;
         public static event EventHandler? ScaleChanged;
 
         public App()
         {
             InitializeComponent();
+            this.UnhandledException += (s, e) => { try { e.Handled = true; } catch { } };
+            try
+            {
+                AppDomain.CurrentDomain.ProcessExit += (s, e) => { try { ElevationService.Instance.ShutdownAsync().GetAwaiter().GetResult(); } catch { } };
+            }
+            catch { }
         }
 
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
+            try
+            {
+                var cmd = Environment.GetCommandLineArgs();
+                if (cmd != null && cmd.Length >= 3 && string.Equals(cmd[1], "--elevation-host", StringComparison.OrdinalIgnoreCase))
+                {
+                    string pipe = cmd[2];
+                    _ = ElevationHost.Run(pipe);
+                    try { Environment.Exit(0); } catch { }
+                    return;
+                }
+            }
+            catch { }
+
             Window = new MainWindow();
             ApplyThemeTo(Window);
-            Window.Closed += (s, e) => CloseAllSecondaryWindows();
+            Window.Closed += async (s, e) => { try { await ElevationService.Instance.ShutdownAsync(); } catch { } CloseAllSecondaryWindows(); };
             Window.Activate();
         }
 
@@ -58,7 +77,6 @@ namespace PolicyPlus.WinUI3
         {
             if (scale <= 0) scale = 1.0;
             CurrentScale = scale;
-            // Notify all windows
             ScaleChanged?.Invoke(null, EventArgs.Empty);
         }
 

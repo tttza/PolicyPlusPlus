@@ -10,6 +10,8 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 using System.Collections.Specialized;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -185,13 +187,13 @@ namespace PolicyPlus.WinUI3.Windows
             }
         }
 
-        private void BtnSaveAll_Click(object sender, RoutedEventArgs e)
+        private async void BtnSaveAll_Click(object sender, RoutedEventArgs e)
         {
             // Save all pending changes
             ApplySelected(PendingChangesService.Instance.Pending.ToArray());
         }
 
-        private void BtnApplySelected_Click(object sender, RoutedEventArgs e)
+        private async void BtnApplySelected_Click(object sender, RoutedEventArgs e)
         {
             var items = PendingList.SelectedItems;
             if (items == null || items.Count == 0) return;
@@ -329,7 +331,7 @@ namespace PolicyPlus.WinUI3.Windows
             if (Content is FrameworkElement fe) fe.RequestedTheme = App.CurrentTheme;
         }
 
-        private void ApplySelected(IEnumerable<PendingChange> items)
+        private async void ApplySelected(IEnumerable<PendingChange> items)
         {
             if (items == null) return;
             var main = App.Window as MainWindow;
@@ -342,27 +344,63 @@ namespace PolicyPlus.WinUI3.Windows
             if (bundle == null) return;
 
             var appliedList = items.ToList();
-            foreach (var c in appliedList)
+            bool wroteOk = true; string? writeErr = null;
+
+            await Task.Run(async () =>
             {
-                if (string.IsNullOrEmpty(c.PolicyId)) continue;
-                if (!bundle.Policies.TryGetValue(c.PolicyId, out var pol)) continue;
-                var src = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? userSrc : compSrc;
-                if (src == null) continue;
-                PolicyProcessing.ForgetPolicy(src, pol);
-                if (c.DesiredState == PolicyState.Enabled)
+                // Always base changes on actual Local GPO POL files
+                PolFile? compPolBuffer = null;
+                PolFile? userPolBuffer = null;
+                try { compPolBuffer = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource() as PolFile; } catch { compPolBuffer = new PolFile(); }
+                try { userPolBuffer = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource() as PolFile; } catch { userPolBuffer = new PolFile(); }
+
+                foreach (var c in appliedList)
                 {
-                    PolicyProcessing.SetPolicyState(src, pol, PolicyState.Enabled, c.Options ?? new Dictionary<string, object>());
+                    if (string.IsNullOrEmpty(c.PolicyId)) continue;
+                    if (!bundle.Policies.TryGetValue(c.PolicyId, out var pol)) continue;
+                    var target = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? (IPolicySource?)userPolBuffer : (IPolicySource?)compPolBuffer;
+                    if (target == null) continue;
+                    PolicyProcessing.ForgetPolicy(target, pol);
+                    if (c.DesiredState == PolicyState.Enabled)
+                    {
+                        PolicyProcessing.SetPolicyState(target, pol, PolicyState.Enabled, c.Options ?? new Dictionary<string, object>());
+                    }
+                    else if (c.DesiredState == PolicyState.Disabled)
+                    {
+                        PolicyProcessing.SetPolicyState(target, pol, PolicyState.Disabled, new Dictionary<string, object>());
+                    }
                 }
-                else if (c.DesiredState == PolicyState.Disabled)
+
+                try
                 {
-                    PolicyProcessing.SetPolicyState(src, pol, PolicyState.Disabled, new Dictionary<string, object>());
+                    string? compBase64 = null;
+                    string? userBase64 = null;
+
+                    if (compPolBuffer != null)
+                    {
+                        using var ms = new MemoryStream();
+                        using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true))
+                        { compPolBuffer.Save(bw); }
+                        compBase64 = Convert.ToBase64String(ms.ToArray());
+                    }
+                    if (userPolBuffer != null)
+                    {
+                        using var ms2 = new MemoryStream();
+                        using (var bw2 = new BinaryWriter(ms2, System.Text.Encoding.Unicode, true))
+                        { userPolBuffer.Save(bw2); }
+                        userBase64 = Convert.ToBase64String(ms2.ToArray());
+                    }
+
+                    var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(compBase64, userBase64, triggerRefresh: true).ConfigureAwait(false);
+                    if (!res.ok) { wroteOk = false; writeErr = res.error; }
                 }
-            }
+                catch (Exception ex) { wroteOk = false; writeErr = ex.Message; }
+            }).ConfigureAwait(true);
 
             PendingChangesService.Instance.Applied(appliedList.ToArray());
             RefreshViews();
             ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
-            NotifyApplied(appliedList.Count);
+            if (!wroteOk && !string.IsNullOrEmpty(writeErr)) ShowLocalInfo("Save failed: " + writeErr); else NotifyApplied(appliedList.Count);
         }
 
         private async void NotifyApplied(int count)

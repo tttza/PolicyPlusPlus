@@ -1,0 +1,165 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Pipes;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace PolicyPlus.WinUI3.Services
+{
+    internal sealed class ElevationService
+    {
+        private static readonly Lazy<ElevationService> _lazy = new(() => new ElevationService());
+        public static ElevationService Instance => _lazy.Value;
+
+        private string? _pipeName;
+        private NamedPipeClientStream? _client;
+        private StreamReader? _reader;
+        private StreamWriter? _writer;
+        private bool _connected;
+        private readonly SemaphoreSlim _ioLock = new(1, 1);
+        private Process? _hostProc;
+
+        private ElevationService() { }
+
+        private string GetCurrentExePath()
+        {
+            try { return Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule!.FileName; } catch { return Process.GetCurrentProcess().MainModule!.FileName; }
+        }
+
+        private async Task EnsureHostAsync()
+        {
+            if (_connected && _client != null && _client.IsConnected) return;
+
+            _pipeName = ("PolicyPlusElevate-" + Guid.NewGuid().ToString("N"));
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = GetCurrentExePath(),
+                UseShellExecute = true,
+                Verb = "runas",
+                Arguments = "--elevation-host " + _pipeName,
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+
+            Debug.WriteLine("Starting elevated host: " + psi.Arguments);
+            try { _hostProc = Process.Start(psi); } catch (Exception ex) { Debug.WriteLine("Start failed: " + ex.Message); throw; }
+
+            _client = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+
+            // Retry connect up to ~5 seconds
+            var sw = Stopwatch.StartNew();
+            Exception? last = null;
+            while (sw.Elapsed < TimeSpan.FromSeconds(5))
+            {
+                try
+                {
+                    await _client.ConnectAsync(500).ConfigureAwait(false);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    last = ex; await Task.Delay(100).ConfigureAwait(false);
+                }
+            }
+            if (_client == null || !_client.IsConnected)
+            {
+                Debug.WriteLine("Pipe connect failed: " + last?.Message);
+                throw last ?? new InvalidOperationException("pipe connect failed");
+            }
+
+            _reader = new StreamReader(_client, Encoding.UTF8, false, 4096, leaveOpen: true);
+            _writer = new StreamWriter(_client, Encoding.UTF8, 4096, leaveOpen: true) { AutoFlush = true, NewLine = "\n" };
+            _connected = true;
+        }
+
+        public async Task<(bool ok, string? error)> WriteLocalGpoBytesAsync(string? machinePolBase64, string? userPolBase64, bool triggerRefresh = true)
+        {
+            await _ioLock.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await EnsureHostAsync().ConfigureAwait(false);
+                if (_writer == null || _reader == null) return (false, "not connected");
+
+                var payload = new
+                {
+                    op = "write-local-gpo",
+                    machinePol = (string?)null,
+                    userPol = (string?)null,
+                    machineBytes = machinePolBase64,
+                    userBytes = userPolBase64,
+                    refresh = triggerRefresh
+                };
+                var json = JsonSerializer.Serialize(payload);
+                await _writer.WriteLineAsync(json).ConfigureAwait(false);
+
+                var readTask = _reader.ReadLineAsync();
+                var timeoutTask = Task.Delay(8000);
+                var completed = await Task.WhenAny(readTask, timeoutTask).ConfigureAwait(false);
+                if (completed == timeoutTask) return (false, "elevated host timeout");
+                string? resp = await readTask.ConfigureAwait(false);
+                if (string.IsNullOrEmpty(resp)) return (false, "no response");
+                try
+                {
+                    using var doc = JsonDocument.Parse(resp);
+                    var root = doc.RootElement;
+                    bool ok = root.TryGetProperty("ok", out var okProp) && okProp.GetBoolean();
+                    string? err = root.TryGetProperty("error", out var errProp) ? errProp.GetString() : null;
+                    return (ok, err);
+                }
+                catch (Exception ex)
+                {
+                    return (false, ex.Message);
+                }
+            }
+            finally
+            {
+                _ioLock.Release();
+            }
+        }
+
+        public async Task<(bool ok, string? error)> WriteLocalGpoAsync(string? machinePolTempPath, string? userPolTempPath, bool triggerRefresh = true)
+        {
+            // Legacy path-based call retained for compatibility
+            string? machineBytes = null;
+            string? userBytes = null;
+            try { if (!string.IsNullOrEmpty(machinePolTempPath) && File.Exists(machinePolTempPath)) machineBytes = Convert.ToBase64String(await File.ReadAllBytesAsync(machinePolTempPath).ConfigureAwait(false)); } catch { }
+            try { if (!string.IsNullOrEmpty(userPolTempPath) && File.Exists(userPolTempPath)) userBytes = Convert.ToBase64String(await File.ReadAllBytesAsync(userPolTempPath).ConfigureAwait(false)); } catch { }
+            return await WriteLocalGpoBytesAsync(machineBytes, userBytes, triggerRefresh).ConfigureAwait(false);
+        }
+
+        public async Task ShutdownAsync()
+        {
+            await _ioLock.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                if (_connected && _writer != null && _reader != null)
+                {
+                    var json = JsonSerializer.Serialize(new { op = "shutdown" });
+                    try { await _writer.WriteLineAsync(json).ConfigureAwait(false); } catch { }
+                    try { await _writer.FlushAsync().ConfigureAwait(false); } catch { }
+                    try { await Task.Delay(200).ConfigureAwait(false); } catch { }
+                }
+            }
+            finally
+            {
+                try { _reader?.Dispose(); } catch { }
+                try { _writer?.Dispose(); } catch { }
+                try { _client?.Dispose(); } catch { }
+                _reader = null; _writer = null; _client = null; _connected = false;
+                _ioLock.Release();
+                try
+                {
+                    if (_hostProc != null && !_hostProc.HasExited)
+                    {
+                        _hostProc.Kill(true);
+                    }
+                }
+                catch { }
+                _hostProc = null;
+            }
+        }
+    }
+}
