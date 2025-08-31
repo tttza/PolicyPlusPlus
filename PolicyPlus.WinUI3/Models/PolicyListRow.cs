@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI; // Colors
+using System.Collections.Generic;
 
 namespace PolicyPlus.WinUI3.Models
 {
@@ -171,6 +172,85 @@ namespace PolicyPlus.WinUI3.Models
                 userCfg, compCfg, userEn, userDis, compEn, compDis,
                 userGlyph, compGlyph, userBrush, compBrush,
                 p.UniqueID, categoryName, appliesText, supportedText, userStateText, compStateText);
+        }
+
+        // Aggregate variant states (User/Machine/Both) for a display-name group
+        public static PolicyListRow FromGroup(PolicyPlusPolicy representative, IEnumerable<PolicyPlusPolicy> variants, IPolicySource? comp, IPolicySource? user)
+        {
+            bool anyUserConfigured = false, anyCompConfigured = false;
+            bool anyUserEnabled = false, anyUserDisabled = false;
+            bool anyCompEnabled = false, anyCompDisabled = false;
+
+            // Evaluate actual states
+            foreach (var v in variants)
+            {
+                try
+                {
+                    if (user != null && (v.RawPolicy.Section == AdmxPolicySection.User || v.RawPolicy.Section == AdmxPolicySection.Both))
+                    {
+                        var st = PolicyProcessing.GetPolicyState(user, v);
+                        bool cfg = st == PolicyState.Enabled || st == PolicyState.Disabled;
+                        anyUserConfigured |= cfg;
+                        anyUserEnabled |= st == PolicyState.Enabled;
+                        anyUserDisabled |= st == PolicyState.Disabled;
+                    }
+                    if (comp != null && (v.RawPolicy.Section == AdmxPolicySection.Machine || v.RawPolicy.Section == AdmxPolicySection.Both))
+                    {
+                        var st = PolicyProcessing.GetPolicyState(comp, v);
+                        bool cfg = st == PolicyState.Enabled || st == PolicyState.Disabled;
+                        anyCompConfigured |= cfg;
+                        anyCompEnabled |= st == PolicyState.Enabled;
+                        anyCompDisabled |= st == PolicyState.Disabled;
+                    }
+                }
+                catch { }
+            }
+
+            // Overlay pending changes per variant
+            try
+            {
+                var pending = PendingChangesService.Instance.Pending;
+                foreach (var v in variants)
+                {
+                    var pendUser = pending.FirstOrDefault(pc => pc.PolicyId == v.UniqueID && pc.Scope == "User");
+                    if (pendUser != null)
+                    {
+                        bool cfg = pendUser.DesiredState == PolicyState.Enabled || pendUser.DesiredState == PolicyState.Disabled;
+                        anyUserConfigured |= cfg;
+                        anyUserEnabled |= pendUser.DesiredState == PolicyState.Enabled;
+                        anyUserDisabled |= pendUser.DesiredState == PolicyState.Disabled;
+                    }
+                    var pendComp = pending.FirstOrDefault(pc => pc.PolicyId == v.UniqueID && pc.Scope == "Computer");
+                    if (pendComp != null)
+                    {
+                        bool cfg = pendComp.DesiredState == PolicyState.Enabled || pendComp.DesiredState == PolicyState.Disabled;
+                        anyCompConfigured |= cfg;
+                        anyCompEnabled |= pendComp.DesiredState == PolicyState.Enabled;
+                        anyCompDisabled |= pendComp.DesiredState == PolicyState.Disabled;
+                    }
+                }
+            }
+            catch { }
+
+            // Prefer Enabled over Disabled when both exist
+            string userGlyph = anyUserEnabled ? "\uE73E" : (anyUserDisabled ? "\uE711" : string.Empty);
+            string compGlyph = anyCompEnabled ? "\uE73E" : (anyCompDisabled ? "\uE711" : string.Empty);
+
+            Brush apply = GetBrush("ApplyBrush", Colors.SeaGreen);
+            Brush danger = GetBrush("DangerBrush", Colors.IndianRed);
+            Brush userBrush = anyUserEnabled ? apply : danger;
+            Brush compBrush = anyCompEnabled ? apply : danger;
+
+            string categoryName = representative.Category?.DisplayName ?? string.Empty;
+            string appliesText = AppliesOf(representative);
+            string supportedText = representative.SupportedOn?.DisplayName ?? string.Empty;
+            string userStateText = StateText(anyUserEnabled, anyUserDisabled, anyUserConfigured);
+            string compStateText = StateText(anyCompEnabled, anyCompDisabled, anyCompConfigured);
+
+            return new PolicyListRow(representative.DisplayName, false, representative, null,
+                anyUserConfigured, anyCompConfigured, anyUserEnabled, anyUserDisabled, anyCompEnabled, anyCompDisabled,
+                userGlyph, compGlyph, userBrush, compBrush,
+                representative.UniqueID, categoryName, appliesText, supportedText, userStateText, compStateText);
         }
     }
 }

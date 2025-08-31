@@ -551,14 +551,19 @@ namespace PolicyPlus.WinUI3
 
             // Build row models with configuration state
             EnsureLocalSources();
-            var rows = representatives.Select(p => PolicyListRow.FromPolicy(p, _compSource, _userSource)).ToList<object>();
+            var rows = representatives.Select(p =>
+            {
+                _nameGroups.TryGetValue(p.DisplayName, out var groupList);
+                groupList ??= new List<PolicyPlusPolicy> { p };
+                return (object)PolicyListRow.FromGroup(p, groupList, _compSource, _userSource);
+            }).ToList<object>();
 
             // If a category is selected and not searching, prepend its subcategories to the list view
-            if (!searching && _selectedCategory != null)
+            if (!searching && _selectedCategory != null && !_configuredOnly)
             {
                 var items = new List<object>();
                 var children = _selectedCategory.Children
-                    .Where(c => !_hideEmptyCategories || !IsCategoryEmpty(c))
+                    .Where(c => !_hideEmptyCategories || HasAnyVisiblePolicyInCategory(c))
                     .OrderBy(c => c.DisplayName)
                     .Select(c => (object)PolicyListRow.FromCategory(c))
                     .ToList();
@@ -1078,6 +1083,48 @@ namespace PolicyPlus.WinUI3
                     return false;
             }
             return true;
+        }
+
+        private bool HasAnyVisiblePolicyInCategory(PolicyPlusCategory cat)
+        {
+            try
+            {
+                // When not using Configured Only, fall back to simple emptiness check
+                if (!_configuredOnly)
+                {
+                    return !IsCategoryEmpty(cat);
+                }
+
+                // Collect all policies within this category subtree
+                var ids = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+                CollectPoliciesRecursive(cat, ids);
+                IEnumerable<PolicyPlusPolicy> seq = _allPolicies.Where(p => ids.Contains(p.UniqueID));
+
+                // Respect the Applies filter
+                if (_appliesFilter == AdmxPolicySection.Machine)
+                    seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both);
+                else if (_appliesFilter == AdmxPolicySection.User)
+                    seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both);
+
+                if (!seq.Any()) return false;
+
+                EnsureLocalSources();
+                if (_compSource == null || _userSource == null) return false;
+
+                foreach (var p in seq)
+                {
+                    var comp = PolicyProcessing.GetPolicyState(_compSource, p);
+                    var user = PolicyProcessing.GetPolicyState(_userSource, p);
+                    if (comp == PolicyState.Enabled || comp == PolicyState.Disabled || user == PolicyState.Enabled || user == PolicyState.Disabled)
+                        return true;
+                }
+                return false;
+            }
+            catch
+            {
+                // In case of any unexpected error, do not hide the category
+                return true;
+            }
         }
 
         private void BtnPendingChanges_Click(object sender, RoutedEventArgs e)

@@ -204,7 +204,7 @@
                                 <datagrid:DataGridTemplateColumn x:Name="ColUserIcon" Header="User" Width="SizeToCells">
                                     <datagrid:DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Grid Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <Grid Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
                                                 <FontIcon Glyph="&#xE77B;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
                                                 <FontIcon Glyph="{Binding UserGlyph}" Foreground="{Binding UserBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Grid>
