@@ -79,10 +79,18 @@ namespace PolicyPlus.WinUI3
         private const string ColUserStateKey = "Columns.ShowUserState";
         private const string ColCompStateKey = "Columns.ShowComputerState";
 
+        private const string ScaleKey = "UIScale"; // e.g. "100%"
+
         public MainWindow()
         {
             this.InitializeComponent();
             HookPendingQueue();
+
+            // attach scaling for main window content when layout is ready
+            RootGrid.Loaded += (s, e) =>
+            {
+                try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
+            };
         }
 
         private CheckBox? GetFlag(string name)
@@ -126,7 +134,7 @@ namespace PolicyPlus.WinUI3
                 var app = GetFlag("ColAppliesFlag"); if (app != null) Set(ColAppliesKey, app.IsChecked == true);
                 var sup = GetFlag("ColSupportedFlag"); if (sup != null) Set(ColSupportedKey, sup.IsChecked == true);
                 var us = GetFlag("ColUserStateFlag"); if (us != null) Set(ColUserStateKey, us.IsChecked == true);
-                var cs = GetFlag("ColCompStateFlag"); if (cs != null) Set(ColCompStateKey, cs.IsChecked == true);
+                var cs = GetFlag("ColCompStateKey"); if (cs != null) Set(ColCompStateKey, cs.IsChecked == true);
             }
             catch { }
         }
@@ -287,6 +295,14 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
 
+            // Load saved scale
+            try
+            {
+                var scalePref = Convert.ToString(_config?.GetValue(ScaleKey, "100%")) ?? "100%";
+                SetScaleFromString(scalePref, updateSelector: true, save: false);
+            }
+            catch { }
+
             // Load column visibility preferences after XAML created
             LoadColumnPrefs();
             UpdateColumnVisibilityFromFlags();
@@ -300,6 +316,46 @@ namespace PolicyPlus.WinUI3
                 {
                     LoadAdmxFolderAsync(lastPath);
                 }
+            }
+            catch { }
+        }
+
+        private void SetScaleFromString(string s, bool updateSelector, bool save)
+        {
+            double scale = 1.0;
+            if (!string.IsNullOrEmpty(s) && s.EndsWith("%"))
+            {
+                if (double.TryParse(s.TrimEnd('%'), out var pct))
+                {
+                    scale = Math.Max(0.5, pct / 100.0);
+                }
+            }
+            App.SetGlobalScale(scale);
+            if (updateSelector)
+            {
+                try
+                {
+                    if (ScaleSelector != null)
+                    {
+                        var items = ScaleSelector.Items?.OfType<ComboBoxItem>()?.ToList();
+                        var match = items?.FirstOrDefault(i => string.Equals(Convert.ToString(i.Content), s, StringComparison.OrdinalIgnoreCase));
+                        if (match != null) ScaleSelector.SelectedItem = match;
+                    }
+                }
+                catch { }
+            }
+            if (save)
+            {
+                try { _config?.SetValue(ScaleKey, s); } catch { }
+            }
+        }
+
+        private void ScaleSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                var item = (ScaleSelector?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "100%";
+                SetScaleFromString(item, updateSelector: false, save: true);
             }
             catch { }
         }

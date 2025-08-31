@@ -52,6 +52,27 @@ namespace PolicyPlus.WinUI3.Windows
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
             this.Closed += (s, e) => App.UnregisterWindow(this);
             App.RegisterWindow(this);
+
+            // Try attach scaling now and on first activation
+            TryAttachScale();
+            this.Activated += (s, e) => TryAttachScale();
+        }
+
+        private void TryAttachScale()
+        {
+            try
+            {
+                if (Content is FrameworkElement fe)
+                {
+                    var host = fe.FindName("ScaleHost") as FrameworkElement;
+                    var root = fe.FindName("RootShell") as FrameworkElement;
+                    if (host != null && root != null)
+                    {
+                        ScaleHelper.Attach(this, host, root);
+                      }
+                }
+            }
+            catch { }
         }
 
         private void ApplyThemeResources()

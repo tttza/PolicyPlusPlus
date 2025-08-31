@@ -29,6 +29,10 @@ namespace PolicyPlus.WinUI3
         public static ElementTheme CurrentTheme { get; private set; } = ElementTheme.Default;
         public static event EventHandler? ThemeChanged;
 
+        // Global UI scale (1.0 = 100%)
+        public static double CurrentScale { get; private set; } = 1.0;
+        public static event EventHandler? ScaleChanged;
+
         public App()
         {
             InitializeComponent();
@@ -48,6 +52,14 @@ namespace PolicyPlus.WinUI3
             if (Window != null) ApplyThemeTo(Window);
             foreach (var w in _secondaryWindows) ApplyThemeTo(w);
             ThemeChanged?.Invoke(null, EventArgs.Empty);
+        }
+
+        public static void SetGlobalScale(double scale)
+        {
+            if (scale <= 0) scale = 1.0;
+            CurrentScale = scale;
+            // Notify all windows
+            ScaleChanged?.Invoke(null, EventArgs.Empty);
         }
 
         private static void ApplyThemeTo(Window w)

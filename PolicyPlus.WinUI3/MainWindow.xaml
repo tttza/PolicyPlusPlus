@@ -17,250 +17,267 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid x:Name="RootGrid" Background="{ThemeResource WindowBackground}" Loaded="Window_Loaded" KeyDown="RootGrid_KeyDown">
-        <Grid.KeyboardAccelerators>
-            <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="SaveAccelerator_Invoked"/>
-        </Grid.KeyboardAccelerators>
-        <Grid.Resources>
-            <converters:ScaleConverter x:Key="ScaleConverter"/>
-            <converters:CategoryVisibilityConverter x:Key="CategoryVisibilityConverter"/>
-            <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-            <converters:NotBoolToVisibilityConverter x:Key="NotBoolToVisibilityConverter"/>
-            <models:ColumnWidths x:Key="ColumnWidthsModel" />
-            <!-- Subtle alternating row background to reduce reliance on grid lines -->
-            <SolidColorBrush x:Key="AltRowBrush" Color="#0F000000" />
-        </Grid.Resources>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-
-        <controls:InfoBar x:Name="StatusBar"
-                          Grid.RowSpan="2"
-                          VerticalAlignment="Bottom"
-                          HorizontalAlignment="Stretch"
-                          Margin="12"
-                          Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
-                          IsOpen="False"
-                          Severity="Informational"
-                          Canvas.ZIndex="5" />
-
-        <Grid Grid.Row="1">
+    <!-- Scale host wraps real content so scaled content always fills window without gaps -->
+    <Grid x:Name="ScaleHost">
+        <Grid x:Name="RootGrid" Background="{ThemeResource WindowBackground}" Loaded="Window_Loaded" KeyDown="RootGrid_KeyDown">
+            <Grid.KeyboardAccelerators>
+                <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="SaveAccelerator_Invoked"/>
+            </Grid.KeyboardAccelerators>
+            <Grid.Resources>
+                <converters:ScaleConverter x:Key="ScaleConverter"/>
+                <converters:CategoryVisibilityConverter x:Key="CategoryVisibilityConverter"/>
+                <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+                <converters:NotBoolToVisibilityConverter x:Key="NotBoolToVisibilityConverter"/>
+                <models:ColumnWidths x:Key="ColumnWidthsModel" />
+                <!-- Subtle alternating row background to reduce reliance on grid lines -->
+                <SolidColorBrush x:Key="AltRowBrush" Color="#0F000000" />
+            </Grid.Resources>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Menu bar and theme selector -->
-            <Grid Grid.Row="0" Margin="8,8,8,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition />
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <controls:MenuBar>
-                    <controls:MenuBarItem Title="File">
-                        <MenuFlyoutItem Text="Load Local GPO (Computer)" Click="BtnLoadLocalGpo_Click" />
-                        <MenuFlyoutItem Text="Load ADMX Folder..." Click="BtnLoadAdmxFolder_Click" />
-                        <MenuFlyoutSeparator/>
-                        <MenuFlyoutItem Text="Save" Click="BtnSave_Click" />
-                    </controls:MenuBarItem>
-                    <controls:MenuBarItem Title="Find">
-                        <MenuFlyoutItem Text="Find..." Click="BtnFind_Click" />
-                        <MenuFlyoutItem Text="Find by registry..." Click="BtnFindReg_Click" />
-                        <MenuFlyoutItem Text="Find by ID..." Click="BtnFindId_Click" />
-                    </controls:MenuBarItem>
-                    <controls:MenuBarItem Title="Import/Export">
-                        <MenuFlyoutItem Text="Export .reg..." Click="BtnExportReg_Click" />
-                        <MenuFlyoutItem Text="Export CSV..." Click="BtnExportCsv_Click" />
-                        <MenuFlyoutSeparator/>
-                        <MenuFlyoutItem Text="Import .pol..." Click="BtnImportPol_Click" />
-                        <MenuFlyoutItem Text="Import .reg..." Click="BtnImportReg_Click" />
-                    </controls:MenuBarItem>
-                    <controls:MenuBarItem Title="Options">
-                        <MenuFlyoutItem Text="Language..." Click="BtnLanguage_Click" />
-                        <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Write to temp .pol" IsChecked="{Binding IsChecked, ElementName=ChkUseTempPol, Mode=TwoWay}" Click="ToggleTempPolMenu_Click" />
-                        <ToggleMenuFlyoutItem x:Name="ToggleHideEmptyMenu" Text="Hide empty categories" IsChecked="True" Click="ToggleHideEmptyMenu_Click" />
-                    </controls:MenuBarItem>
-                    <controls:MenuBarItem Title="Changes">
-                        <MenuFlyoutItem Text="Pending/History..." Click="BtnPendingChanges_Click" />
-                    </controls:MenuBarItem>
-                    <controls:MenuBarItem Title="View">
-                        <ToggleMenuFlyoutItem x:Name="ViewIdToggle" Text="ID" IsChecked="True" Tag="ColIdFlag" Click="ColumnToggle_Click"/>
-                        <ToggleMenuFlyoutItem x:Name="ViewCategoryToggle" Text="Category" IsChecked="False" Tag="ColCategoryFlag" Click="ColumnToggle_Click"/>
-                        <ToggleMenuFlyoutItem x:Name="ViewAppliesToggle" Text="Applies to" IsChecked="False" Tag="ColAppliesFlag" Click="ColumnToggle_Click"/>
-                        <ToggleMenuFlyoutItem x:Name="ViewSupportedToggle" Text="Supported on" IsChecked="False" Tag="ColSupportedFlag" Click="ColumnToggle_Click"/>
-                    </controls:MenuBarItem>
-                </controls:MenuBar>
+            <controls:InfoBar x:Name="StatusBar"
+                              Grid.RowSpan="2"
+                              VerticalAlignment="Bottom"
+                              HorizontalAlignment="Stretch"
+                              Margin="12"
+                              Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                              IsOpen="False"
+                              Severity="Informational"
+                              Canvas.ZIndex="5" />
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="Theme:" VerticalAlignment="Center"/>
-                    <ComboBox x:Name="ThemeSelector" Width="160" SelectionChanged="ThemeSelector_SelectionChanged">
-                        <ComboBoxItem Content="System" IsSelected="True"/>
-                        <ComboBoxItem Content="Dark"/>
-                        <ComboBoxItem Content="Light"/>
+            <Grid Grid.Row="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Menu bar and theme/scale selector -->
+                <Grid Grid.Row="0" Margin="8,8,8,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <controls:MenuBar>
+                        <controls:MenuBarItem Title="File">
+                            <MenuFlyoutItem Text="Load Local GPO (Computer)" Click="BtnLoadLocalGpo_Click" />
+                            <MenuFlyoutItem Text="Load ADMX Folder..." Click="BtnLoadAdmxFolder_Click" />
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem Text="Save" Click="BtnSave_Click" />
+                        </controls:MenuBarItem>
+                        <controls:MenuBarItem Title="Find">
+                            <MenuFlyoutItem Text="Find..." Click="BtnFind_Click" />
+                            <MenuFlyoutItem Text="Find by registry..." Click="BtnFindReg_Click" />
+                            <MenuFlyoutItem Text="Find by ID..." Click="BtnFindId_Click" />
+                        </controls:MenuBarItem>
+                        <controls:MenuBarItem Title="Import/Export">
+                            <MenuFlyoutItem Text="Export .reg..." Click="BtnExportReg_Click" />
+                            <MenuFlyoutItem Text="Export CSV..." Click="BtnExportCsv_Click" />
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem Text="Import .pol..." Click="BtnImportPol_Click" />
+                            <MenuFlyoutItem Text="Import .reg..." Click="BtnImportReg_Click" />
+                        </controls:MenuBarItem>
+                        <controls:MenuBarItem Title="Options">
+                            <MenuFlyoutItem Text="Language..." Click="BtnLanguage_Click" />
+                            <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Write to temp .pol" IsChecked="{Binding IsChecked, ElementName=ChkUseTempPol, Mode=TwoWay}" Click="ToggleTempPolMenu_Click" />
+                            <ToggleMenuFlyoutItem x:Name="ToggleHideEmptyMenu" Text="Hide empty categories" IsChecked="True" Click="ToggleHideEmptyMenu_Click" />
+                        </controls:MenuBarItem>
+                        <controls:MenuBarItem Title="Changes">
+                            <MenuFlyoutItem Text="Pending/History..." Click="BtnPendingChanges_Click" />
+                        </controls:MenuBarItem>
+                        <controls:MenuBarItem Title="View">
+                            <ToggleMenuFlyoutItem x:Name="ViewIdToggle" Text="ID" IsChecked="True" Tag="ColIdFlag" Click="ColumnToggle_Click"/>
+                            <ToggleMenuFlyoutItem x:Name="ViewCategoryToggle" Text="Category" IsChecked="False" Tag="ColCategoryFlag" Click="ColumnToggle_Click"/>
+                            <ToggleMenuFlyoutItem x:Name="ViewAppliesToggle" Text="Applies to" IsChecked="False" Tag="ColAppliesFlag" Click="ColumnToggle_Click"/>
+                            <ToggleMenuFlyoutItem x:Name="ViewSupportedToggle" Text="Supported on" IsChecked="False" Tag="ColSupportedFlag" Click="ColumnToggle_Click"/>
+                        </controls:MenuBarItem>
+                    </controls:MenuBar>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <TextBlock Text="Theme:" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="ThemeSelector" Width="160" SelectionChanged="ThemeSelector_SelectionChanged">
+                            <ComboBoxItem Content="System" IsSelected="True"/>
+                            <ComboBoxItem Content="Dark"/>
+                            <ComboBoxItem Content="Light"/>
+                        </ComboBox>
+                        <TextBlock Text="Scale:" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        <ComboBox x:Name="ScaleSelector" Width="100" SelectionChanged="ScaleSelector_SelectionChanged">
+                            <ComboBoxItem Content="50%"/>
+                            <ComboBoxItem Content="67%"/>
+                            <ComboBoxItem Content="75%"/>
+                            <ComboBoxItem Content="80%"/>
+                            <ComboBoxItem Content="90%"/>
+                            <ComboBoxItem Content="100%" IsSelected="True"/>
+                            <ComboBoxItem Content="110%"/>
+                            <ComboBoxItem Content="125%"/>
+                            <ComboBoxItem Content="150%"/>
+                            <ComboBoxItem Content="175%"/>
+                            <ComboBoxItem Content="200%"/>
+                        </ComboBox>
+                        <TextBlock x:Name="LoaderInfo" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="UnsavedIndicator" Text="• Unsaved changes" Foreground="OrangeRed" Visibility="Collapsed" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Hidden flags for column visibility -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Visibility="Collapsed">
+                    <CheckBox x:Name="ColIdFlag" IsChecked="True" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
+                    <CheckBox x:Name="ColCategoryFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
+                    <CheckBox x:Name="ColAppliesFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
+                    <CheckBox x:Name="ColSupportedFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
+                </StackPanel>
+
+                <!-- Filters and counts row -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="8,4,8,0">
+                    <TextBlock Text="Applies to:" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="AppliesToSelector" Width="140" SelectionChanged="AppliesToSelector_SelectionChanged">
+                        <ComboBoxItem Content="Both" IsSelected="True"/>
+                        <ComboBoxItem Content="Computer"/>
+                        <ComboBoxItem Content="User"/>
                     </ComboBox>
-                    <TextBlock x:Name="LoaderInfo" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="UnsavedIndicator" Text="• Unsaved changes" Foreground="OrangeRed" Visibility="Collapsed" VerticalAlignment="Center"/>
+                    <TextBlock Text="|" VerticalAlignment="Center"/>
+                    <CheckBox x:Name="ChkConfiguredOnly" Content="Configured only" Checked="ChkConfiguredOnly_Checked" Unchecked="ChkConfiguredOnly_Checked"/>
+                    <TextBlock Text="|" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="PolicyCount" VerticalAlignment="Center"/>
+                    <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Visibility="Collapsed" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
+                    <AutoSuggestBox x:Name="SearchBox" Width="360" Margin="16,0,0,0" PlaceholderText="Search policies (name, id)"
+                                    TextChanged="SearchBox_TextChanged" QuerySubmitted="SearchBox_QuerySubmitted" SuggestionChosen="SearchBox_SuggestionChosen" />
+                </StackPanel>
+
+                <Grid Grid.Row="3" Margin="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition x:Name="CategoryColumn" Width="260" MinWidth="140"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Category tree -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Button Content="Clear category filter" Margin="0,0,0,4" Click="ClearCategoryFilter_Click"/>
+                        <controls:TreeView x:Name="CategoryTree" Grid.Row="1" SelectionMode="Single" ItemInvoked="CategoryTree_ItemInvoked" SelectionChanged="CategoryTree_SelectionChanged" DoubleTapped="CategoryTree_DoubleTapped">
+                            <controls:TreeView.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Content.DisplayName}" />
+                                </DataTemplate>
+                            </controls:TreeView.ItemTemplate>
+                        </controls:TreeView>
+                    </Grid>
+
+                    <toolkit:GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Width="8" HorizontalAlignment="Stretch"/>
+
+                    <!-- Policy list and details -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="8*"/>
+                            <RowDefinition Height="8"/>
+                            <RowDefinition Height="2*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- DataGrid -->
+                        <datagrid:DataGrid x:Name="PolicyList"
+                                          Grid.Row="0"
+                                          AutoGenerateColumns="False"
+                                          IsReadOnly="True"
+                                          SelectionMode="Single"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="Horizontal"
+                                          AlternatingRowBackground="{StaticResource AltRowBrush}"
+                                          SelectionChanged="PolicyList_SelectionChanged"
+                                          DoubleTapped="PolicyList_DoubleTapped"
+                                          RightTapped="PolicyList_RightTapped">
+                            <datagrid:DataGrid.Columns>
+                                <datagrid:DataGridTemplateColumn x:Name="ColCatIcon" Header="" Width="SizeToCells">
+                                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <FontIcon Glyph="&#xE8B7;" Opacity="0.8" Visibility="{Binding IsCategory, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        </DataTemplate>
+                                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                                </datagrid:DataGridTemplateColumn>
+                                <!-- User configured state icon -->
+                                <datagrid:DataGridTemplateColumn x:Name="ColUserIcon" Header="User" Width="SizeToCells">
+                                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <FontIcon Glyph="&#xE77B;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
+                                                <FontIcon Glyph="{Binding UserGlyph}" Foreground="{Binding UserBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                                </datagrid:DataGridTemplateColumn>
+                                <!-- Computer configured state icon -->
+                                <datagrid:DataGridTemplateColumn x:Name="ColComputerIcon" Header="Computer" Width="SizeToCells">
+                                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <FontIcon Glyph="&#xE211;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
+                                                <FontIcon Glyph="{Binding ComputerGlyph}" Foreground="{Binding ComputerBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                                </datagrid:DataGridTemplateColumn>
+                                <datagrid:DataGridTextColumn x:Name="ColName" Header="Name" Binding="{Binding DisplayName}" Width="3*" MinWidth="340"/>
+                                <datagrid:DataGridTextColumn x:Name="ColId" Header="ID" Binding="{Binding ShortId}" Width="2*"/>
+                                <datagrid:DataGridTextColumn x:Name="ColCategory" Header="Category" Binding="{Binding CategoryName}" Width="2*"/>
+                                <datagrid:DataGridTextColumn x:Name="ColApplies" Header="Applies to" Binding="{Binding AppliesText}" Width="*"/>
+                                <datagrid:DataGridTextColumn x:Name="ColSupported" Header="Supported on" Binding="{Binding SupportedText}" Width="2*"/>
+                            </datagrid:DataGrid.Columns>
+                            <datagrid:DataGrid.RowStyle>
+                                <Style TargetType="datagrid:DataGridRow">
+                                    <Setter Property="ContextFlyout">
+                                        <Setter.Value>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem Text="Edit..." Tag="{Binding Policy}" Click="ContextEdit_Click" />
+                                                <MenuFlyoutItem Text="View formatted..." Tag="{Binding Policy}" Click="ContextViewFormatted_Click" />
+                                                <MenuFlyoutSeparator />
+                                                <MenuFlyoutItem Text="Copy name" Tag="{Binding Policy}" Click="ContextCopyName_Click" />
+                                                <MenuFlyoutItem Text="Copy ID" Tag="{Binding Policy}" Click="ContextCopyId_Click" />
+                                                <MenuFlyoutItem Text="Copy path" Tag="{Binding Policy}" Click="ContextCopyPath_Click" />
+                                                <MenuFlyoutItem Text="Reveal in tree" Tag="{Binding Policy}" Click="ContextRevealInTree_Click" />
+                                                <MenuFlyoutItem Text="Copy .reg export" Tag="{Binding Policy}" Click="ContextCopyRegExport_Click" />
+                                            </MenuFlyout>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </datagrid:DataGrid.RowStyle>
+                        </datagrid:DataGrid>
+
+                        <toolkit:GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Height="8" HorizontalAlignment="Stretch"/>
+
+                        <Border Grid.Row="2" Margin="0,8,0,0" Padding="12" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}" CornerRadius="4" MinHeight="80">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Grid.Row="0" Spacing="2">
+                                    <RichTextBlock x:Name="DetailTitle" FontSize="16" FontWeight="SemiBold" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
+                                    <RichTextBlock x:Name="DetailId" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
+                                    <RichTextBlock x:Name="DetailCategory" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
+                                    <RichTextBlock x:Name="DetailApplies" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
+                                    <RichTextBlock x:Name="DetailSupported" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ScrollViewer Grid.Row="1" x:Name="DetailExplainScroll" VerticalScrollBarVisibility="Auto">
+                                    <RichTextBlock x:Name="DetailExplain" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <Grid x:Name="BusyOverlay" Background="#80000000" Visibility="Collapsed" Grid.RowSpan="2" Canvas.ZIndex="10">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                    <controls:ProgressRing IsActive="True" Width="48" Height="48"/>
+                    <TextBlock Text="Loading..."/>
                 </StackPanel>
             </Grid>
-
-            <!-- Hidden flags for column visibility -->
-            <StackPanel Grid.Row="1" Orientation="Horizontal" Visibility="Collapsed">
-                <CheckBox x:Name="ColIdFlag" IsChecked="True" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
-                <CheckBox x:Name="ColCategoryFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
-                <CheckBox x:Name="ColAppliesFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
-                <CheckBox x:Name="ColSupportedFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
-            </StackPanel>
-
-            <!-- Filters and counts row -->
-            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="8,4,8,0">
-                <TextBlock Text="Applies to:" VerticalAlignment="Center"/>
-                <ComboBox x:Name="AppliesToSelector" Width="140" SelectionChanged="AppliesToSelector_SelectionChanged">
-                    <ComboBoxItem Content="Both" IsSelected="True"/>
-                    <ComboBoxItem Content="Computer"/>
-                    <ComboBoxItem Content="User"/>
-                </ComboBox>
-                <TextBlock Text="|" VerticalAlignment="Center"/>
-                <CheckBox x:Name="ChkConfiguredOnly" Content="Configured only" Checked="ChkConfiguredOnly_Checked" Unchecked="ChkConfiguredOnly_Checked"/>
-                <TextBlock Text="|" VerticalAlignment="Center"/>
-                <TextBlock x:Name="PolicyCount" VerticalAlignment="Center"/>
-                <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Visibility="Collapsed" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
-                <AutoSuggestBox x:Name="SearchBox" Width="360" Margin="16,0,0,0" PlaceholderText="Search policies (name, id)"
-                                TextChanged="SearchBox_TextChanged" QuerySubmitted="SearchBox_QuerySubmitted" SuggestionChosen="SearchBox_SuggestionChosen" />
-            </StackPanel>
-
-            <Grid Grid.Row="3" Margin="8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition x:Name="CategoryColumn" Width="260" MinWidth="140"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Category tree -->
-                <Grid Grid.Column="0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <Button Content="Clear category filter" Margin="0,0,0,4" Click="ClearCategoryFilter_Click"/>
-                    <controls:TreeView x:Name="CategoryTree" Grid.Row="1" SelectionMode="Single" ItemInvoked="CategoryTree_ItemInvoked" SelectionChanged="CategoryTree_SelectionChanged" DoubleTapped="CategoryTree_DoubleTapped">
-                        <controls:TreeView.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Content.DisplayName}" />
-                            </DataTemplate>
-                        </controls:TreeView.ItemTemplate>
-                    </controls:TreeView>
-                </Grid>
-
-                <toolkit:GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Width="8" HorizontalAlignment="Stretch"/>
-
-                <!-- Policy list and details -->
-                <Grid Grid.Column="2">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="8*"/>
-                        <RowDefinition Height="8"/>
-                        <RowDefinition Height="2*"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- DataGrid -->
-                    <datagrid:DataGrid x:Name="PolicyList"
-                                      Grid.Row="0"
-                                      AutoGenerateColumns="False"
-                                      IsReadOnly="True"
-                                      SelectionMode="Single"
-                                      HeadersVisibility="Column"
-                                      GridLinesVisibility="Horizontal"
-                                      AlternatingRowBackground="{StaticResource AltRowBrush}"
-                                      SelectionChanged="PolicyList_SelectionChanged"
-                                      DoubleTapped="PolicyList_DoubleTapped"
-                                      RightTapped="PolicyList_RightTapped">
-                        <datagrid:DataGrid.Columns>
-                            <datagrid:DataGridTemplateColumn x:Name="ColCatIcon" Header="" Width="SizeToCells">
-                                <datagrid:DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <FontIcon Glyph="&#xE8B7;" Opacity="0.8" Visibility="{Binding IsCategory, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    </DataTemplate>
-                                </datagrid:DataGridTemplateColumn.CellTemplate>
-                            </datagrid:DataGridTemplateColumn>
-                            <!-- User configured state icon -->
-                            <datagrid:DataGridTemplateColumn x:Name="ColUserIcon" Header="User" Width="SizeToCells">
-                                <datagrid:DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
-                                            <FontIcon Glyph="&#xE77B;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
-                                            <FontIcon Glyph="{Binding UserGlyph}" Foreground="{Binding UserBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </datagrid:DataGridTemplateColumn.CellTemplate>
-                            </datagrid:DataGridTemplateColumn>
-                            <!-- Computer configured state icon -->
-                            <datagrid:DataGridTemplateColumn x:Name="ColComputerIcon" Header="Computer" Width="SizeToCells">
-                                <datagrid:DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
-                                            <FontIcon Glyph="&#xE211;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
-                                            <FontIcon Glyph="{Binding ComputerGlyph}" Foreground="{Binding ComputerBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </datagrid:DataGridTemplateColumn.CellTemplate>
-                            </datagrid:DataGridTemplateColumn>
-                            <datagrid:DataGridTextColumn x:Name="ColName" Header="Name" Binding="{Binding DisplayName}" Width="3*" MinWidth="340"/>
-                            <datagrid:DataGridTextColumn x:Name="ColId" Header="ID" Binding="{Binding ShortId}" Width="2*"/>
-                            <datagrid:DataGridTextColumn x:Name="ColCategory" Header="Category" Binding="{Binding CategoryName}" Width="2*"/>
-                            <datagrid:DataGridTextColumn x:Name="ColApplies" Header="Applies to" Binding="{Binding AppliesText}" Width="*"/>
-                            <datagrid:DataGridTextColumn x:Name="ColSupported" Header="Supported on" Binding="{Binding SupportedText}" Width="2*"/>
-                        </datagrid:DataGrid.Columns>
-                        <datagrid:DataGrid.RowStyle>
-                            <Style TargetType="datagrid:DataGridRow">
-                                <Setter Property="ContextFlyout">
-                                    <Setter.Value>
-                                        <MenuFlyout>
-                                            <MenuFlyoutItem Text="Edit..." Tag="{Binding Policy}" Click="ContextEdit_Click" />
-                                            <MenuFlyoutItem Text="View formatted..." Tag="{Binding Policy}" Click="ContextViewFormatted_Click" />
-                                            <MenuFlyoutSeparator />
-                                            <MenuFlyoutItem Text="Copy name" Tag="{Binding Policy}" Click="ContextCopyName_Click" />
-                                            <MenuFlyoutItem Text="Copy ID" Tag="{Binding Policy}" Click="ContextCopyId_Click" />
-                                            <MenuFlyoutItem Text="Copy path" Tag="{Binding Policy}" Click="ContextCopyPath_Click" />
-                                            <MenuFlyoutItem Text="Reveal in tree" Tag="{Binding Policy}" Click="ContextRevealInTree_Click" />
-                                            <MenuFlyoutItem Text="Copy .reg export" Tag="{Binding Policy}" Click="ContextCopyRegExport_Click" />
-                                        </MenuFlyout>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </datagrid:DataGrid.RowStyle>
-                    </datagrid:DataGrid>
-
-                    <toolkit:GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Height="8" HorizontalAlignment="Stretch"/>
-
-                    <Border Grid.Row="2" Margin="0,8,0,0" Padding="12" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}" CornerRadius="4" MinHeight="80">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Spacing="2">
-                                <RichTextBlock x:Name="DetailTitle" FontSize="16" FontWeight="SemiBold" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
-                                <RichTextBlock x:Name="DetailId" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
-                                <RichTextBlock x:Name="DetailCategory" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
-                                <RichTextBlock x:Name="DetailApplies" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
-                                <RichTextBlock x:Name="DetailSupported" Opacity="0.8" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
-                            </StackPanel>
-                            <ScrollViewer Grid.Row="1" x:Name="DetailExplainScroll" VerticalScrollBarVisibility="Auto">
-                                <RichTextBlock x:Name="DetailExplain" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
-                            </ScrollViewer>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </Grid>
-        </Grid>
-
-        <Grid x:Name="BusyOverlay" Background="#80000000" Visibility="Collapsed" Grid.RowSpan="2" Canvas.ZIndex="10">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-                <controls:ProgressRing IsActive="True" Width="48" Height="48"/>
-                <TextBlock Text="Loading..."/>
-            </StackPanel>
         </Grid>
     </Grid>
 </Window>

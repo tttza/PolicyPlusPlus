@@ -50,6 +50,12 @@ namespace PolicyPlus.WinUI3.Windows
             this.Closed += (s, e) => App.UnregisterWindow(this);
             App.RegisterWindow(this);
 
+            // apply scaling after content is loaded
+            RootShell.Loaded += (s, e) =>
+            {
+                try { ScaleHelper.Attach(this, ScaleHost, RootShell); } catch { }
+            };
+
             SectionSelector.SelectionChanged += SectionSelector_SelectionChanged;
             OptNotConfigured.Checked += StateRadio_Checked;
             OptEnabled.Checked += StateRadio_Checked;
