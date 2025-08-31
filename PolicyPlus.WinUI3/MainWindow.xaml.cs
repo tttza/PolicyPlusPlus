@@ -542,16 +542,33 @@ namespace PolicyPlus.WinUI3
 
         private void BindSequenceEnhanced(IEnumerable<PolicyPlusPolicy> seq, bool searching)
         {
-            // Group policies by display name for dedup like before
+            EnsureLocalSources();
+
+            if (searching)
+            {
+                // Show all individual policies when searching (do not group duplicates)
+                var ordered = seq.OrderBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
+                                 .ThenBy(p => p.UniqueID, StringComparer.InvariantCultureIgnoreCase)
+                                 .ToList();
+                _visiblePolicies = ordered.ToList();
+
+                var rows = ordered.Select(p => (object)PolicyListRow.FromPolicy(p, _compSource, _userSource)).ToList();
+                PolicyList.ItemsSource = rows;
+
+                // Show count against total number of policies
+                PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
+                SetDetails(null);
+                return;
+            }
+
+            // Group policies by display name (original behavior when not searching)
             var grouped = seq.GroupBy(p => p.DisplayName, System.StringComparer.InvariantCultureIgnoreCase);
             _nameGroups = grouped.ToDictionary(g => g.Key, g => g.ToList(), StringComparer.InvariantCultureIgnoreCase);
             var representatives = grouped.Select(PickRepresentative).OrderBy(p => p.DisplayName).ToList();
 
             _visiblePolicies = representatives;
 
-            // Build row models with configuration state
-            EnsureLocalSources();
-            var rows = representatives.Select(p =>
+            var groupRows = representatives.Select(p =>
             {
                 _nameGroups.TryGetValue(p.DisplayName, out var groupList);
                 groupList ??= new List<PolicyPlusPolicy> { p };
@@ -559,7 +576,7 @@ namespace PolicyPlus.WinUI3
             }).ToList<object>();
 
             // If a category is selected and not searching, prepend its subcategories to the list view
-            if (!searching && _selectedCategory != null && !_configuredOnly)
+            if (_selectedCategory != null && !_configuredOnly)
             {
                 var items = new List<object>();
                 var children = _selectedCategory.Children
@@ -568,12 +585,12 @@ namespace PolicyPlus.WinUI3
                     .Select(c => (object)PolicyListRow.FromCategory(c))
                     .ToList();
                 items.AddRange(children);
-                items.AddRange(rows);
+                items.AddRange(groupRows);
                 PolicyList.ItemsSource = items;
             }
             else
             {
-                PolicyList.ItemsSource = rows;
+                PolicyList.ItemsSource = groupRows;
             }
 
             PolicyCount.Text = $"{_visiblePolicies.Count} / {_totalGroupCount} policies";
