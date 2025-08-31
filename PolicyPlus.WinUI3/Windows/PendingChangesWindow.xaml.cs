@@ -73,8 +73,8 @@ namespace PolicyPlus.WinUI3.Windows
             BtnClearFilters.Click += (s, e) => { if (SearchBox!=null) SearchBox.Text = string.Empty; if (ScopeFilter!=null) ScopeFilter.SelectedIndex = 0; if (OperationFilter!=null) OperationFilter.SelectedIndex = 0; if (HistoryTimeRange!=null) HistoryTimeRange.SelectedIndex = 0; if (HistoryType!=null) HistoryType.SelectedIndex = 0; if (HistorySearch!=null) HistorySearch.Text = string.Empty; RefreshViews(); };
             BtnExportPending.Click += BtnExportPending_Click;
 
-            if (RootGrid != null)
-                RootGrid.Loaded += (s, e) => { RefreshViews(); PendingChangesWindow_Loaded(s, e); };
+            if (RootShell != null)
+                RootShell.Loaded += (s, e) => { RefreshViews(); PendingChangesWindow_Loaded(s, e); };
 
             PendingList.DoubleTapped += (s, e) => Pending_ContextView_Click(s, e);
 
@@ -85,10 +85,13 @@ namespace PolicyPlus.WinUI3.Windows
                 main.Saved += (s, e) => { ShowLocalInfo("Saved."); RefreshViews(); };
             }
 
-            WindowHelpers.Resize(this, 900, 640);
+            // Scale-aware initial size based on monitor DPI
+            WindowHelpers.ResizeForDisplayScale(this, 900, 640);
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
             this.Closed += (s, e) => { UnsubscribeCollectionChanges(); App.UnregisterWindow(this); };
             App.RegisterWindow(this);
+
+            try { ScaleHelper.Attach(this, ScaleHost, RootShell); } catch { }
 
             SubscribeCollectionChanges();
         }

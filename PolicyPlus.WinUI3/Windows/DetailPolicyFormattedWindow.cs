@@ -40,12 +40,12 @@ namespace PolicyPlus.WinUI3.Windows
             ApplyThemeResources();
             App.ThemeChanged += (s, e) => ApplyThemeResources();
 
-            TryResize(600, 520);
+            // adapt initial size to display scale
+            WindowHelpers.ResizeForDisplayScale(this, 600, 520);
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
             this.Closed += (s, e) => App.UnregisterWindow(this);
             App.RegisterWindow(this);
 
-            // scale attach with runtime lookup
             TryAttachScale();
             this.Activated += (s, e) => TryAttachScale();
         }
@@ -88,18 +88,6 @@ namespace PolicyPlus.WinUI3.Windows
                 var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
                 dp.SetText(text ?? string.Empty);
                 Clipboard.SetContent(dp);
-            }
-            catch { }
-        }
-
-        private void TryResize(int width, int height)
-        {
-            try
-            {
-                var hwnd = WindowNative.GetWindowHandle(this);
-                var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-                var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
-                appWindow?.Resize(new SizeInt32(width, height));
             }
             catch { }
         }

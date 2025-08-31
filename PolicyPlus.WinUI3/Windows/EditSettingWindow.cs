@@ -45,12 +45,12 @@ namespace PolicyPlus.WinUI3.Windows
             ApplyWindowTheme();
             App.ThemeChanged += (s, e) => ApplyWindowTheme();
 
-            WindowHelpers.Resize(this, 800, 600);
+            // grow initial size by display scale (e.g., 250%) but keep within work area
+            WindowHelpers.ResizeForDisplayScale(this, 800, 600);
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
             this.Closed += (s, e) => App.UnregisterWindow(this);
             App.RegisterWindow(this);
 
-            // apply scaling after content is loaded
             RootShell.Loaded += (s, e) =>
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootShell); } catch { }
@@ -218,7 +218,10 @@ namespace PolicyPlus.WinUI3.Windows
         {
             _elementControls.Clear();
             OptionsPanel.Children.Clear();
-            if (_policy.RawPolicy.Elements is null || _policy.Presentation is null) return;
+            if (_policy.RawPolicy.Elements is null || _policy.Presentation is null)
+            {
+                return;
+            }
             var elemDict = _policy.RawPolicy.Elements.ToDictionary(e => e.ID);
             foreach (var pres in _policy.Presentation.Elements)
             {

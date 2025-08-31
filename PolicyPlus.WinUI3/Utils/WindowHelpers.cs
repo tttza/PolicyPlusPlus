@@ -25,6 +25,9 @@ namespace PolicyPlus.WinUI3.Utils
         [DllImport("user32.dll", SetLastError = true)]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
+        [DllImport("user32.dll", ExactSpelling = true)]
+        private static extern uint GetDpiForWindow(IntPtr hWnd);
+
         public static void BringToFront(Window window)
         {
             try
@@ -53,6 +56,44 @@ namespace PolicyPlus.WinUI3.Utils
                 var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
                 var appWindow = AppWindow.GetFromWindowId(id);
                 appWindow?.Resize(new SizeInt32(width, height));
+            }
+            catch { }
+        }
+
+        public static double GetDisplayScale(Window window)
+        {
+            try
+            {
+                var hwnd = WindowNative.GetWindowHandle(window);
+                uint dpi = GetDpiForWindow(hwnd);
+                return dpi / 96.0;
+            }
+            catch { return 1.0; }
+        }
+
+        public static void ResizeForDisplayScale(Window window, int baseWidth, int baseHeight, double workAreaMargin = 0.9)
+        {
+            try
+            {
+                var hwnd = WindowNative.GetWindowHandle(window);
+                var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+                var appWindow = AppWindow.GetFromWindowId(id);
+                if (appWindow == null) { Resize(window, baseWidth, baseHeight); return; }
+
+                double scale = GetDisplayScale(window);
+                int targetW = (int)Math.Round(baseWidth * scale);
+                int targetH = (int)Math.Round(baseHeight * scale);
+
+                var area = DisplayArea.GetFromWindowId(id, DisplayAreaFallback.Primary);
+                if (area != null)
+                {
+                    int maxW = (int)Math.Round(area.WorkArea.Width * workAreaMargin);
+                    int maxH = (int)Math.Round(area.WorkArea.Height * workAreaMargin);
+                    targetW = Math.Min(targetW, maxW);
+                    targetH = Math.Min(targetH, maxH);
+                }
+
+                appWindow.Resize(new SizeInt32(Math.Max(200, targetW), Math.Max(200, targetH)));
             }
             catch { }
         }

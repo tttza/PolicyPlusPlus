@@ -48,12 +48,12 @@ namespace PolicyPlus.WinUI3.Windows
             OkBtn.Click += Ok_Click;
             CancelBtn.Click += Cancel_Click;
 
-            WindowHelpers.Resize(this, 560, 480);
+            // adapt initial size by monitor scale
+            WindowHelpers.ResizeForDisplayScale(this, 560, 480);
             this.Activated += (s, e) => WindowHelpers.BringToFront(this);
             this.Closed += (s, e) => App.UnregisterWindow(this);
             App.RegisterWindow(this);
 
-            // Try attach scaling now and on first activation
             TryAttachScale();
             this.Activated += (s, e) => TryAttachScale();
         }

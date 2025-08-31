@@ -15,164 +15,73 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid x:Name="RootGrid" Background="{ThemeResource WindowBackground}" Padding="12" MinWidth="720" MinHeight="480">
-        <Grid.Resources>
-            <conv:BoolToVisibilityConverter x:Key="BoolToVisibility"/>
-            <conv:BoolToAngleConverter x:Key="BoolToAngle"/>
-            <Style x:Key="FlatToggle" TargetType="ToggleButton">
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Padding" Value="0"/>
-                <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            </Style>
-        </Grid.Resources>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <!-- Scale host for DPI-independent scaling -->
+    <Grid x:Name="ScaleHost">
+        <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="12" MinWidth="720" MinHeight="480">
+            <Grid.Resources>
+                <conv:BoolToVisibilityConverter x:Key="BoolToVisibility"/>
+                <conv:BoolToAngleConverter x:Key="BoolToAngle"/>
+                <Style x:Key="FlatToggle" TargetType="ToggleButton">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                </Style>
+            </Grid.Resources>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <controls:InfoBar x:Name="LocalStatusBar"
-                          Grid.RowSpan="4"
-                          VerticalAlignment="Top"
-                          HorizontalAlignment="Stretch"
-                          Margin="12"
-                          Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
-                          IsOpen="False"
-                          Severity="Informational"
-                          Canvas.ZIndex="5" />
+            <controls:InfoBar x:Name="LocalStatusBar"
+                              Grid.RowSpan="4"
+                              VerticalAlignment="Top"
+                              HorizontalAlignment="Stretch"
+                              Margin="12"
+                              Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                              IsOpen="False"
+                              Severity="Informational"
+                              Canvas.ZIndex="5" />
 
-        <!-- header and filters -->
-        <Grid Grid.Row="0" Margin="0,0,0,8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Vertical" Spacing="2">
-                <TextBlock Text="Pending changes" FontSize="18" FontWeight="SemiBold"/>
-                <TextBlock x:Name="SummaryText" Opacity="0.85"/>
+            <!-- header and filters -->
+            <Grid Grid.Row="0" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Vertical" Spacing="2">
+                    <TextBlock Text="Pending changes" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="SummaryText" Opacity="0.85"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Spacing="8">
+                    <TextBlock Text="Scope:" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="ScopeFilter" Width="140" SelectionChanged="ScopeFilter_SelectionChanged">
+                        <ComboBoxItem Content="Both" IsSelected="True"/>
+                        <ComboBoxItem Content="Computer"/>
+                        <ComboBoxItem Content="User"/>
+                    </ComboBox>
+                    <TextBlock Text="Operation:" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="OperationFilter" Width="180" SelectionChanged="OperationFilter_SelectionChanged">
+                        <ComboBoxItem Content="All" IsSelected="True"/>
+                        <ComboBoxItem Content="Enable"/>
+                        <ComboBoxItem Content="Disable"/>
+                        <ComboBoxItem Content="Clear"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                <AutoSuggestBox x:Name="SearchBox" Width="360" QueryIcon="Find" PlaceholderText="Search pending items (policy, path)" TextChanged="SearchBox_TextChanged"/>
+                <Button x:Name="BtnClearFilters" Content="Clear filters"/>
+                <Button x:Name="BtnExportPending" Content="Export..." Click="BtnExportPending_Click"/>
             </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Spacing="8">
-                <TextBlock Text="Scope:" VerticalAlignment="Center"/>
-                <ComboBox x:Name="ScopeFilter" Width="140" SelectionChanged="ScopeFilter_SelectionChanged">
-                    <ComboBoxItem Content="Both" IsSelected="True"/>
-                    <ComboBoxItem Content="Computer"/>
-                    <ComboBoxItem Content="User"/>
-                </ComboBox>
-                <TextBlock Text="Operation:" VerticalAlignment="Center"/>
-                <ComboBox x:Name="OperationFilter" Width="180" SelectionChanged="OperationFilter_SelectionChanged">
-                    <ComboBoxItem Content="All" IsSelected="True"/>
-                    <ComboBoxItem Content="Enable"/>
-                    <ComboBoxItem Content="Disable"/>
-                    <ComboBoxItem Content="Clear"/>
-                </ComboBox>
-            </StackPanel>
-        </Grid>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-            <AutoSuggestBox x:Name="SearchBox" Width="360" QueryIcon="Find" PlaceholderText="Search pending items (policy, path)" TextChanged="SearchBox_TextChanged"/>
-            <Button x:Name="BtnClearFilters" Content="Clear filters"/>
-            <Button x:Name="BtnExportPending" Content="Export..." Click="BtnExportPending_Click"/>
-        </StackPanel>
-
-        <controls:TabView Grid.Row="2" x:Name="MainTabs" TabWidthMode="Equal" IsAddTabButtonVisible="False" CanReorderTabs="False" CanDragTabs="False" SelectedIndex="0" SelectionChanged="MainTabs_SelectionChanged">
-            <controls:TabViewItem x:Name="PendingTab" Header="Pending" IsClosable="False">
-                <Grid Padding="4">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <Grid Grid.Row="0" Margin="0,0,0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="3*"/>
-                            <ColumnDefinition Width="140"/>
-                            <ColumnDefinition Width="120"/>
-                            <ColumnDefinition Width="5*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Policy" FontWeight="SemiBold"/>
-                        <TextBlock Grid.Column="1" Text="Action" FontWeight="SemiBold" Margin="12,0,0,0"/>
-                        <TextBlock Grid.Column="2" Text="Scope" FontWeight="SemiBold" Margin="12,0,0,0"/>
-                        <TextBlock Grid.Column="3" Text="Details" FontWeight="SemiBold" Margin="12,0,0,0"/>
-                    </Grid>
-
-                    <ListView Grid.Row="1" x:Name="PendingList" SelectionMode="Extended" DoubleTapped="PendingList_DoubleTapped">
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Grid ColumnSpacing="12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="3*"/>
-                                        <ColumnDefinition Width="140"/>
-                                        <ColumnDefinition Width="120"/>
-                                        <ColumnDefinition Width="5*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding PolicyName}" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding Action}"/>
-                                    <TextBlock Grid.Column="2" Text="{Binding Scope}"/>
-                                    <StackPanel Grid.Column="3" Spacing="4">
-                                        <ToggleButton x:Name="Tgl" Style="{StaticResource FlatToggle}">
-                                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Stretch">
-                                                <FontIcon Glyph="&#xE76C;" FontFamily="Segoe MDL2 Assets" RenderTransformOrigin="0.5,0.5">
-                                                    <FontIcon.RenderTransform>
-                                                        <RotateTransform Angle="{Binding IsChecked, ElementName=Tgl, Converter={StaticResource BoolToAngle}}"/>
-                                                    </FontIcon.RenderTransform>
-                                                </FontIcon>
-                                                <TextBlock Text="{Binding Details}" TextWrapping="WrapWholeWords" HorizontalAlignment="Left"/>
-                                            </StackPanel>
-                                        </ToggleButton>
-                                        <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85" Visibility="{Binding IsChecked, ElementName=Tgl, Converter={StaticResource BoolToVisibility}}"/>
-                                    </StackPanel>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                <Setter Property="ContextFlyout">
-                                    <Setter.Value>
-                                        <MenuFlyout>
-                                            <MenuFlyoutItem Text="Save" Click="Pending_ContextApply_Click"/>
-                                            <MenuFlyoutItem Text="Discard" Click="Pending_ContextDiscard_Click"/>
-                                            <MenuFlyoutSeparator/>
-                                            <MenuFlyoutItem Text="View formatted..." Click="Pending_ContextView_Click"/>
-                                            <MenuFlyoutItem Text="Copy registry path" Click="Pending_ContextCopyRegPath_Click"/>
-                                        </MenuFlyout>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </ListView.ItemContainerStyle>
-                    </ListView>
-                </Grid>
-            </controls:TabViewItem>
-
-            <controls:TabViewItem x:Name="HistoryTab" Header="History" IsClosable="False">
-                <Grid Padding="4">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
-                        <TextBlock Text="Time:" VerticalAlignment="Center"/>
-                        <ComboBox x:Name="HistoryTimeRange" Width="160" SelectionChanged="HistoryFilter_Changed">
-                            <ComboBoxItem Content="All" IsSelected="True"/>
-                            <ComboBoxItem Content="Today"/>
-                            <ComboBoxItem Content="Last 7 days"/>
-                            <ComboBoxItem Content="Last 30 days"/>
-                        </ComboBox>
-                        <TextBlock Text="Type:" VerticalAlignment="Center"/>
-                        <ComboBox x:Name="HistoryType" Width="160" SelectionChanged="HistoryFilter_Changed">
-                            <ComboBoxItem Content="All" IsSelected="True"/>
-                            <ComboBoxItem Content="Applied"/>
-                            <ComboBoxItem Content="Discarded"/>
-                            <ComboBoxItem Content="Reapplied"/>
-                        </ComboBox>
-                        <AutoSuggestBox x:Name="HistorySearch" Width="280" QueryIcon="Find" PlaceholderText="Search history (policy, path)" TextChanged="HistorySearch_TextChanged"/>
-                    </StackPanel>
-
-                    <Grid Grid.Row="1">
+            <controls:TabView Grid.Row="2" x:Name="MainTabs" TabWidthMode="Equal" IsAddTabButtonVisible="False" CanReorderTabs="False" CanDragTabs="False" SelectedIndex="0" SelectionChanged="MainTabs_SelectionChanged">
+                <controls:TabViewItem x:Name="PendingTab" Header="Pending" IsClosable="False">
+                    <Grid Padding="4">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
@@ -183,17 +92,15 @@
                                 <ColumnDefinition Width="3*"/>
                                 <ColumnDefinition Width="140"/>
                                 <ColumnDefinition Width="120"/>
-                                <ColumnDefinition Width="2*"/>
                                 <ColumnDefinition Width="5*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Policy" FontWeight="SemiBold"/>
                             <TextBlock Grid.Column="1" Text="Action" FontWeight="SemiBold" Margin="12,0,0,0"/>
                             <TextBlock Grid.Column="2" Text="Scope" FontWeight="SemiBold" Margin="12,0,0,0"/>
-                            <TextBlock Grid.Column="3" Text="Applied at" FontWeight="SemiBold" Margin="12,0,0,0"/>
-                            <TextBlock Grid.Column="4" Text="Details" FontWeight="SemiBold" Margin="12,0,0,0"/>
+                            <TextBlock Grid.Column="3" Text="Details" FontWeight="SemiBold" Margin="12,0,0,0"/>
                         </Grid>
 
-                        <ListView Grid.Row="1" x:Name="HistoryList" SelectionMode="Extended" DoubleTapped="HistoryList_DoubleTapped">
+                        <ListView Grid.Row="1" x:Name="PendingList" SelectionMode="Extended" DoubleTapped="PendingList_DoubleTapped">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
                                     <Grid ColumnSpacing="12">
@@ -201,51 +108,147 @@
                                             <ColumnDefinition Width="3*"/>
                                             <ColumnDefinition Width="140"/>
                                             <ColumnDefinition Width="120"/>
-                                            <ColumnDefinition Width="2*"/>
                                             <ColumnDefinition Width="5*"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="{Binding PolicyName}" TextTrimming="CharacterEllipsis"/>
                                         <TextBlock Grid.Column="1" Text="{Binding Action}"/>
                                         <TextBlock Grid.Column="2" Text="{Binding Scope}"/>
-                                        <TextBlock Grid.Column="3" Text="{Binding AppliedAt}"/>
-                                        <StackPanel Grid.Column="4" Spacing="4">
-                                            <ToggleButton x:Name="Tgl2" Style="{StaticResource FlatToggle}">
+                                        <StackPanel Grid.Column="3" Spacing="4">
+                                            <ToggleButton x:Name="Tgl" Style="{StaticResource FlatToggle}">
                                                 <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Stretch">
-                                                    <FontIcon Glyph="&#xE76C;" FontFamily="Segoe MDL2 Assets">
+                                                    <FontIcon Glyph="&#xE76C;" FontFamily="Segoe MDL2 Assets" RenderTransformOrigin="0.5,0.5">
                                                         <FontIcon.RenderTransform>
-                                                            <RotateTransform Angle="{Binding IsChecked, ElementName=Tgl2, Converter={StaticResource BoolToAngle}}"/>
+                                                            <RotateTransform Angle="{Binding IsChecked, ElementName=Tgl, Converter={StaticResource BoolToAngle}}"/>
                                                         </FontIcon.RenderTransform>
                                                     </FontIcon>
                                                     <TextBlock Text="{Binding Details}" TextWrapping="WrapWholeWords" HorizontalAlignment="Left"/>
                                                 </StackPanel>
                                             </ToggleButton>
-                                            <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85" Visibility="{Binding IsChecked, ElementName=Tgl2, Converter={StaticResource BoolToVisibility}}"/>
+                                            <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85" Visibility="{Binding IsChecked, ElementName=Tgl, Converter={StaticResource BoolToVisibility}}"/>
                                         </StackPanel>
                                     </Grid>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="ContextFlyout">
+                                        <Setter.Value>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem Text="Save" Click="Pending_ContextApply_Click"/>
+                                                <MenuFlyoutItem Text="Discard" Click="Pending_ContextDiscard_Click"/>
+                                                <MenuFlyoutSeparator/>
+                                                <MenuFlyoutItem Text="View formatted..." Click="Pending_ContextView_Click"/>
+                                                <MenuFlyoutItem Text="Copy registry path" Click="Pending_ContextCopyRegPath_Click"/>
+                                            </MenuFlyout>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListView.ItemContainerStyle>
                         </ListView>
                     </Grid>
-                </Grid>
-            </controls:TabViewItem>
-        </controls:TabView>
+                </controls:TabViewItem>
 
-        <Grid Grid.Row="3" Margin="0,8,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button x:Name="BtnApplySelected" Content="Save selected" Style="{StaticResource PrimaryButtonStyle}" Click="BtnApplySelected_Click"/>
-                <Button x:Name="BtnDiscardSelected" Content="Discard selected" Click="BtnDiscardSelected_Click"/>
-            </StackPanel>
-            <Button x:Name="BtnApplyAll" Grid.Column="1" Content="Save all" Click="BtnSaveAll_Click"/>
-            <Button x:Name="BtnDiscardAll" Grid.Column="2" Content="Discard all" Click="BtnDiscardAll_Click"/>
-            <Button x:Name="BtnReapplySelected" Grid.Column="3" Content="Reapply &amp; Save selected" Click="BtnReapplySelected_Click"/>
-            <Button x:Name="BtnClose" Grid.Column="4" Content="Close"/>
+                <controls:TabViewItem x:Name="HistoryTab" Header="History" IsClosable="False">
+                    <Grid Padding="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
+                            <TextBlock Text="Time:" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="HistoryTimeRange" Width="160" SelectionChanged="HistoryFilter_Changed">
+                                <ComboBoxItem Content="All" IsSelected="True"/>
+                                <ComboBoxItem Content="Today"/>
+                                <ComboBoxItem Content="Last 7 days"/>
+                                <ComboBoxItem Content="Last 30 days"/>
+                            </ComboBox>
+                            <TextBlock Text="Type:" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="HistoryType" Width="160" SelectionChanged="HistoryFilter_Changed">
+                                <ComboBoxItem Content="All" IsSelected="True"/>
+                                <ComboBoxItem Content="Applied"/>
+                                <ComboBoxItem Content="Discarded"/>
+                                <ComboBoxItem Content="Reapplied"/>
+                            </ComboBox>
+                            <AutoSuggestBox x:Name="HistorySearch" Width="280" QueryIcon="Find" PlaceholderText="Search history (policy, path)" TextChanged="HistorySearch_TextChanged"/>
+                        </StackPanel>
+
+                        <Grid Grid.Row="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="3*"/>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="5*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Policy" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Column="1" Text="Action" FontWeight="SemiBold" Margin="12,0,0,0"/>
+                                <TextBlock Grid.Column="2" Text="Scope" FontWeight="SemiBold" Margin="12,0,0,0"/>
+                                <TextBlock Grid.Column="3" Text="Applied at" FontWeight="SemiBold" Margin="12,0,0,0"/>
+                                <TextBlock Grid.Column="4" Text="Details" FontWeight="SemiBold" Margin="12,0,0,0"/>
+                            </Grid>
+
+                            <ListView Grid.Row="1" x:Name="HistoryList" SelectionMode="Extended" DoubleTapped="HistoryList_DoubleTapped">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="3*"/>
+                                                <ColumnDefinition Width="140"/>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="2*"/>
+                                                <ColumnDefinition Width="5*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding PolicyName}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Action}"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Scope}"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding AppliedAt}"/>
+                                            <StackPanel Grid.Column="4" Spacing="4">
+                                                <ToggleButton x:Name="Tgl2" Style="{StaticResource FlatToggle}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Stretch">
+                                                        <FontIcon Glyph="&#xE76C;" FontFamily="Segoe MDL2 Assets">
+                                                            <FontIcon.RenderTransform>
+                                                                <RotateTransform Angle="{Binding IsChecked, ElementName=Tgl2, Converter={StaticResource BoolToAngle}}"/>
+                                                            </FontIcon.RenderTransform>
+                                                        </FontIcon>
+                                                        <TextBlock Text="{Binding Details}" TextWrapping="WrapWholeWords" HorizontalAlignment="Left"/>
+                                                    </StackPanel>
+                                                </ToggleButton>
+                                                <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85" Visibility="{Binding IsChecked, ElementName=Tgl2, Converter={StaticResource BoolToVisibility}}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </Grid>
+                    </Grid>
+                </controls:TabViewItem>
+            </controls:TabView>
+
+            <Grid Grid.Row="3" Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button x:Name="BtnApplySelected" Content="Save selected" Style="{StaticResource PrimaryButtonStyle}" Click="BtnApplySelected_Click"/>
+                    <Button x:Name="BtnDiscardSelected" Content="Discard selected" Click="BtnDiscardSelected_Click"/>
+                </StackPanel>
+                <Button x:Name="BtnApplyAll" Grid.Column="1" Content="Save all" Click="BtnSaveAll_Click"/>
+                <Button x:Name="BtnDiscardAll" Grid.Column="2" Content="Discard all" Click="BtnDiscardAll_Click"/>
+                <Button x:Name="BtnReapplySelected" Grid.Column="3" Content="Reapply &amp; Save selected" Click="BtnReapplySelected_Click"/>
+                <Button x:Name="BtnClose" Grid.Column="4" Content="Close"/>
+            </Grid>
         </Grid>
     </Grid>
 </Window>
