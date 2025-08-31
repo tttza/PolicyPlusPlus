@@ -27,6 +27,8 @@ using System.Threading;
 using Microsoft.UI.Xaml.Media.Animation;
 using PolicyPlus.WinUI3.Utils;
 using PolicyPlus.WinUI3.Services;
+using PolicyPlus.WinUI3.Models;
+using Windows.UI.ViewManagement;
 
 namespace PolicyPlus.WinUI3
 {
@@ -67,6 +69,8 @@ namespace PolicyPlus.WinUI3
         // Auto-close InfoBar cancellation
         private CancellationTokenSource? _infoBarCloseCts;
 
+        private double? _savedVerticalOffset;
+
         public MainWindow()
         {
             this.InitializeComponent();
@@ -77,9 +81,19 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
-                PendingChangesWindow.ChangesAppliedOrDiscarded += (_, __) => UpdateUnsavedIndicator();
-                PendingChangesService.Instance.Pending.CollectionChanged += (_, __) => UpdateUnsavedIndicator();
+                PendingChangesWindow.ChangesAppliedOrDiscarded += (_, __) => { UpdateUnsavedIndicator(); RefreshList(); };
+                PendingChangesService.Instance.Pending.CollectionChanged += (_, __) => { UpdateUnsavedIndicator(); RefreshList(); };
                 UpdateUnsavedIndicator();
+            }
+            catch { }
+        }
+
+        private void RefreshList()
+        {
+            try
+            {
+                // Recompute rows to reflect pending queue or applied state changes
+                ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
             }
             catch { }
         }
@@ -377,6 +391,8 @@ namespace PolicyPlus.WinUI3
             if (PolicyList == null || PolicyCount == null) return;
             if (category != null) _selectedCategory = category;
 
+            PreserveScrollPosition();
+
             UpdateSearchPlaceholder();
 
             bool searching = !string.IsNullOrWhiteSpace(query);
@@ -385,6 +401,8 @@ namespace PolicyPlus.WinUI3
                 seq = seq.Where(p => p.DisplayName.Contains(query, StringComparison.InvariantCultureIgnoreCase) || p.UniqueID.Contains(query, StringComparison.InvariantCultureIgnoreCase));
 
             BindSequenceEnhanced(seq, searching);
+
+            RestoreScrollPosition();
         }
 
         private void BindSequenceEnhanced(IEnumerable<PolicyPlusPolicy> seq, bool searching)
@@ -396,6 +414,10 @@ namespace PolicyPlus.WinUI3
 
             _visiblePolicies = representatives;
 
+            // Build row models with configuration state
+            EnsureLocalSources();
+            var rows = representatives.Select(p => PolicyListRow.FromPolicy(p, _compSource, _userSource)).ToList<object>();
+
             // If a category is selected and not searching, prepend its subcategories to the list view
             if (!searching && _selectedCategory != null)
             {
@@ -403,15 +425,15 @@ namespace PolicyPlus.WinUI3
                 var children = _selectedCategory.Children
                     .Where(c => !_hideEmptyCategories || !IsCategoryEmpty(c))
                     .OrderBy(c => c.DisplayName)
-                    .Cast<object>()
+                    .Select(c => (object)PolicyListRow.FromCategory(c))
                     .ToList();
                 items.AddRange(children);
-                items.AddRange(representatives);
+                items.AddRange(rows);
                 PolicyList.ItemsSource = items;
             }
             else
             {
-                PolicyList.ItemsSource = representatives;
+                PolicyList.ItemsSource = rows;
             }
 
             PolicyCount.Text = $"{_visiblePolicies.Count} / {_totalGroupCount} policies";
@@ -431,7 +453,7 @@ namespace PolicyPlus.WinUI3
         { foreach (var p in cat.Policies) sink.Add(p.UniqueID); foreach (var child in cat.Children) CollectPoliciesRecursive(child, sink); }
 
         private void PolicyList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        { var p = PolicyList?.SelectedItem as PolicyPlusPolicy; SetDetails(p); }
+        { var row = PolicyList?.SelectedItem; var p = (row as PolicyListRow)?.Policy ?? row as PolicyPlusPolicy; SetDetails(p); }
 
         private void SetDetails(PolicyPlusPolicy? p)
         {
@@ -627,7 +649,13 @@ namespace PolicyPlus.WinUI3
 
         private PolicyPlusPolicy? GetContextMenuPolicy(object sender)
         {
-            return (sender as FrameworkElement)?.Tag as PolicyPlusPolicy;
+            // Items in the list now bind ContextFlyout Tag to Policy if available
+            if (sender is FrameworkElement fe)
+            {
+                if (fe.Tag is PolicyPlusPolicy p1) return p1;
+                if (fe.DataContext is PolicyListRow row && row.Policy != null) return row.Policy;
+            }
+            return null;
         }
 
         private void SaveAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
@@ -640,7 +668,7 @@ namespace PolicyPlus.WinUI3
 
         private async void BtnViewFormatted_Click(object sender, RoutedEventArgs e)
         {
-            var p = PolicyList?.SelectedItem as PolicyPlusPolicy; if (p is null || _bundle is null) return;
+            var row = PolicyList?.SelectedItem as PolicyListRow; var p = row?.Policy; if (p is null || _bundle is null) return;
             var win = new Windows.DetailPolicyFormattedWindow();
             win.Initialize(p, _bundle, _compSource ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource(), _userSource ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource(), p.RawPolicy.Section);
             win.Activate();
@@ -692,15 +720,15 @@ namespace PolicyPlus.WinUI3
 
         private void ContextViewFormatted_Click(object sender, RoutedEventArgs e) { BtnViewFormatted_Click(sender, e); }
         private void ContextCopyName_Click(object sender, RoutedEventArgs e)
-        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p!=null) { var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(p.DisplayName); Clipboard.SetContent(dp);} }
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy; if (p!=null) { var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(p.DisplayName); Clipboard.SetContent(dp);} }
         private void ContextCopyId_Click(object sender, RoutedEventArgs e)
-        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p!=null) { var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(p.UniqueID); Clipboard.SetContent(dp);} }
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy; if (p!=null) { var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(p.UniqueID); Clipboard.SetContent(dp);} }
         private void ContextCopyPath_Click(object sender, RoutedEventArgs e)
-        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p==null) return; var sb=new StringBuilder(); var c=p.Category; var stack=new Stack<string>(); while(c!=null){stack.Push(c.DisplayName); c=c.Parent;} sb.AppendLine("Administrative Templates"); foreach(var name in stack) sb.AppendLine("+ "+name); sb.AppendLine("+ "+p.DisplayName); var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(sb.ToString()); Clipboard.SetContent(dp); }
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy; if (p==null) return; var sb=new StringBuilder(); var c=p.Category; var stack=new Stack<string>(); while(c!=null){stack.Push(c.DisplayName); c=c.Parent;} sb.AppendLine("Administrative Templates"); foreach(var name in stack) sb.AppendLine("+ "+name); sb.AppendLine("+ "+p.DisplayName); var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(sb.ToString()); Clipboard.SetContent(dp); }
         private void ContextRevealInTree_Click(object sender, RoutedEventArgs e)
-        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p==null||CategoryTree==null) return; _selectedCategory=p.Category; SelectCategoryInTree(_selectedCategory); UpdateSearchPlaceholder(); ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); }
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy; if (p==null||CategoryTree==null) return; _selectedCategory=p.Category; SelectCategoryInTree(_selectedCategory); UpdateSearchPlaceholder(); ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); }
         private void ContextCopyRegPaths_Click(object sender, RoutedEventArgs e)
-        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy); if (p==null) return; var list=PolicyProcessing.GetReferencedRegistryValues(p).Select(kv=>$"{kv.Key} [{kv.Value}]"); var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(string.Join("\r\n",list)); Clipboard.SetContent(dp); }
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy; if (p==null) return; var list=PolicyProcessing.GetReferencedRegistryValues(p).Select(kv=>$"{kv.Key} [{kv.Value}]"); var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(string.Join("\r\n",list)); Clipboard.SetContent(dp); }
         private void ContextCopyRegExport_Click(object sender, RoutedEventArgs e)
         { ShowInfo("Copy .reg export not implemented in this build."); }
 
@@ -751,13 +779,13 @@ namespace PolicyPlus.WinUI3
             // Resolve the bound item in the simplest and most reliable way
             object? item = (e.OriginalSource as FrameworkElement)?.DataContext ?? PolicyList?.SelectedItem;
 
-            if (item is PolicyPlusPolicy pol)
+            if (item is PolicyListRow row && row.Policy is PolicyPlusPolicy pol)
             {
                 e.Handled = true;
                 _ = OpenEditDialogForPolicyAsync(pol, ensureFront: true);
                 return;
             }
-            if (item is PolicyPlusCategory cat)
+            if (item is PolicyListRow row2 && row2.Category is PolicyPlusCategory cat)
             {
                 e.Handled = true;
                 _selectedCategory = cat;
@@ -928,16 +956,15 @@ namespace PolicyPlus.WinUI3
         {
             if (e.Key == global::Windows.System.VirtualKey.Enter)
             {
-                var p = PolicyList?.SelectedItem as PolicyPlusPolicy;
-                if (p != null)
+                if (PolicyList?.SelectedItem is PolicyListRow row && row.Policy != null)
                 {
                     e.Handled = true;
-                    await OpenEditDialogForPolicyAsync(p, ensureFront: true);
+                    await OpenEditDialogForPolicyAsync(row.Policy, ensureFront: true);
                 }
-                else if (PolicyList?.SelectedItem is PolicyPlusCategory cat)
+                else if (PolicyList?.SelectedItem is PolicyListRow row2 && row2.Category != null)
                 {
                     e.Handled = true;
-                    _selectedCategory = cat;
+                    _selectedCategory = row2.Category;
                     UpdateSearchPlaceholder();
                     ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
                 }
@@ -949,13 +976,13 @@ namespace PolicyPlus.WinUI3
             // Resolve the bound item in the simplest and most reliable way
             object? item = (e.OriginalSource as FrameworkElement)?.DataContext ?? PolicyList?.SelectedItem;
 
-            if (item is PolicyPlusPolicy pol)
+            if (item is PolicyListRow row && row.Policy is PolicyPlusPolicy pol)
             {
                 e.Handled = true;
                 _ = OpenEditDialogForPolicyAsync(pol, ensureFront: true);
                 return;
             }
-            if (item is PolicyPlusCategory cat)
+            if (item is PolicyListRow row2 && row2.Category is PolicyPlusCategory cat)
             {
                 e.Handled = true;
                 _selectedCategory = cat;
@@ -981,14 +1008,15 @@ namespace PolicyPlus.WinUI3
 
         private async void BtnEditSelected_Click(object sender, RoutedEventArgs e)
         {
-            var p = PolicyList?.SelectedItem as PolicyPlusPolicy;
-            if (p is null) return;
-            await OpenEditDialogForPolicyAsync(p, ensureFront: false);
+            if (PolicyList?.SelectedItem is PolicyListRow row && row.Policy != null)
+            {
+                await OpenEditDialogForPolicyAsync(row.Policy, ensureFront: false);
+            }
         }
 
         private async void ContextEdit_Click(object sender, RoutedEventArgs e)
         {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyPlusPolicy);
+            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy;
             if (p != null) await OpenEditDialogForPolicyAsync(p, ensureFront: false);
         }
 
@@ -1001,6 +1029,45 @@ namespace PolicyPlus.WinUI3
                 BuildCategoryTree();
                 ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
             }
+        }
+
+        private void PreserveScrollPosition()
+        {
+            try
+            {
+                if (PolicyList == null) return;
+                var scroll = FindDescendantScrollViewer(PolicyList);
+                _savedVerticalOffset = scroll?.VerticalOffset;
+            }
+            catch { }
+        }
+
+        private void RestoreScrollPosition()
+        {
+            try
+            {
+                if (PolicyList == null) return;
+                var scroll = FindDescendantScrollViewer(PolicyList);
+                if (scroll != null && _savedVerticalOffset.HasValue)
+                {
+                    scroll.ChangeView(null, _savedVerticalOffset.Value, null, true);
+                }
+            }
+            catch { }
+        }
+
+        private static ScrollViewer? FindDescendantScrollViewer(DependencyObject root)
+        {
+            if (root == null) return null;
+            int count = VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(root, i);
+                if (child is ScrollViewer sv) return sv;
+                var found = FindDescendantScrollViewer(child);
+                if (found != null) return found;
+            }
+            return null;
         }
     }
 }

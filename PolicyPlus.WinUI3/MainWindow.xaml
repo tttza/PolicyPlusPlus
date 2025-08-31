@@ -22,6 +22,8 @@
         <Grid.Resources>
             <converters:ScaleConverter x:Key="ScaleConverter"/>
             <converters:CategoryVisibilityConverter x:Key="CategoryVisibilityConverter"/>
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+            <converters:NotBoolToVisibilityConverter x:Key="NotBoolToVisibilityConverter"/>
         </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -155,10 +157,28 @@
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <FontIcon Grid.Column="0" Glyph="&#xE8B7;" Opacity="0.8" Visibility="{Binding Converter={StaticResource CategoryVisibilityConverter}}"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding DisplayName}"/>
+                                    <!-- Category icon -->
+                                    <FontIcon Grid.Column="0" Glyph="&#xE8B7;" Opacity="0.8" Visibility="{Binding IsCategory, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <!-- Stacked icons for User/Computer with darker base icon -->
+                                    <Grid Grid.Column="1" Margin="0,0,8,0" Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <FontIcon Glyph="&#xE77B;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.85"/>
+                                        <FontIcon Glyph="{Binding UserGlyph}" Foreground="{ThemeResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="User"/>
+                                        </ToolTipService.ToolTip>
+                                    </Grid>
+                                    <Grid Grid.Column="2" Margin="0,0,8,0" Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <FontIcon Glyph="&#xE211;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.85"/>
+                                        <FontIcon Glyph="{Binding ComputerGlyph}" Foreground="{ThemeResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Computer"/>
+                                        </ToolTipService.ToolTip>
+                                    </Grid>
+                                    <TextBlock Grid.Column="3" Text="{Binding DisplayName}"/>
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
@@ -167,15 +187,14 @@
                                 <Setter Property="ContextFlyout">
                                     <Setter.Value>
                                         <MenuFlyout>
-                                            <MenuFlyoutItem Text="Edit..." Tag="{Binding}" Click="ContextEdit_Click" />
-                                            <MenuFlyoutItem Text="View formatted..." Tag="{Binding}" Click="ContextViewFormatted_Click" />
+                                            <MenuFlyoutItem Text="Edit..." Tag="{Binding Policy}" Click="ContextEdit_Click" />
+                                            <MenuFlyoutItem Text="View formatted..." Tag="{Binding Policy}" Click="ContextViewFormatted_Click" />
                                             <MenuFlyoutSeparator />
-                                            <MenuFlyoutItem Text="Copy name" Tag="{Binding}" Click="ContextCopyName_Click" />
-                                            <MenuFlyoutItem Text="Copy ID" Tag="{Binding}" Click="ContextCopyId_Click" />
-                                            <MenuFlyoutItem Text="Copy path" Tag="{Binding}" Click="ContextCopyPath_Click" />
-                                            <MenuFlyoutItem Text="Reveal in tree" Tag="{Binding}" Click="ContextRevealInTree_Click" />
-                                            <MenuFlyoutItem Text="Copy registry path(s)" Tag="{Binding}" Click="ContextCopyRegPaths_Click" />
-                                            <MenuFlyoutItem Text="Copy .reg export" Tag="{Binding}" Click="ContextCopyRegExport_Click" />
+                                            <MenuFlyoutItem Text="Copy name" Tag="{Binding Policy}" Click="ContextCopyName_Click" />
+                                            <MenuFlyoutItem Text="Copy ID" Tag="{Binding Policy}" Click="ContextCopyId_Click" />
+                                            <MenuFlyoutItem Text="Copy path" Tag="{Binding Policy}" Click="ContextCopyPath_Click" />
+                                            <MenuFlyoutItem Text="Reveal in tree" Tag="{Binding Policy}" Click="ContextRevealInTree_Click" />
+                                            <MenuFlyoutItem Text="Copy .reg export" Tag="{Binding Policy}" Click="ContextCopyRegExport_Click" />
                                         </MenuFlyout>
                                     </Setter.Value>
                                 </Setter>
