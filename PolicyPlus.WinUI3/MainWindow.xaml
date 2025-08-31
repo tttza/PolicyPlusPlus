@@ -7,7 +7,9 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls"
     xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
+    xmlns:datagrid="using:CommunityToolkit.WinUI.UI.Controls"
     xmlns:converters="using:PolicyPlus.WinUI3.Converters"
+    xmlns:models="using:PolicyPlus.WinUI3.Models"
     mc:Ignorable="d"
     Title="PolicyPlus">
 
@@ -24,13 +26,15 @@
             <converters:CategoryVisibilityConverter x:Key="CategoryVisibilityConverter"/>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <converters:NotBoolToVisibilityConverter x:Key="NotBoolToVisibilityConverter"/>
+            <models:ColumnWidths x:Key="ColumnWidthsModel" />
+            <!-- Subtle alternating row background to reduce reliance on grid lines -->
+            <SolidColorBrush x:Key="AltRowBrush" Color="#0F000000" />
         </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Overlay InfoBar at the bottom, with denser background -->
         <controls:InfoBar x:Name="StatusBar"
                           Grid.RowSpan="2"
                           VerticalAlignment="Bottom"
@@ -79,9 +83,14 @@
                         <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Write to temp .pol" IsChecked="{Binding IsChecked, ElementName=ChkUseTempPol, Mode=TwoWay}" Click="ToggleTempPolMenu_Click" />
                         <ToggleMenuFlyoutItem x:Name="ToggleHideEmptyMenu" Text="Hide empty categories" IsChecked="True" Click="ToggleHideEmptyMenu_Click" />
                     </controls:MenuBarItem>
-                    <!-- New menu for Pending/History -->
                     <controls:MenuBarItem Title="Changes">
                         <MenuFlyoutItem Text="Pending/History..." Click="BtnPendingChanges_Click" />
+                    </controls:MenuBarItem>
+                    <controls:MenuBarItem Title="View">
+                        <ToggleMenuFlyoutItem x:Name="ViewIdToggle" Text="ID" IsChecked="True" Tag="ColIdFlag" Click="ColumnToggle_Click"/>
+                        <ToggleMenuFlyoutItem x:Name="ViewCategoryToggle" Text="Category" IsChecked="False" Tag="ColCategoryFlag" Click="ColumnToggle_Click"/>
+                        <ToggleMenuFlyoutItem x:Name="ViewAppliesToggle" Text="Applies to" IsChecked="False" Tag="ColAppliesFlag" Click="ColumnToggle_Click"/>
+                        <ToggleMenuFlyoutItem x:Name="ViewSupportedToggle" Text="Supported on" IsChecked="False" Tag="ColSupportedFlag" Click="ColumnToggle_Click"/>
                     </controls:MenuBarItem>
                 </controls:MenuBar>
 
@@ -97,8 +106,16 @@
                 </StackPanel>
             </Grid>
 
-            <!-- Filters and counts row (removed Load ADMX button) -->
-            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="8,4,8,0">
+            <!-- Hidden flags for column visibility -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Visibility="Collapsed">
+                <CheckBox x:Name="ColIdFlag" IsChecked="True" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
+                <CheckBox x:Name="ColCategoryFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
+                <CheckBox x:Name="ColAppliesFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
+                <CheckBox x:Name="ColSupportedFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
+            </StackPanel>
+
+            <!-- Filters and counts row -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="8,4,8,0">
                 <TextBlock Text="Applies to:" VerticalAlignment="Center"/>
                 <ComboBox x:Name="AppliesToSelector" Width="140" SelectionChanged="AppliesToSelector_SelectionChanged">
                     <ComboBoxItem Content="Both" IsSelected="True"/>
@@ -109,17 +126,9 @@
                 <CheckBox x:Name="ChkConfiguredOnly" Content="Configured only" Checked="ChkConfiguredOnly_Checked" Unchecked="ChkConfiguredOnly_Checked"/>
                 <TextBlock Text="|" VerticalAlignment="Center"/>
                 <TextBlock x:Name="PolicyCount" VerticalAlignment="Center"/>
-                <!-- Keep hidden checkbox to mirror menu toggle state -->
                 <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Visibility="Collapsed" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
-            </StackPanel>
-
-            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Margin="8,4,8,0">
-                <AutoSuggestBox x:Name="SearchBox" Width="400" QueryIcon="Find" PlaceholderText="Search policies (name, id)" TextChanged="SearchBox_TextChanged" QuerySubmitted="SearchBox_QuerySubmitted" SuggestionChosen="SearchBox_SuggestionChosen"/>
-                <Button x:Name="BtnClearAll" Content="Clear all filters" Click="BtnClearAll_Click"/>
-                <Button x:Name="BtnEditSelected" Content="Edit selected..." Click="BtnEditSelected_Click"/>
-                <Button x:Name="BtnViewFormatted" Content="View formatted..." Click="BtnViewFormatted_Click"/>
-                <!-- New toolbar button -->
-                <Button x:Name="BtnShowPending" Content="Pending changes..." Click="BtnPendingChanges_Click"/>
+                <AutoSuggestBox x:Name="SearchBox" Width="360" Margin="16,0,0,0" PlaceholderText="Search policies (name, id)"
+                                TextChanged="SearchBox_TextChanged" QuerySubmitted="SearchBox_QuerySubmitted" SuggestionChosen="SearchBox_SuggestionChosen" />
             </StackPanel>
 
             <Grid Grid.Row="3" Margin="8">
@@ -128,6 +137,8 @@
                     <ColumnDefinition Width="8"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
+
+                <!-- Category tree -->
                 <Grid Grid.Column="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -142,69 +153,67 @@
                         </controls:TreeView.ItemTemplate>
                     </controls:TreeView>
                 </Grid>
+
                 <toolkit:GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Width="8" HorizontalAlignment="Stretch"/>
 
+                <!-- Policy list and details -->
                 <Grid Grid.Column="2">
-                    <!-- Default 7:3 split; user-resizable via splitter placed above the policy name block -->
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="7*"/>
+                        <RowDefinition Height="8*"/>
                         <RowDefinition Height="8"/>
-                        <RowDefinition Height="3*"/>
+                        <RowDefinition Height="2*"/>
                     </Grid.RowDefinitions>
-                    <ListView x:Name="PolicyList" Grid.Row="0" SelectionChanged="PolicyList_SelectionChanged" IsItemClickEnabled="False" DoubleTapped="PolicyList_DoubleTapped" RightTapped="PolicyList_RightTapped">
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <!-- Category icon -->
-                                    <FontIcon Grid.Column="0" Glyph="&#xE8B7;" Opacity="0.8" Visibility="{Binding IsCategory, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                    <!-- Stacked icons for User/Computer with darker base icon -->
-                                    <Grid Grid.Column="1" Margin="0,0,8,0" Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
-                                        <FontIcon Glyph="&#xE77B;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
-                                        <!-- Thicken glyph by overlaying slight offsets -->
-                                        <FontIcon Glyph="{Binding UserGlyph}" Foreground="{Binding UserBrush}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <FontIcon.RenderTransform>
-                                                <TranslateTransform X="-0.35" Y="0"/>
-                                            </FontIcon.RenderTransform>
-                                        </FontIcon>
-                                        <FontIcon Glyph="{Binding UserGlyph}" Foreground="{Binding UserBrush}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <FontIcon.RenderTransform>
-                                                <TranslateTransform X="0.35" Y="0"/>
-                                            </FontIcon.RenderTransform>
-                                        </FontIcon>
-                                        <FontIcon Glyph="{Binding UserGlyph}" Foreground="{Binding UserBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        <ToolTipService.ToolTip>
-                                            <ToolTip Content="User"/>
-                                        </ToolTipService.ToolTip>
-                                    </Grid>
-                                    <Grid Grid.Column="2" Margin="0,0,8,0" Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
-                                        <FontIcon Glyph="&#xE211;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
-                                        <FontIcon Glyph="{Binding ComputerGlyph}" Foreground="{Binding ComputerBrush}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <FontIcon.RenderTransform>
-                                                <TranslateTransform X="-0.35" Y="0"/>
-                                            </FontIcon.RenderTransform>
-                                        </FontIcon>
-                                        <FontIcon Glyph="{Binding ComputerGlyph}" Foreground="{Binding ComputerBrush}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <FontIcon.RenderTransform>
-                                                <TranslateTransform X="0.35" Y="0"/>
-                                            </FontIcon.RenderTransform>
-                                        </FontIcon>
-                                        <FontIcon Glyph="{Binding ComputerGlyph}" Foreground="{Binding ComputerBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        <ToolTipService.ToolTip>
-                                            <ToolTip Content="Computer"/>
-                                        </ToolTipService.ToolTip>
-                                    </Grid>
-                                    <TextBlock Grid.Column="3" Text="{Binding DisplayName}"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
+
+                    <!-- DataGrid -->
+                    <datagrid:DataGrid x:Name="PolicyList"
+                                      Grid.Row="0"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      SelectionMode="Single"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal"
+                                      AlternatingRowBackground="{StaticResource AltRowBrush}"
+                                      SelectionChanged="PolicyList_SelectionChanged"
+                                      DoubleTapped="PolicyList_DoubleTapped"
+                                      RightTapped="PolicyList_RightTapped">
+                        <datagrid:DataGrid.Columns>
+                            <datagrid:DataGridTemplateColumn x:Name="ColCatIcon" Header="" Width="SizeToCells">
+                                <datagrid:DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <FontIcon Glyph="&#xE8B7;" Opacity="0.8" Visibility="{Binding IsCategory, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    </DataTemplate>
+                                </datagrid:DataGridTemplateColumn.CellTemplate>
+                            </datagrid:DataGridTemplateColumn>
+                            <!-- User configured state icon -->
+                            <datagrid:DataGridTemplateColumn x:Name="ColUserIcon" Header="User" Width="SizeToCells">
+                                <datagrid:DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <FontIcon Glyph="&#xE77B;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
+                                            <FontIcon Glyph="{Binding UserGlyph}" Foreground="{Binding UserBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </datagrid:DataGridTemplateColumn.CellTemplate>
+                            </datagrid:DataGridTemplateColumn>
+                            <!-- Computer configured state icon -->
+                            <datagrid:DataGridTemplateColumn x:Name="ColComputerIcon" Header="Computer" Width="SizeToCells">
+                                <datagrid:DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <FontIcon Glyph="&#xE211;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
+                                            <FontIcon Glyph="{Binding ComputerGlyph}" Foreground="{Binding ComputerBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </datagrid:DataGridTemplateColumn.CellTemplate>
+                            </datagrid:DataGridTemplateColumn>
+                            <datagrid:DataGridTextColumn x:Name="ColName" Header="Name" Binding="{Binding DisplayName}" Width="3*" MinWidth="340"/>
+                            <datagrid:DataGridTextColumn x:Name="ColId" Header="ID" Binding="{Binding ShortId}" Width="2*"/>
+                            <datagrid:DataGridTextColumn x:Name="ColCategory" Header="Category" Binding="{Binding CategoryName}" Width="2*"/>
+                            <datagrid:DataGridTextColumn x:Name="ColApplies" Header="Applies to" Binding="{Binding AppliesText}" Width="*"/>
+                            <datagrid:DataGridTextColumn x:Name="ColSupported" Header="Supported on" Binding="{Binding SupportedText}" Width="2*"/>
+                        </datagrid:DataGrid.Columns>
+                        <datagrid:DataGrid.RowStyle>
+                            <Style TargetType="datagrid:DataGridRow">
                                 <Setter Property="ContextFlyout">
                                     <Setter.Value>
                                         <MenuFlyout>
@@ -220,9 +229,11 @@
                                     </Setter.Value>
                                 </Setter>
                             </Style>
-                        </ListView.ItemContainerStyle>
-                    </ListView>
+                        </datagrid:DataGrid.RowStyle>
+                    </datagrid:DataGrid>
+
                     <toolkit:GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Height="8" HorizontalAlignment="Stretch"/>
+
                     <Border Grid.Row="2" Margin="0,8,0,0" Padding="12" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}" CornerRadius="4" MinHeight="80">
                         <Grid>
                             <Grid.RowDefinitions>

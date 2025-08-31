@@ -30,9 +30,29 @@ namespace PolicyPlus.WinUI3.Models
         public Brush UserBrush { get; }
         public Brush ComputerBrush { get; }
 
+        // Optional column values
+        public string UniqueId { get; }
+        public string CategoryName { get; }
+        public string AppliesText { get; }
+        public string SupportedText { get; }
+        public string UserStateText { get; }
+        public string ComputerStateText { get; }
+
+        // Display-only convenience: part after ':' of UniqueId
+        public string ShortId
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(UniqueId)) return string.Empty;
+                int idx = UniqueId.LastIndexOf(':');
+                return idx >= 0 && idx + 1 < UniqueId.Length ? UniqueId.Substring(idx + 1) : UniqueId;
+            }
+        }
+
         private PolicyListRow(string displayName, bool isCategory, PolicyPlusPolicy? policy, PolicyPlusCategory? category,
             bool userConfigured, bool computerConfigured, bool userEnabled, bool userDisabled, bool compEnabled, bool compDisabled,
-            string userGlyph, string compGlyph, Brush userBrush, Brush compBrush)
+            string userGlyph, string compGlyph, Brush userBrush, Brush compBrush,
+            string uniqueId, string categoryName, string appliesText, string supportedText, string userStateText, string computerStateText)
         {
             DisplayName = displayName;
             IsCategory = isCategory;
@@ -48,10 +68,19 @@ namespace PolicyPlus.WinUI3.Models
             ComputerGlyph = compGlyph;
             UserBrush = userBrush;
             ComputerBrush = compBrush;
+            UniqueId = uniqueId;
+            CategoryName = categoryName;
+            AppliesText = appliesText;
+            SupportedText = supportedText;
+            UserStateText = userStateText;
+            ComputerStateText = computerStateText;
         }
 
         public static PolicyListRow FromCategory(PolicyPlusCategory c)
-            => new PolicyListRow(c.DisplayName, true, null, c, false, false, false, false, false, false, string.Empty, string.Empty, new SolidColorBrush(Colors.Transparent), new SolidColorBrush(Colors.Transparent));
+            => new PolicyListRow(c.DisplayName, true, null, c,
+                false, false, false, false, false, false,
+                string.Empty, string.Empty, new SolidColorBrush(Colors.Transparent), new SolidColorBrush(Colors.Transparent),
+                string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
 
         private static Brush GetBrush(string key, global::Windows.UI.Color fallback)
         {
@@ -62,6 +91,24 @@ namespace PolicyPlus.WinUI3.Models
             }
             catch { }
             return new SolidColorBrush(fallback);
+        }
+
+        private static string AppliesOf(PolicyPlusPolicy p)
+        {
+            return p.RawPolicy.Section switch
+            {
+                AdmxPolicySection.Machine => "Computer",
+                AdmxPolicySection.User => "User",
+                _ => "Both"
+            };
+        }
+
+        private static string StateText(bool enabled, bool disabled, bool configured)
+        {
+            if (!configured) return "Not configured";
+            if (enabled) return "Enabled";
+            if (disabled) return "Disabled";
+            return string.Empty;
         }
 
         public static PolicyListRow FromPolicy(PolicyPlusPolicy p, IPolicySource? comp, IPolicySource? user)
@@ -114,7 +161,16 @@ namespace PolicyPlus.WinUI3.Models
             Brush userBrush = userEn ? apply : danger;
             Brush compBrush = compEn ? apply : danger;
 
-            return new PolicyListRow(p.DisplayName, false, p, null, userCfg, compCfg, userEn, userDis, compEn, compDis, userGlyph, compGlyph, userBrush, compBrush);
+            string categoryName = p.Category?.DisplayName ?? string.Empty;
+            string appliesText = AppliesOf(p);
+            string supportedText = p.SupportedOn?.DisplayName ?? string.Empty;
+            string userStateText = StateText(userEn, userDis, userCfg);
+            string compStateText = StateText(compEn, compDis, compCfg);
+
+            return new PolicyListRow(p.DisplayName, false, p, null,
+                userCfg, compCfg, userEn, userDis, compEn, compDis,
+                userGlyph, compGlyph, userBrush, compBrush,
+                p.UniqueID, categoryName, appliesText, supportedText, userStateText, compStateText);
         }
     }
 }

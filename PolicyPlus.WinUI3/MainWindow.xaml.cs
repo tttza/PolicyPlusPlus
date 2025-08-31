@@ -71,11 +71,22 @@ namespace PolicyPlus.WinUI3
 
         private double? _savedVerticalOffset;
 
+        // Persisted column prefs keys
+        private const string ColIdKey = "Columns.ShowId";
+        private const string ColCategoryKey = "Columns.ShowCategory";
+        private const string ColAppliesKey = "Columns.ShowApplies";
+        private const string ColSupportedKey = "Columns.ShowSupported";
+        private const string ColUserStateKey = "Columns.ShowUserState";
+        private const string ColCompStateKey = "Columns.ShowComputerState";
+
         public MainWindow()
         {
             this.InitializeComponent();
             HookPendingQueue();
         }
+
+        private CheckBox? GetFlag(string name)
+            => (RootGrid?.FindName(name) as CheckBox);
 
         private void HookPendingQueue()
         {
@@ -88,11 +99,75 @@ namespace PolicyPlus.WinUI3
             catch { }
         }
 
+        private void LoadColumnPrefs()
+        {
+            try
+            {
+                if (_config == null) return;
+                bool Get(string k, bool defVal) { try { return Convert.ToInt32(_config.GetValue(k, defVal ? 1 : 0)) != 0; } catch { return defVal; } }
+                var id = GetFlag("ColIdFlag"); if (id != null) id.IsChecked = Get(ColIdKey, true);
+                var cat = GetFlag("ColCategoryFlag"); if (cat != null) cat.IsChecked = Get(ColCategoryKey, false);
+                var app = GetFlag("ColAppliesFlag"); if (app != null) app.IsChecked = Get(ColAppliesKey, false);
+                var sup = GetFlag("ColSupportedFlag"); if (sup != null) sup.IsChecked = Get(ColSupportedKey, false);
+                var us = GetFlag("ColUserStateFlag"); if (us != null) us.IsChecked = Get(ColUserStateKey, true);
+                var cs = GetFlag("ColCompStateFlag"); if (cs != null) cs.IsChecked = Get(ColCompStateKey, true);
+            }
+            catch { }
+        }
+
+        private void SaveColumnPrefs()
+        {
+            try
+            {
+                if (_config == null) return;
+                void Set(string k, bool v) { try { _config.SetValue(k, v ? 1 : 0); } catch { } }
+                var id = GetFlag("ColIdFlag"); if (id != null) Set(ColIdKey, id.IsChecked == true);
+                var cat = GetFlag("ColCategoryFlag"); if (cat != null) Set(ColCategoryKey, cat.IsChecked == true);
+                var app = GetFlag("ColAppliesFlag"); if (app != null) Set(ColAppliesKey, app.IsChecked == true);
+                var sup = GetFlag("ColSupportedFlag"); if (sup != null) Set(ColSupportedKey, sup.IsChecked == true);
+                var us = GetFlag("ColUserStateFlag"); if (us != null) Set(ColUserStateKey, us.IsChecked == true);
+                var cs = GetFlag("ColCompStateFlag"); if (cs != null) Set(ColCompStateKey, cs.IsChecked == true);
+            }
+            catch { }
+        }
+
+        private void UpdateColumnVisibilityFromFlags()
+        {
+            try
+            {
+                if (ColId != null) ColId.Visibility = (ColIdFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+                if (ColCategory != null) ColCategory.Visibility = (ColCategoryFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+                if (ColApplies != null) ColApplies.Visibility = (ColAppliesFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+                if (ColSupported != null) ColSupported.Visibility = (ColSupportedFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch { }
+        }
+
+        private void ColumnToggle_Click(object sender, RoutedEventArgs e)
+        {
+            // Sync menu toggle -> hidden checkbox (named via Tag)
+            if (sender is ToggleMenuFlyoutItem t && t.Tag is string name)
+            {
+                if (RootGrid?.FindName(name) is CheckBox cb)
+                {
+                    cb.IsChecked = t.IsChecked;
+                }
+            }
+            SaveColumnPrefs();
+            UpdateColumnVisibilityFromFlags();
+            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+        }
+
+        private void HiddenFlag_Checked(object sender, RoutedEventArgs e)
+        {
+            SaveColumnPrefs();
+            UpdateColumnVisibilityFromFlags();
+        }
+
         private void RefreshList()
         {
             try
             {
-                // Recompute rows to reflect pending queue or applied state changes
                 ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
             }
             catch { }
@@ -188,7 +263,7 @@ namespace PolicyPlus.WinUI3
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            try { _config = new ConfigurationStorage(Microsoft.Win32.RegistryHive.CurrentUser, @"Software\Policy Plus"); } catch { }
+            try { _config = new ConfigurationStorage(Microsoft.Win32.RegistryHive.CurrentUser, @"Software\\Policy Plus"); } catch { }
             try
             {
                 _hideEmptyCategories = Convert.ToInt32(_config?.GetValue("HideEmptyCategories", 1)) != 0;
@@ -211,6 +286,10 @@ namespace PolicyPlus.WinUI3
                 }
             }
             catch { }
+
+            // Load column visibility preferences after XAML created
+            LoadColumnPrefs();
+            UpdateColumnVisibilityFromFlags();
 
             try
             {
