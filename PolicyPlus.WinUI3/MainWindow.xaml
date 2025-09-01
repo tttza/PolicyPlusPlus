@@ -93,6 +93,8 @@
                             <ToggleMenuFlyoutItem x:Name="ViewCategoryToggle" Text="Category" IsChecked="False" Tag="ColCategoryFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewAppliesToggle" Text="Applies to" IsChecked="False" Tag="ColAppliesFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewSupportedToggle" Text="Supported on" IsChecked="False" Tag="ColSupportedFlag" Click="ColumnToggle_Click"/>
+                            <MenuFlyoutSeparator/>
+                            <ToggleMenuFlyoutItem x:Name="ViewDetailsToggle" Text="Details pane" IsChecked="True" Click="ViewDetailsToggle_Click"/>
                         </controls:MenuBarItem>
                     </controls:MenuBar>
 
@@ -173,11 +175,11 @@
                     <toolkit:GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Width="8" HorizontalAlignment="Stretch"/>
 
                     <!-- Policy list and details -->
-                    <Grid Grid.Column="2">
+                    <Grid Grid.Column="2" x:Name="PolicyDetailGrid">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="8*"/>
-                            <RowDefinition Height="8"/>
-                            <RowDefinition Height="2*"/>
+                            <RowDefinition x:Name="SplitterRow" Height="8"/>
+                            <RowDefinition x:Name="DetailRow" Height="2*"/>
                         </Grid.RowDefinitions>
 
                         <!-- DataGrid -->
@@ -266,9 +268,9 @@
                             </datagrid:DataGrid.RowStyle>
                         </datagrid:DataGrid>
 
-                        <toolkit:GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Height="8" HorizontalAlignment="Stretch"/>
+                        <toolkit:GridSplitter x:Name="DetailsSplitter" Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Height="8" HorizontalAlignment="Stretch"/>
 
-                        <Border Grid.Row="2" Margin="0,8,0,0" Padding="12" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}" CornerRadius="4" MinHeight="80">
+                        <Border x:Name="DetailsPane" Grid.Row="2" Margin="0,8,0,0" Padding="12" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}" CornerRadius="4" MinHeight="80">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>

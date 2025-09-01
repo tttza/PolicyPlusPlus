@@ -39,6 +39,9 @@ namespace PolicyPlus.WinUI3
         public event EventHandler? Saved;
 
         private bool _hideEmptyCategories = true;
+        private bool _showDetails = true;
+        private GridLength? _savedDetailRowHeight;
+        private GridLength? _savedSplitterRowHeight;
 
         // State fields
         private PolicyLoader? _loader;
@@ -93,6 +96,7 @@ namespace PolicyPlus.WinUI3
         private const string ColCompStateKey = "Columns.ShowComputerState";
 
         private const string ScaleKey = "UIScale"; // e.g. "100%"
+        private const string ShowDetailsKey = "View.ShowDetails";
 
         public MainWindow()
         {
@@ -104,6 +108,36 @@ namespace PolicyPlus.WinUI3
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
             };
+        }
+
+        private void ApplyDetailsPaneVisibility()
+        {
+            try
+            {
+                if (DetailsPane == null || DetailRow == null || DetailsSplitter == null || SplitterRow == null) return;
+
+                if (_showDetails)
+                {
+                    DetailsPane.Visibility = Visibility.Visible;
+                    DetailsSplitter.Visibility = Visibility.Visible;
+                    DetailRow.Height = _savedDetailRowHeight ?? new GridLength(2, GridUnitType.Star);
+                    SplitterRow.Height = _savedSplitterRowHeight ?? new GridLength(8);
+                }
+                else
+                {
+                    // Save current heights to restore later
+                    if (DetailRow.Height.Value > 0 || DetailRow.Height.IsStar)
+                        _savedDetailRowHeight = DetailRow.Height;
+                    if (SplitterRow.Height.Value > 0)
+                        _savedSplitterRowHeight = SplitterRow.Height;
+
+                    DetailsPane.Visibility = Visibility.Collapsed;
+                    DetailsSplitter.Visibility = Visibility.Collapsed;
+                    DetailRow.Height = new GridLength(0);
+                    SplitterRow.Height = new GridLength(0);
+                }
+            }
+            catch { }
         }
 
         private CheckBox? GetFlag(string name)
@@ -333,6 +367,11 @@ namespace PolicyPlus.WinUI3
             // reflect menu toggle state if present
             try { ToggleHideEmptyMenu.IsChecked = _hideEmptyCategories; } catch { }
 
+            // load details pane visibility
+            try { _showDetails = Convert.ToInt32(_config?.GetValue(ShowDetailsKey, 1)) != 0; } catch { _showDetails = true; }
+            try { ViewDetailsToggle.IsChecked = _showDetails; } catch { }
+            ApplyDetailsPaneVisibility();
+
             try
             {
                 var themePref = Convert.ToString(_config?.GetValue("Theme", "System")) ?? "System";
@@ -362,7 +401,7 @@ namespace PolicyPlus.WinUI3
 
             try
             {
-                string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\PolicyDefinitions");
+                string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
                 var lastObj = _config?.GetValue("AdmxSource", defaultPath);
                 string lastPath = lastObj == null ? defaultPath : Convert.ToString(lastObj) ?? defaultPath;
                 if (System.IO.Directory.Exists(lastPath))
@@ -1324,6 +1363,16 @@ namespace PolicyPlus.WinUI3
                 try { _config?.SetValue("HideEmptyCategories", _hideEmptyCategories ? 1 : 0); } catch { }
                 BuildCategoryTree();
                 ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+            }
+        }
+
+        private void ViewDetailsToggle_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is ToggleMenuFlyoutItem t)
+            {
+                _showDetails = t.IsChecked;
+                try { _config?.SetValue(ShowDetailsKey, _showDetails ? 1 : 0); } catch { }
+                ApplyDetailsPaneVisibility();
             }
         }
 
