@@ -53,7 +53,7 @@
           </StackPanel>
         </StackPanel>
 
-        <Grid Grid.Column="1" ColumnSpacing="8">
+        <Grid Grid.Column="1" Grid.ColumnSpan="7" ColumnSpacing="8" HorizontalAlignment="Right">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -63,9 +63,9 @@
             <ColumnDefinition Width="*"/>
           </Grid.ColumnDefinitions>
           <TextBlock Text="Comment" VerticalAlignment="Top"/>
-          <TextBox x:Name="CommentBox" Grid.Column="1" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="56"/>
+          <TextBox x:Name="CommentBox" Grid.Column="1" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="56" MinWidth="360"/>
           <TextBlock Grid.Row="1" Text="Supported on" VerticalAlignment="Center"/>
-          <TextBox x:Name="SupportedBox" Grid.Row="1" Grid.Column="1" IsReadOnly="True"/>
+          <TextBox x:Name="SupportedBox" Grid.Row="1" Grid.Column="1" IsReadOnly="True" MinWidth="360"/>
         </Grid>
       </Grid>
 
