@@ -13,6 +13,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Threading.Tasks;
 using PolicyPlus; // Core
+using PolicyPlus.WinUI3.ViewModels;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -22,6 +23,49 @@ namespace PolicyPlus.WinUI3.Windows
 
         private List<PendingChange> _pendingView = new();
         private List<HistoryRecord> _historyView = new();
+        private IElevationService _elevation;
+
+        // For app use
+        public PendingChangesWindow() : this(new ElevationServiceAdapter()) { }
+
+        // For tests (dependency injection)
+        public PendingChangesWindow(IElevationService elevation)
+        {
+            _elevation = elevation;
+            InitializeComponent();
+            Title = "Pending changes";
+
+            ApplyThemeResources();
+            App.ThemeChanged += (s, e) => ApplyThemeResources();
+
+            BtnClose.Click += (s, e) => this.Close();
+            BtnApplySelected.Click += BtnApplySelected_Click;
+            BtnDiscardSelected.Click += BtnDiscardSelected_Click;
+            BtnClearFilters.Click += (s, e) => { if (SearchBox!=null) SearchBox.Text = string.Empty; if (ScopeFilter!=null) ScopeFilter.SelectedIndex = 0; if (OperationFilter!=null) OperationFilter.SelectedIndex = 0; if (HistoryTimeRange!=null) HistoryTimeRange.SelectedIndex = 0; if (HistoryType!=null) HistoryType.SelectedIndex = 0; if (HistorySearch!=null) HistorySearch.Text = string.Empty; RefreshViews(); };
+            BtnExportPending.Click += BtnExportPending_Click;
+
+            if (RootShell != null)
+                RootShell.Loaded += (s, e) => { RefreshViews(); PendingChangesWindow_Loaded(s, e); };
+
+            PendingList.DoubleTapped += (s, e) => Pending_ContextView_Click(s, e);
+
+            // Listen to main window save to surface info here too
+            var main = App.Window as MainWindow;
+            if (main != null)
+            {
+                main.Saved += (s, e) => { ShowLocalInfo("Saved."); RefreshViews(); };
+            }
+
+            // Scale-aware initial size based on monitor DPI
+            WindowHelpers.ResizeForDisplayScale(this, 900, 640);
+            this.Activated += (s, e) => WindowHelpers.BringToFront(this);
+            this.Closed += (s, e) => { UnsubscribeCollectionChanges(); App.UnregisterWindow(this); };
+            App.RegisterWindow(this);
+
+            try { ScaleHelper.Attach(this, ScaleHost, RootShell!); } catch { }
+
+            SubscribeCollectionChanges();
+        }
 
         private void MainTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -72,43 +116,6 @@ namespace PolicyPlus.WinUI3.Windows
             ApplyTabSelectionUi();
         }
 
-        public PendingChangesWindow()
-        {
-            InitializeComponent();
-            Title = "Pending changes";
-
-            ApplyThemeResources();
-            App.ThemeChanged += (s, e) => ApplyThemeResources();
-
-            BtnClose.Click += (s, e) => this.Close();
-            BtnApplySelected.Click += BtnApplySelected_Click;
-            BtnDiscardSelected.Click += BtnDiscardSelected_Click;
-            BtnClearFilters.Click += (s, e) => { if (SearchBox!=null) SearchBox.Text = string.Empty; if (ScopeFilter!=null) ScopeFilter.SelectedIndex = 0; if (OperationFilter!=null) OperationFilter.SelectedIndex = 0; if (HistoryTimeRange!=null) HistoryTimeRange.SelectedIndex = 0; if (HistoryType!=null) HistoryType.SelectedIndex = 0; if (HistorySearch!=null) HistorySearch.Text = string.Empty; RefreshViews(); };
-            BtnExportPending.Click += BtnExportPending_Click;
-
-            if (RootShell != null)
-                RootShell.Loaded += (s, e) => { RefreshViews(); PendingChangesWindow_Loaded(s, e); };
-
-            PendingList.DoubleTapped += (s, e) => Pending_ContextView_Click(s, e);
-
-            // Listen to main window save to surface info here too
-            var main = App.Window as MainWindow;
-            if (main != null)
-            {
-                main.Saved += (s, e) => { ShowLocalInfo("Saved."); RefreshViews(); };
-            }
-
-            // Scale-aware initial size based on monitor DPI
-            WindowHelpers.ResizeForDisplayScale(this, 900, 640);
-            this.Activated += (s, e) => WindowHelpers.BringToFront(this);
-            this.Closed += (s, e) => { UnsubscribeCollectionChanges(); App.UnregisterWindow(this); };
-            App.RegisterWindow(this);
-
-            try { ScaleHelper.Attach(this, ScaleHost, RootShell!); } catch { }
-
-            SubscribeCollectionChanges();
-        }
-
         private async void ShowLocalInfo(string message)
         {
             if (LocalStatusBar == null) return;
@@ -122,61 +129,18 @@ namespace PolicyPlus.WinUI3.Windows
         private void RefreshViews()
         {
             var srcPending = PendingChangesService.Instance.Pending?.ToList() ?? new List<PendingChange>();
-            _pendingView = ApplyPendingFilters(srcPending);
+            _pendingView = PendingChangesFilter.FilterPending(srcPending, SearchBox?.Text ?? string.Empty,
+                ((ScopeFilter?.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "Both",
+                ((OperationFilter?.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "All");
             if (PendingList != null) PendingList.ItemsSource = _pendingView;
 
             var srcHistory = PendingChangesService.Instance.History?.ToList() ?? new List<HistoryRecord>();
-            _historyView = ApplyHistoryFilters(srcHistory);
+            _historyView = PendingChangesFilter.FilterHistory(srcHistory, HistorySearch?.Text ?? string.Empty,
+                ((HistoryType?.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "All",
+                ((HistoryTimeRange?.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "All");
             if (HistoryList != null) HistoryList.ItemsSource = _historyView;
 
             UpdateSummary();
-        }
-
-        private List<PendingChange> ApplyPendingFilters(IEnumerable<PendingChange> src)
-        {
-            string q = (SearchBox?.Text ?? string.Empty).Trim();
-            string scope = ((ScopeFilter?.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "Both";
-            string op = ((OperationFilter?.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "All";
-
-            var list = new List<PendingChange>();
-            foreach (var c in src)
-            {
-                if (c == null) continue;
-                bool scopeOk = (scope == "Both") || string.Equals(c.Scope ?? string.Empty, scope, StringComparison.OrdinalIgnoreCase);
-                bool opOk = (op == "All") || string.Equals(c.Action ?? string.Empty, op, StringComparison.OrdinalIgnoreCase);
-                bool textOk = string.IsNullOrEmpty(q) ||
-                              (c.PolicyName?.Contains(q, StringComparison.OrdinalIgnoreCase) == true) ||
-                              (c.Details?.Contains(q, StringComparison.OrdinalIgnoreCase) == true);
-                if (scopeOk && opOk && textOk)
-                    list.Add(c);
-            }
-            return list.OrderBy(c => c.PolicyName ?? string.Empty).ToList();
-        }
-
-        private List<HistoryRecord> ApplyHistoryFilters(IEnumerable<HistoryRecord> src)
-        {
-            string q = (HistorySearch?.Text ?? string.Empty).Trim();
-            string type = ((HistoryType?.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "All";
-            string range = ((HistoryTimeRange?.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "All";
-
-            DateTime? since = null;
-            if (string.Equals(range, "Today", StringComparison.OrdinalIgnoreCase)) since = DateTime.Today;
-            else if (string.Equals(range, "Last 7 days", StringComparison.OrdinalIgnoreCase)) since = DateTime.Today.AddDays(-7);
-            else if (string.Equals(range, "Last 30 days", StringComparison.OrdinalIgnoreCase)) since = DateTime.Today.AddDays(-30);
-
-            var list = new List<HistoryRecord>();
-            foreach (var h in src)
-            {
-                if (h == null) continue;
-                bool typeOk = (type == "All") || string.Equals(h.Result ?? string.Empty, type, StringComparison.OrdinalIgnoreCase);
-                bool sinceOk = (!since.HasValue) || h.AppliedAt >= since.Value;
-                bool textOk = string.IsNullOrEmpty(q) ||
-                              (h.PolicyName?.Contains(q, StringComparison.OrdinalIgnoreCase) == true) ||
-                              (h.Details?.Contains(q, StringComparison.OrdinalIgnoreCase) == true);
-                if (typeOk && sinceOk && textOk)
-                    list.Add(h);
-            }
-            return list.OrderByDescending(h => h.AppliedAt).ToList();
         }
 
         private void UpdateSummary()
@@ -184,7 +148,7 @@ namespace PolicyPlus.WinUI3.Windows
             if (SummaryText != null)
             {
                 var count = PendingChangesService.Instance.Pending.Count;
-                SummaryText.Text = count == 0 ? "No pending changes" : $"{count} pending change(s)";
+                SummaryText.Text = PendingChangesFilter.BuildSummary(count);
             }
         }
 
@@ -370,7 +334,7 @@ namespace PolicyPlus.WinUI3.Windows
 
             if (wroteOk)
             {
-                var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(compBase64, userBase64, triggerRefresh: true);
+                var res = await _elevation.WriteLocalGpoBytesAsync(compBase64, userBase64, triggerRefresh: true);
                 if (!res.ok) { wroteOk = false; writeErr = res.error; }
             }
 

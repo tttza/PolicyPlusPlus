@@ -1,0 +1,66 @@
+using System.Collections.Generic;
+using System.Linq;
+using PolicyPlus;
+using PolicyPlus.WinUI3.ViewModels;
+using Xunit;
+
+namespace PolicyPlusModTests.WinUI3
+{
+    public class CategoryVisibilityEvaluatorTests
+    {
+        private static (PolicyPlusCategory root, PolicyPlusCategory mid, PolicyPlusCategory leaf, List<PolicyPlusPolicy> all) BuildTree()
+        {
+            var root = new PolicyPlusCategory { UniqueID = "cat:root", DisplayName = "Root", RawCategory = new AdmxCategory() };
+            var mid = new PolicyPlusCategory { UniqueID = "cat:mid", DisplayName = "Mid", RawCategory = new AdmxCategory(), Parent = root };
+            var leaf = new PolicyPlusCategory { UniqueID = "cat:leaf", DisplayName = "Leaf", RawCategory = new AdmxCategory(), Parent = mid };
+            root.Children.Add(mid); mid.Children.Add(leaf);
+
+            var pUser = new PolicyPlusPolicy
+            {
+                UniqueID = "USER:Policy",
+                DisplayName = "Policy",
+                Category = leaf,
+                RawPolicy = new AdmxPolicy { RegistryKey = "Software\\PolicyPlusTest", RegistryValue = "V", Section = AdmxPolicySection.User, AffectedValues = new PolicyRegistryList(), DefinedIn = new AdmxFile { SourceFile = "x.admx" } }
+            };
+            var pComp = new PolicyPlusPolicy
+            {
+                UniqueID = "MACHINE:Policy",
+                DisplayName = "Policy",
+                Category = leaf,
+                RawPolicy = new AdmxPolicy { RegistryKey = "Software\\PolicyPlusTest", RegistryValue = "V", Section = AdmxPolicySection.Machine, AffectedValues = new PolicyRegistryList(), DefinedIn = new AdmxFile { SourceFile = "x.admx" } }
+            };
+            leaf.Policies.AddRange(new[] { pUser, pComp });
+            var all = new List<PolicyPlusPolicy> { pUser, pComp };
+            return (root, mid, leaf, all);
+        }
+
+        [Fact(DisplayName = "ConfiguredOnly=false returns non-empty categories visible")]
+        public void NotConfiguredOnly_NonEmptyVisible()
+        {
+            var (root, mid, leaf, all) = BuildTree();
+            var visible = CategoryVisibilityEvaluator.IsCategoryVisible(root, all, AdmxPolicySection.Both, configuredOnly: false, compSource: null, userSource: null);
+            Assert.True(visible);
+        }
+
+        [Fact(DisplayName = "ConfiguredOnly=true hides categories when no configured policies in subtree")]
+        public void ConfiguredOnly_Hides_When_NoConfigured()
+        {
+            var (root, mid, leaf, all) = BuildTree();
+            var comp = new PolFile(); var user = new PolFile();
+            // No states set -> not configured anywhere
+            var visible = CategoryVisibilityEvaluator.IsCategoryVisible(root, all, AdmxPolicySection.Both, configuredOnly: true, compSource: comp, userSource: user);
+            Assert.False(visible);
+        }
+
+        [Fact(DisplayName = "ConfiguredOnly=true with Applies=User shows when any user policy configured")]
+        public void ConfiguredOnly_Applies_User_Shows_When_Configured()
+        {
+            var (root, mid, leaf, all) = BuildTree();
+            var comp = new PolFile(); var user = new PolFile();
+            // Configure user policy only
+            PolicyProcessing.SetPolicyState(user, all.First(p => p.RawPolicy.Section == AdmxPolicySection.User), PolicyState.Enabled, new Dictionary<string, object>());
+            var visible = CategoryVisibilityEvaluator.IsCategoryVisible(root, all, AdmxPolicySection.User, configuredOnly: true, compSource: comp, userSource: user);
+            Assert.True(visible);
+        }
+    }
+}

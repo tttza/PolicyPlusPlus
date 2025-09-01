@@ -3,7 +3,6 @@ using PolicyPlus.WinUI3.Services;
 using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI; // Colors
 using System.Collections.Generic;
 
 namespace PolicyPlus.WinUI3.Models
@@ -27,9 +26,9 @@ namespace PolicyPlus.WinUI3.Models
         public string UserGlyph { get; }
         public string ComputerGlyph { get; }
 
-        // Brushes for glyph coloring
-        public Brush UserBrush { get; }
-        public Brush ComputerBrush { get; }
+        // Brushes for glyph coloring (nullable for test environments without WinUI runtime)
+        public Brush? UserBrush { get; }
+        public Brush? ComputerBrush { get; }
 
         // Optional column values
         public string UniqueId { get; }
@@ -52,7 +51,7 @@ namespace PolicyPlus.WinUI3.Models
 
         private PolicyListRow(string displayName, bool isCategory, PolicyPlusPolicy? policy, PolicyPlusCategory? category,
             bool userConfigured, bool computerConfigured, bool userEnabled, bool userDisabled, bool compEnabled, bool compDisabled,
-            string userGlyph, string compGlyph, Brush userBrush, Brush compBrush,
+            string userGlyph, string compGlyph, Brush? userBrush, Brush? compBrush,
             string uniqueId, string categoryName, string appliesText, string supportedText, string userStateText, string computerStateText)
         {
             DisplayName = displayName;
@@ -80,10 +79,10 @@ namespace PolicyPlus.WinUI3.Models
         public static PolicyListRow FromCategory(PolicyPlusCategory c)
             => new PolicyListRow(c.DisplayName, true, null, c,
                 false, false, false, false, false, false,
-                string.Empty, string.Empty, new SolidColorBrush(Colors.Transparent), new SolidColorBrush(Colors.Transparent),
+                string.Empty, string.Empty, null, null,
                 string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
 
-        private static Brush GetBrush(string key, global::Windows.UI.Color fallback)
+        private static Brush? TryGetResourceBrush(string key)
         {
             try
             {
@@ -91,7 +90,7 @@ namespace PolicyPlus.WinUI3.Models
                 if (obj is Brush b) return b;
             }
             catch { }
-            return new SolidColorBrush(fallback);
+            return null;
         }
 
         private static string AppliesOf(PolicyPlusPolicy p)
@@ -156,11 +155,11 @@ namespace PolicyPlus.WinUI3.Models
             string userGlyph = userEn ? "\uE73E" : (userDis ? "\uE711" : string.Empty);
             string compGlyph = compEn ? "\uE73E" : (compDis ? "\uE711" : string.Empty);
 
-            // Choose colors: Enabled -> ApplyBrush (green), Disabled -> DangerBrush (red)
-            Brush apply = GetBrush("ApplyBrush", Colors.SeaGreen);
-            Brush danger = GetBrush("DangerBrush", Colors.IndianRed);
-            Brush userBrush = userEn ? apply : danger;
-            Brush compBrush = compEn ? apply : danger;
+            // Choose colors from resources when available; otherwise leave null (use default)
+            Brush? apply = TryGetResourceBrush("ApplyBrush");
+            Brush? danger = TryGetResourceBrush("DangerBrush");
+            Brush? userBrush = userEn ? (apply ?? null) : (userDis ? (danger ?? null) : null);
+            Brush? compBrush = compEn ? (apply ?? null) : (compDis ? (danger ?? null) : null);
 
             string categoryName = p.Category?.DisplayName ?? string.Empty;
             string appliesText = AppliesOf(p);
@@ -236,10 +235,10 @@ namespace PolicyPlus.WinUI3.Models
             string userGlyph = anyUserEnabled ? "\uE73E" : (anyUserDisabled ? "\uE711" : string.Empty);
             string compGlyph = anyCompEnabled ? "\uE73E" : (anyCompDisabled ? "\uE711" : string.Empty);
 
-            Brush apply = GetBrush("ApplyBrush", Colors.SeaGreen);
-            Brush danger = GetBrush("DangerBrush", Colors.IndianRed);
-            Brush userBrush = anyUserEnabled ? apply : danger;
-            Brush compBrush = anyCompEnabled ? apply : danger;
+            Brush? apply = TryGetResourceBrush("ApplyBrush");
+            Brush? danger = TryGetResourceBrush("DangerBrush");
+            Brush? userBrush = anyUserEnabled ? (apply ?? null) : (anyUserDisabled ? (danger ?? null) : null);
+            Brush? compBrush = anyCompEnabled ? (apply ?? null) : (anyCompDisabled ? (danger ?? null) : null);
 
             string categoryName = representative.Category?.DisplayName ?? string.Empty;
             string appliesText = AppliesOf(representative);

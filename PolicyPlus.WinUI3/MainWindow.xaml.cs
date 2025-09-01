@@ -1145,42 +1145,10 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
-                // When not using Configured Only, fall back to simple emptiness check
-                if (!_configuredOnly)
-                {
-                    return !IsCategoryEmpty(cat);
-                }
-
-                // Collect all policies within this category subtree
-                var ids = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
-                CollectPoliciesRecursive(cat, ids);
-                IEnumerable<PolicyPlusPolicy> seq = _allPolicies.Where(p => ids.Contains(p.UniqueID));
-
-                // Respect the Applies filter
-                if (_appliesFilter == AdmxPolicySection.Machine)
-                    seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both);
-                else if (_appliesFilter == AdmxPolicySection.User)
-                    seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both);
-
-                if (!seq.Any()) return false;
-
                 EnsureLocalSources();
-                if (_compSource == null || _userSource == null) return false;
-
-                foreach (var p in seq)
-                {
-                    var comp = PolicyProcessing.GetPolicyState(_compSource, p);
-                    var user = PolicyProcessing.GetPolicyState(_userSource, p);
-                    if (comp == PolicyState.Enabled || comp == PolicyState.Disabled || user == PolicyState.Enabled || user == PolicyState.Disabled)
-                        return true;
-                }
-                return false;
+                return ViewModels.CategoryVisibilityEvaluator.IsCategoryVisible(cat, _allPolicies, _appliesFilter, _configuredOnly, _compSource, _userSource);
             }
-            catch
-            {
-                // In case of any unexpected error, do not hide the category
-                return true;
-            }
+            catch { return true; }
         }
 
         private void BtnPendingChanges_Click(object sender, RoutedEventArgs e)

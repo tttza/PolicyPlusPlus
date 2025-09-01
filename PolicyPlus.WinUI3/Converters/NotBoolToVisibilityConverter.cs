@@ -16,7 +16,7 @@ namespace PolicyPlus.WinUI3.Converters
         public object ConvertBack(object value, Type targetType, object parameter, string language)
         {
             if (value is Visibility v)
-                return v != Visibility.Visible;
+                return v == Visibility.Visible;
             return true;
         }
     }

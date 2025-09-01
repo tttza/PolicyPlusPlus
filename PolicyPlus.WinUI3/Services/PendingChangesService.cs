@@ -48,8 +48,10 @@ namespace PolicyPlus.WinUI3.Services
         public void Add(PendingChange change)
         {
             if (change == null) return;
-            var existing = Pending.FirstOrDefault(p => string.Equals(p.PolicyId, change.PolicyId, StringComparison.OrdinalIgnoreCase)
-                                                    && string.Equals(p.Scope, change.Scope, StringComparison.OrdinalIgnoreCase));
+            var pid = change.PolicyId ?? string.Empty;
+            var scope = change.Scope ?? string.Empty;
+            var existing = Pending.FirstOrDefault(p => string.Equals(p?.PolicyId ?? string.Empty, pid, StringComparison.OrdinalIgnoreCase)
+                                                    && string.Equals(p?.Scope ?? string.Empty, scope, StringComparison.OrdinalIgnoreCase));
             if (existing != null)
             {
                 existing.Action = change.Action;
