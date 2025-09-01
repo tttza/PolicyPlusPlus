@@ -18,18 +18,45 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Assets\SplashScreen.scale-200.png" />
-    <Content Include="Assets\LockScreenLogo.scale-200.png" />
-    <Content Include="Assets\Square150x150Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Content Include="Assets\StoreLogo.png" />
-    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
 
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
+
+  <!-- Embed any .ico in Assets so it is available even in single-file publish -->
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\*.ico" />
+  </ItemGroup>
+
+  <!-- Set the EXE file icon if a known .ico exists -->
+  <Choose>
+    <When Condition="Exists('Assets\\AppIcon.ico')">
+      <PropertyGroup>
+        <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+      </PropertyGroup>
+    </When>
+    <When Condition="Exists('Assets\\app.ico')">
+      <PropertyGroup>
+        <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+      </PropertyGroup>
+    </When>
+    <When Condition="Exists('Assets\\icon.ico')">
+      <PropertyGroup>
+        <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+      </PropertyGroup>
+    </When>
+    <When Condition="Exists('Assets\\PolicyPlus.ico')">
+      <PropertyGroup>
+        <ApplicationIcon>Assets\PolicyPlus.ico</ApplicationIcon>
+      </PropertyGroup>
+    </When>
+    <When Condition="Exists('Assets\\PolicyPlusWinUI3.ico')">
+      <PropertyGroup>
+        <ApplicationIcon>Assets\PolicyPlusWinUI3.ico</ApplicationIcon>
+      </PropertyGroup>
+    </When>
+  </Choose>
 
   <!--
     Defining the "Msix" ProjectCapability here allows the Single-project MSIX Packaging
