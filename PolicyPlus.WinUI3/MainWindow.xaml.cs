@@ -6,7 +6,6 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
-using PolicyPlus; // Core namespace
 using System.Linq;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
@@ -15,10 +14,6 @@ using PolicyPlus.WinUI3.Dialogs;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
-using System.Globalization;
-using System.Text;
-using System.Text.RegularExpressions;
-using Windows.System;
 using Microsoft.UI.Xaml.Documents;
 using PolicyPlus.WinUI3.Windows;
 using Microsoft.UI.Dispatching;
@@ -28,9 +23,9 @@ using PolicyPlus.WinUI3.Utils;
 using PolicyPlus.WinUI3.Services;
 using PolicyPlus.WinUI3.Models;
 using System.IO;
-using PolicyPlus; // Core pipeline
 using CommunityToolkit.WinUI.UI.Controls;
 using Windows.Foundation;
+using PolicyPlus; // Core APIs
 
 namespace PolicyPlus.WinUI3
 {
@@ -43,7 +38,6 @@ namespace PolicyPlus.WinUI3
         private GridLength? _savedDetailRowHeight;
         private GridLength? _savedSplitterRowHeight;
 
-        // State fields
         private PolicyLoader? _loader;
         private AdmxBundle? _bundle;
         private List<PolicyPlusPolicy> _allPolicies = new();
@@ -103,7 +97,6 @@ namespace PolicyPlus.WinUI3
         private DateTime _recentDoubleTapAt;
         private string? _lastInvokedCatId;
         private DateTime _lastInvokedAt;
-        // Track pre-tap state to enforce deterministic double-click behavior
         private string? _lastTapCatId;
         private bool _lastTapWasExpanded;
         private DateTime _lastTapAt;
@@ -139,35 +132,6 @@ namespace PolicyPlus.WinUI3
             catch { }
         }
 
-        private void ApplyDetailsPaneVisibility()
-        {
-            try
-            {
-                if (DetailsPane == null || DetailRow == null || DetailsSplitter == null || SplitterRow == null) return;
-
-                if (_showDetails)
-                {
-                    DetailsPane.Visibility = Visibility.Visible;
-                    DetailsSplitter.Visibility = Visibility.Visible;
-                    DetailRow.Height = _savedDetailRowHeight ?? new GridLength(2, GridUnitType.Star);
-                    SplitterRow.Height = _savedSplitterRowHeight ?? new GridLength(8);
-                }
-                else
-                {
-                    if (DetailRow.Height.Value > 0 || DetailRow.Height.IsStar)
-                        _savedDetailRowHeight = DetailRow.Height;
-                    if (SplitterRow.Height.Value > 0)
-                        _savedSplitterRowHeight = SplitterRow.Height;
-
-                    DetailsPane.Visibility = Visibility.Collapsed;
-                    DetailsSplitter.Visibility = Visibility.Collapsed;
-                    DetailRow.Height = new GridLength(0);
-                    SplitterRow.Height = new GridLength(0);
-                }
-            }
-            catch { }
-        }
-
         private CheckBox? GetFlag(string name)
             => (RootGrid?.FindName(name) as CheckBox);
 
@@ -190,7 +154,7 @@ namespace PolicyPlus.WinUI3
                 {
                     foreach (var it in seq)
                     {
-                        if (it is Models.PolicyListRow row)
+                        if (it is PolicyListRow row)
                         {
                             row.RefreshStateFromSourcesAndPending(_compSource, _userSource);
                         }
@@ -220,58 +184,12 @@ namespace PolicyPlus.WinUI3
             catch { }
         }
 
-        private void LoadColumnPrefs()
-        {
-            try
-            {
-                if (_config == null) return;
-                bool Get(string k, bool defVal) { try { return Convert.ToInt32(_config.GetValue(k, defVal ? 1 : 0)) != 0; } catch { return defVal; } }
-                var id = GetFlag("ColIdFlag"); if (id != null) id.IsChecked = Get(ColIdKey, true);
-                var cat = GetFlag("ColCategoryFlag"); if (cat != null) cat.IsChecked = Get(ColCategoryKey, false);
-                var app = GetFlag("ColAppliesFlag"); if (app != null) app.IsChecked = Get(ColAppliesKey, false);
-                var sup = GetFlag("ColSupportedFlag"); if (sup != null) sup.IsChecked = Get(ColSupportedKey, false);
-                var us = GetFlag("ColUserStateFlag"); if (us != null) us.IsChecked = Get(ColUserStateKey, true);
-                var cs = GetFlag("ColCompStateFlag"); if (cs != null) cs.IsChecked = Get(ColCompStateKey, true);
-            }
-            catch { }
-        }
-
-        private void SaveColumnPrefs()
-        {
-            try
-            {
-                if (_config == null) return;
-                void Set(string k, bool v) { try { _config.SetValue(k, v ? 1 : 0); } catch { } }
-                var id = GetFlag("ColIdFlag"); if (id != null) Set(ColIdKey, id.IsChecked == true);
-                var cat = GetFlag("ColCategoryFlag"); if (cat != null) Set(ColCategoryKey, cat.IsChecked == true);
-                var app = GetFlag("ColAppliesFlag"); if (app != null) Set(ColAppliesKey, app.IsChecked == true);
-                var sup = GetFlag("ColSupportedFlag"); if (sup != null) Set(ColSupportedKey, sup.IsChecked == true);
-                var us = GetFlag("ColUserStateFlag"); if (us != null) Set(ColUserStateKey, us.IsChecked == true);
-                var cs = GetFlag("ColCompStateFlag"); if (cs != null) Set(ColCompStateKey, cs.IsChecked == true);
-            }
-            catch { }
-        }
-
-        private void UpdateColumnVisibilityFromFlags()
-        {
-            try
-            {
-                if (ColId != null) ColId.Visibility = (ColIdFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
-                if (ColCategory != null) ColCategory.Visibility = (ColCategoryFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
-                if (ColApplies != null) ColApplies.Visibility = (ColAppliesFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
-                if (ColSupported != null) ColSupported.Visibility = (ColSupportedFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
-            }
-            catch { }
-        }
-
         private void ColumnToggle_Click(object sender, RoutedEventArgs e)
         {
             if (sender is ToggleMenuFlyoutItem t && t.Tag is string name)
             {
                 if (RootGrid?.FindName(name) is CheckBox cb)
-                {
                     cb.IsChecked = t.IsChecked;
-                }
             }
             SaveColumnPrefs();
             UpdateColumnVisibilityFromFlags();
@@ -282,15 +200,6 @@ namespace PolicyPlus.WinUI3
         {
             SaveColumnPrefs();
             UpdateColumnVisibilityFromFlags();
-        }
-
-        private void RefreshList()
-        {
-            try
-            {
-                ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-            }
-            catch { }
         }
 
         private void UpdateUnsavedIndicator()
@@ -304,77 +213,6 @@ namespace PolicyPlus.WinUI3
             });
         }
 
-        private void ShowInfo(string message, InfoBarSeverity severity = InfoBarSeverity.Informational)
-        {
-            if (StatusBar == null) return;
-
-            // Cancel any pending auto-close and reset visuals
-            _infoBarCloseCts?.Cancel();
-            StatusBar.Opacity = 1;
-
-            StatusBar.Title = null;
-            StatusBar.Severity = severity;
-            StatusBar.Message = message;
-            StatusBar.IsOpen = true;
-
-            StartInfoBarAutoClose();
-        }
-
-        private void StartInfoBarAutoClose()
-        {
-            _infoBarCloseCts?.Cancel();
-            _infoBarCloseCts = new CancellationTokenSource();
-            var token = _infoBarCloseCts.Token;
-
-            _ = Task.Run(async () =>
-            {
-                try { await Task.Delay(TimeSpan.FromSeconds(3), token); }
-                catch (TaskCanceledException) { return; }
-                if (token.IsCancellationRequested) return;
-
-                DispatcherQueue.TryEnqueue(async () =>
-                {
-                    if (!token.IsCancellationRequested)
-                    {
-                        await FadeOutAndCloseInfoBarAsync();
-                    }
-                });
-            });
-        }
-
-        private async Task FadeOutAndCloseInfoBarAsync()
-        {
-            if (StatusBar == null || !StatusBar.IsOpen) return;
-
-            var anim = new DoubleAnimation
-            {
-                From = 1,
-                To = 0,
-                Duration = new Duration(TimeSpan.FromMilliseconds(250)),
-                EasingFunction = new ExponentialEase { Exponent = 4, EasingMode = EasingMode.EaseOut }
-            };
-            var sb = new Storyboard();
-            Storyboard.SetTarget(anim, StatusBar);
-            Storyboard.SetTargetProperty(anim, "Opacity");
-            sb.Children.Add(anim);
-
-            var tcs = new TaskCompletionSource<object?>();
-            sb.Completed += (s, e) => tcs.TrySetResult(null);
-            sb.Begin();
-            await tcs.Task;
-
-            StatusBar.IsOpen = false;
-            StatusBar.Opacity = 1;
-        }
-
-        private void HideInfo()
-        {
-            if (StatusBar == null) return;
-            _infoBarCloseCts?.Cancel();
-            StatusBar.IsOpen = false;
-            StatusBar.Opacity = 1;
-        }
-
         private void SetBusy(bool busy)
         {
             if (BusyOverlay == null) return;
@@ -384,16 +222,9 @@ namespace PolicyPlus.WinUI3
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             try { _config = new ConfigurationStorage(Microsoft.Win32.RegistryHive.CurrentUser, @"Software\\Policy Plus"); } catch { }
-            try
-            {
-                _hideEmptyCategories = Convert.ToInt32(_config?.GetValue("HideEmptyCategories", 1)) != 0;
-            }
-            catch { _hideEmptyCategories = true; }
-
-            // reflect menu toggle state if present
+            try { _hideEmptyCategories = Convert.ToInt32(_config?.GetValue("HideEmptyCategories", 1)) != 0; } catch { _hideEmptyCategories = true; }
             try { ToggleHideEmptyMenu.IsChecked = _hideEmptyCategories; } catch { }
 
-            // load details pane visibility
             try { _showDetails = Convert.ToInt32(_config?.GetValue(ShowDetailsKey, 1)) != 0; } catch { _showDetails = true; }
             try { ViewDetailsToggle.IsChecked = _showDetails; } catch { }
             ApplyDetailsPaneVisibility();
@@ -413,7 +244,6 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
 
-            // Load saved scale
             try
             {
                 var scalePref = Convert.ToString(_config?.GetValue(ScaleKey, "100%")) ?? "100%";
@@ -421,11 +251,9 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
 
-            // Load column visibility preferences after XAML created
             LoadColumnPrefs();
             UpdateColumnVisibilityFromFlags();
 
-            // Ensure double-tap handlers are hooked even if events are marked handled by child elements
             HookDoubleTapHandlers();
 
             try
@@ -433,7 +261,7 @@ namespace PolicyPlus.WinUI3
                 string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
                 var lastObj = _config?.GetValue("AdmxSource", defaultPath);
                 string lastPath = lastObj == null ? defaultPath : Convert.ToString(lastObj) ?? defaultPath;
-                if (System.IO.Directory.Exists(lastPath))
+                if (Directory.Exists(lastPath))
                 {
                     LoadAdmxFolderAsync(lastPath);
                 }
@@ -441,45 +269,7 @@ namespace PolicyPlus.WinUI3
             catch { }
         }
 
-        private void SetScaleFromString(string s, bool updateSelector, bool save)
-        {
-            double scale = 1.0;
-            if (!string.IsNullOrEmpty(s) && s.EndsWith("%"))
-            {
-                if (double.TryParse(s.TrimEnd('%'), out var pct))
-                {
-                    scale = Math.Max(0.5, pct / 100.0);
-                }
-            }
-            App.SetGlobalScale(scale);
-            if (updateSelector)
-            {
-                try
-                {
-                    if (ScaleSelector != null)
-                    {
-                        var items = ScaleSelector.Items?.OfType<ComboBoxItem>()?.ToList();
-                        var match = items?.FirstOrDefault(i => string.Equals(Convert.ToString(i.Content), s, StringComparison.OrdinalIgnoreCase));
-                        if (match != null) ScaleSelector.SelectedItem = match;
-                    }
-                }
-                catch { }
-            }
-            if (save)
-            {
-                try { _config?.SetValue(ScaleKey, s); } catch { }
-            }
-        }
-
-        private void ScaleSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            try
-            {
-                var item = (ScaleSelector?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "100%";
-                SetScaleFromString(item, updateSelector: false, save: true);
-            }
-            catch { }
-        }
+        // preference helper implementations are defined in MainWindow.Preferences.cs
 
         private async void LoadAdmxFolderAsync(string path)
         {
@@ -495,31 +285,11 @@ namespace PolicyPlus.WinUI3
                     ShowInfo($"ADMX loaded ({langPref}).");
                 BuildCategoryTree();
                 _allPolicies = _bundle.Policies.Values.ToList();
-                _totalGroupCount = _allPolicies.GroupBy(p => p.DisplayName, System.StringComparer.InvariantCultureIgnoreCase).Count();
+                _totalGroupCount = _allPolicies.GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).Count();
                 ApplyFiltersAndBind();
             }
-            finally
-            {
-                SetBusy(false);
-            }
-            await System.Threading.Tasks.Task.CompletedTask;
-        }
-
-        private void ApplyTheme(string pref)
-        {
-            if (RootGrid == null) return;
-            var theme = pref switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default };
-            RootGrid.RequestedTheme = theme;
-            App.SetGlobalTheme(theme);
-        }
-
-        private void ThemeSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            var cb = ThemeSelector as ComboBox;
-            var item = ((cb?.SelectedItem as ComboBoxItem)?.Content?.ToString());
-            var pref = item ?? "System";
-            ApplyTheme(pref);
-            try { _config?.SetValue("Theme", pref); } catch { }
+            finally { SetBusy(false); }
+            await Task.CompletedTask;
         }
 
         private void BtnLoadLocalGpo_Click(object sender, RoutedEventArgs e)
@@ -527,8 +297,7 @@ namespace PolicyPlus.WinUI3
             _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
             _compSource = _loader.OpenSource();
             _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-            if (LoaderInfo != null)
-                LoaderInfo.Text = _loader.GetDisplayInfo();
+            if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
             ShowInfo("Local GPO sources initialized.");
         }
 
@@ -549,7 +318,6 @@ namespace PolicyPlus.WinUI3
             if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
                 var q = (SearchBox.Text ?? string.Empty).Trim();
-                // Suggestions should search recursively within the selected category
                 var baseSeq = BaseSequenceForFilters(includeSubcategories: true);
                 var suggestions = baseSeq.Where(p => p.DisplayName.Contains(q, StringComparison.InvariantCultureIgnoreCase))
                                          .Take(10)
@@ -576,13 +344,12 @@ namespace PolicyPlus.WinUI3
 
         private void EnsureLocalSources()
         {
-            if (_loader is null || _compSource is null || _userSource is null)
+            if (_loader is null || _userSource is null || _compSource is null)
             {
                 _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
                 _compSource = _loader.OpenSource();
                 _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-                if (LoaderInfo != null)
-                    LoaderInfo.Text = _loader.GetDisplayInfo();
+                if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
             }
         }
 
@@ -598,387 +365,7 @@ namespace PolicyPlus.WinUI3
             _compSource = compLoader.OpenSource();
             _userSource = userLoader.OpenSource();
             _loader = compLoader;
-            if (LoaderInfo != null)
-                LoaderInfo.Text = "Temp POL (Comp/User)";
-        }
-
-        private IEnumerable<PolicyPlusPolicy> BaseSequenceForFilters(bool includeSubcategories)
-        {
-            IEnumerable<PolicyPlusPolicy> seq = _allPolicies;
-            if (_appliesFilter == AdmxPolicySection.Machine)
-                seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both);
-            else if (_appliesFilter == AdmxPolicySection.User)
-                seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both);
-
-            if (_selectedCategory is not null)
-            {
-                // If searching or configured-only, include subcategories; otherwise handle category view separately
-                if (includeSubcategories)
-                {
-                    var allowed = new HashSet<string>();
-                    CollectPoliciesRecursive(_selectedCategory, allowed);
-                    seq = seq.Where(p => allowed.Contains(p.UniqueID));
-                }
-                else
-                {
-                    // Only policies directly under the selected category
-                    var direct = new HashSet<string>(_selectedCategory.Policies.Select(p => p.UniqueID));
-                    seq = seq.Where(p => direct.Contains(p.UniqueID));
-                }
-            }
-
-            if (_configuredOnly)
-            {
-                EnsureLocalSources();
-                var pending = PendingChangesService.Instance.Pending?.ToList() ?? new List<PendingChange>();
-                if (_compSource != null || _userSource != null || pending.Count > 0)
-                {
-                    seq = seq.Where(p =>
-                    {
-                        bool configured = false;
-                        try
-                        {
-                            // Compute effective configured state with pending overriding actual when present
-                            bool effUser = false, effComp = false;
-
-                            if (p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both)
-                            {
-                                var pendUser = pending.FirstOrDefault(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
-                                                                         && string.Equals(pc.Scope, "User", StringComparison.OrdinalIgnoreCase));
-                                if (pendUser != null)
-                                {
-                                    effUser = (pendUser.DesiredState == PolicyState.Enabled || pendUser.DesiredState == PolicyState.Disabled);
-                                }
-                                else if (_userSource != null)
-                                {
-                                    var st = PolicyProcessing.GetPolicyState(_userSource, p);
-                                    effUser = (st == PolicyState.Enabled || st == PolicyState.Disabled);
-                                }
-                            }
-
-                            if (p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both)
-                            {
-                                var pendComp = pending.FirstOrDefault(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
-                                                                         && string.Equals(pc.Scope, "Computer", StringComparison.OrdinalIgnoreCase));
-                                if (pendComp != null)
-                                {
-                                    effComp = (pendComp.DesiredState == PolicyState.Enabled || pendComp.DesiredState == PolicyState.Disabled);
-                                }
-                                else if (_compSource != null)
-                                {
-                                    var st = PolicyProcessing.GetPolicyState(_compSource, p);
-                                    effComp = (st == PolicyState.Enabled || st == PolicyState.Disabled);
-                                }
-                            }
-
-                            configured = effUser || effComp;
-                        }
-                        catch { }
-                        return configured;
-                    });
-                }
-            }
-            return seq;
-        }
-
-        private void ApplyFiltersAndBind(string query = "", PolicyPlusCategory? category = null)
-        {
-            if (PolicyList == null || PolicyCount == null) return;
-            if (category != null) _selectedCategory = category;
-
-            PreserveScrollPosition();
-
-            UpdateSearchPlaceholder();
-
-            bool searching = !string.IsNullOrWhiteSpace(query);
-            bool flat = searching || _configuredOnly;
-            IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(includeSubcategories: flat);
-            if (searching)
-                seq = seq.Where(p => p.DisplayName.Contains(query, StringComparison.InvariantCultureIgnoreCase) || p.UniqueID.Contains(query, StringComparison.InvariantCultureIgnoreCase));
-
-            BindSequenceEnhanced(seq, flat);
-
-            RestorePositionOrSelection();
-        }
-
-        private void BindSequenceEnhanced(IEnumerable<PolicyPlusPolicy> seq, bool flat)
-        {
-            EnsureLocalSources();
-
-            if (flat)
-            {
-                var ordered = seq.OrderBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
-                                 .ThenBy(p => p.UniqueID, StringComparer.InvariantCultureIgnoreCase)
-                                 .ToList();
-                _visiblePolicies = ordered.ToList();
-
-                var rows = ordered.Select(p => (object)PolicyListRow.FromPolicy(p, _compSource, _userSource)).ToList();
-                PolicyList.ItemsSource = rows;
-
-                PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
-                TryRestoreSelectionAsync(rows);
-                return;
-            }
-
-            var grouped = seq.GroupBy(p => p.DisplayName, System.StringComparer.InvariantCultureIgnoreCase);
-            _nameGroups = grouped.ToDictionary(g => g.Key, g => g.ToList(), StringComparer.InvariantCultureIgnoreCase);
-            var representatives = grouped.Select(PickRepresentative).OrderBy(p => p.DisplayName).ToList();
-
-            _visiblePolicies = representatives;
-
-            var groupRows = representatives.Select(p =>
-            {
-                _nameGroups.TryGetValue(p.DisplayName, out var groupList);
-                groupList ??= new List<PolicyPlusPolicy> { p };
-                return (object)PolicyListRow.FromGroup(p, groupList, _compSource, _userSource);
-            }).ToList<object>();
-
-            // If a category is selected and not flat, prepend its subcategories to the list view
-            if (_selectedCategory != null && !_configuredOnly)
-            {
-                var items = new List<object>();
-                var children = _selectedCategory.Children
-                    .Where(c => !_hideEmptyCategories || HasAnyVisiblePolicyInCategory(c))
-                    .OrderBy(c => c.DisplayName)
-                    .Select(c => (object)PolicyListRow.FromCategory(c))
-                    .ToList();
-                items.AddRange(children);
-                items.AddRange(groupRows);
-                PolicyList.ItemsSource = items;
-                TryRestoreSelectionAsync(items);
-            }
-            else
-            {
-                PolicyList.ItemsSource = groupRows;
-                TryRestoreSelectionAsync(groupRows);
-            }
-
-            PolicyCount.Text = $"{_visiblePolicies.Count} / {_totalGroupCount} policies";
-        }
-
-        private PolicyPlusPolicy PickRepresentative(IGrouping<string, PolicyPlusPolicy> g)
-        {
-            var list = g.ToList();
-            var both = list.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Both);
-            if (both != null) return both;
-            var comp = list.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Machine);
-            return comp ?? list[0];
-        }
-
-        private void CollectPoliciesRecursive(PolicyPlusCategory cat, HashSet<string> sink)
-        { foreach (var p in cat.Policies) sink.Add(p.UniqueID); foreach (var child in cat.Children) CollectPoliciesRecursive(child, sink); }
-
-        private void PolicyList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        { var row = PolicyList?.SelectedItem; var p = (row as PolicyListRow)?.Policy ?? row as PolicyPlusPolicy; SetDetails(p); }
-
-        private void SetDetails(PolicyPlusPolicy? p)
-        {
-            if (DetailTitle == null) return;
-            if (p is null)
-            {
-                DetailTitle.Blocks.Clear(); DetailId.Blocks.Clear(); DetailCategory.Blocks.Clear(); DetailApplies.Blocks.Clear(); DetailSupported.Blocks.Clear();
-                if (DetailExplain != null) DetailExplain.Blocks.Clear();
-                return;
-            }
-            SetPlainText(DetailTitle, p.DisplayName);
-            SetPlainText(DetailId, p.UniqueID);
-            SetPlainText(DetailCategory, p.Category is null ? string.Empty : $"Category: {p.Category.DisplayName}");
-            var applies = p.RawPolicy.Section switch { AdmxPolicySection.Machine => "Computer", AdmxPolicySection.User => "User", _ => "Both" };
-            SetPlainText(DetailApplies, $"Applies to: {applies}");
-            SetPlainText(DetailSupported, p.SupportedOn is null ? string.Empty : $"Supported on: {p.SupportedOn.DisplayName}");
-            SetExplanationText(p.DisplayExplanation ?? string.Empty);
-        }
-
-        private static void SetPlainText(RichTextBlock rtb, string text)
-        {
-            rtb.Blocks.Clear();
-            var p = new Paragraph();
-            p.Inlines.Add(new Run { Text = text ?? string.Empty });
-            rtb.Blocks.Add(p);
-        }
-
-        private static bool IsInsideDoubleQuotes(string s, int index)
-        {
-            bool inQuote = false;
-            int i = 0;
-            while (i < index)
-            {
-                if (s[i] == '"')
-                {
-                    int bs = 0; int j = i - 1; while (j >= 0 && s[j] == '\\') { bs++; j--; }
-                    if ((bs % 2) == 0) inQuote = !inQuote;
-                }
-                i++;
-            }
-            return inQuote;
-        }
-
-        private void SetExplanationText(string text)
-        {
-            if (DetailExplain == null) return;
-            DetailExplain.Blocks.Clear();
-            var para = new Paragraph();
-            if (string.IsNullOrEmpty(text)) { DetailExplain.Blocks.Add(para); return; }
-
-            int lastIndex = 0;
-            foreach (Match m in UrlRegex.Matches(text))
-            {
-                if (IsInsideDoubleQuotes(text, m.Index))
-                    continue;
-
-                if (m.Index > lastIndex)
-                {
-                    var before = text.Substring(lastIndex, m.Index - lastIndex);
-                    para.Inlines.Add(new Run { Text = before });
-                }
-
-                string url = m.Value;
-                var link = new Hyperlink();
-                link.Inlines.Add(new Run { Text = url });
-                link.Click += async (s, e) =>
-                {
-                    if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
-                    {
-                        try { await Launcher.LaunchUriAsync(uri); } catch { }
-                    }
-                };
-                para.Inlines.Add(link);
-                lastIndex = m.Index + m.Length;
-            }
-            if (lastIndex < text.Length)
-            {
-                para.Inlines.Add(new Run { Text = text.Substring(lastIndex) });
-            }
-            DetailExplain.Blocks.Add(para);
-        }
-
-        private async Task<AdmxPolicySection?> PromptSectionChoiceAsync()
-        {
-            var dlg = new ContentDialog
-            {
-                Title = "Choose target",
-                Content = new TextBlock { Text = "Edit Computer or User configuration?" },
-                PrimaryButtonText = "Computer",
-                SecondaryButtonText = "User",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Primary
-            };
-            var xr = RootGrid?.XamlRoot ?? (this.Content as FrameworkElement)?.XamlRoot;
-            if (xr != null) dlg.XamlRoot = xr;
-            var res = await dlg.ShowAsync();
-            if (res == ContentDialogResult.Primary) return AdmxPolicySection.Machine;
-            if (res == ContentDialogResult.Secondary) return AdmxPolicySection.User;
-            return null;
-        }
-
-        private async Task OpenEditDialogForPolicyAsync(PolicyPlusPolicy representative, bool ensureFront = false)
-        {
-            if (_bundle is null) return;
-            if (_compSource is null || _userSource is null || _loader is null)
-            { _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false); _compSource = _loader.OpenSource(); _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource(); }
-
-            var displayName = representative.DisplayName;
-            _nameGroups.TryGetValue(displayName, out var groupList);
-            groupList ??= _allPolicies.Where(p => string.Equals(p.DisplayName, displayName, StringComparison.InvariantCultureIgnoreCase)).ToList();
-
-            PolicyPlusPolicy targetPolicy = groupList.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.User)
-                                        ?? groupList.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Machine)
-                                        ?? representative;
-
-            var initialSection = targetPolicy.RawPolicy.Section == AdmxPolicySection.Both
-                ? AdmxPolicySection.User
-                : targetPolicy.RawPolicy.Section;
-
-            if (App.TryActivateExistingEdit(targetPolicy.UniqueID))
-                return;
-
-            var compLoader = _useTempPol && _tempPolCompPath != null
-                ? new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolCompPath, false)
-                : new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-            var userLoader = _useTempPol && _tempPolUserPath != null
-                ? new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolUserPath, true)
-                : new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true);
-
-            var win = new EditSettingWindow();
-            win.Initialize(targetPolicy,
-                initialSection,
-                _bundle!, _compSource!, _userSource!,
-                compLoader, userLoader,
-                new Dictionary<string, string>(), new Dictionary<string, string>());
-            win.Saved += (s, e) => MarkDirty();
-            win.Activate();
-            WindowHelpers.BringToFront(win);
-
-            if (ensureFront)
-            {
-                await Task.Delay(150);
-                try { WindowHelpers.BringToFront(win); } catch { }
-            }
-        }
-
-        public async Task OpenEditDialogForPolicyIdAsync(string policyId, bool ensureFront)
-        {
-            if (_bundle == null) return;
-            PolicyPlusPolicy? representative = _allPolicies.FirstOrDefault(p => p.UniqueID == policyId);
-            if (representative == null)
-            {
-                if (!_bundle.Policies.TryGetValue(policyId, out var fromBundle)) return;
-                representative = fromBundle;
-            }
-            await OpenEditDialogForPolicyAsync(representative, ensureFront);
-        }
-
-        public async Task OpenEditDialogForPolicyIdAsync(string policyId, AdmxPolicySection preferredSection, bool ensureFront)
-        {
-            if (_bundle == null) return;
-            if (_compSource is null || _userSource is null || _loader is null)
-            { _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false); _compSource = _loader.OpenSource(); _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource(); }
-
-            if (!_bundle.Policies.TryGetValue(policyId, out var policy))
-            {
-                policy = _allPolicies.FirstOrDefault(p => p.UniqueID == policyId);
-                if (policy == null) return;
-            }
-
-            var compLoader = _useTempPol && _tempPolCompPath != null
-                ? new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolCompPath, false)
-                : new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-            var userLoader = _useTempPol && _tempPolUserPath != null
-                ? new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolUserPath, true)
-                : new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true);
-
-            var win = new EditSettingWindow();
-            win.Initialize(policy, preferredSection, _bundle!, _compSource!, _userSource!, compLoader, userLoader, new Dictionary<string, string>(), new Dictionary<string, string>());
-            win.Saved += (s, e) => MarkDirty();
-            win.Activate();
-            WindowHelpers.BringToFront(win);
-            if (ensureFront)
-            {
-                await Task.Delay(150);
-                try { WindowHelpers.BringToFront(win); } catch { }
-            }
-        }
-
-        private void MarkDirty()
-        {
-            UpdateUnsavedIndicator();
-        }
-
-        private PolicyPlusPolicy? GetContextMenuPolicy(object sender)
-        {
-            // Items in the list now bind ContextFlyout Tag to Policy if available
-            if (sender is FrameworkElement fe)
-            {
-                if (fe.Tag is PolicyPlusPolicy p1) return p1;
-                if (fe.DataContext is PolicyListRow row && row.Policy != null) return row.Policy;
-            }
-            return null;
-        }
-
-        private void SaveAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        {
-            BtnSave_Click(this, new RoutedEventArgs());
-            args.Handled = true;
+            if (LoaderInfo != null) LoaderInfo.Text = "Temp POL (Comp/User)";
         }
 
         private void PolicyList_RightTapped(object sender, RightTappedRoutedEventArgs e) { }
@@ -986,7 +373,7 @@ namespace PolicyPlus.WinUI3
         private void BtnViewFormatted_Click(object sender, RoutedEventArgs e)
         {
             var row = PolicyList?.SelectedItem as PolicyListRow; var p = row?.Policy; if (p is null || _bundle is null) return;
-            var win = new Windows.DetailPolicyFormattedWindow();
+            var win = new DetailPolicyFormattedWindow();
             win.Initialize(p, _bundle, _compSource ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource(), _userSource ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource(), p.RawPolicy.Section);
             win.Activate();
         }
@@ -1012,78 +399,6 @@ namespace PolicyPlus.WinUI3
         private void BtnFind_Click(object sender, RoutedEventArgs e) { SearchBox.Focus(FocusState.Programmatic); }
         private void BtnFindReg_Click(object sender, RoutedEventArgs e) { SearchBox.Focus(FocusState.Programmatic); }
         private void BtnFindId_Click(object sender, RoutedEventArgs e) { SearchBox.Focus(FocusState.Programmatic); }
-        private async Task<(bool ok, string? error)> SavePendingAsync(PendingChange[] items)
-        {
-            if (items == null || items.Length == 0) return (true, null);
-            if (_bundle == null) return (false, "No ADMX bundle loaded");
-
-            (string? compBase64, string? userBase64) = (null, null);
-            try
-            {
-                var requests = items.Select(c => new PolicyChangeRequest
-                {
-                    PolicyId = c.PolicyId,
-                    Scope = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? PolicyTargetScope.User : PolicyTargetScope.Machine,
-                    DesiredState = c.DesiredState,
-                    Options = c.Options
-                }).ToList();
-                var b64 = PolicySavePipeline.BuildLocalGpoBase64(_bundle, requests);
-                compBase64 = b64.machineBase64; userBase64 = b64.userBase64;
-            }
-            catch (Exception ex)
-            {
-                return (false, ex.Message);
-            }
-
-            var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(compBase64, userBase64, triggerRefresh: true);
-            return (res.ok, res.error);
-        }
-
-        private async void BtnSave_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var pending = PendingChangesService.Instance.Pending.ToArray();
-                if (pending.Length > 0)
-                {
-                    SetBusy(true);
-                    var (ok, err) = await SavePendingAsync(pending);
-                    SetBusy(false);
-
-                    if (ok)
-                    {
-                        PendingChangesService.Instance.Applied(pending);
-                        RefreshLocalSources();
-                        UpdateUnsavedIndicator();
-                        ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-                        ShowInfo("Saved.", InfoBarSeverity.Success);
-                        try { Saved?.Invoke(this, EventArgs.Empty); } catch { }
-                    }
-                    else
-                    {
-                        ShowInfo("Save failed: " + (err ?? "unknown"), InfoBarSeverity.Error);
-                    }
-                }
-            }
-            catch
-            {
-                SetBusy(false);
-            }
-        }
-
-        private void ContextViewFormatted_Click(object sender, RoutedEventArgs e) { BtnViewFormatted_Click(sender, e); }
-        private void ContextCopyName_Click(object sender, RoutedEventArgs e)
-        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy; if (p!=null) { var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(p.DisplayName); Clipboard.SetContent(dp);} }
-        private void ContextCopyId_Click(object sender, RoutedEventArgs e)
-        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy; if (p!=null) { var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(p.UniqueID); Clipboard.SetContent(dp);} }
-        private void ContextCopyPath_Click(object sender, RoutedEventArgs e)
-        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy; if (p==null) return; var sb=new StringBuilder(); var c=p.Category; var stack=new Stack<string>(); while(c!=null){stack.Push(c.DisplayName); c=c.Parent;} sb.AppendLine("Administrative Templates"); foreach(var name in stack) sb.AppendLine("+ "+name); sb.AppendLine("+ "+p.DisplayName); var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(sb.ToString()); Clipboard.SetContent(dp); }
-        private void ContextRevealInTree_Click(object sender, RoutedEventArgs e)
-        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy; if (p==null||CategoryTree==null) return; _selectedCategory=p.Category; SelectCategoryInTree(_selectedCategory); UpdateSearchPlaceholder(); ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); }
-        private void ContextCopyRegPaths_Click(object sender, RoutedEventArgs e)
-        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy; if (p==null) return; var list=PolicyProcessing.GetReferencedRegistryValues(p).Select(kv=>$"{kv.Key} [{kv.Value}]"); var dp=new DataPackage{RequestedOperation=DataPackageOperation.Copy}; dp.SetText(string.Join("\r\n",list)); Clipboard.SetContent(dp); }
-        private void ContextCopyRegExport_Click(object sender, RoutedEventArgs e)
-        { ShowInfo("Copy .reg export not implemented in this build."); }
 
         private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
         {
@@ -1099,263 +414,6 @@ namespace PolicyPlus.WinUI3
             }
             UpdateSearchPlaceholder();
             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-        }
-
-        private void CategoryTree_ItemInvoked(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewItemInvokedEventArgs args)
-        {
-            var cat = args.InvokedItem as PolicyPlusCategory;
-            if (cat == null) return;
-            _selectedCategory = cat;
-            UpdateSearchPlaceholder();
-            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-            SelectCategoryInTree(cat);
-
-            var now = DateTime.UtcNow;
-            if (!string.IsNullOrEmpty(_recentDoubleTapCategoryId)
-                && string.Equals(_recentDoubleTapCategoryId, cat.UniqueID, StringComparison.OrdinalIgnoreCase)
-                && (now - _recentDoubleTapAt).TotalMilliseconds < 500)
-            {
-                return;
-            }
-
-            // Fallback for double-clicking the chevron: two quick invokes on same item => toggle expansion once
-            if (!string.IsNullOrEmpty(_lastInvokedCatId)
-                && string.Equals(_lastInvokedCatId, cat.UniqueID, StringComparison.OrdinalIgnoreCase)
-                && (now - _lastInvokedAt).TotalMilliseconds < 350)
-            {
-                var node = FindNodeByCategory(sender.RootNodes, cat.UniqueID);
-                if (node != null) node.IsExpanded = !node.IsExpanded;
-                _lastInvokedCatId = null;
-                return;
-            }
-
-            _lastInvokedCatId = cat.UniqueID;
-            _lastInvokedAt = now;
-        }
-
-        private void CategoryTree_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            if (CategoryTree == null) return;
-            var dep = e.OriginalSource as DependencyObject;
-            var container = FindAncestorTreeViewItem(dep);
-            Microsoft.UI.Xaml.Controls.TreeViewNode? node = null;
-            if (container != null)
-                node = CategoryTree.NodeFromContainer(container);
-            if (node == null)
-                node = (e.OriginalSource as FrameworkElement)?.DataContext as Microsoft.UI.Xaml.Controls.TreeViewNode;
-            if (node == null)
-                node = CategoryTree.SelectedNode;
-            if (node == null) return;
-
-            _lastTapWasExpanded = node.IsExpanded;
-            if (node.Content is PolicyPlusCategory cat)
-                _lastTapCatId = cat.UniqueID;
-            else
-                _lastTapCatId = null;
-            _lastTapAt = DateTime.UtcNow;
-        }
-
-        private void CategoryTree_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
-        {
-            if (CategoryTree == null) return;
-
-            var dep = e.OriginalSource as DependencyObject;
-            var container = FindAncestorTreeViewItem(dep);
-
-            Microsoft.UI.Xaml.Controls.TreeViewNode? node = null;
-            if (container != null)
-            {
-                node = CategoryTree.NodeFromContainer(container);
-            }
-            if (node == null)
-            {
-                node = (e.OriginalSource as FrameworkElement)?.DataContext as Microsoft.UI.Xaml.Controls.TreeViewNode;
-            }
-            if (node == null)
-            {
-                node = CategoryTree.SelectedNode;
-            }
-            if (node == null) return;
-
-            e.Handled = true;
-
-            bool desiredExpanded;
-            if (node.Content is PolicyPlusCategory cat0
-                && !string.IsNullOrEmpty(_lastTapCatId)
-                && string.Equals(_lastTapCatId, cat0.UniqueID, StringComparison.OrdinalIgnoreCase)
-                && (DateTime.UtcNow - _lastTapAt).TotalMilliseconds < 600)
-            {
-                desiredExpanded = !_lastTapWasExpanded; // enforce single toggle relative to pre-tap state
-            }
-            else
-            {
-                desiredExpanded = !node.IsExpanded; // fallback
-            }
-            node.IsExpanded = desiredExpanded;
-
-            if (node.Content is PolicyPlusCategory cat)
-            {
-                _selectedCategory = cat;
-                UpdateSearchPlaceholder();
-                ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-                _suppressCategorySelectionChanged = true;
-                try { CategoryTree.SelectedNode = node; }
-                finally { _suppressCategorySelectionChanged = false; }
-
-                _recentDoubleTapCategoryId = cat.UniqueID;
-                _recentDoubleTapAt = DateTime.UtcNow;
-            }
-        }
-
-        private static TreeViewItem? FindAncestorTreeViewItem(DependencyObject? start)
-        {
-            while (start != null)
-            {
-                if (start is TreeViewItem tvi) return tvi;
-                start = VisualTreeHelper.GetParent(start);
-            }
-            return null;
-        }
-
-        private void ToggleTempPolMenu_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is ToggleMenuFlyoutItem t)
-            {
-                ChkUseTempPol.IsChecked = t.IsChecked;
-                ChkUseTempPol_Checked(ChkUseTempPol, new RoutedEventArgs());
-            }
-        }
-
-        private void BuildCategoryTree()
-        {
-            if (CategoryTree == null || _bundle == null) return;
-            _suppressCategorySelectionChanged = true;
-            try
-            {
-                var oldMode = CategoryTree.SelectionMode;
-                CategoryTree.SelectionMode = Microsoft.UI.Xaml.Controls.TreeViewSelectionMode.None;
-
-                CategoryTree.RootNodes.Clear();
-                foreach (var kv in _bundle.Categories.OrderBy(k => k.Value.DisplayName))
-                {
-                    var cat = kv.Value;
-                    if (_hideEmptyCategories && IsCategoryEmpty(cat))
-                        continue;
-                    var node = new Microsoft.UI.Xaml.Controls.TreeViewNode() { Content = cat, IsExpanded = false };
-                    BuildChildCategoryNodes(node, cat);
-                    if (node.Children.Count > 0 || !_hideEmptyCategories)
-                        CategoryTree.RootNodes.Add(node);
-                }
-
-                CategoryTree.SelectionMode = oldMode;
-
-                if (_selectedCategory != null)
-                {
-                    SelectCategoryInTree(_selectedCategory);
-                }
-            }
-            finally
-            {
-                _suppressCategorySelectionChanged = false;
-            }
-        }
-
-        private void BuildChildCategoryNodes(Microsoft.UI.Xaml.Controls.TreeViewNode parentNode, PolicyPlusCategory parentCat)
-        {
-            foreach (var child in parentCat.Children.OrderBy(c => c.DisplayName))
-            {
-                if (_hideEmptyCategories && IsCategoryEmpty(child))
-                    continue;
-                var node = new Microsoft.UI.Xaml.Controls.TreeViewNode() { Content = child };
-                parentNode.Children.Add(node);
-                if (child.Children.Count > 0)
-                    BuildChildCategoryNodes(node, child);
-            }
-        }
-
-        private void SelectCategoryInTree(PolicyPlusCategory? category)
-        {
-            if (CategoryTree == null || category == null) return;
-            _suppressCategorySelectionChanged = true;
-            try
-            {
-                // Find the TreeViewNode for the category anywhere in the tree
-                Microsoft.UI.Xaml.Controls.TreeViewNode? target = FindNodeByCategory(CategoryTree.RootNodes, category.UniqueID);
-                if (target == null) return;
-
-                // Expand parents so the node is realized
-                var parent = target.Parent;
-                while (parent != null)
-                {
-                    parent.IsExpanded = true;
-                    parent = parent.Parent;
-                }
-
-                // Select the node directly
-                CategoryTree.SelectedNode = target;
-
-                // Bring into view (after layout if needed)
-                CategoryTree.UpdateLayout();
-                var container = CategoryTree.ContainerFromNode(target) as TreeViewItem;
-                if (container != null)
-                {
-                    container.StartBringIntoView();
-                }
-                else
-                {
-                    _ = DispatcherQueue.TryEnqueue(async () =>
-                    {
-                        await Task.Delay(100);
-                        var c2 = CategoryTree.ContainerFromNode(target) as TreeViewItem;
-                        c2?.StartBringIntoView();
-                    });
-                }
-            }
-            finally
-            {
-                _suppressCategorySelectionChanged = false;
-            }
-        }
-
-        private Microsoft.UI.Xaml.Controls.TreeViewNode? FindNodeByCategory(System.Collections.Generic.IList<Microsoft.UI.Xaml.Controls.TreeViewNode> nodes, string uniqueId)
-        {
-            foreach (var n in nodes)
-            {
-                if (n.Content is PolicyPlusCategory pc && string.Equals(pc.UniqueID, uniqueId, StringComparison.OrdinalIgnoreCase))
-                    return n;
-                var child = FindNodeByCategory(n.Children, uniqueId);
-                if (child != null) return child;
-            }
-            return null;
-        }
-
-        private bool IsCategoryEmpty(PolicyPlusCategory cat)
-        {
-            if (cat.Policies.Count > 0)
-                return false;
-            foreach (var child in cat.Children)
-            {
-                if (!IsCategoryEmpty(child))
-                    return false;
-            }
-            return true;
-        }
-
-        private bool HasAnyVisiblePolicyInCategory(PolicyPlusCategory cat)
-        {
-            try
-            {
-                EnsureLocalSources();
-                return ViewModels.CategoryVisibilityEvaluator.IsCategoryVisible(cat, _allPolicies, _appliesFilter, _configuredOnly, _compSource, _userSource);
-            }
-            catch { return true; }
-        }
-
-        private void BtnPendingChanges_Click(object sender, RoutedEventArgs e)
-        {
-            var win = new PendingChangesWindow();
-            win.Activate();
-            try { WindowHelpers.BringToFront(win); } catch { }
         }
 
         private async void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -1382,14 +440,12 @@ namespace PolicyPlus.WinUI3
             DependencyObject? dep = e.OriginalSource as DependencyObject;
             object? item = null;
 
-            // Prefer the DataGridRow's DataContext
             var dgRow = FindAncestorDataGridRow(dep);
             if (dgRow != null)
             {
                 item = dgRow.DataContext;
             }
 
-            // Fallbacks
             if (item == null)
                 item = (e.OriginalSource as FrameworkElement)?.DataContext;
             if (item == null)
@@ -1423,18 +479,14 @@ namespace PolicyPlus.WinUI3
 
         private void UpdateSearchPlaceholder()
         {
-            if (SearchBox == null)
-                return;
+            if (SearchBox == null) return;
             if (_selectedCategory != null)
                 SearchBox.PlaceholderText = $"Search policies (name, id) in {_selectedCategory.DisplayName}";
             else
                 SearchBox.PlaceholderText = "Search policies (name, id)";
         }
 
-        private void PolicyList_ItemClick(object sender, ItemClickEventArgs e)
-        {
-            // no-op: switched to double-click only
-        }
+        private void PolicyList_ItemClick(object sender, ItemClickEventArgs e) { }
 
         private async void BtnEditSelected_Click(object sender, RoutedEventArgs e)
         {
@@ -1446,19 +498,8 @@ namespace PolicyPlus.WinUI3
 
         private async void ContextEdit_Click(object sender, RoutedEventArgs e)
         {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy;
+            var p = (sender as FrameworkElement)?.Tag as PolicyPlusPolicy ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy;
             if (p != null) await OpenEditDialogForPolicyAsync(p, ensureFront: false);
-        }
-
-        private void ToggleHideEmptyMenu_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is ToggleMenuFlyoutItem t)
-            {
-                _hideEmptyCategories = t.IsChecked;
-                try { _config?.SetValue("HideEmptyCategories", _hideEmptyCategories ? 1 : 0); } catch { }
-                BuildCategoryTree();
-                ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-            }
         }
 
         private void ViewDetailsToggle_Click(object sender, RoutedEventArgs e)
@@ -1471,115 +512,6 @@ namespace PolicyPlus.WinUI3
             }
         }
 
-        private void PreserveScrollPosition()
-        {
-            try
-            {
-                if (PolicyList == null) return;
-                EnsureScrollViewerHook();
-                var current = _policyListScroll?.VerticalOffset;
-                var known = _lastKnownVerticalOffset;
-                _savedVerticalOffset = (known.HasValue ? known : current);
-
-                if (PolicyList.SelectedItem is PolicyListRow sel && sel.Policy != null)
-                {
-                    _savedSelectedPolicyId = sel.Policy.UniqueID;
-                    var row = FindRowContainerForItem(PolicyList.SelectedItem);
-                    if (row != null && _policyListScroll != null)
-                    {
-                        try
-                        {
-                            var pt = row.TransformToVisual(_policyListScroll).TransformPoint(new Point(0, 0));
-                            _savedAnchorViewportY = pt.Y;
-                            var vh = _policyListScroll.ViewportHeight;
-                            _savedAnchorRatio = (vh > 0) ? Math.Clamp(_savedAnchorViewportY.Value / vh, 0.0, 1.0) : null;
-                        }
-                        catch { _savedAnchorViewportY = null; _savedAnchorRatio = null; }
-                    }
-                    else
-                    {
-                        _savedAnchorViewportY = null; _savedAnchorRatio = null;
-                    }
-                }
-                else
-                {
-                    _savedSelectedPolicyId = null;
-                    _savedAnchorViewportY = null; _savedAnchorRatio = null;
-                }
-            }
-            catch { }
-        }
-
-        private void RestorePositionOrSelection()
-        {
-            if (!string.IsNullOrEmpty(_savedSelectedPolicyId))
-                return;
-            RestoreScrollPosition();
-        }
-
-        private void EnsureScrollViewerHook()
-        {
-            try
-            {
-                if (PolicyList == null) return;
-                var sc = FindDescendantScrollViewer(PolicyList);
-                if (!object.ReferenceEquals(sc, _policyListScroll))
-                {
-                    if (_policyListScroll != null)
-                        _policyListScroll.ViewChanged -= PolicyScroll_ViewChanged;
-                    _policyListScroll = sc;
-                    if (_policyListScroll != null)
-                    {
-                        _lastKnownVerticalOffset = _policyListScroll.VerticalOffset;
-                        _policyListScroll.ViewChanged += PolicyScroll_ViewChanged;
-                    }
-                }
-            }
-            catch { }
-        }
-
-        private void PolicyScroll_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
-        {
-            try { _lastKnownVerticalOffset = _policyListScroll?.VerticalOffset; } catch { }
-        }
-
-        private DataGridRow? FindRowContainerForItem(object? item)
-        {
-            if (item == null || PolicyList == null) return null;
-            try { return FindRowContainerRecursive(PolicyList, item); } catch { return null; }
-        }
-
-        private DataGridRow? FindRowContainerRecursive(DependencyObject root, object item)
-        {
-            int count = VisualTreeHelper.GetChildrenCount(root);
-            for (int i = 0; i < count; i++)
-            {
-                var child = VisualTreeHelper.GetChild(root, i);
-                if (child is DataGridRow row)
-                {
-                    if (ReferenceEquals(row.DataContext, item) || Equals(row.DataContext, item))
-                        return row;
-                }
-                var found = FindRowContainerRecursive(child, item);
-                if (found != null) return found;
-            }
-            return null;
-        }
-
-        private static ScrollViewer? FindDescendantScrollViewer(DependencyObject root)
-        {
-            if (root == null) return null;
-            int count = VisualTreeHelper.GetChildrenCount(root);
-            for (int i = 0; i < count; i++)
-            {
-                var child = VisualTreeHelper.GetChild(root, i);
-                if (child is ScrollViewer sv) return sv;
-                var found = FindDescendantScrollViewer(child);
-                if (found != null) return found;
-            }
-            return null;
-        }
-
         public void RefreshLocalSources()
         {
             try
@@ -1587,99 +519,33 @@ namespace PolicyPlus.WinUI3
                 _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
                 _compSource = _loader.OpenSource();
                 _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-                if (LoaderInfo != null)
-                    LoaderInfo.Text = _loader.GetDisplayInfo();
+                if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
             }
             catch { }
         }
 
-        private void TryRestoreSelectionAsync(IList<object> items)
+        private void RefreshList()
         {
-            if (PolicyList == null) return;
-            if (string.IsNullOrEmpty(_savedSelectedPolicyId)) { SetDetails(null); RestoreScrollPosition(); return; }
-
-            _ = DispatcherQueue.TryEnqueue(async () =>
-            {
-                try
-                {
-                    await Task.Delay(16);
-                    object? match = null;
-                    foreach (var it in items)
-                    {
-                        if (it is PolicyListRow row && row.Policy != null && string.Equals(row.Policy.UniqueID, _savedSelectedPolicyId, StringComparison.OrdinalIgnoreCase))
-                        { match = it; break; }
-                    }
-                    if (match != null)
-                    {
-                        PolicyList.SelectedItem = match;
-                        EnsureScrollViewerHook();
-                        try { PolicyList.ScrollIntoView(match, null); } catch { }
-
-                        await Task.Delay(16);
-                        var rowContainer = FindRowContainerForItem(match);
-                        if (rowContainer != null)
-                        {
-                            try
-                            {
-                                if (_savedAnchorRatio.HasValue)
-                                {
-                                    var opts = new BringIntoViewOptions
-                                    {
-                                        VerticalAlignmentRatio = _savedAnchorRatio.Value,
-                                        AnimationDesired = false
-                                    };
-                                    rowContainer.StartBringIntoView(opts);
-                                }
-                                else
-                                {
-                                    rowContainer.StartBringIntoView();
-                                }
-                            }
-                            catch { }
-                        }
-                    }
-                    else
-                    {
-                        SetDetails(null);
-                        RestoreScrollPosition();
-                    }
-                }
-                finally
-                {
-                    _savedSelectedPolicyId = null;
-                    _savedAnchorViewportY = null; _savedAnchorRatio = null;
-                }
-            });
+            try { ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); } catch { }
         }
 
-        private void RestoreScrollPosition()
+        private async Task<AdmxPolicySection?> PromptSectionChoiceAsync()
         {
-            try
+            var dlg = new ContentDialog
             {
-                if (PolicyList == null) return;
-                if (!_savedVerticalOffset.HasValue) return;
-                double offset = _savedVerticalOffset.Value;
-
-                EnsureScrollViewerHook();
-                var sc = _policyListScroll ?? FindDescendantScrollViewer(PolicyList);
-                sc?.ChangeView(null, offset, null, true);
-            }
-            catch { }
-        }
-
-        private void CategoryTree_SelectionChanged(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewSelectionChangedEventArgs args)
-        {
-            if (_suppressCategorySelectionChanged) return;
-            if (sender.SelectedNodes != null && sender.SelectedNodes.Count > 0)
-            {
-                var cat = sender.SelectedNodes.FirstOrDefault()?.Content as PolicyPlusCategory;
-                if (cat != null)
-                {
-                    _selectedCategory = cat;
-                    UpdateSearchPlaceholder();
-                    ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-                }
-            }
+                Title = "Choose target",
+                Content = new TextBlock { Text = "Edit Computer or User configuration?" },
+                PrimaryButtonText = "Computer",
+                SecondaryButtonText = "User",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary
+            };
+            var xr = RootGrid?.XamlRoot ?? (this.Content as FrameworkElement)?.XamlRoot;
+            if (xr != null) dlg.XamlRoot = xr;
+            var res = await dlg.ShowAsync();
+            if (res == ContentDialogResult.Primary) return AdmxPolicySection.Machine;
+            if (res == ContentDialogResult.Secondary) return AdmxPolicySection.User;
+            return null;
         }
     }
 }
