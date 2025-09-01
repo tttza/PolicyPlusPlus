@@ -102,7 +102,19 @@ namespace PolicyPlus.WinUI3
             bool flat = searching || _configuredOnly;
             IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(includeSubcategories: flat);
             if (searching)
-                seq = seq.Where(p => p.DisplayName.Contains(query, StringComparison.InvariantCultureIgnoreCase) || p.UniqueID.Contains(query, StringComparison.InvariantCultureIgnoreCase));
+            {
+                var qLower = query.ToLowerInvariant();
+                // Intersect base filter set with search index for fast OrdinalContains
+                var allowed = new HashSet<string>(seq.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase);
+                var matched = new List<PolicyPlusPolicy>();
+                foreach (var e in _searchIndex)
+                {
+                    if (!allowed.Contains(e.Policy.UniqueID)) continue;
+                    if (e.NameLower.Contains(qLower) || e.IdLower.Contains(qLower))
+                        matched.Add(e.Policy);
+                }
+                seq = matched;
+            }
 
             BindSequenceEnhanced(seq, flat);
             RestorePositionOrSelection();

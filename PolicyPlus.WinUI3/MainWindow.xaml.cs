@@ -106,6 +106,11 @@ namespace PolicyPlus.WinUI3
         // Typing suppression flag for navigation pushes
         private bool _navTyping;
 
+        // Lightweight search index for faster case-insensitive substring matching
+        private List<(PolicyPlusPolicy Policy, string NameLower, string IdLower)> _searchIndex = new();
+        private Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower)> _searchIndexById = new(StringComparer.OrdinalIgnoreCase);
+        private CancellationTokenSource? _searchDebounceCts;
+
         public MainWindow()
         {
             this.InitializeComponent();
@@ -296,10 +301,33 @@ namespace PolicyPlus.WinUI3
                 BuildCategoryTree();
                 _allPolicies = _bundle.Policies.Values.ToList();
                 _totalGroupCount = _allPolicies.GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).Count();
+                RebuildSearchIndex();
                 ApplyFiltersAndBind();
             }
             finally { SetBusy(false); }
             await Task.CompletedTask;
+        }
+
+        private void RebuildSearchIndex()
+        {
+            try
+            {
+                _searchIndex = _allPolicies.Select(p => (
+                    Policy: p,
+                    NameLower: (p.DisplayName ?? string.Empty).ToLowerInvariant(),
+                    IdLower: (p.UniqueID ?? string.Empty).ToLowerInvariant()
+                )).ToList();
+                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower)>(StringComparer.OrdinalIgnoreCase);
+                foreach (var e in _searchIndex)
+                {
+                    _searchIndexById[e.Policy.UniqueID] = e;
+                }
+            }
+            catch
+            {
+                _searchIndex = new List<(PolicyPlusPolicy, string, string)>();
+                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy, string, string)>(StringComparer.OrdinalIgnoreCase);
+            }
         }
 
         private void BtnLoadLocalGpo_Click(object sender, RoutedEventArgs e)
@@ -329,15 +357,67 @@ namespace PolicyPlus.WinUI3
             {
                 _navTyping = true;
                 var q = (SearchBox.Text ?? string.Empty).Trim();
-                var baseSeq = BaseSequenceForFilters(includeSubcategories: true);
-                var suggestions = baseSeq.Where(p => p.DisplayName.Contains(q, StringComparison.InvariantCultureIgnoreCase))
-                                         .Take(10)
-                                         .Select(p => p.DisplayName)
-                                         .Distinct(StringComparer.InvariantCultureIgnoreCase)
-                                         .ToList();
-                SearchBox.ItemsSource = suggestions;
-                ApplyFiltersAndBind(q);
-                UpdateNavButtons();
+
+                // Debounce UI work to avoid heavy refresh on every keystroke
+                _searchDebounceCts?.Cancel();
+                _searchDebounceCts = new CancellationTokenSource();
+                var token = _searchDebounceCts.Token;
+                _ = Task.Run(async () =>
+                {
+                    try { await Task.Delay(120, token); } catch { return; }
+                    if (token.IsCancellationRequested) return;
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        try
+                        {
+                            var baseSeq = BaseSequenceForFilters(includeSubcategories: true);
+                            var allowed = new HashSet<string>(baseSeq.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase);
+                            var qLower = q.ToLowerInvariant();
+                            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            var list = new List<string>(10);
+
+                            // If the allowed set is small, iterate it; otherwise scan the full index and filter by allowed
+                            bool smallSubset = allowed.Count > 0 && allowed.Count < (_allPolicies.Count / 2);
+                            if (smallSubset)
+                            {
+                                foreach (var id in allowed)
+                                {
+                                    if (!_searchIndexById.TryGetValue(id, out var entry)) continue;
+                                    if (string.IsNullOrEmpty(qLower) || entry.NameLower.Contains(qLower))
+                                    {
+                                        var name = entry.Policy.DisplayName ?? string.Empty;
+                                        if (seen.Add(name))
+                                        {
+                                            list.Add(name);
+                                            if (list.Count >= 10) break;
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                foreach (var e2 in _searchIndex)
+                                {
+                                    if (!allowed.Contains(e2.Policy.UniqueID)) continue;
+                                    if (string.IsNullOrEmpty(qLower) || e2.NameLower.Contains(qLower))
+                                    {
+                                        var name = e2.Policy.DisplayName ?? string.Empty;
+                                        if (seen.Add(name))
+                                        {
+                                            list.Add(name);
+                                            if (list.Count >= 10) break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            SearchBox.ItemsSource = list;
+                            ApplyFiltersAndBind(q);
+                            UpdateNavButtons();
+                        }
+                        catch { }
+                    });
+                });
             }
         }
 
