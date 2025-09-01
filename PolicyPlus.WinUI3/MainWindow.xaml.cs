@@ -29,6 +29,8 @@ using PolicyPlus.WinUI3.Services;
 using PolicyPlus.WinUI3.Models;
 using System.IO;
 using PolicyPlus; // Core pipeline
+using CommunityToolkit.WinUI.UI.Controls;
+using Windows.Foundation;
 
 namespace PolicyPlus.WinUI3
 {
@@ -69,6 +71,18 @@ namespace PolicyPlus.WinUI3
         private CancellationTokenSource? _infoBarCloseCts;
 
         private double? _savedVerticalOffset;
+        private string? _savedSelectedPolicyId;
+
+        // Track scroll viewer and last-known user offset to survive rapid refreshes
+        private ScrollViewer? _policyListScroll;
+        private double? _lastKnownVerticalOffset;
+
+        // Debounce refresh caused by pending changes traffic
+        private CancellationTokenSource? _refreshDebounceCts;
+
+        // Preserve the selected row's viewport Y so it can be put back to the same on-screen position
+        private double? _savedAnchorViewportY;
+        private double? _savedAnchorRatio;
 
         // Persisted column prefs keys
         private const string ColIdKey = "Columns.ShowId";
@@ -100,8 +114,47 @@ namespace PolicyPlus.WinUI3
             try
             {
                 PendingChangesWindow.ChangesAppliedOrDiscarded += (_, __) => { UpdateUnsavedIndicator(); RefreshList(); };
-                PendingChangesService.Instance.Pending.CollectionChanged += (_, __) => { UpdateUnsavedIndicator(); RefreshList(); };
+                PendingChangesService.Instance.Pending.CollectionChanged += (_, __) => { UpdateUnsavedIndicator(); RefreshVisibleRows(); };
                 UpdateUnsavedIndicator();
+            }
+            catch { }
+        }
+
+        private void RefreshVisibleRows()
+        {
+            try
+            {
+                if (PolicyList?.ItemsSource is System.Collections.IEnumerable seq)
+                {
+                    foreach (var it in seq)
+                    {
+                        if (it is Models.PolicyListRow row)
+                        {
+                            row.RefreshStateFromSourcesAndPending(_compSource, _userSource);
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private void ScheduleRefreshList()
+        {
+            try
+            {
+                // Freeze current last-known user offset to avoid capturing a temporary 0 during rebind
+                if (_lastKnownVerticalOffset.HasValue)
+                    _savedVerticalOffset = _lastKnownVerticalOffset;
+
+                _refreshDebounceCts?.Cancel();
+                _refreshDebounceCts = new CancellationTokenSource();
+                var token = _refreshDebounceCts.Token;
+                _ = Task.Run(async () =>
+                {
+                    try { await Task.Delay(60, token); } catch { return; }
+                    if (token.IsCancellationRequested) return;
+                    DispatcherQueue.TryEnqueue(() => ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty));
+                });
             }
             catch { }
         }
@@ -539,7 +592,7 @@ namespace PolicyPlus.WinUI3
 
             BindSequenceEnhanced(seq, flat);
 
-            RestoreScrollPosition();
+            RestorePositionOrSelection();
         }
 
         private void BindSequenceEnhanced(IEnumerable<PolicyPlusPolicy> seq, bool flat)
@@ -548,7 +601,6 @@ namespace PolicyPlus.WinUI3
 
             if (flat)
             {
-                // Show all individual policies when searching or configured-only (flat list)
                 var ordered = seq.OrderBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
                                  .ThenBy(p => p.UniqueID, StringComparer.InvariantCultureIgnoreCase)
                                  .ToList();
@@ -557,13 +609,11 @@ namespace PolicyPlus.WinUI3
                 var rows = ordered.Select(p => (object)PolicyListRow.FromPolicy(p, _compSource, _userSource)).ToList();
                 PolicyList.ItemsSource = rows;
 
-                // Show count against total number of policies
                 PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
-                SetDetails(null);
+                TryRestoreSelectionAsync(rows);
                 return;
             }
 
-            // Group policies by display name (original behavior when not searching and not configured-only)
             var grouped = seq.GroupBy(p => p.DisplayName, System.StringComparer.InvariantCultureIgnoreCase);
             _nameGroups = grouped.ToDictionary(g => g.Key, g => g.ToList(), StringComparer.InvariantCultureIgnoreCase);
             var representatives = grouped.Select(PickRepresentative).OrderBy(p => p.DisplayName).ToList();
@@ -589,14 +639,15 @@ namespace PolicyPlus.WinUI3
                 items.AddRange(children);
                 items.AddRange(groupRows);
                 PolicyList.ItemsSource = items;
+                TryRestoreSelectionAsync(items);
             }
             else
             {
                 PolicyList.ItemsSource = groupRows;
+                TryRestoreSelectionAsync(groupRows);
             }
 
             PolicyCount.Text = $"{_visiblePolicies.Count} / {_totalGroupCount} policies";
-            SetDetails(null);
         }
 
         private PolicyPlusPolicy PickRepresentative(IGrouping<string, PolicyPlusPolicy> g)
@@ -1182,7 +1233,7 @@ namespace PolicyPlus.WinUI3
             // Resolve the bound item in the simplest and most reliable way
             object? item = (e.OriginalSource as FrameworkElement)?.DataContext ?? PolicyList?.SelectedItem;
 
-            if (item is PolicyListRow row && row.Policy is PolicyPlusPolicy pol)
+            if (item is PolicyListRow row and { Policy: PolicyPlusPolicy pol })
             {
                 e.Handled = true;
                 _ = OpenEditDialogForPolicyAsync(pol, ensureFront: true);
@@ -1243,24 +1294,94 @@ namespace PolicyPlus.WinUI3
             try
             {
                 if (PolicyList == null) return;
-                var scroll = FindDescendantScrollViewer(PolicyList);
-                _savedVerticalOffset = scroll?.VerticalOffset;
+                EnsureScrollViewerHook();
+                var current = _policyListScroll?.VerticalOffset;
+                var known = _lastKnownVerticalOffset;
+                _savedVerticalOffset = (known.HasValue ? known : current);
+
+                if (PolicyList.SelectedItem is PolicyListRow sel && sel.Policy != null)
+                {
+                    _savedSelectedPolicyId = sel.Policy.UniqueID;
+                    var row = FindRowContainerForItem(PolicyList.SelectedItem);
+                    if (row != null && _policyListScroll != null)
+                    {
+                        try
+                        {
+                            var pt = row.TransformToVisual(_policyListScroll).TransformPoint(new Point(0, 0));
+                            _savedAnchorViewportY = pt.Y;
+                            var vh = _policyListScroll.ViewportHeight;
+                            _savedAnchorRatio = (vh > 0) ? Math.Clamp(_savedAnchorViewportY.Value / vh, 0.0, 1.0) : null;
+                        }
+                        catch { _savedAnchorViewportY = null; _savedAnchorRatio = null; }
+                    }
+                    else
+                    {
+                        _savedAnchorViewportY = null; _savedAnchorRatio = null;
+                    }
+                }
+                else
+                {
+                    _savedSelectedPolicyId = null;
+                    _savedAnchorViewportY = null; _savedAnchorRatio = null;
+                }
             }
             catch { }
         }
 
-        private void RestoreScrollPosition()
+        private void RestorePositionOrSelection()
+        {
+            if (!string.IsNullOrEmpty(_savedSelectedPolicyId))
+                return;
+            RestoreScrollPosition();
+        }
+
+        private void EnsureScrollViewerHook()
         {
             try
             {
                 if (PolicyList == null) return;
-                var scroll = FindDescendantScrollViewer(PolicyList);
-                if (scroll != null && _savedVerticalOffset.HasValue)
+                var sc = FindDescendantScrollViewer(PolicyList);
+                if (!object.ReferenceEquals(sc, _policyListScroll))
                 {
-                    scroll.ChangeView(null, _savedVerticalOffset.Value, null, true);
+                    if (_policyListScroll != null)
+                        _policyListScroll.ViewChanged -= PolicyScroll_ViewChanged;
+                    _policyListScroll = sc;
+                    if (_policyListScroll != null)
+                    {
+                        _lastKnownVerticalOffset = _policyListScroll.VerticalOffset;
+                        _policyListScroll.ViewChanged += PolicyScroll_ViewChanged;
+                    }
                 }
             }
             catch { }
+        }
+
+        private void PolicyScroll_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+        {
+            try { _lastKnownVerticalOffset = _policyListScroll?.VerticalOffset; } catch { }
+        }
+
+        private DataGridRow? FindRowContainerForItem(object? item)
+        {
+            if (item == null || PolicyList == null) return null;
+            try { return FindRowContainerRecursive(PolicyList, item); } catch { return null; }
+        }
+
+        private DataGridRow? FindRowContainerRecursive(DependencyObject root, object item)
+        {
+            int count = VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(root, i);
+                if (child is DataGridRow row)
+                {
+                    if (ReferenceEquals(row.DataContext, item) || Equals(row.DataContext, item))
+                        return row;
+                }
+                var found = FindRowContainerRecursive(child, item);
+                if (found != null) return found;
+            }
+            return null;
         }
 
         private static ScrollViewer? FindDescendantScrollViewer(DependencyObject root)
@@ -1286,6 +1407,80 @@ namespace PolicyPlus.WinUI3
                 _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
                 if (LoaderInfo != null)
                     LoaderInfo.Text = _loader.GetDisplayInfo();
+            }
+            catch { }
+        }
+
+        private void TryRestoreSelectionAsync(IList<object> items)
+        {
+            if (PolicyList == null) return;
+            if (string.IsNullOrEmpty(_savedSelectedPolicyId)) { SetDetails(null); RestoreScrollPosition(); return; }
+
+            _ = DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    await Task.Delay(16);
+                    object? match = null;
+                    foreach (var it in items)
+                    {
+                        if (it is PolicyListRow row && row.Policy != null && string.Equals(row.Policy.UniqueID, _savedSelectedPolicyId, StringComparison.OrdinalIgnoreCase))
+                        { match = it; break; }
+                    }
+                    if (match != null)
+                    {
+                        PolicyList.SelectedItem = match;
+                        EnsureScrollViewerHook();
+                        try { PolicyList.ScrollIntoView(match, null); } catch { }
+
+                        await Task.Delay(16);
+                        var rowContainer = FindRowContainerForItem(match);
+                        if (rowContainer != null)
+                        {
+                            try
+                            {
+                                if (_savedAnchorRatio.HasValue)
+                                {
+                                    var opts = new BringIntoViewOptions
+                                    {
+                                        VerticalAlignmentRatio = _savedAnchorRatio.Value,
+                                        AnimationDesired = false
+                                    };
+                                    rowContainer.StartBringIntoView(opts);
+                                }
+                                else
+                                {
+                                    rowContainer.StartBringIntoView();
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    else
+                    {
+                        SetDetails(null);
+                        RestoreScrollPosition();
+                    }
+                }
+                finally
+                {
+                    _savedSelectedPolicyId = null;
+                    _savedAnchorViewportY = null; _savedAnchorRatio = null;
+                }
+            });
+        }
+
+        private void RestoreScrollPosition()
+        {
+            try
+            {
+                if (PolicyList == null) return;
+                if (!_savedVerticalOffset.HasValue) return;
+                double offset = _savedVerticalOffset.Value;
+
+                EnsureScrollViewerHook();
+                var sc = _policyListScroll ?? FindDescendantScrollViewer(PolicyList);
+                sc?.ChangeView(null, offset, null, true);
             }
             catch { }
         }

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using PolicyPlus;
 using PolicyPlus.WinUI3.Models;
 using PolicyPlus.WinUI3.Services;
@@ -70,6 +69,21 @@ namespace PolicyPlusModTests.WinUI3
             var row = PolicyListRow.FromGroup(compPol, new[] { userPol, compPol }, comp, user);
             Assert.Equal("Enabled", row.ComputerStateText);
             Assert.Equal("Disabled", row.UserStateText);
+        }
+
+        [Fact(DisplayName = "FromGroup pending NotConfigured clears glyph overriding actual configured state")]
+        public void Group_Pending_NotConfigured_ClearsGlyph()
+        {
+            var (userPol, compPol) = MakePair();
+            var comp = new PolFile(); var user = new PolFile();
+            PolicyProcessing.SetPolicyState(user, userPol, PolicyState.Enabled, new Dictionary<string, object>());
+
+            PendingChangesService.Instance.Pending.Clear();
+            PendingChangesService.Instance.Add(new PendingChange { PolicyId = userPol.UniqueID, Scope = "User", DesiredState = PolicyState.NotConfigured });
+
+            var row = PolicyListRow.FromGroup(compPol, new[] { userPol, compPol }, comp, user);
+            Assert.Equal("Not configured", row.UserStateText);
+            Assert.Equal(string.Empty, row.UserGlyph);
         }
     }
 }
