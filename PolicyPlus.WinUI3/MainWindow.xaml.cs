@@ -67,9 +67,6 @@ namespace PolicyPlus.WinUI3
         // Prevents SelectionChanged from re-applying category during programmatic tree updates
         private bool _suppressCategorySelectionChanged;
 
-        // Debounce category select to avoid double-tap side effects
-        private CancellationTokenSource? _categorySelectCts;
-
         // Auto-close InfoBar cancellation
         private CancellationTokenSource? _infoBarCloseCts;
 
@@ -98,6 +95,19 @@ namespace PolicyPlus.WinUI3
         private const string ScaleKey = "UIScale"; // e.g. "100%"
         private const string ShowDetailsKey = "View.ShowDetails";
 
+        // One-time hook to ensure double-tap is captured even if handled by child controls
+        private bool _doubleTapHooked;
+
+        // Recent input tracking to reconcile ItemInvoked vs DoubleTapped
+        private string? _recentDoubleTapCategoryId;
+        private DateTime _recentDoubleTapAt;
+        private string? _lastInvokedCatId;
+        private DateTime _lastInvokedAt;
+        // Track pre-tap state to enforce deterministic double-click behavior
+        private string? _lastTapCatId;
+        private bool _lastTapWasExpanded;
+        private DateTime _lastTapAt;
+
         public MainWindow()
         {
             this.InitializeComponent();
@@ -108,6 +118,25 @@ namespace PolicyPlus.WinUI3
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
             };
+        }
+
+        private void HookDoubleTapHandlers()
+        {
+            if (_doubleTapHooked) return;
+            try
+            {
+                if (PolicyList != null)
+                {
+                    PolicyList.AddHandler(UIElement.DoubleTappedEvent, new DoubleTappedEventHandler(PolicyList_DoubleTapped), true);
+                }
+                if (CategoryTree != null)
+                {
+                    CategoryTree.AddHandler(UIElement.TappedEvent, new TappedEventHandler(CategoryTree_Tapped), true);
+                    CategoryTree.AddHandler(UIElement.DoubleTappedEvent, new DoubleTappedEventHandler(CategoryTree_DoubleTapped), true);
+                }
+                _doubleTapHooked = true;
+            }
+            catch { }
         }
 
         private void ApplyDetailsPaneVisibility()
@@ -125,7 +154,6 @@ namespace PolicyPlus.WinUI3
                 }
                 else
                 {
-                    // Save current heights to restore later
                     if (DetailRow.Height.Value > 0 || DetailRow.Height.IsStar)
                         _savedDetailRowHeight = DetailRow.Height;
                     if (SplitterRow.Height.Value > 0)
@@ -176,7 +204,6 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
-                // Freeze current last-known user offset to avoid capturing a temporary 0 during rebind
                 if (_lastKnownVerticalOffset.HasValue)
                     _savedVerticalOffset = _lastKnownVerticalOffset;
 
@@ -239,7 +266,6 @@ namespace PolicyPlus.WinUI3
 
         private void ColumnToggle_Click(object sender, RoutedEventArgs e)
         {
-            // Sync menu toggle -> hidden checkbox (named via Tag)
             if (sender is ToggleMenuFlyoutItem t && t.Tag is string name)
             {
                 if (RootGrid?.FindName(name) is CheckBox cb)
@@ -398,6 +424,9 @@ namespace PolicyPlus.WinUI3
             // Load column visibility preferences after XAML created
             LoadColumnPrefs();
             UpdateColumnVisibilityFromFlags();
+
+            // Ensure double-tap handlers are hooked even if events are marked handled by child elements
+            HookDoubleTapHandlers();
 
             try
             {
@@ -1059,14 +1088,13 @@ namespace PolicyPlus.WinUI3
         private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
         {
             _selectedCategory = null;
-            _categorySelectCts?.Cancel();
             if (CategoryTree != null)
             {
                 _suppressCategorySelectionChanged = true;
                 var old = CategoryTree.SelectionMode;
                 CategoryTree.SelectionMode = Microsoft.UI.Xaml.Controls.TreeViewSelectionMode.None;
                 BuildCategoryTree();
-                CategoryTree.SelectionMode = old; // clears any selection
+                CategoryTree.SelectionMode = old;
                 _suppressCategorySelectionChanged = false;
             }
             UpdateSearchPlaceholder();
@@ -1081,68 +1109,112 @@ namespace PolicyPlus.WinUI3
             UpdateSearchPlaceholder();
             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
             SelectCategoryInTree(cat);
+
+            var now = DateTime.UtcNow;
+            if (!string.IsNullOrEmpty(_recentDoubleTapCategoryId)
+                && string.Equals(_recentDoubleTapCategoryId, cat.UniqueID, StringComparison.OrdinalIgnoreCase)
+                && (now - _recentDoubleTapAt).TotalMilliseconds < 500)
+            {
+                return;
+            }
+
+            // Fallback for double-clicking the chevron: two quick invokes on same item => toggle expansion once
+            if (!string.IsNullOrEmpty(_lastInvokedCatId)
+                && string.Equals(_lastInvokedCatId, cat.UniqueID, StringComparison.OrdinalIgnoreCase)
+                && (now - _lastInvokedAt).TotalMilliseconds < 350)
+            {
+                var node = FindNodeByCategory(sender.RootNodes, cat.UniqueID);
+                if (node != null) node.IsExpanded = !node.IsExpanded;
+                _lastInvokedCatId = null;
+                return;
+            }
+
+            _lastInvokedCatId = cat.UniqueID;
+            _lastInvokedAt = now;
         }
 
-        private void CategoryTree_SelectionChanged(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewSelectionChangedEventArgs args)
+        private void CategoryTree_Tapped(object sender, TappedRoutedEventArgs e)
         {
-            if (_suppressCategorySelectionChanged) return;
-            if (sender.SelectedNodes != null && sender.SelectedNodes.Count > 0)
-            {
-                var cat = sender.SelectedNodes.FirstOrDefault()?.Content as PolicyPlusCategory;
-                ScheduleApplyCategory(cat);
-            }
-            // If no selected nodes, keep current _selectedCategory (don't clear filter)
+            if (CategoryTree == null) return;
+            var dep = e.OriginalSource as DependencyObject;
+            var container = FindAncestorTreeViewItem(dep);
+            Microsoft.UI.Xaml.Controls.TreeViewNode? node = null;
+            if (container != null)
+                node = CategoryTree.NodeFromContainer(container);
+            if (node == null)
+                node = (e.OriginalSource as FrameworkElement)?.DataContext as Microsoft.UI.Xaml.Controls.TreeViewNode;
+            if (node == null)
+                node = CategoryTree.SelectedNode;
+            if (node == null) return;
+
+            _lastTapWasExpanded = node.IsExpanded;
+            if (node.Content is PolicyPlusCategory cat)
+                _lastTapCatId = cat.UniqueID;
+            else
+                _lastTapCatId = null;
+            _lastTapAt = DateTime.UtcNow;
         }
 
         private void CategoryTree_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             if (CategoryTree == null) return;
-            // Cancel any pending category apply since this is a double-tap
-            _categorySelectCts?.Cancel();
 
-            // Resolve the bound item in the simplest and most reliable way
-            object? item = (e.OriginalSource as FrameworkElement)?.DataContext ?? PolicyList?.SelectedItem;
+            var dep = e.OriginalSource as DependencyObject;
+            var container = FindAncestorTreeViewItem(dep);
 
-            if (item is PolicyListRow row && row.Policy is PolicyPlusPolicy pol)
+            Microsoft.UI.Xaml.Controls.TreeViewNode? node = null;
+            if (container != null)
             {
-                e.Handled = true;
-                _ = OpenEditDialogForPolicyAsync(pol, ensureFront: true);
-                return;
+                node = CategoryTree.NodeFromContainer(container);
             }
-            if (item is PolicyListRow row2 && row2.Category is PolicyPlusCategory cat)
+            if (node == null)
             {
-                e.Handled = true;
+                node = (e.OriginalSource as FrameworkElement)?.DataContext as Microsoft.UI.Xaml.Controls.TreeViewNode;
+            }
+            if (node == null)
+            {
+                node = CategoryTree.SelectedNode;
+            }
+            if (node == null) return;
+
+            e.Handled = true;
+
+            bool desiredExpanded;
+            if (node.Content is PolicyPlusCategory cat0
+                && !string.IsNullOrEmpty(_lastTapCatId)
+                && string.Equals(_lastTapCatId, cat0.UniqueID, StringComparison.OrdinalIgnoreCase)
+                && (DateTime.UtcNow - _lastTapAt).TotalMilliseconds < 600)
+            {
+                desiredExpanded = !_lastTapWasExpanded; // enforce single toggle relative to pre-tap state
+            }
+            else
+            {
+                desiredExpanded = !node.IsExpanded; // fallback
+            }
+            node.IsExpanded = desiredExpanded;
+
+            if (node.Content is PolicyPlusCategory cat)
+            {
                 _selectedCategory = cat;
                 UpdateSearchPlaceholder();
                 ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-                SelectCategoryInTree(cat);
+                _suppressCategorySelectionChanged = true;
+                try { CategoryTree.SelectedNode = node; }
+                finally { _suppressCategorySelectionChanged = false; }
+
+                _recentDoubleTapCategoryId = cat.UniqueID;
+                _recentDoubleTapAt = DateTime.UtcNow;
             }
         }
 
-        private void ScheduleApplyCategory(PolicyPlusCategory? cat)
+        private static TreeViewItem? FindAncestorTreeViewItem(DependencyObject? start)
         {
-            if (cat == null) return;
-            _categorySelectCts?.Cancel();
-            var cts = new CancellationTokenSource();
-            _categorySelectCts = cts;
-            _ = Task.Run(async () =>
+            while (start != null)
             {
-                try
-                {
-                    await Task.Delay(250, cts.Token);
-                    if (cts.IsCancellationRequested) return;
-                    _ = DispatcherQueue.TryEnqueue(() =>
-                    {
-                        if (!cts.IsCancellationRequested)
-                        {
-                            _selectedCategory = cat;
-                            UpdateSearchPlaceholder();
-                            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-                        }
-                    });
-                }
-                catch (TaskCanceledException) { }
-            });
+                if (start is TreeViewItem tvi) return tvi;
+                start = VisualTreeHelper.GetParent(start);
+            }
+            return null;
         }
 
         private void ToggleTempPolMenu_Click(object sender, RoutedEventArgs e)
@@ -1249,7 +1321,7 @@ namespace PolicyPlus.WinUI3
         {
             foreach (var n in nodes)
             {
-                if (n.Content is PolicyPlusCategory pc && string.Equals(pc.UniqueID, uniqueId, StringComparison.InvariantCultureIgnoreCase))
+                if (n.Content is PolicyPlusCategory pc && string.Equals(pc.UniqueID, uniqueId, StringComparison.OrdinalIgnoreCase))
                     return n;
                 var child = FindNodeByCategory(n.Children, uniqueId);
                 if (child != null) return child;
@@ -1307,10 +1379,23 @@ namespace PolicyPlus.WinUI3
 
         private void PolicyList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-            // Resolve the bound item in the simplest and most reliable way
-            object? item = (e.OriginalSource as FrameworkElement)?.DataContext ?? PolicyList?.SelectedItem;
+            DependencyObject? dep = e.OriginalSource as DependencyObject;
+            object? item = null;
 
-            if (item is PolicyListRow row and { Policy: PolicyPlusPolicy pol })
+            // Prefer the DataGridRow's DataContext
+            var dgRow = FindAncestorDataGridRow(dep);
+            if (dgRow != null)
+            {
+                item = dgRow.DataContext;
+            }
+
+            // Fallbacks
+            if (item == null)
+                item = (e.OriginalSource as FrameworkElement)?.DataContext;
+            if (item == null)
+                item = PolicyList?.SelectedItem;
+
+            if (item is PolicyListRow row && row.Policy is PolicyPlusPolicy pol)
             {
                 e.Handled = true;
                 _ = OpenEditDialogForPolicyAsync(pol, ensureFront: true);
@@ -1324,6 +1409,16 @@ namespace PolicyPlus.WinUI3
                 ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
                 SelectCategoryInTree(cat);
             }
+        }
+
+        private static DataGridRow? FindAncestorDataGridRow(DependencyObject? start)
+        {
+            while (start != null)
+            {
+                if (start is DataGridRow dgr) return dgr;
+                start = VisualTreeHelper.GetParent(start);
+            }
+            return null;
         }
 
         private void UpdateSearchPlaceholder()
@@ -1570,6 +1665,21 @@ namespace PolicyPlus.WinUI3
                 sc?.ChangeView(null, offset, null, true);
             }
             catch { }
+        }
+
+        private void CategoryTree_SelectionChanged(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewSelectionChangedEventArgs args)
+        {
+            if (_suppressCategorySelectionChanged) return;
+            if (sender.SelectedNodes != null && sender.SelectedNodes.Count > 0)
+            {
+                var cat = sender.SelectedNodes.FirstOrDefault()?.Content as PolicyPlusCategory;
+                if (cat != null)
+                {
+                    _selectedCategory = cat;
+                    UpdateSearchPlaceholder();
+                    ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+                }
+            }
         }
     }
 }
