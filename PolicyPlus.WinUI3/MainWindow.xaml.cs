@@ -570,24 +570,40 @@ namespace PolicyPlus.WinUI3
                         bool configured = false;
                         try
                         {
-                            // User effective
+                            // Compute effective configured state with pending overriding actual when present
+                            bool effUser = false, effComp = false;
+
                             if (p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both)
                             {
-                                bool hasPendingUser = pending.Any(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
-                                                                        && string.Equals(pc.Scope, "User", StringComparison.OrdinalIgnoreCase)
-                                                                        && (pc.DesiredState == PolicyState.Enabled || pc.DesiredState == PolicyState.Disabled));
-                                bool actualUser = _userSource != null && (PolicyProcessing.GetPolicyState(_userSource, p) == PolicyState.Enabled || PolicyState.Disabled == PolicyProcessing.GetPolicyState(_userSource, p));
-                                configured |= hasPendingUser || actualUser;
+                                var pendUser = pending.FirstOrDefault(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
+                                                                         && string.Equals(pc.Scope, "User", StringComparison.OrdinalIgnoreCase));
+                                if (pendUser != null)
+                                {
+                                    effUser = (pendUser.DesiredState == PolicyState.Enabled || pendUser.DesiredState == PolicyState.Disabled);
+                                }
+                                else if (_userSource != null)
+                                {
+                                    var st = PolicyProcessing.GetPolicyState(_userSource, p);
+                                    effUser = (st == PolicyState.Enabled || st == PolicyState.Disabled);
+                                }
                             }
-                            // Computer effective
+
                             if (p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both)
                             {
-                                bool hasPendingComp = pending.Any(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
-                                                                        && string.Equals(pc.Scope, "Computer", StringComparison.OrdinalIgnoreCase)
-                                                                        && (pc.DesiredState == PolicyState.Enabled || pc.DesiredState == PolicyState.Disabled));
-                                bool actualComp = _compSource != null && (PolicyProcessing.GetPolicyState(_compSource, p) == PolicyState.Enabled || PolicyState.Disabled == PolicyProcessing.GetPolicyState(_compSource, p));
-                                configured |= hasPendingComp || actualComp;
+                                var pendComp = pending.FirstOrDefault(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
+                                                                         && string.Equals(pc.Scope, "Computer", StringComparison.OrdinalIgnoreCase));
+                                if (pendComp != null)
+                                {
+                                    effComp = (pendComp.DesiredState == PolicyState.Enabled || pendComp.DesiredState == PolicyState.Disabled);
+                                }
+                                else if (_compSource != null)
+                                {
+                                    var st = PolicyProcessing.GetPolicyState(_compSource, p);
+                                    effComp = (st == PolicyState.Enabled || st == PolicyState.Disabled);
+                                }
                             }
+
+                            configured = effUser || effComp;
                         }
                         catch { }
                         return configured;
