@@ -42,6 +42,10 @@ namespace PolicyPlus.WinUI3.Models
         private Brush? _userBrush; public Brush? UserBrush { get => _userBrush; private set { if (!ReferenceEquals(_userBrush, value)) { _userBrush = value; OnPropertyChanged(nameof(UserBrush)); } } }
         private Brush? _computerBrush; public Brush? ComputerBrush { get => _computerBrush; private set { if (!ReferenceEquals(_computerBrush, value)) { _computerBrush = value; OnPropertyChanged(nameof(ComputerBrush)); } } }
 
+        // Pending flags to optionally adorn glyphs
+        private bool _userPending; public bool UserPending { get => _userPending; private set { if (_userPending != value) { _userPending = value; OnPropertyChanged(nameof(UserPending)); } } }
+        private bool _computerPending; public bool ComputerPending { get => _computerPending; private set { if (_computerPending != value) { _computerPending = value; OnPropertyChanged(nameof(ComputerPending)); } } }
+
         // Optional column values
         public string UniqueId { get; }
         public string CategoryName { get; }
@@ -148,6 +152,7 @@ namespace PolicyPlus.WinUI3.Models
                 bool anyUserConfigured = false, anyCompConfigured = false;
                 bool anyUserEnabled = false, anyUserDisabled = false;
                 bool anyCompEnabled = false, anyCompDisabled = false;
+                bool anyUserPending = false, anyCompPending = false;
 
                 var pending = PendingChangesService.Instance.Pending;
                 if (_variants != null)
@@ -157,10 +162,10 @@ namespace PolicyPlus.WinUI3.Models
                         // User scope effective
                         if (v.RawPolicy.Section == AdmxPolicySection.User || v.RawPolicy.Section == AdmxPolicySection.Both)
                         {
-                            bool cfg = false, en = false, dis = false;
+                            bool cfg = false, en = false, dis = false, pend = false;
                             var pendUser = pending.FirstOrDefault(pc => pc.PolicyId == v.UniqueID && pc.Scope == "User");
                             if (pendUser != null)
-                            { en = pendUser.DesiredState == PolicyState.Enabled; dis = pendUser.DesiredState == PolicyState.Disabled; cfg = en || dis; }
+                            { en = pendUser.DesiredState == PolicyState.Enabled; dis = pendUser.DesiredState == PolicyState.Disabled; cfg = en || dis; pend = cfg; }
                             else if (_user != null)
                             {
                                 try
@@ -171,15 +176,15 @@ namespace PolicyPlus.WinUI3.Models
                                 }
                                 catch { }
                             }
-                            anyUserConfigured |= cfg; anyUserEnabled |= en; anyUserDisabled |= dis;
+                            anyUserConfigured |= cfg; anyUserEnabled |= en; anyUserDisabled |= dis; anyUserPending |= pend;
                         }
                         // Computer scope effective
                         if (v.RawPolicy.Section == AdmxPolicySection.Machine || v.RawPolicy.Section == AdmxPolicySection.Both)
                         {
-                            bool cfg = false, en = false, dis = false;
+                            bool cfg = false, en = false, dis = false, pend = false;
                             var pendComp = pending.FirstOrDefault(pc => pc.PolicyId == v.UniqueID && pc.Scope == "Computer");
                             if (pendComp != null)
-                            { en = pendComp.DesiredState == PolicyState.Enabled; dis = pendComp.DesiredState == PolicyState.Disabled; cfg = en || dis; }
+                            { en = pendComp.DesiredState == PolicyState.Enabled; dis = pendComp.DesiredState == PolicyState.Disabled; cfg = en || dis; pend = cfg; }
                             else if (_comp != null)
                             {
                                 try
@@ -190,7 +195,7 @@ namespace PolicyPlus.WinUI3.Models
                                 }
                                 catch { }
                             }
-                            anyCompConfigured |= cfg; anyCompEnabled |= en; anyCompDisabled |= dis;
+                            anyCompConfigured |= cfg; anyCompEnabled |= en; anyCompDisabled |= dis; anyCompPending |= pend;
                         }
                     }
                 }
@@ -207,11 +212,15 @@ namespace PolicyPlus.WinUI3.Models
 
                 UserStateText = StateText(anyUserEnabled, anyUserDisabled, anyUserConfigured);
                 ComputerStateText = StateText(anyCompEnabled, anyCompDisabled, anyCompConfigured);
+
+                UserPending = anyUserPending;
+                ComputerPending = anyCompPending;
             }
             else if (Policy != null)
             {
                 bool userCfg = false, compCfg = false;
                 bool userEn = false, userDis = false, compEn = false, compDis = false;
+                bool userPend = false, compPend = false;
                 try
                 {
                     if (_user != null)
@@ -238,12 +247,14 @@ namespace PolicyPlus.WinUI3.Models
                     {
                         userCfg = pendUser.DesiredState == PolicyState.Enabled || pendUser.DesiredState == PolicyState.Disabled;
                         userEn = pendUser.DesiredState == PolicyState.Enabled; userDis = pendUser.DesiredState == PolicyState.Disabled;
+                        userPend = userCfg;
                     }
                     var pendComp = pend.FirstOrDefault(pc => pc.PolicyId == Policy.UniqueID && pc.Scope == "Computer");
                     if (pendComp != null)
                     {
                         compCfg = pendComp.DesiredState == PolicyState.Enabled || pendComp.DesiredState == PolicyState.Disabled;
                         compEn = pendComp.DesiredState == PolicyState.Enabled; compDis = pendComp.DesiredState == PolicyState.Disabled;
+                        compPend = compCfg;
                     }
                 }
                 catch { }
@@ -261,6 +272,8 @@ namespace PolicyPlus.WinUI3.Models
 
                 UserStateText = StateText(userEn, userDis, userCfg);
                 ComputerStateText = StateText(compEn, compDis, compCfg);
+
+                UserPending = userPend; ComputerPending = compPend;
             }
         }
     }

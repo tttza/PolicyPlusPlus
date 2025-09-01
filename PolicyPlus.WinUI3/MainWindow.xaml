@@ -207,6 +207,15 @@
                                             <Grid Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
                                                 <FontIcon Glyph="&#xE77B;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
                                                 <FontIcon Glyph="{Binding UserGlyph}" Foreground="{Binding UserBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <!-- Pending asterisk overlay -->
+                                                <TextBlock Text="*"
+                                                           FontSize="10"
+                                                           FontWeight="Bold"
+                                                           Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                           Visibility="{Binding UserPending, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Top"
+                                                           Margin="0,-2,-2,0" />
                                             </Grid>
                                         </DataTemplate>
                                     </datagrid:DataGridTemplateColumn.CellTemplate>
@@ -218,6 +227,15 @@
                                             <Grid Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
                                                 <FontIcon Glyph="&#xE211;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Opacity="0.9"/>
                                                 <FontIcon Glyph="{Binding ComputerGlyph}" Foreground="{Binding ComputerBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <!-- Pending asterisk overlay -->
+                                                <TextBlock Text="*"
+                                                           FontSize="10"
+                                                           FontWeight="Bold"
+                                                           Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                           Visibility="{Binding ComputerPending, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Top"
+                                                           Margin="0,-2,-2,0" />
                                             </Grid>
                                         </DataTemplate>
                                     </datagrid:DataGridTemplateColumn.CellTemplate>
