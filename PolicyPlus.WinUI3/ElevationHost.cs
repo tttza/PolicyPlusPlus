@@ -18,6 +18,9 @@ namespace PolicyPlus.WinUI3
         [DllImport("userenv.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
         private static extern bool RefreshPolicyEx(bool IsMachine, uint Options);
 
+        private const uint RP_FORCE = 0x1; // Force reapplication, bypass change detection/backoff
+        // private const uint RP_SYNC = 0x2; // Not used to avoid blocking the host (can be enabled if needed)
+
         private static volatile bool s_logEnabled = false;
         private static string? s_clientSid;
         private static string? s_authToken;
@@ -94,10 +97,11 @@ namespace PolicyPlus.WinUI3
                             writer.WriteLine(JsonSerializer.Serialize(new { ok, error }));
                             if (ok && refresh)
                             {
-                                Task.Run(() =>
+                                Task.Run(async () =>
                                 {
-                                    try { RefreshPolicyEx(true, 0); Log("RefreshPolicyEx(machine) invoked"); } catch (Exception ex) { Log("RefreshPolicyEx(machine) failed: " + ex.Message); }
-                                    try { RefreshPolicyEx(false, 0); Log("RefreshPolicyEx(user) invoked"); } catch (Exception ex) { Log("RefreshPolicyEx(user) failed: " + ex.Message); }
+                                    try { RefreshPolicyEx(true, RP_FORCE); Log("RefreshPolicyEx(machine, FORCE) invoked"); } catch (Exception ex) { Log("RefreshPolicyEx(machine) failed: " + ex.Message); }
+                                    try { await Task.Delay(100).ConfigureAwait(false); } catch { }
+                                    try { RefreshPolicyEx(false, RP_FORCE); Log("RefreshPolicyEx(user, FORCE) invoked"); } catch (Exception ex) { Log("RefreshPolicyEx(user) failed: " + ex.Message); }
                                 });
                             }
                         }
@@ -157,6 +161,8 @@ namespace PolicyPlus.WinUI3
                 Directory.CreateDirectory(Path.Combine(gpRoot, "Machine"));
                 Directory.CreateDirectory(Path.Combine(gpRoot, "User"));
 
+                bool wroteMachine = false, wroteUser = false;
+
                 if (!string.IsNullOrEmpty(machineBytes))
                 {
                     var bytes = Convert.FromBase64String(machineBytes);
@@ -164,6 +170,7 @@ namespace PolicyPlus.WinUI3
                     using var fs = new FileStream(machinePol, FileMode.Create, FileAccess.Write, FileShare.None);
                     fs.Write(bytes, 0, bytes.Length);
                     fs.Flush(true);
+                    wroteMachine = true;
                 }
                 if (!string.IsNullOrEmpty(userBytes))
                 {
@@ -172,17 +179,18 @@ namespace PolicyPlus.WinUI3
                     using var fs = new FileStream(userPol, FileMode.Create, FileAccess.Write, FileShare.None);
                     fs.Write(bytes, 0, bytes.Length);
                     fs.Flush(true);
+                    wroteUser = true;
                 }
 
                 var gptIni = Path.Combine(gpRoot, "gpt.ini");
-                UpdateGptIni(gptIni);
+                UpdateGptIni(gptIni, wroteMachine, wroteUser);
                 return (true, null);
             }
             catch (Exception ex)
             { return (false, ex.ToString()); }
         }
 
-        private static void UpdateGptIni(string gptIniPath)
+        private static void UpdateGptIni(string gptIniPath, bool bumpMachine, bool bumpUser)
         {
             const string MachExtensionsLine = "gPCMachineExtensionNames=[{35378EAC-683F-11D2-A89A-00C04FBBCFA2}{D02B1F72-3407-48AE-BA88-E8213C6761F1}]";
             const string UserExtensionsLine = "gPCUserExtensionNames=[{35378EAC-683F-11D2-A89A-00C04FBBCFA2}{D02B1F73-3407-48AE-BA88-E8213C6761F1}]";
@@ -192,7 +200,8 @@ namespace PolicyPlus.WinUI3
             {
                 var lines = File.ReadAllLines(gptIniPath);
                 bool seenMachExts = false, seenUserExts = false, seenVersion = false;
-                using var f = new StreamWriter(gptIniPath, false, Encoding.UTF8);
+                int lo = 0, hi = 0; // low=machine, high=user
+                // First scan to get current version
                 foreach (var line in lines)
                 {
                     if (line.StartsWith("Version", StringComparison.InvariantCultureIgnoreCase))
@@ -200,8 +209,20 @@ namespace PolicyPlus.WinUI3
                         int curVersion = 0;
                         var parts = line.Split('=');
                         if (parts.Length == 2) int.TryParse(parts[1], out curVersion);
-                        curVersion += 0x10001;
-                        f.WriteLine("Version=" + curVersion);
+                        lo = curVersion & 0xFFFF;
+                        hi = (curVersion >> 16) & 0xFFFF;
+                        break;
+                    }
+                }
+                if (bumpMachine) lo = (lo + 1) & 0xFFFF;
+                if (bumpUser) hi = (hi + 1) & 0xFFFF;
+                using var f = new StreamWriter(gptIniPath, false, Encoding.UTF8);
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("Version", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        int newVersion = (hi << 16) | (lo & 0xFFFF);
+                        f.WriteLine("Version=" + newVersion);
                         seenVersion = true;
                     }
                     else
@@ -211,7 +232,11 @@ namespace PolicyPlus.WinUI3
                         if (line.StartsWith("gPCUserExtensionNames=", StringComparison.InvariantCultureIgnoreCase)) seenUserExts = true;
                     }
                 }
-                if (!seenVersion) f.WriteLine("Version=" + 0x10001);
+                if (!seenVersion)
+                {
+                    int newVersion = (hi << 16) | (lo & 0xFFFF);
+                    f.WriteLine("Version=" + newVersion);
+                }
                 if (!seenMachExts) f.WriteLine(MachExtensionsLine);
                 if (!seenUserExts) f.WriteLine(UserExtensionsLine);
             }
@@ -221,7 +246,11 @@ namespace PolicyPlus.WinUI3
                 f.WriteLine("[General]");
                 f.WriteLine(MachExtensionsLine);
                 f.WriteLine(UserExtensionsLine);
-                f.WriteLine("Version=" + 0x10001);
+                int lo = bumpMachine ? 1 : 0;
+                int hi = bumpUser ? 1 : 0;
+                int version = (hi << 16) | (lo & 0xFFFF);
+                if (version == 0) version = 0x10001; // default bump both when unknown
+                f.WriteLine("Version=" + version);
             }
         }
     }
