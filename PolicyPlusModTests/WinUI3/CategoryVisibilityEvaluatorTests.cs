@@ -47,9 +47,17 @@ namespace PolicyPlusModTests.WinUI3
         {
             var (root, mid, leaf, all) = BuildTree();
             var comp = new PolFile(); var user = new PolFile();
-            // No states set -> not configured anywhere
-            var visible = CategoryVisibilityEvaluator.IsCategoryVisible(root, all, AdmxPolicySection.Both, configuredOnly: true, compSource: comp, userSource: user);
-            Assert.False(visible);
+            try
+            {
+                // No states set -> not configured anywhere
+                var visible = CategoryVisibilityEvaluator.IsCategoryVisible(root, all, AdmxPolicySection.Both, configuredOnly: true, compSource: comp, userSource: user);
+                Assert.False(visible);
+            }
+            finally
+            {
+                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Pending.Clear();
+                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.History.Clear();
+            }
         }
 
         [Fact(DisplayName = "ConfiguredOnly=true with Applies=User shows when any user policy configured")]
@@ -57,10 +65,70 @@ namespace PolicyPlusModTests.WinUI3
         {
             var (root, mid, leaf, all) = BuildTree();
             var comp = new PolFile(); var user = new PolFile();
-            // Configure user policy only
-            PolicyProcessing.SetPolicyState(user, all.First(p => p.RawPolicy.Section == AdmxPolicySection.User), PolicyState.Enabled, new Dictionary<string, object>());
-            var visible = CategoryVisibilityEvaluator.IsCategoryVisible(root, all, AdmxPolicySection.User, configuredOnly: true, compSource: comp, userSource: user);
-            Assert.True(visible);
+            try
+            {
+                // Configure user policy only
+                PolicyProcessing.SetPolicyState(user, all.First(p => p.RawPolicy.Section == AdmxPolicySection.User), PolicyState.Enabled, new Dictionary<string, object>());
+                var visible = CategoryVisibilityEvaluator.IsCategoryVisible(root, all, AdmxPolicySection.User, configuredOnly: true, compSource: comp, userSource: user);
+                Assert.True(visible);
+            }
+            finally
+            {
+                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Pending.Clear();
+                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.History.Clear();
+            }
+        }
+
+        [Fact(DisplayName = "ConfiguredOnly=true with pending User change shows category")]
+        public void ConfiguredOnly_Pending_User_Shows()
+        {
+            var (root, mid, leaf, all) = BuildTree();
+            var comp = new PolFile(); var user = new PolFile();
+
+            try
+            {
+                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Pending.Clear();
+                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Add(new PolicyPlus.WinUI3.Services.PendingChange
+                {
+                    PolicyId = all.First(p => p.RawPolicy.Section == AdmxPolicySection.User).UniqueID,
+                    Scope = "User",
+                    DesiredState = PolicyState.Enabled
+                });
+
+                var visible = CategoryVisibilityEvaluator.IsCategoryVisible(root, all, AdmxPolicySection.User, configuredOnly: true, compSource: comp, userSource: user);
+                Assert.True(visible);
+            }
+            finally
+            {
+                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Pending.Clear();
+                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.History.Clear();
+            }
+        }
+
+        [Fact(DisplayName = "ConfiguredOnly=true with pending Machine change shows category")]
+        public void ConfiguredOnly_Pending_Machine_Shows()
+        {
+            var (root, mid, leaf, all) = BuildTree();
+            var comp = new PolFile(); var user = new PolFile();
+
+            try
+            {
+                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Pending.Clear();
+                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Add(new PolicyPlus.WinUI3.Services.PendingChange
+                {
+                    PolicyId = all.First(p => p.RawPolicy.Section == AdmxPolicySection.Machine).UniqueID,
+                    Scope = "Computer",
+                    DesiredState = PolicyState.Disabled
+                });
+
+                var visible = CategoryVisibilityEvaluator.IsCategoryVisible(root, all, AdmxPolicySection.Machine, configuredOnly: true, compSource: comp, userSource: user);
+                Assert.True(visible);
+            }
+            finally
+            {
+                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Pending.Clear();
+                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.History.Clear();
+            }
         }
     }
 }

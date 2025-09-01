@@ -29,14 +29,34 @@ namespace PolicyPlus.WinUI3.ViewModels
                 seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both);
 
             if (!seq.Any()) return false;
-            if (compSource == null || userSource == null) return false;
+
+            // Include pending (unsaved) changes so categories with pending items remain visible
+            var pending = Services.PendingChangesService.Instance.Pending?.ToList() ?? new List<Services.PendingChange>();
 
             foreach (var p in seq)
             {
-                var comp = PolicyProcessing.GetPolicyState(compSource, p);
-                var user = PolicyProcessing.GetPolicyState(userSource, p);
-                if (comp == PolicyState.Enabled || comp == PolicyState.Disabled || user == PolicyState.Enabled || user == PolicyState.Disabled)
+                // Check pending first
+                bool hasPendingUser = pending.Any(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
+                                                     && string.Equals(pc.Scope, "User", StringComparison.OrdinalIgnoreCase)
+                                                     && (pc.DesiredState == PolicyState.Enabled || pc.DesiredState == PolicyState.Disabled));
+                bool hasPendingComp = pending.Any(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
+                                                     && string.Equals(pc.Scope, "Computer", StringComparison.OrdinalIgnoreCase)
+                                                     && (pc.DesiredState == PolicyState.Enabled || pc.DesiredState == PolicyState.Disabled));
+
+                if ((p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both) && hasPendingUser)
                     return true;
+                if ((p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both) && hasPendingComp)
+                    return true;
+
+                // Fall back to actual source state
+                try
+                {
+                    var comp = compSource != null ? PolicyProcessing.GetPolicyState(compSource, p) : PolicyState.Unknown;
+                    var user = userSource != null ? PolicyProcessing.GetPolicyState(userSource, p) : PolicyState.Unknown;
+                    if (comp == PolicyState.Enabled || comp == PolicyState.Disabled || user == PolicyState.Enabled || user == PolicyState.Disabled)
+                        return true;
+                }
+                catch { }
             }
             return false;
         }

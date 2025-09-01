@@ -562,13 +562,35 @@ namespace PolicyPlus.WinUI3
             if (_configuredOnly)
             {
                 EnsureLocalSources();
-                if (_compSource != null && _userSource != null)
+                var pending = PendingChangesService.Instance.Pending?.ToList() ?? new List<PendingChange>();
+                if (_compSource != null || _userSource != null || pending.Count > 0)
                 {
                     seq = seq.Where(p =>
                     {
-                        var comp = PolicyProcessing.GetPolicyState(_compSource, p);
-                        var user = PolicyProcessing.GetPolicyState(_userSource, p);
-                        return comp == PolicyState.Enabled || comp == PolicyState.Disabled || user == PolicyState.Enabled || user == PolicyState.Disabled;
+                        bool configured = false;
+                        try
+                        {
+                            // User effective
+                            if (p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both)
+                            {
+                                bool hasPendingUser = pending.Any(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
+                                                                        && string.Equals(pc.Scope, "User", StringComparison.OrdinalIgnoreCase)
+                                                                        && (pc.DesiredState == PolicyState.Enabled || pc.DesiredState == PolicyState.Disabled));
+                                bool actualUser = _userSource != null && (PolicyProcessing.GetPolicyState(_userSource, p) == PolicyState.Enabled || PolicyState.Disabled == PolicyProcessing.GetPolicyState(_userSource, p));
+                                configured |= hasPendingUser || actualUser;
+                            }
+                            // Computer effective
+                            if (p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both)
+                            {
+                                bool hasPendingComp = pending.Any(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
+                                                                        && string.Equals(pc.Scope, "Computer", StringComparison.OrdinalIgnoreCase)
+                                                                        && (pc.DesiredState == PolicyState.Enabled || pc.DesiredState == PolicyState.Disabled));
+                                bool actualComp = _compSource != null && (PolicyProcessing.GetPolicyState(_compSource, p) == PolicyState.Enabled || PolicyState.Disabled == PolicyProcessing.GetPolicyState(_compSource, p));
+                                configured |= hasPendingComp || actualComp;
+                            }
+                        }
+                        catch { }
+                        return configured;
                     });
                 }
             }
