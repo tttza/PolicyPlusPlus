@@ -60,6 +60,8 @@ namespace PolicyPlus.WinUI3
 
         // Prevents SelectionChanged from re-applying category during programmatic tree updates
         private bool _suppressCategorySelectionChanged;
+        private bool _suppressAppliesToSelectionChanged;
+        private bool _suppressConfiguredOnlyChanged;
 
         // Auto-close InfoBar cancellation
         private CancellationTokenSource? _infoBarCloseCts;
@@ -100,6 +102,9 @@ namespace PolicyPlus.WinUI3
         private string? _lastTapCatId;
         private bool _lastTapWasExpanded;
         private DateTime _lastTapAt;
+
+        // Typing suppression flag for navigation pushes
+        private bool _navTyping;
 
         public MainWindow()
         {
@@ -193,7 +198,9 @@ namespace PolicyPlus.WinUI3
             }
             SaveColumnPrefs();
             UpdateColumnVisibilityFromFlags();
+            _navTyping = false;
             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+            UpdateNavButtons();
         }
 
         private void HiddenFlag_Checked(object sender, RoutedEventArgs e)
@@ -267,6 +274,9 @@ namespace PolicyPlus.WinUI3
                 }
             }
             catch { }
+
+            // Initialize navigation service/buttons
+            try { InitNavigation(); } catch { }
         }
 
         // preference helper implementations are defined in MainWindow.Preferences.cs
@@ -317,6 +327,7 @@ namespace PolicyPlus.WinUI3
         {
             if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
+                _navTyping = true;
                 var q = (SearchBox.Text ?? string.Empty).Trim();
                 var baseSeq = BaseSequenceForFilters(includeSubcategories: true);
                 var suggestions = baseSeq.Where(p => p.DisplayName.Contains(q, StringComparison.InvariantCultureIgnoreCase))
@@ -326,20 +337,24 @@ namespace PolicyPlus.WinUI3
                                          .ToList();
                 SearchBox.ItemsSource = suggestions;
                 ApplyFiltersAndBind(q);
+                UpdateNavButtons();
             }
         }
 
         private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
-        { var q = args.QueryText ?? string.Empty; ApplyFiltersAndBind(q); }
+        { _navTyping = false; var q = args.QueryText ?? string.Empty; ApplyFiltersAndBind(q); UpdateNavButtons(); }
 
         private void SearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
-        { var chosen = args.SelectedItem?.ToString() ?? string.Empty; ApplyFiltersAndBind(chosen); }
+        { _navTyping = false; var chosen = args.SelectedItem?.ToString() ?? string.Empty; ApplyFiltersAndBind(chosen); UpdateNavButtons(); }
 
         private void AppliesToSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (_suppressAppliesToSelectionChanged) return;
             var sel = (AppliesToSelector?.SelectedItem as ComboBoxItem)?.Content?.ToString();
             _appliesFilter = sel switch { "Computer" => AdmxPolicySection.Machine, "User" => AdmxPolicySection.User, _ => AdmxPolicySection.Both };
+            _navTyping = false;
             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+            UpdateNavButtons();
         }
 
         private void EnsureLocalSources()
@@ -380,11 +395,13 @@ namespace PolicyPlus.WinUI3
 
         private void BtnClearAll_Click(object sender, RoutedEventArgs e)
         {
-            SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; if (ChkConfiguredOnly != null) ChkConfiguredOnly.IsChecked = false; UpdateSearchPlaceholder(); ApplyFiltersAndBind();
+            _navTyping = false;
+            SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; if (ChkConfiguredOnly != null) { _suppressConfiguredOnlyChanged = true; ChkConfiguredOnly.IsChecked = false; _suppressConfiguredOnlyChanged = false; } UpdateSearchPlaceholder(); ApplyFiltersAndBind();
+            UpdateNavButtons();
         }
 
         private void ChkConfiguredOnly_Checked(object sender, RoutedEventArgs e)
-        { _configuredOnly = ChkConfiguredOnly?.IsChecked == true; ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); }
+        { if (_suppressConfiguredOnlyChanged) return; _configuredOnly = ChkConfiguredOnly?.IsChecked == true; _navTyping = false; ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); UpdateNavButtons(); }
 
         private void ChkUseTempPol_Checked(object sender, RoutedEventArgs e)
         { _useTempPol = ChkUseTempPol?.IsChecked == true; EnsureLocalSourcesUsingTemp(); ShowInfo(_useTempPol ? "Using temp .pol" : "Using Local GPO"); }
@@ -413,24 +430,28 @@ namespace PolicyPlus.WinUI3
                 _suppressCategorySelectionChanged = false;
             }
             UpdateSearchPlaceholder();
+            _navTyping = false;
             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+            UpdateNavButtons();
         }
 
         private async void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == global::Windows.System.VirtualKey.Enter)
             {
-                if (PolicyList?.SelectedItem is PolicyListRow row && row.Policy != null)
+                if (PolicyList?.SelectedItem is PolicyListRow row and { Policy: not null })
                 {
                     e.Handled = true;
                     await OpenEditDialogForPolicyAsync(row.Policy, ensureFront: true);
                 }
-                else if (PolicyList?.SelectedItem is PolicyListRow row2 && row2.Category != null)
+                else if (PolicyList?.SelectedItem is PolicyListRow row2 and { Category: not null })
                 {
                     e.Handled = true;
                     _selectedCategory = row2.Category;
                     UpdateSearchPlaceholder();
+                    _navTyping = false;
                     ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+                    UpdateNavButtons();
                 }
             }
         }
@@ -462,8 +483,10 @@ namespace PolicyPlus.WinUI3
                 e.Handled = true;
                 _selectedCategory = cat;
                 UpdateSearchPlaceholder();
+                _navTyping = false;
                 ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
                 SelectCategoryInTree(cat);
+                UpdateNavButtons();
             }
         }
 
@@ -546,6 +569,32 @@ namespace PolicyPlus.WinUI3
             if (res == ContentDialogResult.Primary) return AdmxPolicySection.Machine;
             if (res == ContentDialogResult.Secondary) return AdmxPolicySection.User;
             return null;
+        }
+
+        private void GoBackAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { BtnBack_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+
+        private void GoForwardAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { BtnForward_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+
+        private void RootGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            try
+            {
+                var point = e.GetCurrentPoint(this.Content as UIElement);
+                var props = point.Properties;
+                if (props.IsXButton1Pressed)
+                {
+                    BtnBack_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
+                else if (props.IsXButton2Pressed)
+                {
+                    BtnForward_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
+            }
+            catch { }
         }
     }
 }

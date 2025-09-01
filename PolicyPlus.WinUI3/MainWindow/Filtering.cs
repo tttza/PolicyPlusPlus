@@ -106,6 +106,11 @@ namespace PolicyPlus.WinUI3
 
             BindSequenceEnhanced(seq, flat);
             RestorePositionOrSelection();
+            // Ensure a baseline state exists so first change enables Back
+            if (ViewNavigationService.Instance.Current == null)
+            {
+                MaybePushCurrentState();
+            }
         }
 
         private void BindSequenceEnhanced(IEnumerable<PolicyPlusPolicy> seq, bool flat)
@@ -124,6 +129,7 @@ namespace PolicyPlus.WinUI3
 
                 PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
                 TryRestoreSelectionAsync(rows);
+                MaybePushCurrentState();
                 return;
             }
 
@@ -160,6 +166,7 @@ namespace PolicyPlus.WinUI3
             }
 
             PolicyCount.Text = $"{_visiblePolicies.Count} / {_totalGroupCount} policies";
+            MaybePushCurrentState();
         }
 
         private PolicyPlusPolicy PickRepresentative(IGrouping<string, PolicyPlusPolicy> g)

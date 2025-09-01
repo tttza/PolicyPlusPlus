@@ -18,6 +18,7 @@ namespace PolicyPlus.WinUI3
             if (cat == null) return;
             _selectedCategory = cat;
             UpdateSearchPlaceholder();
+            _navTyping = false;
             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
             SelectCategoryInTree(cat);
 
@@ -107,6 +108,7 @@ namespace PolicyPlus.WinUI3
             {
                 _selectedCategory = cat;
                 UpdateSearchPlaceholder();
+                _navTyping = false;
                 ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
                 _suppressCategorySelectionChanged = true;
                 try { CategoryTree.SelectedNode = node; }
@@ -258,6 +260,7 @@ namespace PolicyPlus.WinUI3
                 {
                     _selectedCategory = cat;
                     UpdateSearchPlaceholder();
+                    _navTyping = false;
                     ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
                 }
             }

@@ -19,9 +19,11 @@
 
     <!-- Scale host wraps real content so scaled content always fills window without gaps -->
     <Grid x:Name="ScaleHost">
-        <Grid x:Name="RootGrid" Background="{ThemeResource WindowBackground}" Loaded="Window_Loaded" KeyDown="RootGrid_KeyDown">
+        <Grid x:Name="RootGrid" Background="{ThemeResource WindowBackground}" Loaded="Window_Loaded" KeyDown="RootGrid_KeyDown" PointerPressed="RootGrid_PointerPressed">
             <Grid.KeyboardAccelerators>
                 <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="SaveAccelerator_Invoked"/>
+                <KeyboardAccelerator Key="Left" Modifiers="Menu" Invoked="GoBackAccelerator_Invoked"/>
+                <KeyboardAccelerator Key="Right" Modifiers="Menu" Invoked="GoForwardAccelerator_Invoked"/>
             </Grid.KeyboardAccelerators>
             <Grid.Resources>
                 <converters:ScaleConverter x:Key="ScaleConverter"/>
@@ -31,6 +33,17 @@
                 <models:ColumnWidths x:Key="ColumnWidthsModel" />
                 <!-- Subtle alternating row background to reduce reliance on grid lines -->
                 <SolidColorBrush x:Key="AltRowBrush" Color="#0F000000" />
+                <Style x:Key="NavIconButtonStyle" TargetType="Button">
+                    <Setter Property="Width" Value="28"/>
+                    <Setter Property="Height" Value="28"/>
+                    <Setter Property="Padding" Value="4"/>
+                    <Setter Property="Background" Value="{ThemeResource LayerFillColorDefaultBrush}"/>
+                    <Setter Property="BorderBrush" Value="{ThemeResource ControlStrokeColorSecondaryBrush}"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                    <Setter Property="CornerRadius" Value="4"/>
+                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                    <Setter Property="VerticalAlignment" Value="Center"/>
+                </Style>
             </Grid.Resources>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -133,8 +146,14 @@
                 </StackPanel>
 
                 <!-- Filters and counts row -->
-                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="8,4,8,0">
-                    <TextBlock Text="Applies to:" VerticalAlignment="Center"/>
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="8,4,8,0">
+                    <Button x:Name="BtnBack" Click="BtnBack_Click" IsEnabled="False" ToolTipService.ToolTip="Back (Alt+Left / Mouse Back)" Style="{StaticResource NavIconButtonStyle}">
+                        <FontIcon Glyph="&#xE72B;" FontSize="12"/>
+                    </Button>
+                    <Button x:Name="BtnForward" Click="BtnForward_Click" IsEnabled="False" ToolTipService.ToolTip="Forward (Alt+Right / Mouse Forward)" Style="{StaticResource NavIconButtonStyle}">
+                        <FontIcon Glyph="&#xE72A;" FontSize="12"/>
+                    </Button>
+                    <TextBlock Text="Applies to:" VerticalAlignment="Center" Margin="6,0,0,0"/>
                     <ComboBox x:Name="AppliesToSelector" Width="140" SelectionChanged="AppliesToSelector_SelectionChanged">
                         <ComboBoxItem Content="Both" IsSelected="True"/>
                         <ComboBoxItem Content="Computer"/>
