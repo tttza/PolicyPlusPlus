@@ -28,7 +28,7 @@
       <!-- Header -->
       <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnSpacing="20" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}">
         <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="7*"/>
+          <ColumnDefinition Width="10*"/>
           <ColumnDefinition Width="13*"/>
           <ColumnDefinition Width="Auto"/>
           <ColumnDefinition/>
@@ -41,7 +41,7 @@
         <StackPanel Grid.Column="0" Spacing="8">
           <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
             <TextBlock Text="Editing for" VerticalAlignment="Center"/>
-            <ComboBox x:Name="SectionSelector" Width="160">
+            <ComboBox x:Name="SectionSelector" Width="120">
               <ComboBoxItem Content="Computer"/>
               <ComboBoxItem Content="User"/>
             </ComboBox>

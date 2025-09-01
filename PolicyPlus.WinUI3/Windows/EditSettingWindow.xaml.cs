@@ -91,8 +91,26 @@ namespace PolicyPlus.WinUI3.Windows
             SupportedBox.Text = policy.SupportedOn is null ? string.Empty : policy.SupportedOn.DisplayName;
             SetExplanationText(policy.DisplayExplanation ?? string.Empty);
 
+            // Determine initial section selection. If the policy supports both and the Computer scope is already configured,
+            // prefer Computer regardless of the requested section.
+            var initialSection = section;
+            try
+            {
+                if (policy.RawPolicy.Section == AdmxPolicySection.Both)
+                {
+                    var compState = PolicyProcessing.GetPolicyState(_compSource, _policy);
+                    bool compConfigured = compState == PolicyState.Enabled || compState == PolicyState.Disabled;
+                    if (compConfigured)
+                    {
+                        initialSection = AdmxPolicySection.Machine;
+                    }
+                }
+            }
+            catch { }
+            _currentSection = initialSection;
+
             SectionSelector.IsEnabled = policy.RawPolicy.Section == AdmxPolicySection.Both;
-            SectionSelector.SelectedIndex = (section == AdmxPolicySection.Machine) ? 0 : 1;
+            SectionSelector.SelectedIndex = (_currentSection == AdmxPolicySection.Machine) ? 0 : 1;
 
             BuildElements();
             LoadStateFromSource();
