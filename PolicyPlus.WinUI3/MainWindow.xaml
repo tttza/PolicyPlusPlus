@@ -83,7 +83,6 @@
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Import/Export">
                             <MenuFlyoutItem Text="Export .reg..." Click="BtnExportReg_Click" />
-                            <MenuFlyoutItem Text="Export CSV..." Click="BtnExportCsv_Click" />
                             <MenuFlyoutSeparator/>
                             <MenuFlyoutItem Text="Import .pol..." Click="BtnImportPol_Click" />
                             <MenuFlyoutItem Text="Import .reg..." Click="BtnImportReg_Click" />

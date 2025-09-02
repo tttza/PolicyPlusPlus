@@ -10,6 +10,7 @@ using Windows.ApplicationModel.DataTransfer;
 using PolicyPlus.WinUI3.Windows;
 using PolicyPlus.WinUI3.Utils;
 using System.Threading.Tasks;
+using PolicyPlus.WinUI3.ViewModels; // RegistryViewFormatter
 
 namespace PolicyPlus.WinUI3
 {
@@ -94,7 +95,27 @@ namespace PolicyPlus.WinUI3
         }
 
         private void ContextCopyRegExport_Click(object sender, RoutedEventArgs e)
-        { ShowInfo("Copy .reg export not implemented in this build."); }
+        {
+            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy;
+            if (p == null) return;
+            var section = p.RawPolicy.Section switch
+            {
+                AdmxPolicySection.User => AdmxPolicySection.User,
+                AdmxPolicySection.Machine => AdmxPolicySection.Machine,
+                _ => (_appliesFilter == AdmxPolicySection.User ? AdmxPolicySection.User : AdmxPolicySection.Machine)
+            };
+            var src = section == AdmxPolicySection.User ? _userSource : _compSource;
+            if (src == null)
+            {
+                var loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, section == AdmxPolicySection.User);
+                src = loader.OpenSource();
+            }
+            var text = RegistryViewFormatter.BuildRegExport(p, src, section) ?? string.Empty;
+            var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
+            dp.SetText(text);
+            Clipboard.SetContent(dp);
+            ShowInfo("Copied .reg export to clipboard.");
+        }
 
         private void BtnPendingChanges_Click(object sender, RoutedEventArgs e)
         {

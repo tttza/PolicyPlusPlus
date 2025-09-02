@@ -507,125 +507,127 @@ namespace PolicyPlus
 
     public class RegistryPolicyProxy : IPolicySource
     {
-    private RegistryKey RootKey = null!;
+        private RegistryKey RootKey = null!;
 
-    public static RegistryPolicyProxy EncapsulateKey(RegistryKey Key)
-        {
-            return new RegistryPolicyProxy() { RootKey = Key };
-        }
+        public static RegistryPolicyProxy EncapsulateKey(RegistryKey Key)
+            => new RegistryPolicyProxy() { RootKey = Key };
 
         public static RegistryPolicyProxy EncapsulateKey(RegistryHive Key)
-        {
-            return EncapsulateKey(RegistryKey.OpenBaseKey(Key, RegistryView.Default));
-        }
+            => EncapsulateKey(RegistryKey.OpenBaseKey(Key, RegistryView.Default));
+
+        public RegistryKey EncapsulatedRegistry => RootKey;
 
         public void DeleteValue(string Key, string Value)
         {
             var isEmpty = false;
-            using (var regKey = RootKey.OpenSubKey(Key, true))
+            if (string.IsNullOrEmpty(Key))
             {
-                if (regKey is null)
-                    return;
-                regKey.DeleteValue(Value, false);
-
-                if (regKey.SubKeyCount == 0 & regKey.ValueCount == 0)
-                    isEmpty = true;
+                try
+                {
+                    RootKey.DeleteValue(Value, false);
+                    using (var regKey = RootKey)
+                    {
+                        if (regKey.SubKeyCount == 0 & regKey.ValueCount == 0)
+                            isEmpty = true;
+                    }
+                }
+                catch { }
             }
-            if (isEmpty)
+            else
             {
-                RootKey.DeleteSubKey(Key, false);
+                using (var regKey = RootKey.OpenSubKey(Key, true))
+                {
+                    if (regKey is null)
+                        return;
+                    regKey.DeleteValue(Value, false);
+
+                    if (regKey.SubKeyCount == 0 & regKey.ValueCount == 0)
+                        isEmpty = true;
+                }
+                if (isEmpty)
+                {
+                    RootKey.DeleteSubKey(Key, false);
+                }
             }
         }
 
-        public void ForgetValue(string Key, string Value)
-        {
-            DeleteValue(Key, Value);
-        }
+        public void ForgetValue(string Key, string Value) => DeleteValue(Key, Value);
 
         public void SetValue(string Key, string Value, object Data, RegistryValueKind DataType)
         {
-            if (Data is uint u)
-            {
-                Data = new ReinterpretableDword() { Unsigned = u }.Signed;
-            }
-            else if (Data is ulong ul)
-            {
-                Data = new ReinterpretableQword() { Unsigned = ul }.Signed;
-            }
+            if (Data is uint u) Data = new ReinterpretableDword() { Unsigned = u }.Signed;
+            else if (Data is ulong ul) Data = new ReinterpretableQword() { Unsigned = ul }.Signed;
+
+            if (string.IsNullOrEmpty(Key))
+            { RootKey.SetValue(Value, Data, DataType); return; }
 
             using (var regKey = RootKey.CreateSubKey(Key))
-            {
-                regKey.SetValue(Value, Data, DataType);
-            }
+            { regKey.SetValue(Value, Data, DataType); }
         }
 
         public bool ContainsValue(string Key, string Value)
         {
+            if (string.IsNullOrEmpty(Key))
+            {
+                var data = RootKey.GetValue(Value, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                return data != null || RootKey.GetValueNames().Any(s => s.Equals(Value, StringComparison.InvariantCultureIgnoreCase));
+            }
             using (var regKey = RootKey.OpenSubKey(Key))
             {
-                if (regKey is null)
-                    return false;
-                if (string.IsNullOrEmpty(Value))
-                    return true;
+                if (regKey is null) return false;
+                if (string.IsNullOrEmpty(Value)) return true;
                 return regKey.GetValueNames().Any(s => s.Equals(Value, StringComparison.InvariantCultureIgnoreCase));
             }
         }
 
-    public object? GetValue(string Key, string Value)
+        public object? GetValue(string Key, string Value)
         {
+            if (string.IsNullOrEmpty(Key))
+            {
+                var data = RootKey.GetValue(Value, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                if (data is int i) return new ReinterpretableDword() { Signed = i }.Unsigned;
+                if (data is long l) return new ReinterpretableQword() { Signed = l }.Unsigned;
+                return data;
+            }
             using (var regKey = RootKey.OpenSubKey(Key, false))
             {
-                if (regKey is null)
-                    return null;
+                if (regKey is null) return null;
                 var data = regKey.GetValue(Value, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
-                if (data is int i)
-                {
-                    return new ReinterpretableDword() { Signed = i }.Unsigned;
-                }
-                else if (data is long l)
-                {
-                    return new ReinterpretableQword() { Signed = l }.Unsigned;
-                }
-                else
-                {
-                    return data;
-                }
+                if (data is int i) return new ReinterpretableDword() { Signed = i }.Unsigned;
+                if (data is long l) return new ReinterpretableQword() { Signed = l }.Unsigned;
+                return data;
             }
         }
 
         public List<string> GetValueNames(string Key)
         {
+            if (string.IsNullOrEmpty(Key)) return RootKey.GetValueNames().ToList();
             using (var regKey = RootKey.OpenSubKey(Key))
-            {
-                if (regKey is null)
-                    return new List<string>();
-                else
-                    return regKey.GetValueNames().ToList();
-            }
+            { return regKey is null ? new List<string>() : regKey.GetValueNames().ToList(); }
         }
 
-        public bool WillDeleteValue(string Key, string Value)
-        {
-            return false;
-        }
+        public bool WillDeleteValue(string Key, string Value) => false;
 
         public static bool IsPolicyKey(string KeyPath)
         {
-            return PolicyKeys.Any(pk => KeyPath.StartsWith(pk + @"\", StringComparison.InvariantCultureIgnoreCase) | KeyPath.Equals(pk, StringComparison.InvariantCultureIgnoreCase));
+            return PolicyKeys.Any(pk => KeyPath.StartsWith(pk + @"\", StringComparison.InvariantCultureIgnoreCase)
+                                     || KeyPath.Equals(pk, StringComparison.InvariantCultureIgnoreCase));
         }
 
         public void ClearKey(string Key)
         {
-            foreach (var value in GetValueNames(Key))
-                ForgetValue(Key, value);
+            if (string.IsNullOrEmpty(Key))
+            { foreach (var value in RootKey.GetValueNames()) ForgetValue(string.Empty, value); return; }
+            foreach (var value in GetValueNames(Key)) ForgetValue(Key, value);
         }
 
-        public void ForgetKeyClearance(string Key)
+        public void ForgetKeyClearance(string Key) { }
+
+        public static IEnumerable<string> PolicyKeys => new[]
         {
-        }
-
-    public RegistryKey EncapsulatedRegistry => RootKey;
-
-        public static IEnumerable<string> PolicyKeys => new[] { @"software\policies", @"software\microsoft\windows\currentversion\policies", @"system\currentcontrolset\policies" };
+            @"software\policies",
+            @"software\microsoft\windows\currentversion\policies",
+            @"system\currentcontrolset\policies"
+        };
     }
 }

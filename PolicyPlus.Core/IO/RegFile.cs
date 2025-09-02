@@ -181,7 +181,7 @@ namespace PolicyPlus
             Writer.WriteLine();
             foreach (var key in Keys)
             {
-                string keyName = key.Name;
+                string keyName = CanonicalizeKeyName(key.Name);
                 if (casePreservation != null && casePreservation.TryGetValue(keyName.ToLowerInvariant() + "\\", out var preservedKey))
                     keyName = preservedKey;
                 if (key.IsDeleter)
@@ -296,6 +296,30 @@ namespace PolicyPlus
                 }
                 Writer.WriteLine();
             }
+        }
+
+        private static string CanonicalizeKeyName(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return name;
+            // Trim accidental leading backslashes
+            while (name.Length > 0 && name[0] == '\\') name = name.Substring(1);
+            var parts = name.Split('\\');
+            if (parts.Length == 0) return name;
+            // Canonicalize hive
+            if (parts[0].Equals("HKLM", StringComparison.OrdinalIgnoreCase) || parts[0].Equals("HKEY_LOCAL_MACHINE", StringComparison.OrdinalIgnoreCase))
+                parts[0] = "HKEY_LOCAL_MACHINE";
+            else if (parts[0].Equals("HKCU", StringComparison.OrdinalIgnoreCase) || parts[0].Equals("HKEY_CURRENT_USER", StringComparison.OrdinalIgnoreCase))
+                parts[0] = "HKEY_CURRENT_USER";
+            else if (parts[0].Equals("HKU", StringComparison.OrdinalIgnoreCase) || parts[0].Equals("HKEY_USERS", StringComparison.OrdinalIgnoreCase))
+                parts[0] = "HKEY_USERS";
+            // Canonicalize common first segments
+            if (parts.Length > 1 && parts[1].Equals("software", StringComparison.OrdinalIgnoreCase)) parts[1] = "SOFTWARE";
+            if (parts.Length > 1 && parts[1].Equals("system", StringComparison.OrdinalIgnoreCase)) parts[1] = "SYSTEM";
+            if (parts.Length > 2 && parts[2].Equals("policies", StringComparison.OrdinalIgnoreCase)) parts[2] = "Policies";
+            if (parts.Length > 2 && parts[2].Equals("microsoft", StringComparison.OrdinalIgnoreCase)) parts[2] = "Microsoft";
+            if (parts.Length > 3 && parts[3].Equals("windows", StringComparison.OrdinalIgnoreCase)) parts[3] = "Windows";
+            if (parts.Length > 4 && parts[4].Equals("currentversion", StringComparison.OrdinalIgnoreCase)) parts[4] = "CurrentVersion";
+            return string.Join("\\", parts);
         }
 
         public void Save(string File)
@@ -477,6 +501,7 @@ namespace PolicyPlus
             foreach (var key in Keys)
             {
                 string unprefixedKeyName = UnprefixKeyName(key.Name);
+                unprefixedKeyName = StripHivePrefix(unprefixedKeyName);
                 if (key.IsDeleter)
                 {
                     Target.ClearKey(unprefixedKeyName);
@@ -519,8 +544,38 @@ namespace PolicyPlus
             }
         }
 
+        private static string StripHivePrefix(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return path;
+            string p = path;
+            // Normalize to uniform form for startswith (case-insensitive)
+            string Lower = p.ToLowerInvariant();
+            static bool TryStrip(string lower, string original, string prefix, out string result)
+            {
+                if (lower.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    result = original.Substring(prefix.Length);
+                    if (result.StartsWith("\\")) result = result.Substring(1);
+                    return true;
+                }
+                result = original; return false;
+            }
+            if (TryStrip(Lower, p, "hkey_local_machine\\", out var r)) return r;
+            if (TryStrip(Lower, p, "hkey_current_user\\", out r)) return r;
+            if (TryStrip(Lower, p, "hkey_users\\", out r)) return r;
+            if (TryStrip(Lower, p, "hklm\\", out r)) return r;
+            if (TryStrip(Lower, p, "hkcu\\", out r)) return r;
+            if (TryStrip(Lower, p, "hku\\", out r)) return r;
+            return p;
+        }
+
         public void SetPrefix(string Prefix)
         {
+            if (string.IsNullOrEmpty(Prefix))
+            {
+                this.Prefix = string.Empty;
+                return;
+            }
             if (!Prefix.EndsWith("\\"))
                 Prefix += "\\";
             this.Prefix = Prefix;

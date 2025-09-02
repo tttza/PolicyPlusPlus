@@ -87,10 +87,20 @@ namespace PolicyPlus.WinUI3.ViewModels
             if (data is byte[] bin) return $"\"{name}\"=hex:{string.Join(",", bin.Select(b => b.ToString("x2")))}";
             if (data is ulong qu)
             {
-                var b = BitConverter.GetBytes(qu);
+                var b = BitConverter.GetBytes(qu); // little-endian order
                 return $"\"{name}\"=hex(b):{string.Join(",", b.Select(x => x.ToString("x2")))}";
             }
-            return $"\"{name}\"=hex:{string.Join(",", (byte[])PolicyPlus.PolFile.ObjectToBytes(data, Microsoft.Win32.RegistryValueKind.Binary))}";
+            // Fallback for other numeric types
+            try
+            {
+                var kind = Microsoft.Win32.RegistryValueKind.Binary;
+                var bytes = (byte[])PolicyPlus.PolFile.ObjectToBytes(data, kind);
+                return $"\"{name}\"=hex:{string.Join(",", bytes.Select(b => b.ToString("x2")))}";
+            }
+            catch
+            {
+                return $"\"{name}\"=hex:";
+            }
         }
 
         private static string EscapeRegString(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");

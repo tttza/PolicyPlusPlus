@@ -27,6 +27,7 @@ using Windows.Foundation;
 using PolicyPlus; // Core APIs
 using PolicyPlus.WinUI3.Dialogs; // FindByRegistryWinUI
 using PolicyPlus.Utilities; // SearchText
+using PolicyPlus.WinUI3.ViewModels; // RegistryViewFormatter
 
 namespace PolicyPlus.WinUI3
 {
@@ -742,56 +743,212 @@ namespace PolicyPlus.WinUI3
                 ShowInfo("Using Local GPO");
         }
 
-        private void BtnLanguage_Click(object sender, RoutedEventArgs e)
-        { ShowInfo("Language dialog not implemented in this build."); }
-
-        private void BtnExportReg_Click(object sender, RoutedEventArgs e) { ShowInfo("Export .reg not implemented in this build."); }
-        private void BtnExportCsv_Click(object sender, RoutedEventArgs e) { ShowInfo("Export CSV not implemented in this build."); }
-        private void BtnImportPol_Click(object sender, RoutedEventArgs e) { ShowInfo("Import .pol not implemented in this build."); }
-        private void BtnImportReg_Click(object sender, RoutedEventArgs e) { ShowInfo("Import .reg not implemented in this build."); }
-        private void BtnFind_Click(object sender, RoutedEventArgs e)
+        private async void BtnLanguage_Click(object sender, RoutedEventArgs e)
         {
-            SearchBox.Focus(FocusState.Programmatic);
-        }
-
-        private void BtnFindReg_Click(object sender, RoutedEventArgs e)
-        {
-            SearchBox.Focus(FocusState.Programmatic);
-        }
-
-        private void BtnFindId_Click(object sender, RoutedEventArgs e)
-        {
-            SearchBox.Focus(FocusState.Programmatic);
-        }
-
-        private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
-        {
-            _selectedCategory = null;
-            if (CategoryTree != null)
+            try
             {
-                _suppressCategorySelectionChanged = true;
-                var old = CategoryTree.SelectionMode;
-                CategoryTree.SelectionMode = Microsoft.UI.Xaml.Controls.TreeViewSelectionMode.None;
-                BuildCategoryTree();
-                CategoryTree.SelectionMode = old;
-                _suppressCategorySelectionChanged = false;
+                string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
+                string admxPath = Convert.ToString(_config?.GetValue("AdmxSource", defaultPath)) ?? defaultPath;
+                string currentLang = Convert.ToString(_config?.GetValue("UICulture", System.Globalization.CultureInfo.CurrentUICulture.Name)) ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
+
+                var dlg = new LanguageOptionsDialog();
+                if (this.Content is FrameworkElement root)
+                {
+                    dlg.XamlRoot = root.XamlRoot;
+                }
+                dlg.Initialize(admxPath, currentLang);
+                var result = await dlg.ShowAsync();
+                if (result == ContentDialogResult.Primary)
+                {
+                    var chosen = dlg.SelectedLanguage;
+                    if (!string.IsNullOrEmpty(chosen) && !string.Equals(chosen, currentLang, StringComparison.OrdinalIgnoreCase))
+                    {
+                        try { _config?.SetValue("UICulture", chosen); } catch { }
+                        LoadAdmxFolderAsync(admxPath);
+                    }
+                }
             }
-            UpdateSearchPlaceholder();
-            _navTyping = false;
-            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
-            UpdateNavButtons();
+            catch
+            {
+                ShowInfo("Unable to open Language dialog.", InfoBarSeverity.Error);
+            }
+        }
+
+        private async void BtnExportReg_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var picker = new FileSavePicker();
+                var hwnd = WindowNative.GetWindowHandle(this);
+                InitializeWithWindow.Initialize(picker, hwnd);
+                picker.FileTypeChoices.Add("Registry scripts", new System.Collections.Generic.List<string> { ".reg" });
+                picker.SuggestedFileName = "export";
+                var file = await picker.PickSaveFileAsync();
+                if (file is null) return;
+
+                var reg = PolicySourceSnapshot.SnapshotAllPolicyToReg();
+                reg.Save(file.Path);
+                ShowInfo(".reg exported.", InfoBarSeverity.Success);
+            }
+            catch (Exception ex)
+            {
+                ShowInfo("Failed to export .reg: " + ex.Message, InfoBarSeverity.Error);
+            }
+        }
+
+        private async void BtnImportPol_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new ImportPolDialog();
+                if (this.Content is FrameworkElement root) dlg.XamlRoot = root.XamlRoot;
+                var result = await dlg.ShowAsync();
+                if (result == ContentDialogResult.Primary && dlg.Pol != null)
+                {
+                    ShowInfo(".pol loaded (preview).", InfoBarSeverity.Informational);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowInfo("Failed to import .pol: " + ex.Message, InfoBarSeverity.Error);
+            }
+        }
+
+        private async void BtnImportReg_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new ImportRegDialog();
+                if (this.Content is FrameworkElement root) dlg.XamlRoot = root.XamlRoot;
+                var result = await dlg.ShowAsync();
+                if (result == ContentDialogResult.Primary && dlg.ParsedReg != null)
+                {
+                    SetBusy(true, "Saving...");
+                    try
+                    {
+                        if (_useTempPol)
+                        {
+                            // Apply into both temp POLs by hive
+                            EnsureTempPolPaths();
+                            var (userPolNew, machinePolNew) = RegImportHelper.ToPolByHive(dlg.ParsedReg);
+
+                            if (!string.IsNullOrEmpty(_tempPolUserPath))
+                            {
+                                var userPath = _tempPolUserPath!;
+                                var existingUser = File.Exists(userPath) ? PolFile.Load(userPath) : new PolFile();
+                                userPolNew.Apply(existingUser);
+                                existingUser.Save(userPath);
+                            }
+
+                            if (!string.IsNullOrEmpty(_tempPolCompPath))
+                            {
+                                var compPath = _tempPolCompPath!;
+                                var existingComp = File.Exists(compPath) ? PolFile.Load(compPath) : new PolFile();
+                                machinePolNew.Apply(existingComp);
+                                existingComp.Save(compPath);
+                            }
+
+                            EnsureLocalSourcesUsingTemp();
+                            ShowInfo(".reg imported to temp POLs (User/Machine).", InfoBarSeverity.Success);
+                        }
+                        else
+                        {
+                            // Apply into Local GPO via elevation host: split by hive and send each scope separately
+                            var (userPol, machinePol) = RegImportHelper.ToPolByHive(dlg.ParsedReg);
+                            string? machineB64 = null, userB64 = null;
+                            if (machinePol != null)
+                            {
+                                using var msM = new MemoryStream(); using var bwM = new BinaryWriter(msM, System.Text.Encoding.Unicode, true);
+                                machinePol.Save(bwM); msM.Position = 0; machineB64 = Convert.ToBase64String(msM.ToArray());
+                            }
+                            if (userPol != null)
+                            {
+                                using var msU = new MemoryStream(); using var bwU = new BinaryWriter(msU, System.Text.Encoding.Unicode, true);
+                                userPol.Save(bwU); msU.Position = 0; userB64 = Convert.ToBase64String(msU.ToArray());
+                            }
+                            var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(machineB64, userB64, triggerRefresh: true);
+                            if (!res.ok)
+                            { ShowInfo(".reg import failed: " + (res.error ?? "elevation error"), InfoBarSeverity.Error); return; }
+                            RefreshLocalSources();
+                            ShowInfo(".reg imported to Local GPO.");
+                        }
+
+                        // Refresh list to reflect new states
+                        RefreshList();
+                        RefreshVisibleRows();
+                    }
+                    finally
+                    {
+                        SetBusy(false);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                SetBusy(false);
+                ShowInfo("Failed to import .reg: " + ex.Message, InfoBarSeverity.Error);
+            }
+        }
+
+        private static string SanitizeFileName(string name)
+        {
+            foreach (var ch in Path.GetInvalidFileNameChars()) name = name.Replace(ch, '_');
+            return string.IsNullOrWhiteSpace(name) ? "export" : name;
+        }
+
+        public void RefreshLocalSources()
+        {
+            try
+            {
+                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
+                _compSource = _loader.OpenSource();
+                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
+                if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
+            }
+            catch { }
+        }
+
+        private void RefreshList()
+        {
+            try { RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } catch { }
+        }
+
+        private void GoBackAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { BtnBack_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+
+        private void GoForwardAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { BtnForward_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+
+        private void RootGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            try
+            {
+                var point = e.GetCurrentPoint(this.Content as UIElement);
+                var props = point.Properties;
+                if (props.IsXButton1Pressed)
+                {
+                    BtnBack_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
+                else if (props.IsXButton2Pressed)
+                {
+                    BtnForward_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
+            }
+            catch { }
         }
 
         private async void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == global::Windows.System.VirtualKey.Enter)
             {
-                if (PolicyList?.SelectedItem is PolicyListRow row and { Policy: not null })
+                if (PolicyList?.SelectedItem is PolicyListRow row && row.Policy is not null)
                 {
                     e.Handled = true;
                     await OpenEditDialogForPolicyInternalAsync(row.Policy, ensureFront: true);
                 }
-                else if (PolicyList?.SelectedItem is PolicyListRow row2 and { Category: not null })
+                else if (PolicyList?.SelectedItem is PolicyListRow row2 && row2.Category is not null)
                 {
                     e.Handled = true;
                     _selectedCategory = row2.Category;
@@ -856,8 +1013,6 @@ namespace PolicyPlus.WinUI3
                 SearchBox.PlaceholderText = "Search policies";
         }
 
-        private void PolicyList_ItemClick(object sender, ItemClickEventArgs e) { }
-
         private void ViewDetailsToggle_Click(object sender, RoutedEventArgs e)
         {
             if (sender is ToggleMenuFlyoutItem t)
@@ -868,47 +1023,22 @@ namespace PolicyPlus.WinUI3
             }
         }
 
-        public void RefreshLocalSources()
+        private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
         {
-            try
+            _selectedCategory = null;
+            if (CategoryTree != null)
             {
-                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-                _compSource = _loader.OpenSource();
-                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-                if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
+                _suppressCategorySelectionChanged = true;
+                var old = CategoryTree.SelectionMode;
+                CategoryTree.SelectionMode = Microsoft.UI.Xaml.Controls.TreeViewSelectionMode.None;
+                BuildCategoryTree();
+                CategoryTree.SelectionMode = old;
+                _suppressCategorySelectionChanged = false;
             }
-            catch { }
-        }
-
-        private void RefreshList()
-        {
-            try { RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } catch { }
-        }
-
-        private void GoBackAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { BtnBack_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
-
-        private void GoForwardAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { BtnForward_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
-
-        private void RootGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
-        {
-            try
-            {
-                var point = e.GetCurrentPoint(this.Content as UIElement);
-                var props = point.Properties;
-                if (props.IsXButton1Pressed)
-                {
-                    BtnBack_Click(this, new RoutedEventArgs());
-                    e.Handled = true;
-                }
-                else if (props.IsXButton2Pressed)
-                {
-                    BtnForward_Click(this, new RoutedEventArgs());
-                    e.Handled = true;
-                }
-            }
-            catch { }
+            UpdateSearchPlaceholder();
+            _navTyping = false;
+            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+            UpdateNavButtons();
         }
     }
 }

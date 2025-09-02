@@ -9,17 +9,17 @@
     DefaultButton="Primary"
     MinWidth="520">
     <StackPanel Spacing="12">
-        <TextBlock Text="Choose .reg file and root key, then preview parsed content."/>
+        <TextBlock Text="Choose .reg file. Root hive will be detected automatically."/>
         <StackPanel Orientation="Horizontal" Spacing="8">
             <TextBox x:Name="RegPath" Width="360" PlaceholderText="Select a .reg file..." IsReadOnly="True"/>
             <Button Content="Browse..." Click="Browse_Click"/>
         </StackPanel>
-        <ComboBox x:Name="RootSelector" Width="260">
-            <ComboBoxItem Content="HKEY_LOCAL_MACHINE"/>
-            <ComboBoxItem Content="HKEY_CURRENT_USER"/>
-            <ComboBoxItem Content="HKEY_USERS"/>
-        </ComboBox>
-        <Button Content="Preview" Click="Preview_Click"/>
-        <TextBox x:Name="PreviewBox" AcceptsReturn="True" TextWrapping="Wrap" Height="240" IsReadOnly="True"/>
+        <TextBox x:Name="PreviewBox"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 Height="320"
+                 IsReadOnly="True"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.VerticalScrollMode="Enabled"/>
     </StackPanel>
 </ContentDialog>

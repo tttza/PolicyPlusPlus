@@ -42,7 +42,6 @@ namespace PolicyPlus.WinUI3.Windows
             BtnApplySelected.Click += BtnApplySelected_Click;
             BtnDiscardSelected.Click += BtnDiscardSelected_Click;
             BtnClearFilters.Click += (s, e) => { if (SearchBox!=null) SearchBox.Text = string.Empty; if (ScopeFilter!=null) ScopeFilter.SelectedIndex = 0; if (OperationFilter!=null) OperationFilter.SelectedIndex = 0; if (HistoryTimeRange!=null) HistoryTimeRange.SelectedIndex = 0; if (HistoryType!=null) HistoryType.SelectedIndex = 0; if (HistorySearch!=null) HistorySearch.Text = string.Empty; RefreshViews(); };
-            BtnExportPending.Click += BtnExportPending_Click;
 
             if (RootShell != null)
                 RootShell.Loaded += (s, e) => { RefreshViews(); PendingChangesWindow_Loaded(s, e); };
@@ -252,30 +251,6 @@ namespace PolicyPlus.WinUI3.Windows
                 dp.SetText(h.Details ?? string.Empty);
                 Clipboard.SetContent(dp);
             }
-        }
-
-        private async void BtnExportPending_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-                var picker = new FileSavePicker();
-                InitializeWithWindow.Initialize(picker, hwnd);
-                picker.FileTypeChoices.Add("CSV", new List<string> { ".csv" });
-                picker.SuggestedFileName = "pending";
-                var file = await picker.PickSaveFileAsync();
-                if (file == null) return;
-
-                var rows = new List<string>();
-                rows.Add("PolicyId,PolicyName,Scope,Action,Details");
-                foreach (var c in _pendingView)
-                {
-                    string esc(string s) => '"' + (s ?? string.Empty).Replace("\"", "\"\"") + '"';
-                    rows.Add(string.Join(",", new[] { esc(c.PolicyId), esc(c.PolicyName), esc(c.Scope), esc(c.Action), esc(c.Details) }));
-                }
-                await global::Windows.Storage.FileIO.WriteLinesAsync(file, rows);
-            }
-            catch { }
         }
 
         private void SearchBox_TextChanged(object sender, AutoSuggestBoxTextChangedEventArgs e)
