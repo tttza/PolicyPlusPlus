@@ -200,7 +200,7 @@ namespace PolicyPlus.WinUI3
                 {
                     try { await Task.Delay(60, token); } catch { return; }
                     if (token.IsCancellationRequested) return;
-                    DispatcherQueue.TryEnqueue(() => ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty));
+                    DispatcherQueue.TryEnqueue(() => RebindConsideringAsync(SearchBox?.Text ?? string.Empty));
                 });
             }
             catch { }
@@ -216,7 +216,7 @@ namespace PolicyPlus.WinUI3
             SaveColumnPrefs();
             UpdateColumnVisibilityFromFlags();
             _navTyping = false;
-            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
             UpdateNavButtons();
         }
 
@@ -240,6 +240,17 @@ namespace PolicyPlus.WinUI3
         private void SetBusy(bool busy)
         {
             if (BusyOverlay == null) return;
+            if (busy)
+            {
+                try { if (BusyText != null && string.IsNullOrWhiteSpace(BusyText.Text)) BusyText.Text = "Working..."; } catch { }
+            }
+            BusyOverlay.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void SetBusy(bool busy, string? message)
+        {
+            if (BusyOverlay == null) return;
+            try { if (BusyText != null && !string.IsNullOrEmpty(message)) BusyText.Text = message; } catch { }
             BusyOverlay.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -300,22 +311,73 @@ namespace PolicyPlus.WinUI3
 
         private async void LoadAdmxFolderAsync(string path)
         {
-            SetBusy(true);
+            SetBusy(true, "Loading...");
             try
             {
-                _bundle = new AdmxBundle();
                 var langPref = Convert.ToString(_config?.GetValue("UICulture", System.Globalization.CultureInfo.CurrentUICulture.Name)) ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
-                var fails = _bundle.LoadFolder(path, langPref);
-                if (fails.Any())
-                    ShowInfo($"ADMX load completed with {fails.Count()} issue(s).", InfoBarSeverity.Warning);
+
+                AdmxBundle? newBundle = null;
+                int failureCount = 0;
+                List<PolicyPlusPolicy>? allLocal = null;
+                int totalGroupsLocal = 0;
+                List<(PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)>? searchIndexLocal = null;
+                Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)>? searchIndexByIdLocal = null;
+
+                await Task.Run(() =>
+                {
+                    var b = new AdmxBundle();
+                    var fails = b.LoadFolder(path, langPref);
+                    newBundle = b;
+                    failureCount = fails.Count();
+                    allLocal = b.Policies.Values.ToList();
+                    totalGroupsLocal = allLocal.GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).Count();
+
+                    // Build search index off the UI thread
+                    try
+                    {
+                        searchIndexLocal = allLocal.Select(p => (
+                            Policy: p,
+                            NameLower: (p.DisplayName ?? string.Empty).ToLowerInvariant(),
+                            IdLower: (p.UniqueID ?? string.Empty).ToLowerInvariant(),
+                            DescLower: (p.DisplayExplanation ?? string.Empty).ToLowerInvariant()
+                        )).ToList();
+                        searchIndexByIdLocal = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var e in searchIndexLocal)
+                        {
+                            searchIndexByIdLocal[e.Policy.UniqueID] = e;
+                        }
+                    }
+                    catch
+                    {
+                        searchIndexLocal = new List<(PolicyPlusPolicy, string, string, string)>();
+                        searchIndexByIdLocal = new Dictionary<string, (PolicyPlusPolicy, string, string, string)>(StringComparer.OrdinalIgnoreCase);
+                    }
+                });
+
+                _bundle = newBundle;
+                _allPolicies = allLocal ?? new List<PolicyPlusPolicy>();
+                _totalGroupCount = totalGroupsLocal;
+                RegistryReferenceCache.Clear();
+
+                // Adopt prebuilt search index
+                if (searchIndexLocal != null && searchIndexByIdLocal != null)
+                {
+                    _searchIndex = searchIndexLocal;
+                    _searchIndexById = searchIndexByIdLocal;
+                }
+                else
+                {
+                    RebuildSearchIndex();
+                }
+
+                BuildCategoryTreeAsync();
+
+                if (failureCount > 0)
+                    ShowInfo($"ADMX load completed with {failureCount} issue(s).", InfoBarSeverity.Warning);
                 else
                     ShowInfo($"ADMX loaded ({langPref}).");
-                BuildCategoryTree();
-                _allPolicies = _bundle.Policies.Values.ToList();
-                _totalGroupCount = _allPolicies.GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).Count();
-                RegistryReferenceCache.Clear();
-                RebuildSearchIndex();
-                ApplyFiltersAndBind();
+
+                RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
             }
             finally { SetBusy(false); }
             await Task.CompletedTask;
@@ -384,7 +446,7 @@ namespace PolicyPlus.WinUI3
                 }
             }
             catch { }
-            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
         }
 
         private static int MatchScoreFor(string textLower, string qLower)
@@ -488,10 +550,10 @@ namespace PolicyPlus.WinUI3
         }
 
         private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
-        { _navTyping = false; var q = args.QueryText ?? string.Empty; ApplyFiltersAndBind(q); UpdateNavButtons(); }
+        { _navTyping = false; var q = args.QueryText ?? string.Empty; RunAsyncSearchAndBind(q); UpdateNavButtons(); }
 
         private void SearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
-        { _navTyping = false; var chosen = args.SelectedItem?.ToString() ?? string.Empty; ApplyFiltersAndBind(chosen); UpdateNavButtons(); }
+        { _navTyping = false; var chosen = args.SelectedItem?.ToString() ?? string.Empty; RunAsyncSearchAndBind(chosen); UpdateNavButtons(); }
 
         private void AppliesToSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -499,7 +561,7 @@ namespace PolicyPlus.WinUI3
             var sel = (AppliesToSelector?.SelectedItem as ComboBoxItem)?.Content?.ToString();
             _appliesFilter = sel switch { "Computer" => AdmxPolicySection.Machine, "User" => AdmxPolicySection.User, _ => AdmxPolicySection.Both };
             _navTyping = false;
-            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
             UpdateNavButtons();
         }
 
@@ -549,12 +611,12 @@ namespace PolicyPlus.WinUI3
         private void BtnClearAll_Click(object sender, RoutedEventArgs e)
         {
             _navTyping = false;
-            SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; if (ChkConfiguredOnly != null) { _suppressConfiguredOnlyChanged = true; ChkConfiguredOnly.IsChecked = false; _suppressConfiguredOnlyChanged = false; } UpdateSearchPlaceholder(); ApplyFiltersAndBind();
+            SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; if (ChkConfiguredOnly != null) { _suppressConfiguredOnlyChanged = true; ChkConfiguredOnly.IsChecked = false; _suppressConfiguredOnlyChanged = false; } UpdateSearchPlaceholder(); RunAsyncFilterAndBind();
             UpdateNavButtons();
         }
 
         private void ChkConfiguredOnly_Checked(object sender, RoutedEventArgs e)
-        { if (_suppressConfiguredOnlyChanged) return; _configuredOnly = ChkConfiguredOnly?.IsChecked == true; _navTyping = false; ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); UpdateNavButtons(); }
+        { if (_suppressConfiguredOnlyChanged) return; _configuredOnly = ChkConfiguredOnly?.IsChecked == true; _navTyping = false; RebindConsideringAsync(SearchBox?.Text ?? string.Empty); UpdateNavButtons(); }
 
         private void ChkUseTempPol_Checked(object sender, RoutedEventArgs e)
         { _useTempPol = ChkUseTempPol?.IsChecked == true; EnsureLocalSourcesUsingTemp(); ShowInfo(_useTempPol ? "Using temp .pol" : "Using Local GPO"); }
@@ -595,7 +657,7 @@ namespace PolicyPlus.WinUI3
             }
             UpdateSearchPlaceholder();
             _navTyping = false;
-            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
             UpdateNavButtons();
         }
 
@@ -614,7 +676,7 @@ namespace PolicyPlus.WinUI3
                     _selectedCategory = row2.Category;
                     UpdateSearchPlaceholder();
                     _navTyping = false;
-                    ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+                    RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
                     UpdateNavButtons();
                 }
             }
@@ -648,7 +710,7 @@ namespace PolicyPlus.WinUI3
                 _selectedCategory = cat;
                 UpdateSearchPlaceholder();
                 _navTyping = false;
-                ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+                RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
                 SelectCategoryInTree(cat);
                 UpdateNavButtons();
             }
@@ -699,7 +761,7 @@ namespace PolicyPlus.WinUI3
 
         private void RefreshList()
         {
-            try { ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); } catch { }
+            try { RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } catch { }
         }
 
         private void GoBackAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)

@@ -43,7 +43,7 @@ namespace PolicyPlus.WinUI3
                 var pending = PendingChangesService.Instance.Pending.ToArray();
                 if (pending.Length > 0)
                 {
-                    SetBusy(true);
+                    SetBusy(true, "Saving...");
                     var (ok, err) = await SavePendingAsync(pending);
                     SetBusy(false);
 

@@ -524,5 +524,78 @@ namespace PolicyPlus.WinUI3
                 });
             }
         }
+
+        // Async filtering helper for non-search scenarios (e.g., toggling ConfiguredOnly/AppliesTo/Category)
+        private void RunAsyncFilterAndBind()
+        {
+            _searchDebounceCts?.Cancel();
+            _searchDebounceCts = new System.Threading.CancellationTokenSource();
+            var token = _searchDebounceCts.Token;
+
+            // Show spinner and preserve scroll
+            try { PreserveScrollPosition(); } catch { }
+            try { if (SearchSpinner != null) { SearchSpinner.Visibility = Visibility.Visible; SearchSpinner.IsActive = true; } } catch { }
+
+            var applies = _appliesFilter;
+            var category = _selectedCategory;
+            var configuredOnly = _configuredOnly;
+            if (configuredOnly)
+            {
+                try { EnsureLocalSources(); } catch { }
+            }
+            var comp = _compSource;
+            var user = _userSource;
+
+            _ = System.Threading.Tasks.Task.Run(async () =>
+            {
+                try { await System.Threading.Tasks.Task.Delay(60, token); } catch { return; }
+                if (token.IsCancellationRequested) { FinishSpinner(); return; }
+
+                var snap = new FilterSnapshot(applies, category, includeSubcats: configuredOnly, configuredOnly: configuredOnly, comp: comp, user: user);
+
+                List<PolicyPlusPolicy> items;
+                try
+                {
+                    items = BaseSequenceForFilters(snap).ToList();
+                }
+                catch
+                {
+                    items = new List<PolicyPlusPolicy>();
+                }
+
+                if (token.IsCancellationRequested) { FinishSpinner(); return; }
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (token.IsCancellationRequested) { FinishSpinner(); return; }
+                    try
+                    {
+                        bool flat = configuredOnly; // non-search path
+                        BindSequenceEnhanced(items, flat);
+                        RestorePositionOrSelection();
+                        UpdateNavButtons();
+                    }
+                    finally
+                    {
+                        FinishSpinner();
+                    }
+                });
+            });
+
+            void FinishSpinner()
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    try { if (SearchSpinner != null) { SearchSpinner.IsActive = false; SearchSpinner.Visibility = Visibility.Collapsed; } } catch { }
+                });
+            }
+        }
+
+        private void RebindConsideringAsync(string q)
+        {
+            if (string.IsNullOrWhiteSpace(q))
+                RunAsyncFilterAndBind();
+            else
+                RunAsyncSearchAndBind(q);
+        }
     }
 }

@@ -19,7 +19,7 @@ namespace PolicyPlus.WinUI3
             _selectedCategory = cat;
             UpdateSearchPlaceholder();
             _navTyping = false;
-            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
             SelectCategoryInTree(cat);
 
             var now = DateTime.UtcNow;
@@ -109,7 +109,7 @@ namespace PolicyPlus.WinUI3
                 _selectedCategory = cat;
                 UpdateSearchPlaceholder();
                 _navTyping = false;
-                ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+                RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
                 _suppressCategorySelectionChanged = true;
                 try { CategoryTree.SelectedNode = node; }
                 finally { _suppressCategorySelectionChanged = false; }
@@ -129,6 +129,125 @@ namespace PolicyPlus.WinUI3
             return null;
         }
 
+        // Background-friendly category building
+        private sealed class CatNodeData
+        {
+            public PolicyPlusCategory Cat { get; init; }
+            public List<CatNodeData> Children { get; } = new();
+        }
+
+        private void BuildCategoryTreeAsync()
+        {
+            if (CategoryTree == null || _bundle == null) return;
+
+            var bundleLocal = _bundle;
+            var allPoliciesLocal = _allPolicies;
+            var applies = _appliesFilter;
+            var configuredOnly = _configuredOnly;
+            var comp = _compSource;
+            var user = _userSource;
+            var hideEmpty = _hideEmptyCategories;
+            var selectedId = _selectedCategory?.UniqueID;
+
+            _ = Task.Run(() =>
+            {
+                List<CatNodeData> roots;
+                try
+                {
+                    bool Include(PolicyPlusCategory cat)
+                    {
+                        if (!hideEmpty) return true;
+                        try
+                        {
+                            return ViewModels.CategoryVisibilityEvaluator.IsCategoryVisible(cat, allPoliciesLocal, applies, configuredOnly, comp, user);
+                        }
+                        catch { return true; }
+                    }
+
+                    var rootCats = bundleLocal.Categories.Values.Where(c => c.Parent == null)
+                        .OrderBy(c => c.DisplayName)
+                        .ToList();
+
+                    CatNodeData BuildNode(PolicyPlusCategory c)
+                    {
+                        var nd = new CatNodeData { Cat = c };
+                        foreach (var ch in c.Children.OrderBy(x => x.DisplayName))
+                        {
+                            if (!Include(ch)) continue;
+                            nd.Children.Add(BuildNode(ch));
+                        }
+                        return nd;
+                    }
+
+                    roots = new List<CatNodeData>();
+                    foreach (var rc in rootCats)
+                    {
+                        if (Include(rc))
+                        {
+                            roots.Add(BuildNode(rc));
+                        }
+                    }
+                }
+                catch
+                {
+                    roots = new List<CatNodeData>();
+                }
+
+                DispatcherQueue.TryEnqueue(() => ApplyCategoryTreeData(roots, selectedId));
+            });
+        }
+
+        private void ApplyCategoryTreeData(List<CatNodeData> roots, string? selectedId)
+        {
+            if (CategoryTree == null) return;
+            _suppressCategorySelectionChanged = true;
+            try
+            {
+                var oldMode = CategoryTree.SelectionMode;
+                CategoryTree.SelectionMode = Microsoft.UI.Xaml.Controls.TreeViewSelectionMode.None;
+
+                CategoryTree.RootNodes.Clear();
+
+                Microsoft.UI.Xaml.Controls.TreeViewNode Convert(CatNodeData d)
+                {
+                    var node = new Microsoft.UI.Xaml.Controls.TreeViewNode { Content = d.Cat };
+                    foreach (var ch in d.Children)
+                        node.Children.Add(Convert(ch));
+                    return node;
+                }
+
+                foreach (var d in roots)
+                {
+                    var node = Convert(d);
+                    if (node.Children.Count > 0 || !_hideEmptyCategories)
+                        CategoryTree.RootNodes.Add(node);
+                }
+
+                CategoryTree.SelectionMode = oldMode;
+
+                if (!string.IsNullOrEmpty(selectedId))
+                {
+                    var cat = FindCategoryById(selectedId);
+                    if (cat != null)
+                        SelectCategoryInTree(cat);
+                }
+            }
+            finally
+            {
+                _suppressCategorySelectionChanged = false;
+            }
+        }
+
+        private PolicyPlusCategory? FindCategoryById(string uniqueId)
+        {
+            try
+            {
+                return _bundle?.Categories.Values.FirstOrDefault(c => string.Equals(c.UniqueID, uniqueId, StringComparison.OrdinalIgnoreCase));
+            }
+            catch { return null; }
+        }
+
+        // Legacy synchronous builder kept for fallback
         private void BuildCategoryTree()
         {
             if (CategoryTree == null || _bundle == null) return;
@@ -261,7 +380,7 @@ namespace PolicyPlus.WinUI3
                     _selectedCategory = cat;
                     UpdateSearchPlaceholder();
                     _navTyping = false;
-                    ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
+                    RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
                 }
             }
         }

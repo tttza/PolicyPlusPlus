@@ -327,7 +327,7 @@
             <Grid x:Name="BusyOverlay" Background="#80000000" Visibility="Collapsed" Grid.RowSpan="2" Canvas.ZIndex="10">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
                     <controls:ProgressRing IsActive="True" Width="48" Height="48"/>
-                    <TextBlock Text="Saving..."/>
+                    <TextBlock x:Name="BusyText" Text="Working..."/>
                 </StackPanel>
             </Grid>
         </Grid>
