@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace PolicyPlus.WinUI3.Services
 {
@@ -30,6 +31,35 @@ namespace PolicyPlus.WinUI3.Services
                 else if (age <= TimeSpan.FromDays(7)) recencyBoost = 10;
             }
             return countBoost + recencyBoost;
+        }
+
+        public static void Initialize(IDictionary<string, int> counts, IDictionary<string, DateTime> lastUsed)
+        {
+            try
+            {
+                _counts.Clear();
+                _lastUsed.Clear();
+                if (counts != null)
+                {
+                    foreach (var kv in counts)
+                        _counts[kv.Key] = kv.Value;
+                }
+                if (lastUsed != null)
+                {
+                    foreach (var kv in lastUsed)
+                        _lastUsed[kv.Key] = kv.Value;
+                }
+            }
+            catch { }
+        }
+
+        public static (Dictionary<string, int> counts, Dictionary<string, DateTime> lastUsed) GetSnapshot()
+        {
+            var c = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var l = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in _counts) c[kv.Key] = kv.Value;
+            foreach (var kv in _lastUsed) l[kv.Key] = kv.Value;
+            return (c, l);
         }
     }
 }

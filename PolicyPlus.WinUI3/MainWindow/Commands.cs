@@ -8,9 +8,10 @@ using System.Linq;
 using System.Text;
 using Windows.ApplicationModel.DataTransfer;
 using PolicyPlus.WinUI3.Windows;
+using PolicyPlus.WinUI3.Services;
+using PolicyPlus.WinUI3.ViewModels;
+using PolicyPlus;
 using PolicyPlus.WinUI3.Utils;
-using System.Threading.Tasks;
-using PolicyPlus.WinUI3.ViewModels; // RegistryViewFormatter
 
 namespace PolicyPlus.WinUI3
 {
@@ -129,7 +130,7 @@ namespace PolicyPlus.WinUI3
             if (sender is ToggleMenuFlyoutItem t)
             {
                 _hideEmptyCategories = t.IsChecked;
-                try { _config?.SetValue("HideEmptyCategories", _hideEmptyCategories ? 1 : 0); } catch { }
+                try { SettingsService.Instance.UpdateHideEmptyCategories(_hideEmptyCategories); } catch { }
                 BuildCategoryTree();
                 ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
             }

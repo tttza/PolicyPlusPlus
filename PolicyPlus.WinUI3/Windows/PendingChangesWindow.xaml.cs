@@ -104,9 +104,14 @@ namespace PolicyPlus.WinUI3.Windows
             }
             catch { }
         }
-        private void OnCollectionsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        private void OnCollectionsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            DispatcherQueue.TryEnqueue(() => RefreshViews());
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                RefreshViews();
+                // Persist history to disk when it changes
+                try { SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList()); } catch { }
+            });
         }
 
         // Call once on loaded too
@@ -316,6 +321,11 @@ namespace PolicyPlus.WinUI3.Windows
             if (wroteOk)
             {
                 PendingChangesService.Instance.Applied(appliedList.ToArray());
+                try
+                {
+                    SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList());
+                }
+                catch { }
                 try { main?.RefreshLocalSources(); } catch { }
                 RefreshViews();
                 ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
@@ -387,6 +397,8 @@ namespace PolicyPlus.WinUI3.Windows
                 DesiredState = h.DesiredState,
                 Options = h.Options
             });
+
+            try { SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList()); } catch { }
 
             RefreshViews();
             ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);

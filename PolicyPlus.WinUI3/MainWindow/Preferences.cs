@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Linq;
+using PolicyPlus.WinUI3.Services;
 
 namespace PolicyPlus.WinUI3
 {
@@ -40,14 +41,15 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
-                if (_config == null) return;
-                bool Get(string k, bool defVal) { try { return Convert.ToInt32(_config.GetValue(k, defVal ? 1 : 0)) != 0; } catch { return defVal; } }
-                var id = GetFlag("ColIdFlag"); if (id != null) id.IsChecked = Get("Columns.ShowId", true);
-                var cat = GetFlag("ColCategoryFlag"); if (cat != null) cat.IsChecked = Get("Columns.ShowCategory", false);
-                var app = GetFlag("ColAppliesFlag"); if (app != null) app.IsChecked = Get("Columns.ShowApplies", false);
-                var sup = GetFlag("ColSupportedFlag"); if (sup != null) sup.IsChecked = Get("Columns.ShowSupported", false);
-                var us = GetFlag("ColUserStateFlag"); if (us != null) us.IsChecked = Get("Columns.ShowUserState", true);
-                var cs = GetFlag("ColCompStateFlag"); if (cs != null) cs.IsChecked = Get("Columns.ShowComputerState", true);
+                var s = SettingsService.Instance.LoadSettings();
+                var cols = s.Columns;
+                if (cols == null) return;
+                var id = GetFlag("ColIdFlag"); if (id != null) id.IsChecked = cols.ShowId;
+                var cat = GetFlag("ColCategoryFlag"); if (cat != null) cat.IsChecked = cols.ShowCategory;
+                var app = GetFlag("ColAppliesFlag"); if (app != null) app.IsChecked = cols.ShowApplies;
+                var sup = GetFlag("ColSupportedFlag"); if (sup != null) sup.IsChecked = cols.ShowSupported;
+                var us = GetFlag("ColUserStateFlag"); if (us != null) us.IsChecked = cols.ShowUserState;
+                var cs = GetFlag("ColCompStateFlag"); if (cs != null) cs.IsChecked = cols.ShowComputerState;
             }
             catch { }
         }
@@ -56,14 +58,39 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
-                if (_config == null) return;
-                void Set(string k, bool v) { try { _config.SetValue(k, v ? 1 : 0); } catch { } }
-                var id = GetFlag("ColIdFlag"); if (id != null) Set("Columns.ShowId", id.IsChecked == true);
-                var cat = GetFlag("ColCategoryFlag"); if (cat != null) Set("Columns.ShowCategory", cat.IsChecked == true);
-                var app = GetFlag("ColAppliesFlag"); if (app != null) Set("Columns.ShowApplies", app.IsChecked == true);
-                var sup = GetFlag("ColSupportedFlag"); if (sup != null) Set("Columns.ShowSupported", sup.IsChecked == true);
-                var us = GetFlag("ColUserStateFlag"); if (us != null) Set("Columns.ShowUserState", us.IsChecked == true);
-                var cs = GetFlag("ColCompStateFlag"); if (cs != null) Set("Columns.ShowComputerState", cs.IsChecked == true);
+                // Preserve previously saved values when a flag control is not present yet
+                var current = SettingsService.Instance.LoadSettings();
+                var existing = current.Columns ?? new ColumnsOptions();
+
+                bool showId = GetFlag("ColIdFlag")?.IsChecked ?? existing.ShowId;
+                bool showCategory = GetFlag("ColCategoryFlag")?.IsChecked ?? existing.ShowCategory;
+                bool showApplies = GetFlag("ColAppliesFlag")?.IsChecked ?? existing.ShowApplies;
+                bool showSupported = GetFlag("ColSupportedFlag")?.IsChecked ?? existing.ShowSupported;
+                bool showUserState = GetFlag("ColUserStateFlag")?.IsChecked ?? existing.ShowUserState;
+                bool showComputerState = GetFlag("ColCompStateFlag")?.IsChecked ?? existing.ShowComputerState;
+
+                var cols = new ColumnsOptions
+                {
+                    ShowId = showId,
+                    ShowCategory = showCategory,
+                    ShowApplies = showApplies,
+                    ShowSupported = showSupported,
+                    ShowUserState = showUserState,
+                    ShowComputerState = showComputerState,
+                };
+                SettingsService.Instance.UpdateColumns(cols);
+            }
+            catch { }
+        }
+
+        private void UpdateColumnMenuChecks()
+        {
+            try
+            {
+                if (ViewIdToggle != null) ViewIdToggle.IsChecked = (ColIdFlag?.IsChecked == true);
+                if (ViewCategoryToggle != null) ViewCategoryToggle.IsChecked = (ColCategoryFlag?.IsChecked == true);
+                if (ViewAppliesToggle != null) ViewAppliesToggle.IsChecked = (ColAppliesFlag?.IsChecked == true);
+                if (ViewSupportedToggle != null) ViewSupportedToggle.IsChecked = (ColSupportedFlag?.IsChecked == true);
             }
             catch { }
         }
@@ -76,6 +103,8 @@ namespace PolicyPlus.WinUI3
                 if (ColCategory != null) ColCategory.Visibility = (ColCategoryFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
                 if (ColApplies != null) ColApplies.Visibility = (ColAppliesFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
                 if (ColSupported != null) ColSupported.Visibility = (ColSupportedFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+                // Keep menu toggle checks in sync with hidden flags
+                UpdateColumnMenuChecks();
             }
             catch { }
         }
@@ -86,6 +115,7 @@ namespace PolicyPlus.WinUI3
             var theme = pref switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default };
             RootGrid.RequestedTheme = theme;
             App.SetGlobalTheme(theme);
+            try { SettingsService.Instance.UpdateTheme(pref); } catch { }
         }
 
         private void ThemeSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -94,7 +124,6 @@ namespace PolicyPlus.WinUI3
             var item = ((cb?.SelectedItem as ComboBoxItem)?.Content?.ToString());
             var pref = item ?? "System";
             ApplyTheme(pref);
-            try { _config?.SetValue("Theme", pref); } catch { }
         }
 
         private void SetScaleFromString(string s, bool updateSelector, bool save)
@@ -123,7 +152,7 @@ namespace PolicyPlus.WinUI3
             }
             if (save)
             {
-                try { _config?.SetValue("UIScale", s); } catch { }
+                try { SettingsService.Instance.UpdateScale(s); } catch { }
             }
         }
 

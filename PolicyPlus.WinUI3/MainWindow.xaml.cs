@@ -48,7 +48,6 @@ namespace PolicyPlus.WinUI3
         private int _totalGroupCount = 0;
         private AdmxPolicySection _appliesFilter = AdmxPolicySection.Both;
         private PolicyPlusCategory? _selectedCategory = null;
-        private ConfigurationStorage? _config;
         private IPolicySource? _compSource;
         private IPolicySource? _userSource;
         private bool _configuredOnly = false;
@@ -163,9 +162,20 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
-                PendingChangesWindow.ChangesAppliedOrDiscarded += (_, __) => { UpdateUnsavedIndicator(); RefreshList(); };
+                PendingChangesWindow.ChangesAppliedOrDiscarded += (_, __) => { UpdateUnsavedIndicator(); RefreshList(); PersistHistory(); };
                 PendingChangesService.Instance.Pending.CollectionChanged += (_, __) => { UpdateUnsavedIndicator(); RefreshVisibleRows(); };
+                PendingChangesService.Instance.History.CollectionChanged += (_, __) => { PersistHistory(); };
                 UpdateUnsavedIndicator();
+            }
+            catch { }
+        }
+
+        private void PersistHistory()
+        {
+            try
+            {
+                var list = PendingChangesService.Instance.History.ToList();
+                SettingsService.Instance.SaveHistory(list);
             }
             catch { }
         }
@@ -258,58 +268,85 @@ namespace PolicyPlus.WinUI3
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            try { _config = new ConfigurationStorage(Microsoft.Win32.RegistryHive.CurrentUser, @"Software\\Policy Plus"); } catch { }
-            try { _hideEmptyCategories = Convert.ToInt32(_config?.GetValue("HideEmptyCategories", 1)) != 0; } catch { _hideEmptyCategories = true; }
-            try { ToggleHideEmptyMenu.IsChecked = _hideEmptyCategories; } catch { }
-
-            try { _showDetails = Convert.ToInt32(_config?.GetValue(ShowDetailsKey, 1)) != 0; } catch { _showDetails = true; }
-            try { ViewDetailsToggle.IsChecked = _showDetails; } catch { }
-            ApplyDetailsPaneVisibility();
-
+            // Stop using ConfigurationStorage; migrate from it (one-time) to SettingsService
             try
             {
-                var themePref = Convert.ToString(_config?.GetValue("Theme", "System")) ?? "System";
+                var s = SettingsService.Instance.LoadSettings();
+
+                // Hide empty categories
+                _hideEmptyCategories = s.HideEmptyCategories ?? true;
+                try { ToggleHideEmptyMenu.IsChecked = _hideEmptyCategories; } catch { }
+
+                // Details pane
+                _showDetails = s.ShowDetails ?? true;
+                try { ViewDetailsToggle.IsChecked = _showDetails; } catch { }
+                ApplyDetailsPaneVisibility();
+
+                // Theme
+                var themePref = s.Theme ?? "System";
                 ApplyTheme(themePref);
                 App.SetGlobalTheme(themePref switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
-                var itemsObj = ThemeSelector?.Items;
-                if (itemsObj != null)
+                try
                 {
-                    var items = itemsObj.OfType<ComboBoxItem>().ToList();
-                    var match = items.FirstOrDefault(i => string.Equals(Convert.ToString(i.Content), themePref, StringComparison.OrdinalIgnoreCase));
+                    var itemsObj = ThemeSelector?.Items;
+                    var items = itemsObj?.OfType<ComboBoxItem>()?.ToList();
+                    var match = items?.FirstOrDefault(i => string.Equals(Convert.ToString(i.Content), themePref, StringComparison.OrdinalIgnoreCase));
                     if (match != null) ThemeSelector!.SelectedItem = match;
                 }
-            }
-            catch { }
+                catch { }
 
-            try
-            {
-                var scalePref = Convert.ToString(_config?.GetValue(ScaleKey, "100%")) ?? "100%";
+                // Scale
+                var scalePref = s.UIScale ?? "100%";
                 SetScaleFromString(scalePref, updateSelector: true, save: false);
-            }
-            catch { }
 
-            LoadColumnPrefs();
-            UpdateColumnVisibilityFromFlags();
+                // Columns
+                var cols = s.Columns;
+                if (cols != null)
+                {
+                    var id = GetFlag("ColIdFlag"); if (id != null) id.IsChecked = cols.ShowId;
+                    var cat = GetFlag("ColCategoryFlag"); if (cat != null) cat.IsChecked = cols.ShowCategory;
+                    var app = GetFlag("ColAppliesFlag"); if (app != null) app.IsChecked = cols.ShowApplies;
+                    var sup = GetFlag("ColSupportedFlag"); if (sup != null) sup.IsChecked = cols.ShowSupported;
+                    var us = GetFlag("ColUserStateFlag"); if (us != null) us.IsChecked = cols.ShowUserState;
+                    var cs = GetFlag("ColCompStateFlag"); if (cs != null) cs.IsChecked = cols.ShowComputerState;
+                }
+                UpdateColumnVisibilityFromFlags();
 
-            HookDoubleTapHandlers();
+                HookDoubleTapHandlers();
 
-            try
-            {
+                // ADMX path
                 string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
-                var lastObj = _config?.GetValue("AdmxSource", defaultPath);
-                string lastPath = lastObj == null ? defaultPath : Convert.ToString(lastObj) ?? defaultPath;
+                string lastPath = s.AdmxSourcePath ?? defaultPath;
                 if (Directory.Exists(lastPath))
                 {
                     LoadAdmxFolderAsync(lastPath);
                 }
+
+                // Init navigation and search UI
+                try { InitNavigation(); } catch { }
+                try { UpdateSearchClearButtonVisibility(); } catch { }
+
+                // Load history
+                try
+                {
+                    var hist = SettingsService.Instance.LoadHistory();
+                    foreach (var h in hist) PendingChangesService.Instance.History.Add(h);
+                }
+                catch { }
+
+                // Search options
+                var so = s.Search;
+                if (so != null)
+                {
+                    _searchInName = so.InName;
+                    _searchInId = so.InId;
+                    _searchInRegistryKey = so.InRegistryKey;
+                    _searchInRegistryValue = so.InRegistryValue;
+                    _searchInDescription = so.InDescription;
+                    _searchInComments = so.InComments;
+                }
             }
             catch { }
-
-            // Initialize navigation service/buttons
-            try { InitNavigation(); } catch { }
-
-            // Ensure search clear button is in correct state on load
-            try { UpdateSearchClearButtonVisibility(); } catch { }
         }
 
         // preference helper implementations are defined in MainWindow.Preferences.cs
@@ -319,7 +356,7 @@ namespace PolicyPlus.WinUI3
             SetBusy(true, "Loading...");
             try
             {
-                var langPref = Convert.ToString(_config?.GetValue("UICulture", System.Globalization.CultureInfo.CurrentUICulture.Name)) ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
+                var langPref = SettingsService.Instance.LoadSettings().Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
 
                 AdmxBundle? newBundle = null;
                 int failureCount = 0;
@@ -428,7 +465,7 @@ namespace PolicyPlus.WinUI3
             picker.FileTypeFilter.Add("*");
             var folder = await picker.PickSingleFolderAsync();
             if (folder is null) return;
-            try { _config?.SetValue("AdmxSource", folder.Path); } catch { }
+            try { SettingsService.Instance.UpdateAdmxSourcePath(folder.Path); } catch { }
             LoadAdmxFolderAsync(folder.Path);
         }
 
@@ -454,6 +491,20 @@ namespace PolicyPlus.WinUI3
                         case "comments": _searchInComments = isChecked; break;
                     }
                 }
+            }
+            catch { }
+            // Persist
+            try
+            {
+                SettingsService.Instance.UpdateSearchOptions(new SearchOptions
+                {
+                    InName = _searchInName,
+                    InId = _searchInId,
+                    InRegistryKey = _searchInRegistryKey,
+                    InRegistryValue = _searchInRegistryValue,
+                    InDescription = _searchInDescription,
+                    InComments = _searchInComments
+                });
             }
             catch { }
             RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
@@ -748,8 +799,8 @@ namespace PolicyPlus.WinUI3
             try
             {
                 string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
-                string admxPath = Convert.ToString(_config?.GetValue("AdmxSource", defaultPath)) ?? defaultPath;
-                string currentLang = Convert.ToString(_config?.GetValue("UICulture", System.Globalization.CultureInfo.CurrentUICulture.Name)) ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
+                string admxPath = SettingsService.Instance.LoadSettings().AdmxSourcePath ?? defaultPath;
+                string currentLang = SettingsService.Instance.LoadSettings().Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
 
                 var dlg = new LanguageOptionsDialog();
                 if (this.Content is FrameworkElement root)
@@ -763,7 +814,7 @@ namespace PolicyPlus.WinUI3
                     var chosen = dlg.SelectedLanguage;
                     if (!string.IsNullOrEmpty(chosen) && !string.Equals(chosen, currentLang, StringComparison.OrdinalIgnoreCase))
                     {
-                        try { _config?.SetValue("UICulture", chosen); } catch { }
+                        try { SettingsService.Instance.UpdateLanguage(chosen); } catch { }
                         LoadAdmxFolderAsync(admxPath);
                     }
                 }
@@ -1018,7 +1069,7 @@ namespace PolicyPlus.WinUI3
             if (sender is ToggleMenuFlyoutItem t)
             {
                 _showDetails = t.IsChecked;
-                try { _config?.SetValue(ShowDetailsKey, _showDetails ? 1 : 0); } catch { }
+                try { SettingsService.Instance.UpdateShowDetails(_showDetails); } catch { }
                 ApplyDetailsPaneVisibility();
             }
         }

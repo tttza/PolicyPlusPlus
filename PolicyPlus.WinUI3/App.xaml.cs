@@ -62,12 +62,42 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
 
+            // Initialize settings storage and load persisted values before creating main window
+            try
+            {
+                SettingsService.Instance.Initialize();
+                var appSettings = SettingsService.Instance.LoadSettings();
+                // Theme
+                if (!string.IsNullOrEmpty(appSettings.Theme))
+                    SetGlobalTheme(appSettings.Theme switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
+                // Scale
+                if (!string.IsNullOrEmpty(appSettings.UIScale))
+                {
+                    if (double.TryParse(appSettings.UIScale.TrimEnd('%'), out var pct))
+                        SetGlobalScale(Math.Max(0.5, pct / 100.0));
+                }
+                // Search usage stats bootstrap
+                var (counts, lastUsed) = SettingsService.Instance.LoadSearchStats();
+                SearchRankingService.Initialize(counts, lastUsed);
+            }
+            catch { }
+
             Window = new MainWindow();
             ApplyThemeTo(Window);
 
             TryApplyIconTo(Window);
 
-            Window.Closed += async (s, e) => { try { await ElevationService.Instance.ShutdownAsync(); } catch { } CloseAllSecondaryWindows(); };
+            Window.Closed += async (s, e) =>
+            {
+                try
+                {
+                    var snap = SearchRankingService.GetSnapshot();
+                    SettingsService.Instance.SaveSearchStats(snap.counts, snap.lastUsed);
+                }
+                catch { }
+                try { await ElevationService.Instance.ShutdownAsync(); } catch { }
+                CloseAllSecondaryWindows();
+            };
             Window.Activate();
         }
 
@@ -132,6 +162,11 @@ namespace PolicyPlus.WinUI3
             if (Window != null) ApplyThemeTo(Window);
             foreach (var w in _secondaryWindows) ApplyThemeTo(w);
             ThemeChanged?.Invoke(null, EventArgs.Empty);
+        }
+
+        public static void SetGlobalTheme(string theme)
+        {
+            SetGlobalTheme(theme switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
         }
 
         public static void SetGlobalScale(double scale)
