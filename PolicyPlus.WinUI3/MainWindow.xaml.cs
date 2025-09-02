@@ -652,6 +652,34 @@ namespace PolicyPlus.WinUI3
                 _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
                 if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
             }
+            else
+            {
+                // Force switch to Local GPO
+                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
+                _compSource = _loader.OpenSource();
+                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
+                if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
+            }
+        }
+
+        private void EnsureTempPolPaths()
+        {
+            try
+            {
+                var baseDir = Path.Combine(Path.GetTempPath(), "PolicyPlus");
+                Directory.CreateDirectory(baseDir);
+                if (string.IsNullOrEmpty(_tempPolCompPath))
+                {
+                    _tempPolCompPath = Path.Combine(baseDir, "machine.pol");
+                    try { var pol = new PolFile(); pol.Save(_tempPolCompPath); } catch { }
+                }
+                if (string.IsNullOrEmpty(_tempPolUserPath))
+                {
+                    _tempPolUserPath = Path.Combine(baseDir, "user.pol");
+                    try { var pol = new PolFile(); pol.Save(_tempPolUserPath); } catch { }
+                }
+            }
+            catch { }
         }
 
         private void EnsureLocalSourcesUsingTemp()
@@ -661,6 +689,7 @@ namespace PolicyPlus.WinUI3
                 EnsureLocalSources();
                 return;
             }
+            EnsureTempPolPaths();
             var compLoader = new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolCompPath ?? string.Empty, false);
             var userLoader = new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolUserPath ?? string.Empty, true);
             _compSource = compLoader.OpenSource();
@@ -697,7 +726,18 @@ namespace PolicyPlus.WinUI3
         { if (_suppressConfiguredOnlyChanged) return; _configuredOnly = ChkConfiguredOnly?.IsChecked == true; _navTyping = false; RebindConsideringAsync(SearchBox?.Text ?? string.Empty); UpdateNavButtons(); }
 
         private void ChkUseTempPol_Checked(object sender, RoutedEventArgs e)
-        { _useTempPol = ChkUseTempPol?.IsChecked == true; EnsureLocalSourcesUsingTemp(); ShowInfo(_useTempPol ? "Using temp .pol" : "Using Local GPO"); }
+        {
+            _useTempPol = ChkUseTempPol?.IsChecked == true;
+            if (_useTempPol)
+            {
+                EnsureTempPolPaths();
+            }
+            EnsureLocalSourcesUsingTemp();
+            if (_useTempPol)
+                ShowInfo($"Using temp .pol (Comp: {_tempPolCompPath}, User: {_tempPolUserPath})");
+            else
+                ShowInfo("Using Local GPO");
+        }
 
         private void BtnLanguage_Click(object sender, RoutedEventArgs e)
         { ShowInfo("Language dialog not implemented in this build."); }
