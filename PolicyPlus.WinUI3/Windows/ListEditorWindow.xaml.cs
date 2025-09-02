@@ -6,6 +6,7 @@ using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml.Media;
 using PolicyPlus.WinUI3.Utils;
+using Microsoft.UI.Xaml.Input;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -57,6 +58,13 @@ namespace PolicyPlus.WinUI3.Windows
             TryAttachScale();
             this.Activated += (s, e) => TryAttachScale();
         }
+
+        private void Accel_Add(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { AddRow(string.Empty); } catch { } args.Handled = true; }
+        private void Accel_Ok(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { Ok_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+        private void Accel_Close(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { Close(); } catch { } args.Handled = true; }
 
         private void TryAttachScale()
         {

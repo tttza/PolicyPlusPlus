@@ -25,6 +25,14 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
+            <Grid.KeyboardAccelerators>
+                <KeyboardAccelerator Key="T" Modifiers="Control" Invoked="Accel_ToggleView"/>
+                <KeyboardAccelerator Key="P" Modifiers="Control,Shift" Invoked="Accel_CopyPath"/>
+                <KeyboardAccelerator Key="R" Modifiers="Control,Shift" Invoked="Accel_CopyReg"/>
+                <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="Accel_Close"/>
+                <KeyboardAccelerator Key="Escape" Invoked="Accel_Close"/>
+            </Grid.KeyboardAccelerators>
+
             <!-- Name -->
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center"/>
             <TextBox x:Name="NameBox" Grid.Row="0" Grid.Column="1" IsReadOnly="True"/>

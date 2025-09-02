@@ -9,6 +9,7 @@ using System.Text;
 using PolicyPlus.WinUI3.Utils;
 using Windows.ApplicationModel.DataTransfer;
 using PolicyPlus.WinUI3.ViewModels;
+using Microsoft.UI.Xaml.Input;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -44,6 +45,15 @@ namespace PolicyPlus.WinUI3.Windows
 
             try { ScaleHelper.Attach(this, ScaleHost, RootShell); } catch { }
         }
+
+        private void Accel_ToggleView(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { ToggleViewBtn_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+        private void Accel_CopyPath(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { CopyToClipboard(PathBox.Text); } catch { } args.Handled = true; }
+        private void Accel_CopyReg(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { CopyToClipboard(RegBox.Text); } catch { } args.Handled = true; }
+        private void Accel_Close(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { this.Close(); } catch { } args.Handled = true; }
 
         private void ApplyThemeResources()
         {

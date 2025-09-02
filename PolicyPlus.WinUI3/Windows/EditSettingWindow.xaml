@@ -22,6 +22,16 @@
         <ColumnDefinition/>
       </Grid.ColumnDefinitions>
 
+      <Grid.KeyboardAccelerators>
+        <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="Accel_Apply"/>
+        <KeyboardAccelerator Key="Enter" Modifiers="Control" Invoked="Accel_Ok"/>
+        <KeyboardAccelerator Key="P" Modifiers="Control" Invoked="Accel_Preview"/>
+        <KeyboardAccelerator Key="Number1" Modifiers="Control" Invoked="Accel_SectionComp"/>
+        <KeyboardAccelerator Key="Number2" Modifiers="Control" Invoked="Accel_SectionUser"/>
+        <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="Accel_Close"/>
+        <KeyboardAccelerator Key="Escape" Invoked="Accel_Close"/>
+      </Grid.KeyboardAccelerators>
+
       <!-- Title -->
       <TextBlock x:Name="SettingTitle" Grid.Row="0" Grid.ColumnSpan="2" FontSize="18" FontWeight="SemiBold"/>
 

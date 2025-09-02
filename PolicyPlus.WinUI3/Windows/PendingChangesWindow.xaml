@@ -36,6 +36,18 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
+            <Grid.KeyboardAccelerators>
+                <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="Accel_SaveAll"/>
+                <KeyboardAccelerator Key="Enter" Modifiers="Control" Invoked="Accel_SaveSelected"/>
+                <KeyboardAccelerator Key="Delete" Invoked="Accel_DiscardSelected"/>
+                <KeyboardAccelerator Key="D" Modifiers="Control" Invoked="Accel_DiscardAll"/>
+                <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="Accel_FocusSearch"/>
+                <KeyboardAccelerator Key="Number1" Modifiers="Control" Invoked="Accel_TabPending"/>
+                <KeyboardAccelerator Key="Number2" Modifiers="Control" Invoked="Accel_TabHistory"/>
+                <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="Accel_Close"/>
+                <KeyboardAccelerator Key="Escape" Invoked="Accel_Close"/>
+            </Grid.KeyboardAccelerators>
+
             <controls:InfoBar x:Name="LocalStatusBar"
                               Grid.RowSpan="4"
                               VerticalAlignment="Top"

@@ -10,6 +10,14 @@
         <RowDefinition Height="*"/>
         <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
+
+      <Grid.KeyboardAccelerators>
+        <KeyboardAccelerator Key="N" Modifiers="Control" Invoked="Accel_Add"/>
+        <KeyboardAccelerator Key="Enter" Modifiers="Control" Invoked="Accel_Ok"/>
+        <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="Accel_Close"/>
+        <KeyboardAccelerator Key="Escape" Invoked="Accel_Close"/>
+      </Grid.KeyboardAccelerators>
+
       <TextBlock x:Name="HeaderText" Grid.Row="0" FontWeight="SemiBold"/>
       <ListView x:Name="ListItems" Grid.Row="1" SelectionMode="None"/>
       <Grid Grid.Row="2">

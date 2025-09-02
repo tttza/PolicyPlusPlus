@@ -24,6 +24,16 @@
                 <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="SaveAccelerator_Invoked"/>
                 <KeyboardAccelerator Key="Left" Modifiers="Menu" Invoked="GoBackAccelerator_Invoked"/>
                 <KeyboardAccelerator Key="Right" Modifiers="Menu" Invoked="GoForwardAccelerator_Invoked"/>
+                <!-- Added shortcuts -->
+                <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="FindAccelerator_Invoked"/>
+                <KeyboardAccelerator Key="P" Modifiers="Control" Invoked="OpenPendingAccelerator_Invoked"/>
+                <KeyboardAccelerator Key="L" Modifiers="Control" Invoked="LoadAdmxAccelerator_Invoked"/>
+                <KeyboardAccelerator Key="G" Modifiers="Control" Invoked="LoadLocalGpoAccelerator_Invoked"/>
+                <KeyboardAccelerator Key="E" Modifiers="Control" Invoked="ExportRegAccelerator_Invoked"/>
+                <KeyboardAccelerator Key="I" Modifiers="Control" Invoked="ImportRegAccelerator_Invoked"/>
+                <KeyboardAccelerator Key="I" Modifiers="Control,Shift" Invoked="ImportPolAccelerator_Invoked"/>
+                <KeyboardAccelerator Key="D" Modifiers="Control" Invoked="ToggleDetailsAccelerator_Invoked"/>
+                <KeyboardAccelerator Key="F5" Invoked="RefreshAccelerator_Invoked"/>
             </Grid.KeyboardAccelerators>
             <Grid.Resources>
                 <converters:ScaleConverter x:Key="ScaleConverter"/>

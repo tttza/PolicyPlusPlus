@@ -23,6 +23,69 @@ namespace PolicyPlus.WinUI3
             args.Handled = true;
         }
 
+        private void FindAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            try { SearchBox?.Focus(FocusState.Programmatic); } catch { }
+            args.Handled = true;
+        }
+
+        private void OpenPendingAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            try { BtnPendingChanges_Click(this, new RoutedEventArgs()); } catch { }
+            args.Handled = true;
+        }
+
+        private void LoadAdmxAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            try { BtnLoadAdmxFolder_Click(this, new RoutedEventArgs()); } catch { }
+            args.Handled = true;
+        }
+
+        private void LoadLocalGpoAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            try { BtnLoadLocalGpo_Click(this, new RoutedEventArgs()); } catch { }
+            args.Handled = true;
+        }
+
+        private void ExportRegAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            try { BtnExportReg_Click(this, new RoutedEventArgs()); } catch { }
+            args.Handled = true;
+        }
+
+        private void ImportRegAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            try { BtnImportReg_Click(this, new RoutedEventArgs()); } catch { }
+            args.Handled = true;
+        }
+
+        private void ImportPolAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            try { BtnImportPol_Click(this, new RoutedEventArgs()); } catch { }
+            args.Handled = true;
+        }
+
+        private void ToggleDetailsAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            try
+            {
+                if (ViewDetailsToggle != null)
+                {
+                    bool current = ViewDetailsToggle.IsChecked == true;
+                    ViewDetailsToggle.IsChecked = !current;
+                    ViewDetailsToggle_Click(ViewDetailsToggle, new RoutedEventArgs());
+                }
+            }
+            catch { }
+            args.Handled = true;
+        }
+
+        private void RefreshAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            try { RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } catch { }
+            args.Handled = true;
+        }
+
         private async void ContextEdit_Click(object sender, RoutedEventArgs e)
         {
             try

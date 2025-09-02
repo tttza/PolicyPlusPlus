@@ -14,6 +14,7 @@ using System.IO;
 using System.Threading.Tasks;
 using PolicyPlus; // Core
 using PolicyPlus.WinUI3.ViewModels;
+using Microsoft.UI.Xaml.Input;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -65,6 +66,23 @@ namespace PolicyPlus.WinUI3.Windows
 
             SubscribeCollectionChanges();
         }
+
+        private void Accel_SaveAll(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { BtnSaveAll_Click(this, new RoutedEventArgs()); args.Handled = true; }
+        private void Accel_SaveSelected(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { BtnApplySelected_Click(this, new RoutedEventArgs()); args.Handled = true; }
+        private void Accel_DiscardSelected(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { BtnDiscardSelected_Click(this, new RoutedEventArgs()); args.Handled = true; }
+        private void Accel_DiscardAll(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { BtnDiscardAll_Click(this, new RoutedEventArgs()); args.Handled = true; }
+        private void Accel_FocusSearch(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { if ((MainTabs.SelectedItem as TabViewItem) == PendingTab) SearchBox?.Focus(FocusState.Programmatic); else HistorySearch?.Focus(FocusState.Programmatic); } catch { } args.Handled = true; }
+        private void Accel_TabPending(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { MainTabs.SelectedItem = PendingTab; } catch { } args.Handled = true; }
+        private void Accel_TabHistory(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { MainTabs.SelectedItem = HistoryTab; } catch { } args.Handled = true; }
+        private void Accel_Close(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { this.Close(); } catch { } args.Handled = true; }
 
         private void MainTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

@@ -14,6 +14,7 @@ using WinRT.Interop;
 using PolicyPlus.WinUI3.Utils;
 using PolicyPlus.WinUI3.Services;
 using PolicyPlus; // for PolFile, PolicyProcessing
+using Microsoft.UI.Xaml.Input;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -66,6 +67,19 @@ namespace PolicyPlus.WinUI3.Windows
             OkBtn.Click += OkBtn_Click;
             CancelBtn.Click += (s, e) => Close();
         }
+
+        private void Accel_Apply(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { ApplyBtn_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+        private void Accel_Ok(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { OkBtn_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+        private void Accel_Preview(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { ViewDetailApplyBtn_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+        private void Accel_SectionComp(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { if (SectionSelector!=null) SectionSelector.SelectedIndex = 0; } catch { } args.Handled = true; }
+        private void Accel_SectionUser(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { if (SectionSelector!=null) SectionSelector.SelectedIndex = 1; } catch { } args.Handled = true; }
+        private void Accel_Close(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { Close(); } catch { } args.Handled = true; }
 
         private void ApplyWindowTheme()
         {
