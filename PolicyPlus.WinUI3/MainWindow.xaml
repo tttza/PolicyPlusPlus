@@ -81,11 +81,6 @@
                             <MenuFlyoutSeparator/>
                             <MenuFlyoutItem Text="Save" Click="BtnSave_Click" />
                         </controls:MenuBarItem>
-                        <controls:MenuBarItem Title="Find">
-                            <MenuFlyoutItem Text="Find..." Click="BtnFind_Click" />
-                            <MenuFlyoutItem Text="Find by registry..." Click="BtnFindReg_Click" />
-                            <MenuFlyoutItem Text="Find by ID..." Click="BtnFindId_Click" />
-                        </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Import/Export">
                             <MenuFlyoutItem Text="Export .reg..." Click="BtnExportReg_Click" />
                             <MenuFlyoutItem Text="Export CSV..." Click="BtnExportCsv_Click" />

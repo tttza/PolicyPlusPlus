@@ -75,12 +75,6 @@
     <Page Update="Resources\ThemeColors.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Update="Dialogs\FindByRegistryDialog.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Update="Dialogs\FindByIdDialog.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Update="Dialogs\LanguageOptionsDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
