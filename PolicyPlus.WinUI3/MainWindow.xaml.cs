@@ -435,17 +435,22 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
+                string? tag = null; bool isChecked = false;
                 if (sender is ToggleMenuFlyoutItem t)
+                { tag = Convert.ToString(t.Tag); isChecked = t.IsChecked; }
+                else if (sender is CheckBox cb)
+                { tag = Convert.ToString(cb.Tag); isChecked = cb.IsChecked == true; }
+
+                if (tag != null)
                 {
-                    var tag = Convert.ToString(t.Tag);
                     switch (tag)
                     {
-                        case "name": _searchInName = t.IsChecked; break;
-                        case "id": _searchInId = t.IsChecked; break;
-                        case "desc": _searchInDescription = t.IsChecked; break;
-                        case "regkey": _searchInRegistryKey = t.IsChecked; break;    // key path
-                        case "regvalue": _searchInRegistryValue = t.IsChecked; break; // value name
-                        case "comments": _searchInComments = t.IsChecked; break;
+                        case "name": _searchInName = isChecked; break;
+                        case "id": _searchInId = isChecked; break;
+                        case "desc": _searchInDescription = isChecked; break;
+                        case "regkey": _searchInRegistryKey = isChecked; break;    // key path
+                        case "regvalue": _searchInRegistryValue = isChecked; break; // value name
+                        case "comments": _searchInComments = isChecked; break;
                     }
                 }
             }

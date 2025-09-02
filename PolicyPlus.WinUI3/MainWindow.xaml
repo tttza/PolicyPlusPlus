@@ -183,16 +183,18 @@
                     <Button x:Name="SearchOptionsBtn" Style="{StaticResource NavIconButtonStyle}" ToolTipService.ToolTip="Search options">
                         <FontIcon Glyph="&#xE713;" FontSize="12"/>
                         <Button.Flyout>
-                            <MenuFlyout>
-                                <ToggleMenuFlyoutItem Tag="name" Text="Search name" IsChecked="True" Click="SearchOption_Toggle_Click"/>
-                                <ToggleMenuFlyoutItem Tag="desc" Text="Search description" IsChecked="False" Click="SearchOption_Toggle_Click"/>
-                                <ToggleMenuFlyoutItem Tag="comments" Text="Search comments" IsChecked="False" Click="SearchOption_Toggle_Click"/>
-                                <MenuFlyoutSeparator/>
-                                <ToggleMenuFlyoutItem Tag="id" Text="Search ID" IsChecked="True" Click="SearchOption_Toggle_Click"/>
-                                <ToggleMenuFlyoutItem Tag="regkey" Text="Search registry key path" IsChecked="True" Click="SearchOption_Toggle_Click"/>
-                                <ToggleMenuFlyoutItem Tag="regvalue" Text="Search registry value name" IsChecked="True" Click="SearchOption_Toggle_Click"/>
-                                
-                            </MenuFlyout>
+                            <Flyout>
+                                <StackPanel>
+                                    <CheckBox Tag="name" Content="Search name" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                    <CheckBox Tag="desc" Content="Search description" IsChecked="False" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                    <CheckBox Tag="comments" Content="Search comments" IsChecked="False" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                    <!-- Divider -->
+                                    <Border Height="1" Background="{ThemeResource ControlStrokeColorDefaultBrush}" Margin="0,6,0,6" />
+                                    <CheckBox Tag="id" Content="Search ID" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                    <CheckBox Tag="regkey" Content="Search registry key path" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                    <CheckBox Tag="regvalue" Content="Search registry value name" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                </StackPanel>
+                            </Flyout>
                         </Button.Flyout>
                     </Button>
                     <controls:ProgressRing x:Name="SearchSpinner" Width="16" Height="16" IsActive="True" Visibility="Collapsed" VerticalAlignment="Center" ToolTipService.ToolTip="Searching..."/>
