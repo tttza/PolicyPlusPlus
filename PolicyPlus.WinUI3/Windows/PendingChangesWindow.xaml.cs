@@ -212,7 +212,12 @@ namespace PolicyPlus.WinUI3.Windows
 
         private void Pending_ContextView_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as FrameworkElement)?.DataContext is not PendingChange c) return;
+            if ((sender as FrameworkElement)?.DataContext is not PendingChange c)
+            {
+                // fallback to selected item if context is missing
+                c = PendingList?.SelectedItem as PendingChange;
+                if (c == null) return;
+            }
 
             var main = App.Window as MainWindow;
             var bundleField = typeof(MainWindow).GetField("_bundle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -378,11 +383,11 @@ namespace PolicyPlus.WinUI3.Windows
             PolicyProcessing.ForgetPolicy(src, pol);
             if (h.DesiredState == PolicyState.Enabled)
             {
-                PolicyProcessing.SetPolicyState(src, pol, PolicyState.Enabled, h.Options ?? new Dictionary<string, object>());
+                PolicyProcessing.SetPolicyState(src, pol, PolicyState.Enabled, h.Options ?? new System.Collections.Generic.Dictionary<string, object>());
             }
             else if (h.DesiredState == PolicyState.Disabled)
             {
-                PolicyProcessing.SetPolicyState(src, pol, PolicyState.Disabled, new Dictionary<string, object>());
+                PolicyProcessing.SetPolicyState(src, pol, PolicyState.Disabled, new System.Collections.Generic.Dictionary<string, object>());
             }
 
             PendingChangesService.Instance.History.Add(new HistoryRecord
@@ -415,21 +420,23 @@ namespace PolicyPlus.WinUI3.Windows
 
         private async void PendingList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
-            if ((sender as ListView)?.SelectedItem is PendingChange c)
+            var selected = PendingList?.SelectedItem as PendingChange;
+            if (selected != null)
             {
-                var section = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+                var section = string.Equals(selected.Scope, "User", StringComparison.OrdinalIgnoreCase) ? AdmxPolicySection.User : AdmxPolicySection.Machine;
                 var main = App.Window as MainWindow; if (main == null) return;
-                await main.OpenEditDialogForPolicyIdAsync(c.PolicyId, section, true);
+                await main.OpenEditDialogForPolicyIdAsync(selected.PolicyId, section, true);
             }
         }
 
         private async void HistoryList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
-            if ((sender as ListView)?.SelectedItem is HistoryRecord h)
+            var selected = HistoryList?.SelectedItem as HistoryRecord;
+            if (selected != null)
             {
-                var section = string.Equals(h.Scope, "User", StringComparison.OrdinalIgnoreCase) ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+                var section = string.Equals(selected.Scope, "User", StringComparison.OrdinalIgnoreCase) ? AdmxPolicySection.User : AdmxPolicySection.Machine;
                 var main = App.Window as MainWindow; if (main == null) return;
-                await main.OpenEditDialogForPolicyIdAsync(h.PolicyId, section, true);
+                await main.OpenEditDialogForPolicyIdAsync(selected.PolicyId, section, true);
             }
         }
     }

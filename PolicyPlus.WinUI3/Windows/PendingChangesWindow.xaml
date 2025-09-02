@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls"
-    xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
+    xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls"
     xmlns:conv="using:PolicyPlus.WinUI3.Converters"
     mc:Ignorable="d"
     Title="Pending changes">
@@ -82,55 +82,32 @@
                 <controls:TabViewItem x:Name="PendingTab" Header="Pending" IsClosable="False">
                     <Grid Padding="4">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <Grid Grid.Row="0" Margin="0,0,0,4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="3*"/>
-                                <ColumnDefinition Width="140"/>
-                                <ColumnDefinition Width="120"/>
-                                <ColumnDefinition Width="5*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Policy" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="1" Text="Action" FontWeight="SemiBold" Margin="12,0,0,0"/>
-                            <TextBlock Grid.Column="2" Text="Scope" FontWeight="SemiBold" Margin="12,0,0,0"/>
-                            <TextBlock Grid.Column="3" Text="Details" FontWeight="SemiBold" Margin="12,0,0,0"/>
-                        </Grid>
-
-                        <ListView Grid.Row="1" x:Name="PendingList" SelectionMode="Extended" DoubleTapped="PendingList_DoubleTapped">
-                            <ListView.ItemTemplate>
+                        <toolkit:DataGrid Grid.Row="0"
+                                           x:Name="PendingList"
+                                           AutoGenerateColumns="False"
+                                           IsReadOnly="True"
+                                           CanUserSortColumns="True"
+                                           SelectionMode="Extended"
+                                           RowDetailsVisibilityMode="VisibleWhenSelected"
+                                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                           ScrollViewer.HorizontalScrollMode="Auto"
+                                           DoubleTapped="PendingList_DoubleTapped">
+                            <toolkit:DataGrid.Columns>
+                                <toolkit:DataGridTextColumn Header="Policy" Binding="{Binding PolicyName}" Width="300"/>
+                                <toolkit:DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="140"/>
+                                <toolkit:DataGridTextColumn Header="Scope" Binding="{Binding Scope}" Width="120"/>
+                                <toolkit:DataGridTextColumn Header="Details" Binding="{Binding Details}" Width="360"/>
+                            </toolkit:DataGrid.Columns>
+                            <toolkit:DataGrid.RowDetailsTemplate>
                                 <DataTemplate>
-                                    <Grid ColumnSpacing="12">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="3*"/>
-                                            <ColumnDefinition Width="140"/>
-                                            <ColumnDefinition Width="120"/>
-                                            <ColumnDefinition Width="5*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding PolicyName}" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding Action}"/>
-                                        <TextBlock Grid.Column="2" Text="{Binding Scope}"/>
-                                        <StackPanel Grid.Column="3" Spacing="4">
-                                            <ToggleButton x:Name="Tgl" Style="{StaticResource FlatToggle}">
-                                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Stretch">
-                                                    <FontIcon Glyph="&#xE76C;" FontFamily="Segoe MDL2 Assets" RenderTransformOrigin="0.5,0.5">
-                                                        <FontIcon.RenderTransform>
-                                                            <RotateTransform Angle="{Binding IsChecked, ElementName=Tgl, Converter={StaticResource BoolToAngle}}"/>
-                                                        </FontIcon.RenderTransform>
-                                                    </FontIcon>
-                                                    <TextBlock Text="{Binding Details}" TextWrapping="WrapWholeWords" HorizontalAlignment="Left"/>
-                                                </StackPanel>
-                                            </ToggleButton>
-                                            <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85" Visibility="{Binding IsChecked, ElementName=Tgl, Converter={StaticResource BoolToVisibility}}"/>
-                                        </StackPanel>
-                                    </Grid>
+                                    <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85"/>
                                 </DataTemplate>
-                            </ListView.ItemTemplate>
-                            <ListView.ItemContainerStyle>
-                                <Style TargetType="ListViewItem">
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            </toolkit:DataGrid.RowDetailsTemplate>
+                            <toolkit:DataGrid.RowStyle>
+                                <Style TargetType="toolkit:DataGridRow">
                                     <Setter Property="ContextFlyout">
                                         <Setter.Value>
                                             <MenuFlyout>
@@ -143,8 +120,8 @@
                                         </Setter.Value>
                                     </Setter>
                                 </Style>
-                            </ListView.ItemContainerStyle>
-                        </ListView>
+                            </toolkit:DataGrid.RowStyle>
+                        </toolkit:DataGrid>
                     </Grid>
                 </controls:TabViewItem>
 
@@ -173,60 +150,29 @@
                             <AutoSuggestBox x:Name="HistorySearch" Width="280" QueryIcon="Find" PlaceholderText="Search history (policy, path)" TextChanged="HistorySearch_TextChanged"/>
                         </StackPanel>
 
-                        <Grid Grid.Row="1">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <Grid Grid.Row="0" Margin="0,0,0,4">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="3*"/>
-                                    <ColumnDefinition Width="140"/>
-                                    <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="2*"/>
-                                    <ColumnDefinition Width="5*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Policy" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Column="1" Text="Action" FontWeight="SemiBold" Margin="12,0,0,0"/>
-                                <TextBlock Grid.Column="2" Text="Scope" FontWeight="SemiBold" Margin="12,0,0,0"/>
-                                <TextBlock Grid.Column="3" Text="Applied at" FontWeight="SemiBold" Margin="12,0,0,0"/>
-                                <TextBlock Grid.Column="4" Text="Details" FontWeight="SemiBold" Margin="12,0,0,0"/>
-                            </Grid>
-
-                            <ListView Grid.Row="1" x:Name="HistoryList" SelectionMode="Extended" DoubleTapped="HistoryList_DoubleTapped">
-                                <ListView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid ColumnSpacing="12">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="3*"/>
-                                                <ColumnDefinition Width="140"/>
-                                                <ColumnDefinition Width="120"/>
-                                                <ColumnDefinition Width="2*"/>
-                                                <ColumnDefinition Width="5*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding PolicyName}" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Action}"/>
-                                            <TextBlock Grid.Column="2" Text="{Binding Scope}"/>
-                                            <TextBlock Grid.Column="3" Text="{Binding AppliedAt}"/>
-                                            <StackPanel Grid.Column="4" Spacing="4">
-                                                <ToggleButton x:Name="Tgl2" Style="{StaticResource FlatToggle}">
-                                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Stretch">
-                                                        <FontIcon Glyph="&#xE76C;" FontFamily="Segoe MDL2 Assets">
-                                                            <FontIcon.RenderTransform>
-                                                                <RotateTransform Angle="{Binding IsChecked, ElementName=Tgl2, Converter={StaticResource BoolToAngle}}"/>
-                                                            </FontIcon.RenderTransform>
-                                                        </FontIcon>
-                                                        <TextBlock Text="{Binding Details}" TextWrapping="WrapWholeWords" HorizontalAlignment="Left"/>
-                                                    </StackPanel>
-                                                </ToggleButton>
-                                                <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85" Visibility="{Binding IsChecked, ElementName=Tgl2, Converter={StaticResource BoolToVisibility}}"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
-                        </Grid>
+                        <toolkit:DataGrid Grid.Row="1"
+                                           x:Name="HistoryList"
+                                           AutoGenerateColumns="False"
+                                           IsReadOnly="True"
+                                           CanUserSortColumns="True"
+                                           SelectionMode="Extended"
+                                           RowDetailsVisibilityMode="VisibleWhenSelected"
+                                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                           ScrollViewer.HorizontalScrollMode="Auto"
+                                           DoubleTapped="HistoryList_DoubleTapped">
+                            <toolkit:DataGrid.Columns>
+                                <toolkit:DataGridTextColumn Header="Policy" Binding="{Binding PolicyName}" Width="300"/>
+                                <toolkit:DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="140"/>
+                                <toolkit:DataGridTextColumn Header="Scope" Binding="{Binding Scope}" Width="120"/>
+                                <toolkit:DataGridTextColumn Header="Applied at" Binding="{Binding AppliedAt}" Width="180"/>
+                                <toolkit:DataGridTextColumn Header="Details" Binding="{Binding Details}" Width="400"/>
+                            </toolkit:DataGrid.Columns>
+                            <toolkit:DataGrid.RowDetailsTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85"/>
+                                </DataTemplate>
+                            </toolkit:DataGrid.RowDetailsTemplate>
+                        </toolkit:DataGrid>
                     </Grid>
                 </controls:TabViewItem>
             </controls:TabView>
