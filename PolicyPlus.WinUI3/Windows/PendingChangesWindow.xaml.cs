@@ -174,13 +174,13 @@ namespace PolicyPlus.WinUI3.Windows
             }
         }
 
-        private async void BtnSaveAll_Click(object sender, RoutedEventArgs e)
+        private void BtnSaveAll_Click(object sender, RoutedEventArgs e)
         {
             // Save all pending changes
             ApplySelected(PendingChangesService.Instance.Pending.ToArray());
         }
 
-        private async void BtnApplySelected_Click(object sender, RoutedEventArgs e)
+        private void BtnApplySelected_Click(object sender, RoutedEventArgs e)
         {
             var items = PendingList.SelectedItems;
             if (items == null || items.Count == 0) return;
@@ -233,7 +233,7 @@ namespace PolicyPlus.WinUI3.Windows
             if ((sender as FrameworkElement)?.DataContext is not PendingChange c)
             {
                 // fallback to selected item if context is missing
-                c = PendingList?.SelectedItem as PendingChange;
+                c = (PendingList?.SelectedItem as PendingChange)!;
                 if (c == null) return;
             }
 
@@ -362,7 +362,7 @@ namespace PolicyPlus.WinUI3.Windows
             SetSaving(false);
         }
 
-        private async void NotifyApplied(int count)
+        private void NotifyApplied(int count)
         {
             var msg = count == 1 ? "1 change saved." : $"{count} changes saved.";
             ShowLocalInfo(msg);
@@ -370,10 +370,9 @@ namespace PolicyPlus.WinUI3.Windows
             {
                 try { mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { msg, InfoBarSeverity.Success }); } catch { }
             }
-            await System.Threading.Tasks.Task.CompletedTask;
         }
 
-        private async void NotifyDiscarded(int count)
+        private void NotifyDiscarded(int count)
         {
             var msg = count == 1 ? "1 change discarded." : $"{count} changes discarded.";
             ShowLocalInfo(msg);
@@ -381,7 +380,6 @@ namespace PolicyPlus.WinUI3.Windows
             {
                 try { mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { msg, InfoBarSeverity.Informational }); } catch { }
             }
-            await System.Threading.Tasks.Task.CompletedTask;
         }
 
         private void ExecuteReapply(HistoryRecord h)

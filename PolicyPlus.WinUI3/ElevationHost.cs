@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using System.IO.Pipes; // Acl helper
 
 namespace PolicyPlus.WinUI3
 {
@@ -27,7 +26,7 @@ namespace PolicyPlus.WinUI3
 
         private static string HostLogPath => Path.Combine(Path.GetTempPath(), "PolicyPlus_host.log");
         private static void Log(string msg)
-        { if (!s_logEnabled) return; try { File.AppendAllText(HostLogPath, DateTime.Now.ToString("s") + " [" + Environment.ProcessId + "] " + msg + Environment.NewLine); } catch { } }
+        { if (!s_logEnabled) return; try { File.AppendAllText(HostLogPath, DateTime.Now.ToString("s") + "[" + Environment.ProcessId + "] " + msg + Environment.NewLine); } catch { } }
 
         public static int Run(string pipeName)
         {

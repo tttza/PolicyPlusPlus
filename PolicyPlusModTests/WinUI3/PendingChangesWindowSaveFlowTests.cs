@@ -1,28 +1,14 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using PolicyPlus;
-using PolicyPlus.WinUI3;
 using PolicyPlus.WinUI3.Services;
-using PolicyPlus.WinUI3.Windows;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
 {
     public class PendingChangesWindowSaveFlowTests
     {
-        private sealed class FakeElevationService : IElevationService
-        {
-            public List<(string? m, string? u, bool refresh)> Calls { get; } = new();
-            public Task<(bool ok, string? error)> WriteLocalGpoBytesAsync(string? machinePolBase64, string? userPolBase64, bool triggerRefresh = true)
-            {
-                Calls.Add((machinePolBase64, userPolBase64, triggerRefresh));
-                return Task.FromResult((true, (string?)null));
-            }
-        }
-
-        private static (AdmxBundle bundle, PendingChange change) BuildContext()
+        [Fact(DisplayName = "Save flow builds POL base64 and calls elevation writer")]
+        public void SaveFlow_CallsElevationService_WithBuiltBase64()
         {
             var pol = new PolicyPlusPolicy
             {
@@ -46,13 +32,7 @@ namespace PolicyPlusModTests.WinUI3
                 DesiredState = PolicyState.Enabled,
                 Options = new Dictionary<string, object>()
             };
-            return (bundle, change);
-        }
 
-        [Fact(DisplayName = "Save flow builds POL base64 and calls elevation writer")]
-        public async Task SaveFlow_CallsElevationService_WithBuiltBase64()
-        {
-            var (bundle, change) = BuildContext();
             PendingChangesService.Instance.Pending.Clear();
             PendingChangesService.Instance.History.Clear();
             PendingChangesService.Instance.Add(change);

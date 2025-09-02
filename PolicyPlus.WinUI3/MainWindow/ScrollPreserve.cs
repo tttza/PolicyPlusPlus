@@ -78,7 +78,7 @@ namespace PolicyPlus.WinUI3
             catch { }
         }
 
-        private void PolicyScroll_ViewChanged(object sender, ScrollViewerViewChangedEventArgs e)
+        private void PolicyScroll_ViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
         {
             try { _lastKnownVerticalOffset = _policyListScroll?.VerticalOffset; } catch { }
         }

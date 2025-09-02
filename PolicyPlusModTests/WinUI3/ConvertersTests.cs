@@ -10,7 +10,7 @@ namespace PolicyPlusModTests.WinUI3
         [InlineData(true, "Visible", true)]
         [InlineData(false, "Collapsed", false)]
         [InlineData(null, "Collapsed", false)]
-        public void BoolToVisibility_Convert_And_Back(object input, string expectedName, bool expectedBack)
+        public void BoolToVisibility_Convert_And_Back(object? input, string expectedName, bool expectedBack)
         {
             var conv = new BoolToVisibilityConverter();
             var result = conv.Convert(input!, null!, null!, "");
@@ -24,7 +24,7 @@ namespace PolicyPlusModTests.WinUI3
         [InlineData(true, "Collapsed", false)]
         [InlineData(false, "Visible", true)]
         [InlineData(null, "Visible", true)]
-        public void NotBoolToVisibility_Convert_And_Back(object input, string expectedName, bool expectedBack)
+        public void NotBoolToVisibility_Convert_And_Back(object? input, string expectedName, bool expectedBack)
         {
             var conv = new NotBoolToVisibilityConverter();
             var result = conv.Convert(input!, null!, null!, "");
@@ -38,7 +38,7 @@ namespace PolicyPlusModTests.WinUI3
         [InlineData(false, 0.0)]
         [InlineData(true, 90.0)]
         [InlineData(null, 0.0)]
-        public void BoolToAngle_Convert(object input, double expected)
+        public void BoolToAngle_Convert(object? input, double expected)
         {
             var conv = new BoolToAngleConverter();
             var result = Convert.ToDouble(conv.Convert(input!, typeof(double), null!, ""));

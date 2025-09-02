@@ -127,7 +127,7 @@ namespace PolicyPlusModTests.TestHelpers
         public static T RunInSta<T>(Func<T> func)
         {
             T result = default!;
-            Exception ex = null;
+            Exception? ex = null;
             var t = new System.Threading.Thread(() =>
             {
                 try { result = func(); }
@@ -145,8 +145,8 @@ namespace PolicyPlusModTests.TestHelpers
     {
         public class Issue
         {
-            public Control Control { get; init; }
-            public string Kind { get; init; }
+            public Control Control { get; init; } = null!;
+            public string Kind { get; init; } = string.Empty;
             public override string ToString() => $"{Control?.FindForm()?.Name}/{Control?.Name}: {Kind}";
         }
 
@@ -154,6 +154,6 @@ namespace PolicyPlusModTests.TestHelpers
         public Issue[] Issues => _issues.ToArray();
         public bool HasIssues => _issues.Count > 0;
         public void AddIssue(Control control, string kind) => _issues.Add(new Issue { Control = control, Kind = kind });
-    public override string ToString() => string.Join("; ", _issues.ConvertAll(i => i.ToString()));
+        public override string ToString() => string.Join("; ", _issues.ConvertAll(i => i.ToString()));
     }
 }

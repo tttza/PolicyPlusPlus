@@ -194,7 +194,7 @@ namespace PolicyPlusModTests.TestHelpers
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "BinaryValue",
                 Section = AdmxPolicySection.Machine,
-                Elements = null,
+                Elements = null!,
                 AffectedValues = new PolicyRegistryList(),
                 DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
             };
@@ -213,7 +213,7 @@ namespace PolicyPlusModTests.TestHelpers
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "QwordValue",
                 Section = AdmxPolicySection.Machine,
-                Elements = null,
+                Elements = null!,
                 AffectedValues = new PolicyRegistryList(),
                 DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
             };
@@ -232,7 +232,7 @@ namespace PolicyPlusModTests.TestHelpers
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "ExpandStringValue",
                 Section = AdmxPolicySection.Machine,
-                Elements = null,
+                Elements = null!,
                 AffectedValues = new PolicyRegistryList(),
                 DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
             };
@@ -251,7 +251,7 @@ namespace PolicyPlusModTests.TestHelpers
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "DeleteValue",
                 Section = AdmxPolicySection.Machine,
-                Elements = null,
+                Elements = null!,
                 AffectedValues = new PolicyRegistryList(),
                 DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
             };
@@ -268,9 +268,9 @@ namespace PolicyPlusModTests.TestHelpers
             var rawPolicy = new AdmxPolicy
             {
                 RegistryKey = "Software\\PolicyPlusTest\\ClearMe",
-                RegistryValue = null,
+                RegistryValue = null!,
                 Section = AdmxPolicySection.Machine,
-                Elements = null,
+                Elements = null!,
                 AffectedValues = new PolicyRegistryList(),
                 DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
             };

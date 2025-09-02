@@ -19,6 +19,7 @@ namespace PolicyPlusModTests
             // Arrange
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateListPolicy();
+            // Ensure the key exists and simulate prefix entries
             polFile.SetValue(policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue + "1", "A", Microsoft.Win32.RegistryValueKind.String);
             polFile.SetValue(policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue + "2", "B", Microsoft.Win32.RegistryValueKind.String);
 
@@ -156,8 +157,8 @@ namespace PolicyPlusModTests
 
         private string GetRegFileStringForTest(DetailPolicyFormatted formatter, IPolicySource polFile, PolicyPlusPolicy policy)
         {
-            var method = typeof(DetailPolicyFormatted).GetMethod("GetRegFileString", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            return (string)method.Invoke(formatter, new object[] { polFile, PolicyState.Enabled, policy, false });
+            var method = typeof(DetailPolicyFormatted).GetMethod("GetRegFileString", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            return (string)method.Invoke(formatter, new object[] { polFile, PolicyState.Enabled, policy, false })!;
         }
     }
 }

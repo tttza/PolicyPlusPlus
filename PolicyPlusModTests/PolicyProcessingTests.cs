@@ -29,9 +29,9 @@ namespace PolicyPlusModTests
         {
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateSimpleTogglePolicy();
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, null);
+            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object>());
             PolAssert.HasDwordValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, 1U);
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Disabled, null);
+            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Disabled, new Dictionary<string, object>());
             PolAssert.NotContains(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue);
         }
 
@@ -43,7 +43,7 @@ namespace PolicyPlusModTests
         {
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateSimpleTogglePolicy();
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, null);
+            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object>());
             PolAssert.HasDwordValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, 1U);
             PolicyProcessing.ForgetPolicy(polFile, policy);
             PolAssert.NotContains(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue);

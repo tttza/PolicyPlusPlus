@@ -112,21 +112,21 @@ namespace PolicyPlusModTests
                 });
             }
             var editSettingType = typeof(EditSetting);
-            editSettingType.GetField("CurrentSetting", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(this, policy);
-            editSettingType.GetField("CurrentSection", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(this, section);
-            editSettingType.GetField("AdmxWorkspace", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(this, workspace);
-            editSettingType.GetField("CompPolSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(this, polFile);
-            editSettingType.GetField("UserPolSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(this, polFile);
-            editSettingType.GetField("CompPolLoader", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(this, loader);
-            editSettingType.GetField("UserPolLoader", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(this, loader);
-            editSettingType.GetField("CompComments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(this, comments);
-            editSettingType.GetField("UserComments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(this, comments);
-            editSettingType.GetField("languageCode", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(this, "en-US");
+            editSettingType.GetField("CurrentSetting", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, policy);
+            editSettingType.GetField("CurrentSection", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, section);
+            editSettingType.GetField("AdmxWorkspace", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, workspace);
+            editSettingType.GetField("CompPolSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, polFile);
+            editSettingType.GetField("UserPolSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, polFile);
+            editSettingType.GetField("CompPolLoader", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, loader);
+            editSettingType.GetField("UserPolLoader", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, loader);
+            editSettingType.GetField("CompComments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, comments);
+            editSettingType.GetField("UserComments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, comments);
+            editSettingType.GetField("languageCode", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(this, "en-US");
             PreparePolicyElements();
             PreparePolicyState();
-            EnabledOption.Checked = true;
-            NotConfiguredOption.Checked = false;
-            DisabledOption.Checked = false;
+            EnabledOption!.Checked = true;
+            NotConfiguredOption!.Checked = false;
+            DisabledOption!.Checked = false;
             InvokeStateRadiosChanged();
         }
 
@@ -140,15 +140,15 @@ namespace PolicyPlusModTests
 
         public void EnableAndApply()
         {
-            EnabledOption.Checked = true;
+            EnabledOption!.Checked = true;
             InvokeStateRadiosChanged();
             ApplyToPolicySource();
         }
 
         public void InvokeStateRadiosChanged()
         {
-            var method = typeof(EditSetting).GetMethod("StateRadiosChanged", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method.Invoke(this, new object[] { null, null });
+            var method = typeof(EditSetting).GetMethod("StateRadiosChanged", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            method.Invoke(this, new object[] { this, System.EventArgs.Empty });
         }
 
         public void ApplyToPolicySource_PublicForTest() => ApplyToPolicySource();

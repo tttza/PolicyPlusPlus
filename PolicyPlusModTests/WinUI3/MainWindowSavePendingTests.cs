@@ -1,7 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using PolicyPlus;
 using PolicyPlus.WinUI3;
 using PolicyPlus.WinUI3.Services;
@@ -11,18 +8,8 @@ namespace PolicyPlusModTests.WinUI3
 {
     public class MainWindowSavePendingTests
     {
-        private sealed class FakeElevationService : IElevationService
-        {
-            public List<(string? m, string? u, bool refresh)> Calls { get; } = new();
-            public Task<(bool ok, string? error)> WriteLocalGpoBytesAsync(string? machinePolBase64, string? userPolBase64, bool triggerRefresh = true)
-            {
-                Calls.Add((machinePolBase64, userPolBase64, triggerRefresh));
-                return Task.FromResult((true, (string?)null));
-            }
-        }
-
         [Fact(DisplayName = "MainWindow SavePendingAsync builds base64 for both scopes when needed")]
-        public async Task SavePending_BuildsBase64_ForBothScopes()
+        public void SavePending_BuildsBase64_ForBothScopes()
         {
             // Build bundle with user & machine policies
             var compPol = new PolicyPlusPolicy

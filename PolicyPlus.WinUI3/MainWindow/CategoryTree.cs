@@ -132,7 +132,7 @@ namespace PolicyPlus.WinUI3
         // Background-friendly category building
         private sealed class CatNodeData
         {
-            public PolicyPlusCategory Cat { get; init; }
+            public required PolicyPlusCategory Cat { get; init; }
             public List<CatNodeData> Children { get; } = new();
         }
 
