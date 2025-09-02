@@ -196,8 +196,9 @@ namespace PolicyPlus.WinUI3
             UpdateSearchPlaceholder();
 
             bool searching = !string.IsNullOrWhiteSpace(query);
-            bool flat = searching || _configuredOnly;
-            IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(includeSubcategories: flat);
+            // Always use flat view (no name grouping)
+            bool flat = true;
+            IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(includeSubcategories: true);
             if (searching)
             {
                 var qLower = query.ToLowerInvariant();
@@ -322,7 +323,8 @@ namespace PolicyPlus.WinUI3
                 TryRestoreSelectionAsync(groupRows);
             }
 
-            PolicyCount.Text = $"{_visiblePolicies.Count} / {_totalGroupCount} policies";
+            // Clarify that counts refer to groups in grouped view
+            PolicyCount.Text = $"{_visiblePolicies.Count} / {_totalGroupCount} groups";
             MaybePushCurrentState();
         }
 
@@ -505,7 +507,7 @@ namespace PolicyPlus.WinUI3
                     try
                     {
                         SearchBox.ItemsSource = suggestions;
-                        bool flat = !string.IsNullOrWhiteSpace(q) || _configuredOnly;
+                        bool flat = true; // always flat
                         BindSequenceEnhanced(matches, flat);
                         UpdateNavButtons();
                     }
@@ -551,7 +553,7 @@ namespace PolicyPlus.WinUI3
                 try { await System.Threading.Tasks.Task.Delay(60, token); } catch { return; }
                 if (token.IsCancellationRequested) { FinishSpinner(); return; }
 
-                var snap = new FilterSnapshot(applies, category, includeSubcats: configuredOnly, configuredOnly: configuredOnly, comp: comp, user: user);
+                var snap = new FilterSnapshot(applies, category, includeSubcats: true, configuredOnly: configuredOnly, comp: comp, user: user);
 
                 List<PolicyPlusPolicy> items;
                 try
@@ -569,7 +571,7 @@ namespace PolicyPlus.WinUI3
                     if (token.IsCancellationRequested) { FinishSpinner(); return; }
                     try
                     {
-                        bool flat = configuredOnly; // non-search path
+                        bool flat = true; // always flat in non-search path too
                         BindSequenceEnhanced(items, flat);
                         RestorePositionOrSelection();
                         UpdateNavButtons();
