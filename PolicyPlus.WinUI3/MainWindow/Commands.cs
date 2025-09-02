@@ -9,6 +9,7 @@ using System.Text;
 using Windows.ApplicationModel.DataTransfer;
 using PolicyPlus.WinUI3.Windows;
 using PolicyPlus.WinUI3.Utils;
+using System.Threading.Tasks;
 
 namespace PolicyPlus.WinUI3
 {
@@ -18,6 +19,17 @@ namespace PolicyPlus.WinUI3
         {
             BtnSave_Click(this, new RoutedEventArgs());
             args.Handled = true;
+        }
+
+        private async void ContextEdit_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy;
+                if (p != null)
+                    await OpenEditDialogForPolicyAsync(p, ensureFront: true);
+            }
+            catch { }
         }
 
         private void ContextViewFormatted_Click(object sender, RoutedEventArgs e)

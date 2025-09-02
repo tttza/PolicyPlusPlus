@@ -10,7 +10,6 @@ using System.Linq;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 using System.Collections.Generic;
-using PolicyPlus.WinUI3.Dialogs;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
@@ -26,6 +25,7 @@ using System.IO;
 using CommunityToolkit.WinUI.UI.Controls;
 using Windows.Foundation;
 using PolicyPlus; // Core APIs
+using PolicyPlus.WinUI3.Dialogs; // FindByRegistryWinUI
 
 namespace PolicyPlus.WinUI3
 {
@@ -107,9 +107,21 @@ namespace PolicyPlus.WinUI3
         private bool _navTyping;
 
         // Lightweight search index for faster case-insensitive substring matching
-        private List<(PolicyPlusPolicy Policy, string NameLower, string IdLower)> _searchIndex = new();
-        private Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower)> _searchIndexById = new(StringComparer.OrdinalIgnoreCase);
+        private List<(PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)> _searchIndex = new();
+        private Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)> _searchIndexById = new(StringComparer.OrdinalIgnoreCase);
         private CancellationTokenSource? _searchDebounceCts;
+
+        // Search options
+        private bool _searchInName = true;
+        private bool _searchInId = true;
+        private bool _searchInRegistryKey = true;   // interprets as path by default
+        private bool _searchInRegistryValue = true; // interprets as key name
+        private bool _searchInDescription = false;
+        private bool _searchInComments = false;
+
+        // Comments storage (in-memory)
+        private readonly Dictionary<string, string> _compComments = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> _userComments = new(StringComparer.OrdinalIgnoreCase);
 
         public MainWindow()
         {
@@ -315,9 +327,10 @@ namespace PolicyPlus.WinUI3
                 _searchIndex = _allPolicies.Select(p => (
                     Policy: p,
                     NameLower: (p.DisplayName ?? string.Empty).ToLowerInvariant(),
-                    IdLower: (p.UniqueID ?? string.Empty).ToLowerInvariant()
+                    IdLower: (p.UniqueID ?? string.Empty).ToLowerInvariant(),
+                    DescLower: (p.DisplayExplanation ?? string.Empty).ToLowerInvariant()
                 )).ToList();
-                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower)>(StringComparer.OrdinalIgnoreCase);
+                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
                 foreach (var e in _searchIndex)
                 {
                     _searchIndexById[e.Policy.UniqueID] = e;
@@ -325,8 +338,8 @@ namespace PolicyPlus.WinUI3
             }
             catch
             {
-                _searchIndex = new List<(PolicyPlusPolicy, string, string)>();
-                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy, string, string)>(StringComparer.OrdinalIgnoreCase);
+                _searchIndex = new List<(PolicyPlusPolicy, string, string, string)>();
+                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy, string, string, string)>(StringComparer.OrdinalIgnoreCase);
             }
         }
 
@@ -349,6 +362,28 @@ namespace PolicyPlus.WinUI3
             if (folder is null) return;
             try { _config?.SetValue("AdmxSource", folder.Path); } catch { }
             LoadAdmxFolderAsync(folder.Path);
+        }
+
+        private void SearchOption_Toggle_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is ToggleMenuFlyoutItem t)
+                {
+                    var tag = Convert.ToString(t.Tag);
+                    switch (tag)
+                    {
+                        case "name": _searchInName = t.IsChecked; break;
+                        case "id": _searchInId = t.IsChecked; break;
+                        case "desc": _searchInDescription = t.IsChecked; break;
+                        case "regkey": _searchInRegistryKey = t.IsChecked; break;    // key path
+                        case "regvalue": _searchInRegistryValue = t.IsChecked; break; // value name
+                        case "comments": _searchInComments = t.IsChecked; break;
+                    }
+                }
+            }
+            catch { }
+            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
         }
 
         private void SearchBox_TextChanged(object sender, AutoSuggestBoxTextChangedEventArgs e)
@@ -375,9 +410,8 @@ namespace PolicyPlus.WinUI3
                             var qLower = q.ToLowerInvariant();
                             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                             var list = new List<string>(10);
-
-                            // If the allowed set is small, iterate it; otherwise scan the full index and filter by allowed
                             bool smallSubset = allowed.Count > 0 && allowed.Count < (_allPolicies.Count / 2);
+
                             if (smallSubset)
                             {
                                 foreach (var id in allowed)
@@ -410,7 +444,6 @@ namespace PolicyPlus.WinUI3
                                     }
                                 }
                             }
-
                             SearchBox.ItemsSource = list;
                             ApplyFiltersAndBind(q);
                             UpdateNavButtons();
@@ -522,7 +555,7 @@ namespace PolicyPlus.WinUI3
                 if (PolicyList?.SelectedItem is PolicyListRow row and { Policy: not null })
                 {
                     e.Handled = true;
-                    await OpenEditDialogForPolicyAsync(row.Policy, ensureFront: true);
+                    await OpenEditDialogForPolicyInternalAsync(row.Policy, ensureFront: true);
                 }
                 else if (PolicyList?.SelectedItem is PolicyListRow row2 and { Category: not null })
                 {
@@ -555,7 +588,7 @@ namespace PolicyPlus.WinUI3
             if (item is PolicyListRow row && row.Policy is PolicyPlusPolicy pol)
             {
                 e.Handled = true;
-                _ = OpenEditDialogForPolicyAsync(pol, ensureFront: true);
+                _ = OpenEditDialogForPolicyInternalAsync(pol, ensureFront: true);
                 return;
             }
             if (item is PolicyListRow row2 && row2.Category is PolicyPlusCategory cat)
@@ -584,25 +617,16 @@ namespace PolicyPlus.WinUI3
         {
             if (SearchBox == null) return;
             if (_selectedCategory != null)
-                SearchBox.PlaceholderText = $"Search policies (name, id) in {_selectedCategory.DisplayName}";
+                SearchBox.PlaceholderText = $"Search policies in {_selectedCategory.DisplayName}";
             else
-                SearchBox.PlaceholderText = "Search policies (name, id)";
+                SearchBox.PlaceholderText = "Search policies";
         }
 
         private void PolicyList_ItemClick(object sender, ItemClickEventArgs e) { }
 
-        private async void BtnEditSelected_Click(object sender, RoutedEventArgs e)
+        private async Task OpenEditDialogForPolicyInternalAsync(PolicyPlusPolicy representative, bool ensureFront)
         {
-            if (PolicyList?.SelectedItem is PolicyListRow row && row.Policy != null)
-            {
-                await OpenEditDialogForPolicyAsync(row.Policy, ensureFront: false);
-            }
-        }
-
-        private async void ContextEdit_Click(object sender, RoutedEventArgs e)
-        {
-            var p = (sender as FrameworkElement)?.Tag as PolicyPlusPolicy ?? (PolicyList?.SelectedItem as PolicyListRow)?.Policy;
-            if (p != null) await OpenEditDialogForPolicyAsync(p, ensureFront: false);
+            await this.OpenEditDialogForPolicyAsync(representative, ensureFront);
         }
 
         private void ViewDetailsToggle_Click(object sender, RoutedEventArgs e)
@@ -630,25 +654,6 @@ namespace PolicyPlus.WinUI3
         private void RefreshList()
         {
             try { ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); } catch { }
-        }
-
-        private async Task<AdmxPolicySection?> PromptSectionChoiceAsync()
-        {
-            var dlg = new ContentDialog
-            {
-                Title = "Choose target",
-                Content = new TextBlock { Text = "Edit Computer or User configuration?" },
-                PrimaryButtonText = "Computer",
-                SecondaryButtonText = "User",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Primary
-            };
-            var xr = RootGrid?.XamlRoot ?? (this.Content as FrameworkElement)?.XamlRoot;
-            if (xr != null) dlg.XamlRoot = xr;
-            var res = await dlg.ShowAsync();
-            if (res == ContentDialogResult.Primary) return AdmxPolicySection.Machine;
-            if (res == ContentDialogResult.Secondary) return AdmxPolicySection.User;
-            return null;
         }
 
         private void GoBackAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)

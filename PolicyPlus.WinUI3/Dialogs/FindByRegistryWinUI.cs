@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using PolicyPlus.Utilities;
 
 namespace PolicyPlus.WinUI3.Dialogs
 {
@@ -7,55 +8,70 @@ namespace PolicyPlus.WinUI3.Dialogs
     {
         public static bool WildcardMatch(string input, string pattern)
         {
-            int i = 0, p = 0, star = -1, mark = 0;
-            while (i < input.Length)
-            {
-                if (p < pattern.Length && (pattern[p] == '?' || pattern[p] == input[i])) { i++; p++; continue; }
-                if (p < pattern.Length && pattern[p] == '*') { star = p++; mark = i; continue; }
-                if (star != -1) { p = star + 1; i = ++mark; continue; }
-                return false;
-            }
-            while (p < pattern.Length && pattern[p] == '*') p++;
-            return p == pattern.Length;
+            return StringMatch.WildcardMatch(input, pattern);
         }
 
-        public static bool WildcardOrExact(string input, string pattern)
+        public static bool WildcardOrExact(string input, string pattern, bool allowSubstring)
         {
-            if (pattern.Contains('*') || pattern.Contains('?'))
-                return WildcardMatch(input, pattern);
-            return input.Equals(pattern, StringComparison.InvariantCultureIgnoreCase);
+            return StringMatch.WildcardOrExact(input, pattern, allowSubstring);
         }
 
-        public static bool SearchRegistry(PolicyPlusPolicy Policy, string keyName, string valName)
+        public static bool SearchRegistry(PolicyPlusPolicy Policy, string keyName, string valName, bool allowSubstring = true)
         {
+            var keyPat = keyName ?? string.Empty;
+            var valPat = valName ?? string.Empty;
             var affected = PolicyProcessing.GetReferencedRegistryValues(Policy);
             foreach (var rkvp in affected)
             {
-                if (!string.IsNullOrEmpty(valName))
+                if (!string.IsNullOrEmpty(valPat))
                 {
-                    if (!WildcardOrExact(rkvp.Value.ToLowerInvariant(), valName))
+                    var v = (rkvp.Value ?? string.Empty);
+                    if (!WildcardOrExact(v, valPat, allowSubstring))
                         continue;
                 }
 
-                if (!string.IsNullOrEmpty(keyName))
+                if (!string.IsNullOrEmpty(keyPat))
                 {
-                    if (keyName.Contains("*") | keyName.Contains("?"))
+                    var keyLower = rkvp.Key.ToLowerInvariant();
+                    var pat = keyPat;
+                    if (pat.Contains("*") || pat.Contains("?"))
                     {
-                        if (!WildcardMatch(rkvp.Key.ToLowerInvariant(), keyName))
+                        if (!WildcardMatch(keyLower, pat))
                             continue;
                     }
-                    else if (keyName.Contains(@"\"))
+                    else if (pat.Contains(@"\"))
                     {
-                        if (!rkvp.Key.StartsWith(keyName, StringComparison.InvariantCultureIgnoreCase))
+                        if (!keyLower.StartsWith(pat, StringComparison.InvariantCultureIgnoreCase))
                             continue;
                     }
-                    else if (!rkvp.Key.Split('\\').Any(part => part.Equals(keyName, StringComparison.InvariantCultureIgnoreCase)))
-                        continue;
+                    else
+                    {
+                        bool segMatch = rkvp.Key.Split('\\').Any(part => part.Equals(pat, StringComparison.InvariantCultureIgnoreCase));
+                        bool subMatch = allowSubstring && keyLower.IndexOf(pat, StringComparison.InvariantCultureIgnoreCase) >= 0;
+                        if (!(segMatch || subMatch))
+                            continue;
+                    }
                 }
 
                 return true;
             }
 
+            return false;
+        }
+
+        public static bool SearchRegistryValueNameOnly(PolicyPlusPolicy policy, string valueNamePattern, bool allowSubstring = true)
+        {
+            var pat = valueNamePattern ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(pat))
+                return false;
+
+            var affected = PolicyProcessing.GetReferencedRegistryValues(policy);
+            foreach (var rkvp in affected)
+            {
+                var v = rkvp.Value ?? string.Empty;
+                if (WildcardOrExact(v, pat, allowSubstring))
+                    return true;
+            }
             return false;
         }
     }

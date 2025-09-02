@@ -9,6 +9,7 @@ using Windows.System;
 using PolicyPlus;
 using PolicyPlus.WinUI3.Models;
 using PolicyPlus.WinUI3.Services;
+using PolicyPlus.WinUI3.Dialogs; // FindByRegistryWinUI
 
 namespace PolicyPlus.WinUI3
 {
@@ -104,14 +105,37 @@ namespace PolicyPlus.WinUI3
             if (searching)
             {
                 var qLower = query.ToLowerInvariant();
-                // Intersect base filter set with search index for fast OrdinalContains
                 var allowed = new HashSet<string>(seq.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase);
                 var matched = new List<PolicyPlusPolicy>();
                 foreach (var e in _searchIndex)
                 {
                     if (!allowed.Contains(e.Policy.UniqueID)) continue;
-                    if (e.NameLower.Contains(qLower) || e.IdLower.Contains(qLower))
-                        matched.Add(e.Policy);
+
+                    bool hit = false;
+                    if (_searchInName && e.NameLower.Contains(qLower))
+                        hit = true;
+                    else if (_searchInId && e.IdLower.Contains(qLower))
+                        hit = true;
+                    else if (_searchInDescription && e.DescLower.Contains(qLower))
+                        hit = true;
+                    else if ((_searchInRegistryKey || _searchInRegistryValue))
+                    {
+                        bool keyHit = false, valHit = false;
+                        if (_searchInRegistryKey)
+                            keyHit = FindByRegistryWinUI.SearchRegistry(e.Policy, qLower, string.Empty, allowSubstring: true);
+                        if (!keyHit && _searchInRegistryValue)
+                            valHit = FindByRegistryWinUI.SearchRegistryValueNameOnly(e.Policy, qLower, allowSubstring: true);
+                        if (keyHit || valHit) hit = true;
+                    }
+                    else if (_searchInComments)
+                    {
+                        if (_compComments.TryGetValue(e.Policy.UniqueID, out var c1) && (c1 ?? string.Empty).ToLowerInvariant().Contains(qLower))
+                            hit = true;
+                        else if (_userComments.TryGetValue(e.Policy.UniqueID, out var c2) && (c2 ?? string.Empty).ToLowerInvariant().Contains(qLower))
+                            hit = true;
+                    }
+
+                    if (hit) matched.Add(e.Policy);
                 }
                 seq = matched;
             }

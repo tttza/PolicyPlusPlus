@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using PolicyPlus.Utilities;
 
 namespace PolicyPlus.WinUI3.Dialogs
 {
@@ -18,16 +19,7 @@ namespace PolicyPlus.WinUI3.Dialogs
 
         private static bool WildcardMatch(string input, string pattern)
         {
-            int i = 0, p = 0, star = -1, mark = 0;
-            while (i < input.Length)
-            {
-                if (p < pattern.Length && (pattern[p] == '?' || pattern[p] == input[i])) { i++; p++; continue; }
-                if (p < pattern.Length && pattern[p] == '*') { star = p++; mark = i; continue; }
-                if (star != -1) { p = star + 1; i = ++mark; continue; }
-                return false;
-            }
-            while (p < pattern.Length && pattern[p] == '*') p++;
-            return p == pattern.Length;
+            return StringMatch.WildcardMatch(input, pattern);
         }
 
         private bool IsStringAHit(string searchedText, List<string> simpleWords, List<string> wildcards, List<string> quotedStrings)
@@ -35,7 +27,7 @@ namespace PolicyPlus.WinUI3.Dialogs
             string cleanupStr(string RawText)
             {
                 if (RawText == null) return string.Empty;
-                return new string(RawText.Trim().ToLowerInvariant().Where(c => !".,'\";/!(){}[] @".Contains(c)).ToArray());
+                return new string(RawText.Trim().ToLowerInvariant().Where(c => !".,'\";/!(){}[] ?@".Contains(c)).ToArray());
             }
             string cleanText = cleanupStr(searchedText);
             var wordsInText = cleanText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -54,7 +46,7 @@ namespace PolicyPlus.WinUI3.Dialogs
 
             string cleanupStr(string RawText)
             {
-                return new string((RawText ?? string.Empty).Trim().ToLowerInvariant().Where(c => !".,'\";/!(){}[] @".Contains(c)).ToArray());
+                return new string((RawText ?? string.Empty).Trim().ToLowerInvariant().Where(c => !".,'\";/!(){}[] ?@".Contains(c)).ToArray());
             }
 
             for (int n = 0; n <= rawSplitted.Length - 1; n++)
@@ -122,7 +114,7 @@ namespace PolicyPlus.WinUI3.Dialogs
                     return true;
                 if (checkId && IsStringAHit(Policy.UniqueID.Split(':').ElementAtOrDefault(1) ?? string.Empty, simple, wild, quoted))
                     return true;
-                if (checkRegName && FindByRegistryWinUI.SearchRegistry(Policy, string.Empty, lowText))
+                if (checkRegName && FindByRegistryWinUI.SearchRegistryValueNameOnly(Policy, lowText, allowSubstring: checkPartial))
                     return true;
                 return false;
             };

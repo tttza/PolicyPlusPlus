@@ -49,7 +49,7 @@ namespace PolicyPlus.WinUI3
                 initialSection,
                 _bundle!, _compSource!, _userSource!,
                 compLoader, userLoader,
-                new Dictionary<string, string>(), new Dictionary<string, string>());
+                _compComments, _userComments);
             win.Saved += (s, e) => MarkDirty();
             win.Activate();
             WindowHelpers.BringToFront(win);
@@ -93,7 +93,7 @@ namespace PolicyPlus.WinUI3
                 : new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true);
 
             var win = new EditSettingWindow();
-            win.Initialize(policy, preferredSection, _bundle!, _compSource!, _userSource!, compLoader, userLoader, new Dictionary<string, string>(), new Dictionary<string, string>());
+            win.Initialize(policy, preferredSection, _bundle!, _compSource!, _userSource!, compLoader, userLoader, _compComments, _userComments);
             win.Saved += (s, e) => MarkDirty();
             win.Activate();
             WindowHelpers.BringToFront(win);
