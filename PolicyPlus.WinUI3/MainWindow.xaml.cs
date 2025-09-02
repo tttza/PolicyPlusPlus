@@ -313,6 +313,7 @@ namespace PolicyPlus.WinUI3
                 BuildCategoryTree();
                 _allPolicies = _bundle.Policies.Values.ToList();
                 _totalGroupCount = _allPolicies.GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).Count();
+                RegistryReferenceCache.Clear();
                 RebuildSearchIndex();
                 ApplyFiltersAndBind();
             }
@@ -386,6 +387,96 @@ namespace PolicyPlus.WinUI3
             ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
         }
 
+        private static int MatchScoreFor(string textLower, string qLower)
+        {
+            if (string.IsNullOrEmpty(qLower)) return 0;
+            if (string.Equals(textLower, qLower, StringComparison.Ordinal)) return 100;
+            if (textLower.StartsWith(qLower, StringComparison.Ordinal)) return 60;
+            int idx = textLower.IndexOf(qLower, StringComparison.Ordinal);
+            if (idx > 0)
+            {
+                char prev = textLower[idx - 1];
+                if (!char.IsLetterOrDigit(prev)) return 40;
+                return 20;
+            }
+            return -1000; // no match
+        }
+
+        private List<string> BuildSuggestions(string q, HashSet<string> allowed)
+        {
+            var qLower = (q ?? string.Empty).ToLowerInvariant();
+            var bestByName = new Dictionary<string, (int score, string name)>(StringComparer.OrdinalIgnoreCase);
+            bool smallSubset = allowed.Count > 0 && allowed.Count < (_allPolicies.Count / 2);
+
+            void Consider((PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower) e)
+            {
+                if (!allowed.Contains(e.Policy.UniqueID)) return;
+                int score = 0;
+                if (!string.IsNullOrEmpty(qLower))
+                {
+                    int nameScore = MatchScoreFor(e.NameLower, qLower);
+                    int idScore = MatchScoreFor(e.IdLower, qLower);
+                    int descScore = _searchInDescription ? MatchScoreFor(e.DescLower, qLower) : -1000;
+                    // field weights: name > id > description
+                    if (nameScore <= -1000 && idScore <= -1000 && descScore <= -1000) return;
+                    score += Math.Max(0, nameScore) * 3;
+                    score += Math.Max(0, idScore) * 2;
+                    score += Math.Max(0, descScore);
+                }
+                // usage boost
+                score += SearchRankingService.GetBoost(e.Policy.UniqueID);
+
+                var name = e.Policy.DisplayName ?? string.Empty;
+                if (string.IsNullOrEmpty(name)) name = e.Policy.UniqueID;
+                if (bestByName.TryGetValue(name, out var cur))
+                {
+                    if (score > cur.score) bestByName[name] = (score, name);
+                }
+                else
+                {
+                    bestByName[name] = (score, name);
+                }
+            }
+
+            if (smallSubset)
+            {
+                foreach (var id in allowed)
+                {
+                    if (_searchIndexById.TryGetValue(id, out var entry))
+                        Consider(entry);
+                }
+            }
+            else
+            {
+                foreach (var e in _searchIndex)
+                    Consider(e);
+            }
+
+            if (bestByName.Count == 0 && string.IsNullOrEmpty(qLower))
+            {
+                // fallback: top used among allowed
+                foreach (var id in allowed)
+                {
+                    if (_searchIndexById.TryGetValue(id, out var e))
+                    {
+                        int score = SearchRankingService.GetBoost(id);
+                        var name = e.Policy.DisplayName ?? string.Empty;
+                        if (bestByName.TryGetValue(name, out var cur))
+                        { if (score > cur.score) bestByName[name] = (score, name); }
+                        else bestByName[name] = (score, name);
+                    }
+                }
+            }
+
+            var ordered = bestByName.Values
+                .OrderByDescending(v => v.score)
+                .ThenBy(v => v.name, StringComparer.InvariantCultureIgnoreCase)
+                .Take(10)
+                .Select(v => v.name)
+                .ToList();
+            return ordered;
+        }
+
         private void SearchBox_TextChanged(object sender, AutoSuggestBoxTextChangedEventArgs e)
         {
             if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
@@ -393,7 +484,6 @@ namespace PolicyPlus.WinUI3
                 _navTyping = true;
                 var q = (SearchBox.Text ?? string.Empty).Trim();
 
-                // Debounce UI work to avoid heavy refresh on every keystroke
                 _searchDebounceCts?.Cancel();
                 _searchDebounceCts = new CancellationTokenSource();
                 var token = _searchDebounceCts.Token;
@@ -407,43 +497,7 @@ namespace PolicyPlus.WinUI3
                         {
                             var baseSeq = BaseSequenceForFilters(includeSubcategories: true);
                             var allowed = new HashSet<string>(baseSeq.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase);
-                            var qLower = q.ToLowerInvariant();
-                            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                            var list = new List<string>(10);
-                            bool smallSubset = allowed.Count > 0 && allowed.Count < (_allPolicies.Count / 2);
-
-                            if (smallSubset)
-                            {
-                                foreach (var id in allowed)
-                                {
-                                    if (!_searchIndexById.TryGetValue(id, out var entry)) continue;
-                                    if (string.IsNullOrEmpty(qLower) || entry.NameLower.Contains(qLower))
-                                    {
-                                        var name = entry.Policy.DisplayName ?? string.Empty;
-                                        if (seen.Add(name))
-                                        {
-                                            list.Add(name);
-                                            if (list.Count >= 10) break;
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                foreach (var e2 in _searchIndex)
-                                {
-                                    if (!allowed.Contains(e2.Policy.UniqueID)) continue;
-                                    if (string.IsNullOrEmpty(qLower) || e2.NameLower.Contains(qLower))
-                                    {
-                                        var name = e2.Policy.DisplayName ?? string.Empty;
-                                        if (seen.Add(name))
-                                        {
-                                            list.Add(name);
-                                            if (list.Count >= 10) break;
-                                        }
-                                    }
-                                }
-                            }
+                            var list = BuildSuggestions(q, allowed);
                             SearchBox.ItemsSource = list;
                             ApplyFiltersAndBind(q);
                             UpdateNavButtons();
@@ -498,9 +552,16 @@ namespace PolicyPlus.WinUI3
 
         private void PolicyList_RightTapped(object sender, RightTappedRoutedEventArgs e) { }
 
+        private async Task OpenEditDialogForPolicyInternalAsync(PolicyPlusPolicy representative, bool ensureFront)
+        {
+            try { SearchRankingService.RecordUsage(representative.UniqueID); } catch { }
+            await this.OpenEditDialogForPolicyAsync(representative, ensureFront);
+        }
+
         private void BtnViewFormatted_Click(object sender, RoutedEventArgs e)
         {
             var row = PolicyList?.SelectedItem as PolicyListRow; var p = row?.Policy; if (p is null || _bundle is null) return;
+            try { SearchRankingService.RecordUsage(p.UniqueID); } catch { }
             var win = new DetailPolicyFormattedWindow();
             win.Initialize(p, _bundle, _compSource ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource(), _userSource ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource(), p.RawPolicy.Section);
             win.Activate();
@@ -526,9 +587,20 @@ namespace PolicyPlus.WinUI3
         private void BtnExportCsv_Click(object sender, RoutedEventArgs e) { ShowInfo("Export CSV not implemented in this build."); }
         private void BtnImportPol_Click(object sender, RoutedEventArgs e) { ShowInfo("Import .pol not implemented in this build."); }
         private void BtnImportReg_Click(object sender, RoutedEventArgs e) { ShowInfo("Import .reg not implemented in this build."); }
-        private void BtnFind_Click(object sender, RoutedEventArgs e) { SearchBox.Focus(FocusState.Programmatic); }
-        private void BtnFindReg_Click(object sender, RoutedEventArgs e) { SearchBox.Focus(FocusState.Programmatic); }
-        private void BtnFindId_Click(object sender, RoutedEventArgs e) { SearchBox.Focus(FocusState.Programmatic); }
+        private void BtnFind_Click(object sender, RoutedEventArgs e)
+        {
+            SearchBox.Focus(FocusState.Programmatic);
+        }
+
+        private void BtnFindReg_Click(object sender, RoutedEventArgs e)
+        {
+            SearchBox.Focus(FocusState.Programmatic);
+        }
+
+        private void BtnFindId_Click(object sender, RoutedEventArgs e)
+        {
+            SearchBox.Focus(FocusState.Programmatic);
+        }
 
         private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
         {
@@ -623,11 +695,6 @@ namespace PolicyPlus.WinUI3
         }
 
         private void PolicyList_ItemClick(object sender, ItemClickEventArgs e) { }
-
-        private async Task OpenEditDialogForPolicyInternalAsync(PolicyPlusPolicy representative, bool ensureFront)
-        {
-            await this.OpenEditDialogForPolicyAsync(representative, ensureFront);
-        }
 
         private void ViewDetailsToggle_Click(object sender, RoutedEventArgs e)
         {

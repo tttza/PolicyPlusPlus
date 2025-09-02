@@ -10,6 +10,9 @@ using PolicyPlus;
 using PolicyPlus.WinUI3.Models;
 using PolicyPlus.WinUI3.Services;
 using PolicyPlus.WinUI3.Dialogs; // FindByRegistryWinUI
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PolicyPlus.WinUI3
 {
@@ -107,35 +110,25 @@ namespace PolicyPlus.WinUI3
                 var qLower = query.ToLowerInvariant();
                 var allowed = new HashSet<string>(seq.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase);
                 var matched = new List<PolicyPlusPolicy>();
-                foreach (var e in _searchIndex)
+                bool smallSubset = allowed.Count > 0 && allowed.Count < (_allPolicies.Count / 2);
+
+                if (smallSubset)
                 {
-                    if (!allowed.Contains(e.Policy.UniqueID)) continue;
-
-                    bool hit = false;
-                    if (_searchInName && e.NameLower.Contains(qLower))
-                        hit = true;
-                    else if (_searchInId && e.IdLower.Contains(qLower))
-                        hit = true;
-                    else if (_searchInDescription && e.DescLower.Contains(qLower))
-                        hit = true;
-                    else if ((_searchInRegistryKey || _searchInRegistryValue))
+                    foreach (var id in allowed)
                     {
-                        bool keyHit = false, valHit = false;
-                        if (_searchInRegistryKey)
-                            keyHit = FindByRegistryWinUI.SearchRegistry(e.Policy, qLower, string.Empty, allowSubstring: true);
-                        if (!keyHit && _searchInRegistryValue)
-                            valHit = FindByRegistryWinUI.SearchRegistryValueNameOnly(e.Policy, qLower, allowSubstring: true);
-                        if (keyHit || valHit) hit = true;
+                        if (!_searchIndexById.TryGetValue(id, out var e)) continue;
+                        if (PolicyMatchesQuery(e, query, qLower))
+                            matched.Add(e.Policy);
                     }
-                    else if (_searchInComments)
+                }
+                else
+                {
+                    foreach (var e in _searchIndex)
                     {
-                        if (_compComments.TryGetValue(e.Policy.UniqueID, out var c1) && (c1 ?? string.Empty).ToLowerInvariant().Contains(qLower))
-                            hit = true;
-                        else if (_userComments.TryGetValue(e.Policy.UniqueID, out var c2) && (c2 ?? string.Empty).ToLowerInvariant().Contains(qLower))
-                            hit = true;
+                        if (!allowed.Contains(e.Policy.UniqueID)) continue;
+                        if (PolicyMatchesQuery(e, query, qLower))
+                            matched.Add(e.Policy);
                     }
-
-                    if (hit) matched.Add(e.Policy);
                 }
                 seq = matched;
             }
@@ -147,6 +140,41 @@ namespace PolicyPlus.WinUI3
             {
                 MaybePushCurrentState();
             }
+        }
+
+        private bool PolicyMatchesQuery((PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower) e, string query, string qLower)
+        {
+            bool hit = false;
+
+            // Fast text checks first
+            if (_searchInName && e.NameLower.Contains(qLower))
+                hit = true;
+            if (!hit && _searchInId && e.IdLower.Contains(qLower))
+                hit = true;
+            if (!hit && _searchInDescription && e.DescLower.Contains(qLower))
+                hit = true;
+
+            // Comments (cheap) before registry scans
+            if (!hit && _searchInComments)
+            {
+                if (_compComments.TryGetValue(e.Policy.UniqueID, out var c1) && !string.IsNullOrEmpty(c1) && c1.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                    hit = true;
+                else if (_userComments.TryGetValue(e.Policy.UniqueID, out var c2) && !string.IsNullOrEmpty(c2) && c2.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                    hit = true;
+            }
+
+            // Registry scans last (expensive)
+            if (!hit && (_searchInRegistryKey || _searchInRegistryValue))
+            {
+                bool keyHit = false, valHit = false;
+                if (_searchInRegistryKey)
+                    keyHit = FindByRegistryWinUI.SearchRegistry(e.Policy, qLower, string.Empty, allowSubstring: true);
+                if (!keyHit && _searchInRegistryValue)
+                    valHit = FindByRegistryWinUI.SearchRegistryValueNameOnly(e.Policy, qLower, allowSubstring: true);
+                if (keyHit || valHit) hit = true;
+            }
+
+            return hit;
         }
 
         private void BindSequenceEnhanced(IEnumerable<PolicyPlusPolicy> seq, bool flat)

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using PolicyPlus.Utilities;
+using PolicyPlus.WinUI3.Services;
 
 namespace PolicyPlus.WinUI3.Dialogs
 {
@@ -20,43 +21,46 @@ namespace PolicyPlus.WinUI3.Dialogs
         {
             var keyPat = keyName ?? string.Empty;
             var valPat = valName ?? string.Empty;
-            var affected = PolicyProcessing.GetReferencedRegistryValues(Policy);
-            foreach (var rkvp in affected)
+            var cached = RegistryReferenceCache.Get(Policy);
+
+            // Value-name pattern first (cheap)
+            if (!string.IsNullOrEmpty(valPat))
             {
-                if (!string.IsNullOrEmpty(valPat))
-                {
-                    var v = (rkvp.Value ?? string.Empty);
-                    if (!WildcardOrExact(v, valPat, allowSubstring))
-                        continue;
-                }
-
-                if (!string.IsNullOrEmpty(keyPat))
-                {
-                    var keyLower = rkvp.Key.ToLowerInvariant();
-                    var pat = keyPat;
-                    if (pat.Contains("*") || pat.Contains("?"))
-                    {
-                        if (!WildcardMatch(keyLower, pat))
-                            continue;
-                    }
-                    else if (pat.Contains(@"\"))
-                    {
-                        if (!keyLower.StartsWith(pat, StringComparison.InvariantCultureIgnoreCase))
-                            continue;
-                    }
-                    else
-                    {
-                        bool segMatch = rkvp.Key.Split('\\').Any(part => part.Equals(pat, StringComparison.InvariantCultureIgnoreCase));
-                        bool subMatch = allowSubstring && keyLower.IndexOf(pat, StringComparison.InvariantCultureIgnoreCase) >= 0;
-                        if (!(segMatch || subMatch))
-                            continue;
-                    }
-                }
-
-                return true;
+                bool anyVal = cached.ValueNamesLower.Any(v => WildcardOrExact(v, valPat, allowSubstring));
+                if (!anyVal) return false; // if a value pattern is specified but none match, bail out
             }
 
-            return false;
+            if (string.IsNullOrEmpty(keyPat))
+            {
+                // Only value filter requested and it matched
+                return !string.IsNullOrEmpty(valPat);
+            }
+
+            // Key path filter
+            var pat = keyPat;
+            if (pat.Contains("*") || pat.Contains("?"))
+            {
+                // wildcard full-path
+                if (cached.KeyPathsLower.Any(k => WildcardMatch(k, pat))) return true;
+                return false;
+            }
+            else if (pat.Contains(@"\\"))
+            {
+                // rooted path prefix
+                if (cached.KeyPathsLower.Any(k => k.StartsWith(pat, StringComparison.InvariantCultureIgnoreCase))) return true;
+                return false;
+            }
+            else
+            {
+                // single segment or substring
+                foreach (var segs in cached.KeySegmentsLower)
+                {
+                    bool segMatch = segs.Any(s => string.Equals(s, pat, StringComparison.InvariantCultureIgnoreCase));
+                    bool subMatch = allowSubstring && segs.Any(s => s.IndexOf(pat, StringComparison.InvariantCultureIgnoreCase) >= 0);
+                    if (segMatch || subMatch) return true;
+                }
+                return false;
+            }
         }
 
         public static bool SearchRegistryValueNameOnly(PolicyPlusPolicy policy, string valueNamePattern, bool allowSubstring = true)
@@ -65,10 +69,9 @@ namespace PolicyPlus.WinUI3.Dialogs
             if (string.IsNullOrWhiteSpace(pat))
                 return false;
 
-            var affected = PolicyProcessing.GetReferencedRegistryValues(policy);
-            foreach (var rkvp in affected)
+            var cached = RegistryReferenceCache.Get(policy);
+            foreach (var v in cached.ValueNamesLower)
             {
-                var v = rkvp.Value ?? string.Empty;
                 if (WildcardOrExact(v, pat, allowSubstring))
                     return true;
             }
