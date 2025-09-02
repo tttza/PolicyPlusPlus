@@ -124,6 +124,10 @@ namespace PolicyPlus.WinUI3
         private readonly Dictionary<string, string> _compComments = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> _userComments = new(StringComparer.OrdinalIgnoreCase);
 
+        // Sorting state
+        private string? _sortColumn;
+        private DataGridSortDirection? _sortDirection;
+
         public MainWindow()
         {
             this.InitializeComponent();
@@ -721,16 +725,16 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
-                var baseDir = Path.Combine(Path.GetTempPath(), "PolicyPlus");
-                Directory.CreateDirectory(baseDir);
+                var baseDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "PolicyPlus");
+                System.IO.Directory.CreateDirectory(baseDir);
                 if (string.IsNullOrEmpty(_tempPolCompPath))
                 {
-                    _tempPolCompPath = Path.Combine(baseDir, "machine.pol");
+                    _tempPolCompPath = System.IO.Path.Combine(baseDir, "machine.pol");
                     try { var pol = new PolFile(); pol.Save(_tempPolCompPath); } catch { }
                 }
                 if (string.IsNullOrEmpty(_tempPolUserPath))
                 {
-                    _tempPolUserPath = Path.Combine(baseDir, "user.pol");
+                    _tempPolUserPath = System.IO.Path.Combine(baseDir, "user.pol");
                     try { var pol = new PolFile(); pol.Save(_tempPolUserPath); } catch { }
                 }
             }
@@ -943,7 +947,7 @@ namespace PolicyPlus.WinUI3
 
         private static string SanitizeFileName(string name)
         {
-            foreach (var ch in Path.GetInvalidFileNameChars()) name = name.Replace(ch, '_');
+            foreach (var ch in System.IO.Path.GetInvalidFileNameChars()) name = name.Replace(ch, '_');
             return string.IsNullOrWhiteSpace(name) ? "export" : name;
         }
 
@@ -1053,6 +1057,43 @@ namespace PolicyPlus.WinUI3
                 start = VisualTreeHelper.GetParent(start);
             }
             return null;
+        }
+
+        private void PolicyList_Sorting(object? sender, DataGridColumnEventArgs e)
+        {
+            try
+            {
+                // Determine sort column key by column name
+                string? key = null;
+                if (e.Column == ColName) key = nameof(PolicyListRow.DisplayName);
+                else if (e.Column == ColId) key = nameof(PolicyListRow.ShortId);
+                else if (e.Column == ColCategory) key = nameof(PolicyListRow.CategoryName);
+                else if (e.Column == ColApplies) key = nameof(PolicyListRow.AppliesText);
+                else if (e.Column == ColSupported) key = nameof(PolicyListRow.SupportedText);
+                if (string.IsNullOrEmpty(key)) return;
+
+                // Toggle direction if same column, else ascending
+                if (string.Equals(_sortColumn, key, StringComparison.Ordinal))
+                {
+                    _sortDirection = (_sortDirection == DataGridSortDirection.Ascending) ? DataGridSortDirection.Descending : DataGridSortDirection.Ascending;
+                }
+                else
+                {
+                    _sortColumn = key;
+                    _sortDirection = DataGridSortDirection.Ascending;
+                }
+
+                // Update glyph
+                foreach (var col in PolicyList.Columns)
+                {
+                    col.SortDirection = null;
+                }
+                e.Column.SortDirection = _sortDirection;
+
+                // Rebind with new sort
+                RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+            }
+            catch { }
         }
 
         private void UpdateSearchPlaceholder()

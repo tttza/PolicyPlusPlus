@@ -243,9 +243,11 @@
                                           AlternatingRowBackground="{StaticResource AltRowBrush}"
                                           SelectionChanged="PolicyList_SelectionChanged"
                                           DoubleTapped="PolicyList_DoubleTapped"
-                                          RightTapped="PolicyList_RightTapped">
+                                          RightTapped="PolicyList_RightTapped"
+                                          CanUserSortColumns="True"
+                                          Sorting="PolicyList_Sorting">
                             <datagrid:DataGrid.Columns>
-                                <datagrid:DataGridTemplateColumn x:Name="ColCatIcon" Header="" Width="SizeToCells">
+                                <datagrid:DataGridTemplateColumn x:Name="ColCatIcon" Header="" Width="SizeToCells" CanUserSort="False">
                                     <datagrid:DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <FontIcon Glyph="&#xE8B7;" Opacity="0.8" Visibility="{Binding IsCategory, Converter={StaticResource BoolToVisibilityConverter}}"/>
@@ -253,7 +255,7 @@
                                     </datagrid:DataGridTemplateColumn.CellTemplate>
                                 </datagrid:DataGridTemplateColumn>
                                 <!-- User configured state icon -->
-                                <datagrid:DataGridTemplateColumn x:Name="ColUserIcon" Header="User" Width="SizeToCells">
+                                <datagrid:DataGridTemplateColumn x:Name="ColUserIcon" Header="User" Width="SizeToCells" CanUserSort="False">
                                     <datagrid:DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -273,7 +275,7 @@
                                     </datagrid:DataGridTemplateColumn.CellTemplate>
                                 </datagrid:DataGridTemplateColumn>
                                 <!-- Computer configured state icon -->
-                                <datagrid:DataGridTemplateColumn x:Name="ColComputerIcon" Header="Computer" Width="SizeToCells">
+                                <datagrid:DataGridTemplateColumn x:Name="ColComputerIcon" Header="Computer" Width="SizeToCells" CanUserSort="False">
                                     <datagrid:DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">

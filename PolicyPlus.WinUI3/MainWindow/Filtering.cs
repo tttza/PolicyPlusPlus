@@ -301,13 +301,46 @@ namespace PolicyPlus.WinUI3
         {
             EnsureLocalSources();
 
-            if (flat)
+            // Apply sorting if any
+            Func<PolicyPlusPolicy, object>? primary = null;
+            bool desc = _sortDirection == CommunityToolkit.WinUI.UI.Controls.DataGridSortDirection.Descending;
+            if (!string.IsNullOrEmpty(_sortColumn))
             {
-                var ordered = seq.OrderBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
+                switch (_sortColumn)
+                {
+                    case nameof(PolicyListRow.DisplayName): primary = p => p.DisplayName ?? string.Empty; break;
+                    case nameof(PolicyListRow.ShortId):
+                        primary = p =>
+                        {
+                            var id = p.UniqueID ?? string.Empty;
+                            int idx = id.LastIndexOf(':');
+                            return idx >= 0 && idx + 1 < id.Length ? id[(idx + 1)..] : id;
+                        };
+                        break;
+                    case nameof(PolicyListRow.CategoryName): primary = p => p.Category?.DisplayName ?? string.Empty; break;
+                    case nameof(PolicyListRow.AppliesText): primary = p => p.RawPolicy.Section switch { AdmxPolicySection.Machine => 1, AdmxPolicySection.User => 2, _ => 0 }; break;
+                    case nameof(PolicyListRow.SupportedText): primary = p => p.SupportedOn?.DisplayName ?? string.Empty; break;
+                }
+            }
+
+            List<PolicyPlusPolicy> ordered;
+            if (primary != null)
+            {
+                if (desc)
+                    ordered = seq.OrderByDescending(primary).ThenBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).ThenBy(p => p.UniqueID, StringComparer.InvariantCultureIgnoreCase).ToList();
+                else
+                    ordered = seq.OrderBy(primary).ThenBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).ThenBy(p => p.UniqueID, StringComparer.InvariantCultureIgnoreCase).ToList();
+            }
+            else
+            {
+                ordered = seq.OrderBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
                                  .ThenBy(p => p.UniqueID, StringComparer.InvariantCultureIgnoreCase)
                                  .ToList();
-                _visiblePolicies = ordered.ToList();
+            }
+            _visiblePolicies = ordered.ToList();
 
+            if (flat)
+            {
                 var rows = ordered.Select(p => (object)PolicyListRow.FromPolicy(p, _compSource, _userSource)).ToList();
                 PolicyList.ItemsSource = rows;
 
