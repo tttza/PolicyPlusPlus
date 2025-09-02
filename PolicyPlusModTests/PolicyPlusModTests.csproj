@@ -22,6 +22,8 @@
       <IncludeAssets>runtime;native;contentfiles</IncludeAssets>
       <ExcludeAssets>build;buildTransitive;analyzers</ExcludeAssets>
     </PackageReference>
+    <!-- Block WebView2 transitive WPF reference to avoid WindowsBase version conflict -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" ExcludeAssets="all" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
