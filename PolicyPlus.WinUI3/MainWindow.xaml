@@ -159,9 +159,27 @@
                     <TextBlock Text="|" VerticalAlignment="Center"/>
                     <TextBlock x:Name="PolicyCount" VerticalAlignment="Center"/>
                     <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Visibility="Collapsed" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
-                    <AutoSuggestBox x:Name="SearchBox" Width="360" Margin="16,0,0,0" PlaceholderText="Search policies"
-                                    TextChanged="SearchBox_TextChanged" QuerySubmitted="SearchBox_QuerySubmitted" SuggestionChosen="SearchBox_SuggestionChosen" />
-                    <!-- Search options (name / id / description / registry / comments) -->
+                    <Grid x:Name="SearchBoxHost" Width="360" Margin="16,0,0,0">
+                        <AutoSuggestBox x:Name="SearchBox"
+                                        Padding="0,0,28,0"
+                                        PlaceholderText="Search policies"
+                                        Loaded="SearchBox_Loaded"
+                                        TextChanged="SearchBox_TextChanged"
+                                        QuerySubmitted="SearchBox_QuerySubmitted"
+                                        SuggestionChosen="SearchBox_SuggestionChosen" />
+                        <!-- Lightweight hitbox to avoid button hover/press visuals -->
+                        <Grid x:Name="SearchClearBtn"
+                              Width="24" Height="24"
+                              HorizontalAlignment="Right"
+                              VerticalAlignment="Center"
+                              Margin="0,-2,6,0"
+                              Background="Transparent"
+                              Visibility="Collapsed"
+                              ToolTipService.ToolTip="Clear search"
+                              Tapped="SearchClearBtn_Tapped">
+                            <FontIcon Glyph="&#xE10A;" FontSize="10" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                        </Grid>
+                    </Grid>
                     <Button x:Name="SearchOptionsBtn" Style="{StaticResource NavIconButtonStyle}" ToolTipService.ToolTip="Search options">
                         <FontIcon Glyph="&#xE713;" FontSize="12"/>
                         <Button.Flyout>
@@ -177,7 +195,6 @@
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
-                    <!-- Subtle spinner indicating background searching -->
                     <controls:ProgressRing x:Name="SearchSpinner" Width="16" Height="16" IsActive="True" Visibility="Collapsed" VerticalAlignment="Center" ToolTipService.ToolTip="Searching..."/>
                 </StackPanel>
 
@@ -322,6 +339,7 @@
                         </Border>
                     </Grid>
                 </Grid>
+
             </Grid>
 
             <Grid x:Name="BusyOverlay" Background="#80000000" Visibility="Collapsed" Grid.RowSpan="2" Canvas.ZIndex="10">

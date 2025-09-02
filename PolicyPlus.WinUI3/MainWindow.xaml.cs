@@ -305,6 +305,9 @@ namespace PolicyPlus.WinUI3
 
             // Initialize navigation service/buttons
             try { InitNavigation(); } catch { }
+
+            // Ensure search clear button is in correct state on load
+            try { UpdateSearchClearButtonVisibility(); } catch { }
         }
 
         // preference helper implementations are defined in MainWindow.Preferences.cs
@@ -539,8 +542,83 @@ namespace PolicyPlus.WinUI3
             return ordered;
         }
 
+        private void SearchClearBtn_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            try
+            {
+                _navTyping = false;
+                if (SearchBox != null)
+                {
+                    SearchBox.Text = string.Empty;
+                }
+                UpdateSearchClearButtonVisibility();
+                RunAsyncFilterAndBind();
+                UpdateNavButtons();
+                e.Handled = true;
+            }
+            catch { }
+        }
+
+        private void UpdateSearchClearButtonVisibility()
+        {
+            try
+            {
+                var btn = RootGrid?.FindName("SearchClearBtn") as UIElement;
+                if (btn != null)
+                {
+                    var hasText = !string.IsNullOrEmpty(SearchBox?.Text);
+                    btn.Visibility = hasText ? Visibility.Visible : Visibility.Collapsed;
+                }
+            }
+            catch { }
+        }
+
+        private void SearchBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            try { HideBuiltInSearchClearButton(); } catch { }
+            try { UpdateSearchClearButtonVisibility(); } catch { }
+        }
+
+        private void HideBuiltInSearchClearButton()
+        {
+            try
+            {
+                if (SearchBox == null) return;
+                var deleteBtn = FindDescendantByName(SearchBox, "DeleteButton") as UIElement;
+                if (deleteBtn != null)
+                {
+                    deleteBtn.Visibility = Visibility.Collapsed;
+                    deleteBtn.IsHitTestVisible = false;
+                    if (deleteBtn is Control c)
+                    {
+                        c.IsEnabled = false;
+                        c.Opacity = 0;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private static DependencyObject? FindDescendantByName(DependencyObject? root, string name)
+        {
+            if (root == null) return null;
+            int count = VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(root, i);
+                if (child is FrameworkElement fe && string.Equals(fe.Name, name, StringComparison.Ordinal))
+                    return child;
+                var result = FindDescendantByName(child, name);
+                if (result != null) return result;
+            }
+            return null;
+        }
+
         private void SearchBox_TextChanged(object sender, AutoSuggestBoxTextChangedEventArgs e)
         {
+            // Keep clear button visibility synced for any text change
+            UpdateSearchClearButtonVisibility();
+
             if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
                 _navTyping = true;
