@@ -177,6 +177,8 @@
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
+                    <!-- Subtle spinner indicating background searching -->
+                    <controls:ProgressRing x:Name="SearchSpinner" Width="16" Height="16" IsActive="True" Visibility="Collapsed" VerticalAlignment="Center" ToolTipService.ToolTip="Searching..."/>
                 </StackPanel>
 
                 <Grid Grid.Row="3" Margin="8">

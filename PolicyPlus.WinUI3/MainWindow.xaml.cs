@@ -483,28 +483,7 @@ namespace PolicyPlus.WinUI3
             {
                 _navTyping = true;
                 var q = (SearchBox.Text ?? string.Empty).Trim();
-
-                _searchDebounceCts?.Cancel();
-                _searchDebounceCts = new CancellationTokenSource();
-                var token = _searchDebounceCts.Token;
-                _ = Task.Run(async () =>
-                {
-                    try { await Task.Delay(120, token); } catch { return; }
-                    if (token.IsCancellationRequested) return;
-                    DispatcherQueue.TryEnqueue(() =>
-                    {
-                        try
-                        {
-                            var baseSeq = BaseSequenceForFilters(includeSubcategories: true);
-                            var allowed = new HashSet<string>(baseSeq.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase);
-                            var list = BuildSuggestions(q, allowed);
-                            SearchBox.ItemsSource = list;
-                            ApplyFiltersAndBind(q);
-                            UpdateNavButtons();
-                        }
-                        catch { }
-                    });
-                });
+                RunAsyncSearchAndBind(q);
             }
         }
 
@@ -552,7 +531,7 @@ namespace PolicyPlus.WinUI3
 
         private void PolicyList_RightTapped(object sender, RightTappedRoutedEventArgs e) { }
 
-        private async Task OpenEditDialogForPolicyInternalAsync(PolicyPlusPolicy representative, bool ensureFront)
+        private async System.Threading.Tasks.Task OpenEditDialogForPolicyInternalAsync(PolicyPlusPolicy representative, bool ensureFront)
         {
             try { SearchRankingService.RecordUsage(representative.UniqueID); } catch { }
             await this.OpenEditDialogForPolicyAsync(representative, ensureFront);
