@@ -219,8 +219,7 @@ namespace PolicyPlus.WinUI3
                 foreach (var d in roots)
                 {
                     var node = Convert(d);
-                    if (node.Children.Count > 0 || !_hideEmptyCategories)
-                        CategoryTree.RootNodes.Add(node);
+                    CategoryTree.RootNodes.Add(node);
                 }
 
                 CategoryTree.SelectionMode = oldMode;
@@ -265,8 +264,7 @@ namespace PolicyPlus.WinUI3
                         continue;
                     var node = new Microsoft.UI.Xaml.Controls.TreeViewNode() { Content = cat, IsExpanded = false };
                     BuildChildCategoryNodes(node, cat);
-                    if (node.Children.Count > 0 || !_hideEmptyCategories)
-                        CategoryTree.RootNodes.Add(node);
+                    CategoryTree.RootNodes.Add(node);
                 }
 
                 CategoryTree.SelectionMode = oldMode;
