@@ -8,9 +8,9 @@ namespace PolicyPlus.Utilities
         {
             input ??= string.Empty;
             pattern ??= string.Empty;
-            // Case-insensitive wildcard match by normalizing to lowercase
-            var s = input.ToLowerInvariant();
-            var p = pattern.ToLowerInvariant();
+            // Normalize both sides for culture-aware, case-insensitive match (Japanese-friendly)
+            var s = SearchText.Normalize(input);
+            var p = SearchText.Normalize(pattern);
 
             int i = 0, pi = 0, star = -1, mark = 0;
             while (i < s.Length)
@@ -29,9 +29,12 @@ namespace PolicyPlus.Utilities
             if (string.IsNullOrEmpty(pattern)) return true;
             if (pattern.Contains('*') || pattern.Contains('?'))
                 return WildcardMatch(input, pattern);
-            if (string.Equals(input ?? string.Empty, pattern, StringComparison.InvariantCultureIgnoreCase))
+
+            var a = SearchText.Normalize(input);
+            var b = SearchText.Normalize(pattern);
+            if (string.Equals(a, b, StringComparison.Ordinal))
                 return true;
-            return allowSubstring && (input ?? string.Empty).IndexOf(pattern, StringComparison.InvariantCultureIgnoreCase) >= 0;
+            return allowSubstring && a.IndexOf(b, StringComparison.Ordinal) >= 0;
         }
     }
 }

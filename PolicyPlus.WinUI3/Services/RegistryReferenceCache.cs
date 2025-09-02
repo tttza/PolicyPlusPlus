@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using PolicyPlus; // for PolicyPlusPolicy, PolicyProcessing
+using PolicyPlus.Utilities;
 
 namespace PolicyPlus.WinUI3.Services
 {
@@ -30,17 +31,17 @@ namespace PolicyPlus.WinUI3.Services
             try
             {
                 var affected = PolicyProcessing.GetReferencedRegistryValues(policy);
-                var keysLower = affected.Select(kv => (kv.Key ?? string.Empty).ToLowerInvariant()).ToArray();
+                var keysNorm = affected.Select(kv => SearchText.Normalize(kv.Key)).ToArray();
                 var keySegs = affected
                     .Select(kv => (kv.Key ?? string.Empty).Split('\\'))
-                    .Select(segs => segs.Select(s => (s ?? string.Empty).ToLowerInvariant()).ToArray())
+                    .Select(segs => segs.Select(s => SearchText.Normalize(s)).ToArray())
                     .ToArray();
-                var valsLower = affected.Select(kv => (kv.Value ?? string.Empty).ToLowerInvariant()).ToArray();
+                var valsNorm = affected.Select(kv => SearchText.Normalize(kv.Value)).ToArray();
                 return new Cached
                 {
-                    KeyPathsLower = keysLower,
+                    KeyPathsLower = keysNorm,
                     KeySegmentsLower = keySegs,
-                    ValueNamesLower = valsLower,
+                    ValueNamesLower = valsNorm,
                 };
             }
             catch

@@ -23,31 +23,35 @@ namespace PolicyPlus.WinUI3.Dialogs
             var valPat = valName ?? string.Empty;
             var cached = RegistryReferenceCache.Get(Policy);
 
+            // Normalize patterns once
+            var keyPatNorm = SearchText.Normalize(keyPat);
+            var valPatNorm = SearchText.Normalize(valPat);
+
             // Value-name pattern first (cheap)
-            if (!string.IsNullOrEmpty(valPat))
+            if (!string.IsNullOrEmpty(valPatNorm))
             {
-                bool anyVal = cached.ValueNamesLower.Any(v => WildcardOrExact(v, valPat, allowSubstring));
+                bool anyVal = cached.ValueNamesLower.Any(v => WildcardOrExact(v, valPatNorm, allowSubstring));
                 if (!anyVal) return false; // if a value pattern is specified but none match, bail out
             }
 
-            if (string.IsNullOrEmpty(keyPat))
+            if (string.IsNullOrEmpty(keyPatNorm))
             {
                 // Only value filter requested and it matched
-                return !string.IsNullOrEmpty(valPat);
+                return !string.IsNullOrEmpty(valPatNorm);
             }
 
             // Key path filter
-            var pat = keyPat;
+            var pat = keyPatNorm;
             if (pat.Contains("*") || pat.Contains("?"))
             {
                 // wildcard full-path
                 if (cached.KeyPathsLower.Any(k => WildcardMatch(k, pat))) return true;
                 return false;
             }
-            else if (pat.Contains(@"\\"))
+            else if (pat.Contains(@"\\\\"))
             {
                 // rooted path prefix
-                if (cached.KeyPathsLower.Any(k => k.StartsWith(pat, StringComparison.InvariantCultureIgnoreCase))) return true;
+                if (cached.KeyPathsLower.Any(k => k.StartsWith(pat, StringComparison.Ordinal))) return true;
                 return false;
             }
             else
@@ -55,8 +59,8 @@ namespace PolicyPlus.WinUI3.Dialogs
                 // single segment or substring
                 foreach (var segs in cached.KeySegmentsLower)
                 {
-                    bool segMatch = segs.Any(s => string.Equals(s, pat, StringComparison.InvariantCultureIgnoreCase));
-                    bool subMatch = allowSubstring && segs.Any(s => s.IndexOf(pat, StringComparison.InvariantCultureIgnoreCase) >= 0);
+                    bool segMatch = segs.Any(s => string.Equals(s, pat, StringComparison.Ordinal));
+                    bool subMatch = allowSubstring && segs.Any(s => s.IndexOf(pat, StringComparison.Ordinal) >= 0);
                     if (segMatch || subMatch) return true;
                 }
                 return false;
@@ -70,9 +74,10 @@ namespace PolicyPlus.WinUI3.Dialogs
                 return false;
 
             var cached = RegistryReferenceCache.Get(policy);
+            var patNorm = SearchText.Normalize(pat);
             foreach (var v in cached.ValueNamesLower)
             {
-                if (WildcardOrExact(v, pat, allowSubstring))
+                if (WildcardOrExact(v, patNorm, allowSubstring))
                     return true;
             }
             return false;

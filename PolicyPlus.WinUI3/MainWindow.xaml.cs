@@ -26,6 +26,7 @@ using CommunityToolkit.WinUI.UI.Controls;
 using Windows.Foundation;
 using PolicyPlus; // Core APIs
 using PolicyPlus.WinUI3.Dialogs; // FindByRegistryWinUI
+using PolicyPlus.Utilities; // SearchText
 
 namespace PolicyPlus.WinUI3
 {
@@ -85,8 +86,8 @@ namespace PolicyPlus.WinUI3
         private const string ColCategoryKey = "Columns.ShowCategory";
         private const string ColAppliesKey = "Columns.ShowApplies";
         private const string ColSupportedKey = "Columns.ShowSupported";
-        private const string ColUserStateKey = "Columns.ShowUserState";
-        private const string ColCompStateKey = "Columns.ShowComputerState";
+        private const string ColUserStateKey = "Columns.ShowComputerState";
+        private const string ColCompStateKey = "Columns.ShowUserState";
 
         private const string ScaleKey = "UIScale"; // e.g. "100%"
         private const string ShowDetailsKey = "View.ShowDetails";
@@ -340,9 +341,9 @@ namespace PolicyPlus.WinUI3
                     {
                         searchIndexLocal = allLocal.Select(p => (
                             Policy: p,
-                            NameLower: (p.DisplayName ?? string.Empty).ToLowerInvariant(),
-                            IdLower: (p.UniqueID ?? string.Empty).ToLowerInvariant(),
-                            DescLower: (p.DisplayExplanation ?? string.Empty).ToLowerInvariant()
+                            NameLower: SearchText.Normalize(p.DisplayName),
+                            IdLower: SearchText.Normalize(p.UniqueID),
+                            DescLower: SearchText.Normalize(p.DisplayExplanation)
                         )).ToList();
                         searchIndexByIdLocal = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
                         foreach (var e in searchIndexLocal)
@@ -392,9 +393,9 @@ namespace PolicyPlus.WinUI3
             {
                 _searchIndex = _allPolicies.Select(p => (
                     Policy: p,
-                    NameLower: (p.DisplayName ?? string.Empty).ToLowerInvariant(),
-                    IdLower: (p.UniqueID ?? string.Empty).ToLowerInvariant(),
-                    DescLower: (p.DisplayExplanation ?? string.Empty).ToLowerInvariant()
+                    NameLower: SearchText.Normalize(p.DisplayName),
+                    IdLower: SearchText.Normalize(p.UniqueID),
+                    DescLower: SearchText.Normalize(p.DisplayExplanation)
                 )).ToList();
                 _searchIndexById = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
                 foreach (var e in _searchIndex)
@@ -469,7 +470,7 @@ namespace PolicyPlus.WinUI3
 
         private List<string> BuildSuggestions(string q, HashSet<string> allowed)
         {
-            var qLower = (q ?? string.Empty).ToLowerInvariant();
+            var qLower = SearchText.Normalize(q);
             var bestByName = new Dictionary<string, (int score, string name)>(StringComparer.OrdinalIgnoreCase);
             bool smallSubset = allowed.Count > 0 && allowed.Count < (_allPolicies.Count / 2);
 
@@ -482,13 +483,11 @@ namespace PolicyPlus.WinUI3
                     int nameScore = MatchScoreFor(e.NameLower, qLower);
                     int idScore = MatchScoreFor(e.IdLower, qLower);
                     int descScore = _searchInDescription ? MatchScoreFor(e.DescLower, qLower) : -1000;
-                    // field weights: name > id > description
                     if (nameScore <= -1000 && idScore <= -1000 && descScore <= -1000) return;
                     score += Math.Max(0, nameScore) * 3;
                     score += Math.Max(0, idScore) * 2;
                     score += Math.Max(0, descScore);
                 }
-                // usage boost
                 score += SearchRankingService.GetBoost(e.Policy.UniqueID);
 
                 var name = e.Policy.DisplayName ?? string.Empty;
@@ -519,7 +518,6 @@ namespace PolicyPlus.WinUI3
 
             if (bestByName.Count == 0 && string.IsNullOrEmpty(qLower))
             {
-                // fallback: top used among allowed
                 foreach (var id in allowed)
                 {
                     if (_searchIndexById.TryGetValue(id, out var e))
