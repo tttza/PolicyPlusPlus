@@ -10,22 +10,14 @@
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
-    <WindowsAppSdkBootstrapInitialize>true</WindowsAppSdkBootstrapInitialize>
-	<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>	 
+    <WindowsAppSDKBootstrapInitialize>true</WindowsAppSDKBootstrapInitialize>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
 
   <!-- When using Windows App SDK self-contained (app-local runtime), do not bootstrap -->
   <PropertyGroup Condition="'$(WindowsAppSDKSelfContained)'=='true'">
-    <WindowsAppSdkBootstrapInitialize>false</WindowsAppSdkBootstrapInitialize>
+    <WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="Resources\ThemeColors.xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Manifest Include="$(ApplicationManifest)" />
-  </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Assets\*.ico" />
@@ -59,10 +51,6 @@
     </When>
   </Choose>
 
-  <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
-    <ProjectCapability Include="Msix" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.250402" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
@@ -75,32 +63,6 @@
     <ProjectReference Include="..\PolicyPlus.Core\PolicyPlus.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Page Update="Resources\ThemeColors.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Update="Dialogs\LanguageOptionsDialog.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Update="Dialogs\ImportPolDialog.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Update="Dialogs\ImportRegDialog.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Page Remove="Windows\DetailPolicyFormattedWindow.xaml" />
-    <Page Remove="Windows\PendingChangesWindow.xaml" />
-    <Page Include="Windows\DetailPolicyFormattedWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Windows\PendingChangesWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-
   <!-- Rely on default items for XAML and code-behind, and for MainWindow\*.cs partials -->
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
@@ -111,8 +73,6 @@
     <PublishReadyToRun>True</PublishReadyToRun>
     <PublishTrimmed>False</PublishTrimmed>
     <PublishSingleFile>False</PublishSingleFile>
-    <!-- Let publish resolve RID assets; do not flatten all assemblies at build time -->
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <!-- Single-file self-contained publish tuning for WinUI 3 / Windows App SDK -->
