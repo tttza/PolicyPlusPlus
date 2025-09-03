@@ -42,7 +42,8 @@ namespace PolicyPlus.WinUI3.Windows
         private static readonly Regex UrlRegex = new Regex(@"(https?://[^\s]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private bool _useSecondLanguage = false;
-        private CheckBox? _secondLangToggle;
+        private Button? _secondLangButton;
+        private ToggleButton? _secondLangToggle;
 
         public EditSettingWindow()
         {
@@ -61,20 +62,22 @@ namespace PolicyPlus.WinUI3.Windows
             RootShell.Loaded += (s, e) =>
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootShell); } catch { }
-                _secondLangToggle = RootShell.FindName("SecondLangToggle") as CheckBox;
+                _secondLangButton = RootShell.FindName("SecondLangToggle") as Button;
+                _secondLangToggle = RootShell.FindName("SecondLangToggle") as ToggleButton;
                 if (_secondLangToggle != null)
                 {
                     _secondLangToggle.Checked += SecondLangToggle_Checked;
                     _secondLangToggle.Unchecked += SecondLangToggle_Checked;
-
-                    // Initialize toggle visibility/text based on settings
+                }
+                if (_secondLangButton != null)
+                {
                     try
                     {
                         var st = SettingsService.Instance.LoadSettings();
                         bool enabled = st.SecondLanguageEnabled ?? false;
-                        _secondLangToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
-                        if (enabled && !string.IsNullOrEmpty(st.SecondLanguage))
-                            _secondLangToggle.Content = $"2nd Language ({st.SecondLanguage})";
+                        _secondLangButton.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                        string code = st.SecondLanguage ?? "en-US";
+                        ToolTipService.SetToolTip(_secondLangButton, enabled ? $"Toggle 2nd language ({code})" : "2nd language disabled in preferences");
                     }
                     catch { }
                 }
@@ -90,9 +93,11 @@ namespace PolicyPlus.WinUI3.Windows
             CancelBtn.Click += (s, e) => Close();
         }
 
+        private void SecondLangButton_Click(object sender, RoutedEventArgs e) { }
         private void SecondLangToggle_Checked(object sender, RoutedEventArgs e)
         {
-            _useSecondLanguage = (_secondLangToggle?.IsChecked == true);
+            var t = sender as ToggleButton;
+            _useSecondLanguage = t?.IsChecked == true;
             RefreshLocalizedTexts();
         }
 
@@ -127,6 +132,14 @@ namespace PolicyPlus.WinUI3.Windows
                 {
                     SupportedBox.Text = _policy.SupportedOn is null ? string.Empty : _policy.SupportedOn.DisplayName;
                 }
+
+                // Update tooltip to reflect current language code
+                try
+                {
+                    if (_secondLangButton != null)
+                        ToolTipService.SetToolTip(_secondLangButton, enabled ? $"Toggle 2nd language ({lang})" : "2nd language disabled in preferences");
+                }
+                catch { }
 
                 // Rebuild option labels/controls for second language when toggled
                 if (_policy.RawPolicy.Elements != null)

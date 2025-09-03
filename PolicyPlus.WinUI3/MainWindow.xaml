@@ -109,7 +109,7 @@
                             <ToggleMenuFlyoutItem x:Name="ViewCategoryToggle" Text="Category" IsChecked="False" Tag="ColCategoryFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewAppliesToggle" Text="Applies to" IsChecked="False" Tag="ColAppliesFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewSupportedToggle" Text="Supported on" IsChecked="False" Tag="ColSupportedFlag" Click="ColumnToggle_Click"/>
-                            <ToggleMenuFlyoutItem x:Name="ViewSecondNameToggle" Text="2nd Language column" IsChecked="False" Click="ViewEnglishNameToggle_Click"/>
+                            <ToggleMenuFlyoutItem x:Name="ViewSecondNameToggle" Text="2nd Language Name" IsChecked="False" Click="ViewSecoundNameToggle_Click"/>
                             <MenuFlyoutSeparator/>
                             <ToggleMenuFlyoutItem x:Name="ViewDetailsToggle" Text="Details pane" IsChecked="True" Click="ViewDetailsToggle_Click"/>
                         </controls:MenuBarItem>
@@ -305,7 +305,7 @@
                                     </datagrid:DataGridTemplateColumn.CellTemplate>
                                 </datagrid:DataGridTemplateColumn>
                                 <datagrid:DataGridTextColumn x:Name="ColName" Header="Name" Binding="{Binding DisplayName}" Width="3*" MinWidth="260"/>
-                                <datagrid:DataGridTextColumn x:Name="ColSecondName" Header="2nd Language" Binding="{Binding SecondName}" Width="2*" MinWidth="200" Visibility="Collapsed"/>
+                                <datagrid:DataGridTextColumn x:Name="ColSecondName" Header="2nd Language Name" Binding="{Binding SecondName}" Width="2*" MinWidth="200" Visibility="Collapsed"/>
                                 <datagrid:DataGridTextColumn x:Name="ColId" Header="ID" Binding="{Binding ShortId}" Width="2*"/>
                                 <datagrid:DataGridTextColumn x:Name="ColCategory" Header="Category" Binding="{Binding CategoryName}" Width="2*"/>
                                 <datagrid:DataGridTextColumn x:Name="ColApplies" Header="Applies to" Binding="{Binding AppliesText}" Width="*"/>

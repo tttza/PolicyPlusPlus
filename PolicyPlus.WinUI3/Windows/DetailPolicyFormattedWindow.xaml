@@ -36,7 +36,6 @@
             <!-- Name -->
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center"/>
             <TextBox Grid.Row="0" Grid.Column="1" x:Name="NameBox" IsReadOnly="True"/>
-            <Button Grid.Row="0" Grid.Column="2" x:Name="LangToggle" Content="2nd" ToolTipService.ToolTip="Toggle 2nd Language" MinWidth="44" MinHeight="32"/>
 
             <!-- Unique ID -->
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Unique ID" VerticalAlignment="Center"/>
@@ -88,9 +87,17 @@
             </StackPanel>
 
             <!-- Footer -->
-            <StackPanel Grid.Row="5" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="CloseBtn" Content="Close" Style="{StaticResource PrimaryButtonStyle}" MinWidth="90"/>
-            </StackPanel>
+            <Grid Grid.Row="5" Grid.ColumnSpan="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <ToggleButton x:Name="LangToggle" Grid.Column="1" MinWidth="36" MinHeight="36" ToolTipService.ToolTip="Toggle 2nd language">
+                    <FontIcon Glyph="&#xF2B7;"/>
+                </ToggleButton>
+                <Button x:Name="CloseBtn" Grid.Column="2" Content="Close" Style="{StaticResource PrimaryButtonStyle}" MinWidth="90"/>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

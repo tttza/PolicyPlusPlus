@@ -197,26 +197,19 @@ namespace PolicyPlus.WinUI3
                 if (ViewSecondNameToggle != null)
                 {
                     ViewSecondNameToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
-                    ViewSecondNameToggle.Text = enabled ? $"2nd Language column ({lang})" : "2nd Language column";
+                    ViewSecondNameToggle.Text = enabled ? $"2nd Language Name ({lang})" : "2nd Language Name";
                     if (!enabled) ViewSecondNameToggle.IsChecked = false;
                 }
                 if (ColSecondName != null)
                 {
-                    ColSecondName.Header = enabled ? $"2nd Language ({lang})" : "2nd Language";
+                    ColSecondName.Header = enabled ? $"2nd Language Name ({lang})" : "2nd Language Name";
                     ColSecondName.Visibility = (enabled && (ViewSecondNameToggle?.IsChecked == true)) ? Visibility.Visible : Visibility.Collapsed;
                 }
             }
             catch { }
         }
 
-        private void ViewEnglishToggle_Click(object sender, RoutedEventArgs e)
-        {
-            bool on = (sender as ToggleMenuFlyoutItem)?.IsChecked == true;
-            try { Services.SettingsService.Instance.UpdateShowEnglishNames(on); } catch { }
-            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
-        }
-
-        private void ViewEnglishNameToggle_Click(object sender, RoutedEventArgs e)
+        private void ViewSecoundNameToggle_Click(object sender, RoutedEventArgs e)
         {
             SaveColumnPrefs();
             UpdateColumnVisibilityFromFlags();

@@ -32,14 +32,13 @@
         <KeyboardAccelerator Key="Escape" Invoked="Accel_Close"/>
       </Grid.KeyboardAccelerators>
 
-      <!-- Title row with 2nd language toggle -->
+      <!-- Title row -->
       <Grid Grid.Row="0" Grid.ColumnSpan="2">
         <Grid.ColumnDefinitions>
           <ColumnDefinition/>
           <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <TextBlock x:Name="SettingTitle" FontSize="18" FontWeight="SemiBold"/>
-        <CheckBox x:Name="SecondLangToggle" Grid.Column="1" Content="2nd Language" VerticalAlignment="Center"/>
       </Grid>
 
       <!-- Header -->
@@ -107,13 +106,17 @@
           <ColumnDefinition Width="Auto"/>
           <ColumnDefinition Width="Auto"/>
           <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button x:Name="ViewDetailApplyBtn" Content="Preview Details" ToolTipService.ToolTip="Open formatted details without saving" Style="{StaticResource PrimaryButtonStyle}"/>
         </StackPanel>
-        <Button x:Name="ApplyBtn" Grid.Column="1" Content="Apply" Style="{StaticResource ApplyButtonStyle}"/>
-        <Button x:Name="OkBtn" Grid.Column="2" Content="OK" Style="{StaticResource PrimaryButtonStyle}"/>
-        <Button x:Name="CancelBtn" Grid.Column="3" Content="Cancel"/>
+        <ToggleButton x:Name="SecondLangToggle" Grid.Column="1" MinWidth="36" MinHeight="36" VerticalAlignment="Center" ToolTipService.ToolTip="Toggle 2nd language">
+          <FontIcon Glyph="&#xF2B7;"/>
+        </ToggleButton>
+        <Button x:Name="ApplyBtn" Grid.Column="2" Content="Apply" Style="{StaticResource ApplyButtonStyle}"/>
+        <Button x:Name="OkBtn" Grid.Column="3" Content="OK" Style="{StaticResource PrimaryButtonStyle}"/>
+        <Button x:Name="CancelBtn" Grid.Column="4" Content="Cancel"/>
       </Grid>
     </Grid>
   </Grid>

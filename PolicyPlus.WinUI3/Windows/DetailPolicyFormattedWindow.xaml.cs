@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Text;
 using PolicyPlus.WinUI3.Utils;
@@ -28,8 +29,9 @@ namespace PolicyPlus.WinUI3.Windows
         private string _regFileCache = string.Empty;
         private bool _showRegFile = false;
         private string _joinSymbol = "+";
-        private bool _useSecondLanguage = false;
         private Button? _langToggleBtn;
+        private ToggleButton? _langToggle;
+        private bool _useSecondLanguage = false;
 
         public DetailPolicyFormattedWindow()
         {
@@ -54,7 +56,12 @@ namespace PolicyPlus.WinUI3.Windows
             try
             {
                 _langToggleBtn = RootShell.FindName("LangToggle") as Button;
-                if (_langToggleBtn != null) _langToggleBtn.Click += LangToggle_Click;
+                _langToggle = RootShell.FindName("LangToggle") as ToggleButton;
+                if (_langToggle != null)
+                {
+                    _langToggle.Checked += LangToggle_Checked;
+                    _langToggle.Unchecked += LangToggle_Checked;
+                }
             }
             catch { }
 
@@ -124,16 +131,17 @@ namespace PolicyPlus.WinUI3.Windows
         {
             _policy = policy; _bundle = bundle; _compSource = compSource; _userSource = userSource; _currentSection = section;
 
-            _useSecondLanguage = false;
             var s = SettingsService.Instance.LoadSettings();
             if (_langToggleBtn != null)
+            {
                 _langToggleBtn.Visibility = (s.SecondLanguageEnabled ?? false) ? Visibility.Visible : Visibility.Collapsed;
+                ToolTipService.SetToolTip(_langToggleBtn, (s.SecondLanguageEnabled ?? false) ? $"Toggle 2nd language ({s.SecondLanguage ?? "en-US"})" : "2nd language disabled in preferences");
+            }
 
             // Basic fields
             IdBox.Text = policy.UniqueID;
             DefinedInBox.Text = System.IO.Path.GetFileName(policy.RawPolicy.DefinedIn?.SourceFile ?? string.Empty);
 
-            // Build all dynamic texts in one place to keep language consistent with the current toggle state
             RefreshTexts();
         }
 
@@ -148,12 +156,7 @@ namespace PolicyPlus.WinUI3.Windows
                     _joinSymbol = sym.Substring(0, Math.Min(1, sym.Length));
                     PathSymbolBtn.Content = _joinSymbol;
                     PathBox.Text = DetailPathFormatter.BuildPathText(_policy, _joinSymbol);
-                    // persist
-                    try
-                    {
-                        SettingsService.Instance.UpdatePathJoinSymbol(_joinSymbol);
-                    }
-                    catch { }
+                    try { SettingsService.Instance.UpdatePathJoinSymbol(_joinSymbol); } catch { }
                 }
             }
             catch { }
@@ -162,6 +165,11 @@ namespace PolicyPlus.WinUI3.Windows
         private void LangToggle_Click(object sender, RoutedEventArgs e)
         {
             _useSecondLanguage = !_useSecondLanguage;
+            RefreshTexts();
+        }
+        private void LangToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            _useSecondLanguage = _langToggle?.IsChecked == true;
             RefreshTexts();
         }
 
@@ -175,7 +183,7 @@ namespace PolicyPlus.WinUI3.Windows
             if (_langToggleBtn != null)
             {
                 _langToggleBtn.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
-                try { _langToggleBtn.Content = enabled ? (lang.Length >= 2 ? lang.Substring(0, 2).ToUpperInvariant() : "2nd") : "2nd"; } catch { }
+                ToolTipService.SetToolTip(_langToggleBtn, enabled ? $"Toggle 2nd language ({lang})" : "2nd language disabled in preferences");
             }
 
             bool useSecond = enabled && _useSecondLanguage;

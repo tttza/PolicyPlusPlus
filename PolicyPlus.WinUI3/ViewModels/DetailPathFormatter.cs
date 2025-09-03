@@ -21,8 +21,9 @@ namespace PolicyPlus.WinUI3.ViewModels
         {
             var sb = new StringBuilder();
 
-            string uiLang = GetUiLanguage();
-            string lang = useSecondLanguage ? (secondLanguageCode ?? uiLang) : uiLang;
+            // Use app-selected primary language (ADMX language) instead of OS UI culture for consistency
+            string primaryLang = GetPrimaryLanguage();
+            string lang = useSecondLanguage ? (secondLanguageCode ?? primaryLang) : primaryLang;
             bool isJa = lang.StartsWith("ja", System.StringComparison.OrdinalIgnoreCase);
             string T(string en)
             {
@@ -56,7 +57,7 @@ namespace PolicyPlus.WinUI3.ViewModels
                 }
             }
 
-            string policyName = useSecondLanguage ? LocalizedTextService.GetPolicyNameIn(policy, secondLanguageCode ?? uiLang) : policy.DisplayName;
+            string policyName = useSecondLanguage ? LocalizedTextService.GetPolicyNameIn(policy, secondLanguageCode ?? primaryLang) : policy.DisplayName;
             sb.Append(new string(' ', depth * 2) + " " + policyName);
 
             return sb.ToString();
@@ -68,7 +69,7 @@ namespace PolicyPlus.WinUI3.ViewModels
             var cur = cat;
             while (cur != null)
             {
-                string name = useSecondLanguage ? LocalizedTextService.GetCategoryNameIn(cur, secondLanguageCode ?? GetUiLanguage()) : cur.DisplayName;
+                string name = useSecondLanguage ? LocalizedTextService.GetCategoryNameIn(cur, secondLanguageCode ?? GetPrimaryLanguage()) : cur.DisplayName;
                 stack.Push(name);
                 cur = cur.Parent;
             }
@@ -78,6 +79,18 @@ namespace PolicyPlus.WinUI3.ViewModels
         private static string GetUiLanguage()
         {
             try { return CultureInfo.CurrentUICulture.Name; } catch { return "en-US"; }
+        }
+
+        private static string GetPrimaryLanguage()
+        {
+            try
+            {
+                var s = SettingsService.Instance.LoadSettings();
+                var lang = s.Language;
+                if (!string.IsNullOrWhiteSpace(lang)) return lang!;
+                return GetUiLanguage();
+            }
+            catch { return GetUiLanguage(); }
         }
     }
 }
