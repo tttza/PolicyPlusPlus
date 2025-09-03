@@ -1,6 +1,6 @@
 using System;
 
-namespace PolicyPlus.Utilities
+namespace PolicyPlus.Core.Utilities
 {
     public static class StringMatch
     {

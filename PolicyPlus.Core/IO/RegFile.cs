@@ -1,11 +1,12 @@
 // VB dependency removed: replaced Strings/Conversions helpers with .NET equivalents
 using Microsoft.Win32;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace PolicyPlus
+namespace PolicyPlus.Core.IO
 {
     public class RegFile : IPolicySource
     {
@@ -59,7 +60,7 @@ namespace PolicyPlus
             {
                 if (Reader.EndOfStream)
                     return null;
-                if (StopAt.HasValue && Reader.Peek() == (int)StopAt.Value)
+                if (StopAt.HasValue && Reader.Peek() == StopAt.Value)
                     return null;
                 string? line = Reader.ReadLine();
                 if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith(";"))

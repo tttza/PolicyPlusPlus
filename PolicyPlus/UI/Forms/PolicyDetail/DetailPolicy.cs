@@ -1,4 +1,6 @@
-﻿using System;
+﻿using PolicyPlus.Core.Core;
+
+using System;
 
 namespace PolicyPlus.UI.PolicyDetail
 {

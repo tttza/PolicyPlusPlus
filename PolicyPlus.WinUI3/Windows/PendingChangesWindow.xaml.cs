@@ -12,9 +12,11 @@ using WinRT.Interop;
 using System.Collections.Specialized;
 using System.IO;
 using System.Threading.Tasks;
-using PolicyPlus; // Core
 using PolicyPlus.WinUI3.ViewModels;
 using Microsoft.UI.Xaml.Input;
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.Admx;
 
 namespace PolicyPlus.WinUI3.Windows
 {

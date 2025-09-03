@@ -10,6 +10,9 @@ using PolicyPlus.WinUI3.Utils;
 using Windows.ApplicationModel.DataTransfer;
 using PolicyPlus.WinUI3.ViewModels;
 using Microsoft.UI.Xaml.Input;
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.Admx;
 
 namespace PolicyPlus.WinUI3.Windows
 {

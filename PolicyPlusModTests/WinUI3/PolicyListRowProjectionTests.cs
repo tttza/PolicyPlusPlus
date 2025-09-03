@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using PolicyPlus;
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.IO;
 using PolicyPlus.WinUI3.Models;
 using PolicyPlus.WinUI3.Services;
 using Xunit;

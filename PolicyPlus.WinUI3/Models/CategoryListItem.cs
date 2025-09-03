@@ -1,4 +1,4 @@
-using PolicyPlus;
+using PolicyPlus.Core.Core;
 
 namespace PolicyPlus.WinUI3.Models
 {

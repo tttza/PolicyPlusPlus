@@ -1,8 +1,12 @@
 using Microsoft.Win32;
+
+using PolicyPlus.Core.Helpers;
+using PolicyPlus.Core.Utils;
+
 using System;
 using System.Linq;
 
-namespace PolicyPlus
+namespace PolicyPlus.Core.IO
 {
     public class PolicyLoader
     {
@@ -129,7 +133,7 @@ namespace PolicyPlus
                         using (var machHive = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default))
                         {
                             string subkeyName = "PolicyPlusMount:" + Guid.NewGuid().ToString();
-                            PInvoke.RegLoadKeyW(new IntPtr(int.MinValue + 0x00000002), subkeyName, MainSourcePath); // HKEY_LOCAL_MACHINE
+                            PInvoke.RegLoadKeyW(new nint(int.MinValue + 0x00000002), subkeyName, MainSourcePath); // HKEY_LOCAL_MACHINE
                             MainSourceRegKey = machHive.OpenSubKey(subkeyName, true);
                             if (MainSourceRegKey is null)
                             {
@@ -155,12 +159,12 @@ namespace PolicyPlus
 
                 default:
                     {
-                        if (System.IO.File.Exists(MainSourcePath))
+                        if (File.Exists(MainSourcePath))
                         {
                             // Open a POL file
                             try
                             {
-                                using (var fPol = new System.IO.FileStream(MainSourcePath, System.IO.FileMode.Open, System.IO.FileAccess.ReadWrite))
+                                using (var fPol = new FileStream(MainSourcePath, FileMode.Open, FileAccess.ReadWrite))
                                 {
                                     Writable = true;
                                 }
@@ -177,9 +181,9 @@ namespace PolicyPlus
                             // Create a new POL file
                             try
                             {
-                                var dir = System.IO.Path.GetDirectoryName(MainSourcePath);
+                                var dir = Path.GetDirectoryName(MainSourcePath);
                                 if (!string.IsNullOrEmpty(dir))
-                                    System.IO.Directory.CreateDirectory(dir);
+                                    Directory.CreateDirectory(dir);
                                 var pol = new PolFile();
                                 pol.Save(MainSourcePath);
                                 SourceObject = pol;
@@ -205,7 +209,7 @@ namespace PolicyPlus
             {
                 string subkeyName = MainSourceRegKey!.Name.Split(new[] { '\\' }, 2)[1]; // Remove the host hive name
                 MainSourceRegKey!.Dispose();
-                return PInvoke.RegUnLoadKeyW(new IntPtr(int.MinValue + 0x00000002), subkeyName) == 0;
+                return PInvoke.RegUnLoadKeyW(new nint(int.MinValue + 0x00000002), subkeyName) == 0;
             }
 
             return true;
@@ -218,7 +222,7 @@ namespace PolicyPlus
                 case PolicyLoaderSource.LocalGpo:
                     {
                         PolFile oldPol;
-                        if (System.IO.File.Exists(MainSourcePath))
+                        if (File.Exists(MainSourcePath))
                             oldPol = PolFile.Load(MainSourcePath);
                         else
                             oldPol = new PolFile();
@@ -234,7 +238,7 @@ namespace PolicyPlus
                         else
                         {
                             pol.ApplyDifference(oldPol, RegistryPolicyProxy.EncapsulateKey(User ? RegistryHive.CurrentUser : RegistryHive.LocalMachine));
-                            PInvoke.SendNotifyMessageW(new IntPtr(0xFFFF), 0x1A, UIntPtr.Zero, IntPtr.Zero); // Broadcast WM_SETTINGCHANGE
+                            PInvoke.SendNotifyMessageW(new nint(0xFFFF), 0x1A, nuint.Zero, nint.Zero); // Broadcast WM_SETTINGCHANGE
                             return "saved to disk and applied diff to Registry";
                         }
                     }
@@ -277,7 +281,7 @@ namespace PolicyPlus
             // Get the path to the comments file, or nothing if comments don't work
             if (SourceType == PolicyLoaderSource.PolFile | SourceType == PolicyLoaderSource.NtUserDat)
             {
-                return System.IO.Path.ChangeExtension(MainSourcePath, "cmtx");
+                return Path.ChangeExtension(MainSourcePath, "cmtx");
             }
             else if (SourceType == PolicyLoaderSource.LocalRegistry)
             {
@@ -285,8 +289,8 @@ namespace PolicyPlus
             }
             else if (!string.IsNullOrEmpty(MainSourcePath))
             {
-                var dir = System.IO.Path.GetDirectoryName(MainSourcePath);
-                return string.IsNullOrEmpty(dir) ? string.Empty : System.IO.Path.Combine(dir, "comment.cmtx");
+                var dir = Path.GetDirectoryName(MainSourcePath);
+                return string.IsNullOrEmpty(dir) ? string.Empty : Path.Combine(dir, "comment.cmtx");
             }
             else
             {
@@ -316,11 +320,11 @@ namespace PolicyPlus
             // Increment the version number in gpt.ini
             const string MachExtensionsLine = "gPCMachineExtensionNames=[{35378EAC-683F-11D2-A89A-00C04FBBCFA2}{D02B1F72-3407-48AE-BA88-E8213C6761F1}]";
             const string UserExtensionsLine = "gPCUserExtensionNames=[{35378EAC-683F-11D2-A89A-00C04FBBCFA2}{D02B1F73-3407-48AE-BA88-E8213C6761F1}]";
-            if (System.IO.File.Exists(GptIniPath))
+            if (File.Exists(GptIniPath))
             {
                 // Alter the existing gpt.ini's Version line and add any necessary other lines
-                var lines = System.IO.File.ReadLines(GptIniPath).ToList();
-                using (var fGpt = new System.IO.StreamWriter(GptIniPath, false))
+                var lines = File.ReadLines(GptIniPath).ToList();
+                using (var fGpt = new StreamWriter(GptIniPath, false))
                 {
                     bool seenMachExts = default, seenUserExts = default, seenVersion = default;
                     foreach (var line in lines)
@@ -353,7 +357,7 @@ namespace PolicyPlus
             else
             {
                 // Create a new gpt.ini
-                using (var fGpt = new System.IO.StreamWriter(GptIniPath))
+                using (var fGpt = new StreamWriter(GptIniPath))
                 {
                     fGpt.WriteLine("[General]");
                     fGpt.WriteLine(MachExtensionsLine);

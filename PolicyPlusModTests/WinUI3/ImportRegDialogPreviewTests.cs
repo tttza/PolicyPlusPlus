@@ -1,5 +1,8 @@
 using System.IO;
-using PolicyPlus;
+
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Utilities;
+
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3

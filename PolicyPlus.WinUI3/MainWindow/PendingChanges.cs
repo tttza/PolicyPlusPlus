@@ -1,9 +1,9 @@
 using Microsoft.UI.Xaml;
 using PolicyPlus.WinUI3.Services;
-using PolicyPlus;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using PolicyPlus.Core.Core;
 
 namespace PolicyPlus.WinUI3
 {

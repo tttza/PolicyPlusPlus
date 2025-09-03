@@ -1,10 +1,12 @@
 using Microsoft.Win32;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using PolicyPlus.Core.Utils;
 
-namespace PolicyPlus
+namespace PolicyPlus.Core.IO
 {
     public interface IPolicySource
     {
@@ -57,7 +59,7 @@ namespace PolicyPlus
                     int charCode = Stream.ReadUInt16();
                     if (charCode == 0)
                         break;
-                    sb.Append(Char.ConvertFromUtf32(charCode));
+                    sb.Append(char.ConvertFromUtf32(charCode));
                 }
                 while (true);
                 return sb.ToString();
@@ -356,7 +358,7 @@ namespace PolicyPlus
                     int charCode = Data[x * 2] + (Data[x * 2 + 1] << 8);
                     if (charCode == 0)
                         break;
-                    sb.Append(Char.ConvertFromUtf32(charCode));
+                    sb.Append(char.ConvertFromUtf32(charCode));
                 }
 
                 return sb.ToString();

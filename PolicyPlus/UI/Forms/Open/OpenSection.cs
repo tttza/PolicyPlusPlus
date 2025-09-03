@@ -1,7 +1,8 @@
 ﻿
 using System;
 using System.Windows.Forms;
-using PolicyPlus;
+
+using PolicyPlus.Core.Core;
 
 namespace PolicyPlus
 {

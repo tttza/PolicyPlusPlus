@@ -6,11 +6,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Windows.System;
-using PolicyPlus;
 using PolicyPlus.WinUI3.Models;
 using PolicyPlus.WinUI3.Services;
 using PolicyPlus.WinUI3.Dialogs; // FindByRegistryWinUI
-using PolicyPlus.Utilities; // SearchText
+using PolicyPlus.Core.Utilities;
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Core; // SearchText
 
 namespace PolicyPlus.WinUI3
 {

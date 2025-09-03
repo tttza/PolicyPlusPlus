@@ -1,6 +1,8 @@
+using PolicyPlus.Core.Helpers;
+
 using System.Linq;
 
-namespace PolicyPlus
+namespace PolicyPlus.Core.Utils
 {
     public static class SystemInfo
     {

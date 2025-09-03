@@ -1,8 +1,11 @@
+using PolicyPlus.Core.Admx;
+using PolicyPlus.Core.IO;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace PolicyPlus
+namespace PolicyPlus.Core.Core
 {
     public enum PolicyTargetScope
     {

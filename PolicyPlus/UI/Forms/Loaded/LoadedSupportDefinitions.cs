@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
+
+using PolicyPlus.Core.Admx;
+using PolicyPlus.Core.Core;
 using PolicyPlus.UI; // For AppForms
 
 namespace PolicyPlus

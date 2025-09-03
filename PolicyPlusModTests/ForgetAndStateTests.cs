@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using PolicyPlus;
 using Xunit;
 using PolicyPlusModTests.TestHelpers;
+using PolicyPlus.Core.Core;
 
 namespace PolicyPlusModTests
 {

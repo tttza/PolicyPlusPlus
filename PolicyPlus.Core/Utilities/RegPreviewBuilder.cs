@@ -1,8 +1,10 @@
+using PolicyPlus.Core.IO;
+
 using System;
 using System.Linq;
 using System.Text;
 
-namespace PolicyPlus
+namespace PolicyPlus.Core.Utilities
 {
     public static class RegPreviewBuilder
     {

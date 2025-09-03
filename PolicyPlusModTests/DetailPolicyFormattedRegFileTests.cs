@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using PolicyPlus.UI.PolicyDetail;
-using PolicyPlus;
 using PolicyPlusModTests.TestHelpers;
 using Xunit;
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Core;
 
 namespace PolicyPlusModTests
 {

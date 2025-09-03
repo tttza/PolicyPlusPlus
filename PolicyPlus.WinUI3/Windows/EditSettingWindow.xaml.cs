@@ -13,8 +13,10 @@ using System.Text.RegularExpressions;
 using WinRT.Interop;
 using PolicyPlus.WinUI3.Utils;
 using PolicyPlus.WinUI3.Services;
-using PolicyPlus; // for PolFile, PolicyProcessing
 using Microsoft.UI.Xaml.Input;
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.Admx;
 
 namespace PolicyPlus.WinUI3.Windows
 {

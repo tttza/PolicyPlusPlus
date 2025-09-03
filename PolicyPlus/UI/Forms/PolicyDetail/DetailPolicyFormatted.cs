@@ -4,6 +4,10 @@
 // Even more code...
 // Final lines of code...
 using Microsoft.Win32;
+
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.IO;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -331,7 +335,7 @@ namespace PolicyPlus.UI.PolicyDetail
                 }
             }
 
-            var filteredKeys = new List<PolicyPlus.RegFile.RegFileKey>() { };
+            var filteredKeys = new List<RegFile.RegFileKey>() { };
 
             try
             {

@@ -1,9 +1,12 @@
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.Utils;
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Xml;
 
-namespace PolicyPlus
+namespace PolicyPlus.Core.Admx
 {
     public class AdmxFile
     {

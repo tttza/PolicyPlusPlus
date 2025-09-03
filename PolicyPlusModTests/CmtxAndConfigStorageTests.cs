@@ -2,6 +2,9 @@ using System;
 using System.IO;
 using System.Xml;
 using Microsoft.Win32;
+
+using PolicyPlus.Core.IO;
+
 using Xunit;
 
 namespace PolicyPlusModTests
@@ -32,7 +35,7 @@ namespace PolicyPlusModTests
             File.WriteAllText(path, xml);
             try
             {
-                var cmtx = PolicyPlus.CmtxFile.Load(path);
+                var cmtx = CmtxFile.Load(path);
                 Assert.Equal(path, cmtx.SourceFile);
                 Assert.Equal("http://example.com/foo", cmtx.Prefixes["foo"]);
                 Assert.Equal("Hello", cmtx.Comments["bar"]);
@@ -50,7 +53,7 @@ namespace PolicyPlusModTests
             string subkey = $"Software\\PolicyPlusModTests\\ConfigStorage_{Guid.NewGuid():N}";
             try
             {
-                var cfg = new PolicyPlus.ConfigurationStorage(RegistryHive.CurrentUser, subkey);
+                var cfg = new ConfigurationStorage(RegistryHive.CurrentUser, subkey);
                 Assert.False(cfg.HasValue("k1"));
                 Assert.Equal(42, cfg.GetValue("k1", 42));
                 cfg.SetValue("k1", "v1");

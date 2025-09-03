@@ -1,9 +1,12 @@
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.Utils;
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Xml;
 
-namespace PolicyPlus
+namespace PolicyPlus.Core.Admx
 {
     public class AdmlFile
     {
@@ -178,7 +181,7 @@ namespace PolicyPlus
                                 {
                                     var dropPart = new DropDownPresentationElement();
                                     dropPart.NoSort = Convert.ToBoolean(uiElement.AttributeOrDefault("noSort", false));
-                                    dropPart.DefaultItemID = (int.TryParse(uiElement.AttributeOrNull("defaultItem"), out int num)) ? num : null;
+                                    dropPart.DefaultItemID = int.TryParse(uiElement.AttributeOrNull("defaultItem"), out int num) ? num : null;
                                     dropPart.Label = uiElement.InnerText ?? string.Empty;
                                     presPart = dropPart;
                                     break;

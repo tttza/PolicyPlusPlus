@@ -3,9 +3,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PolicyPlus;
 
-namespace PolicyPlus
+using PolicyPlus.Core.Admx;
+using PolicyPlus.Core.Core;
+
+namespace PolicyPlus.Core.IO
 {
     public class SpolFile
     {

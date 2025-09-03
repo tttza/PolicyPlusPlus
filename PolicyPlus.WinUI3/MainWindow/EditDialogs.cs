@@ -1,7 +1,10 @@
 using Microsoft.UI.Xaml;
-using PolicyPlus;
+
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.IO;
 using PolicyPlus.WinUI3.Utils;
 using PolicyPlus.WinUI3.Windows;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;

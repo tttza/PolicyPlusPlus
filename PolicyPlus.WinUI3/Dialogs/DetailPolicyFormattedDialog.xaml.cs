@@ -5,6 +5,9 @@ using System.Linq;
 using System.Text;
 using Windows.ApplicationModel.DataTransfer;
 using System.Collections.Generic;
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.Admx;
 
 namespace PolicyPlus.WinUI3.Dialogs
 {
@@ -318,7 +321,7 @@ namespace PolicyPlus.WinUI3.Dialogs
                 var b = BitConverter.GetBytes(qu); // little-endian
                 return $"\"{name}\"=hex(b):{string.Join(",", b.Select(x => x.ToString("x2")))}";
             }
-            return $"\"{name}\"=hex:{string.Join(",", (byte[])PolicyPlus.PolFile.ObjectToBytes(data, Microsoft.Win32.RegistryValueKind.Binary))}";
+            return $"\"{name}\"=hex:{string.Join(",", (byte[])PolFile.ObjectToBytes(data, Microsoft.Win32.RegistryValueKind.Binary))}";
         }
 
         private static string EscapeRegString(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");

@@ -1,3 +1,6 @@
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.IO;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -94,7 +97,7 @@ namespace PolicyPlus.WinUI3.ViewModels
             try
             {
                 var kind = Microsoft.Win32.RegistryValueKind.Binary;
-                var bytes = (byte[])PolicyPlus.PolFile.ObjectToBytes(data, kind);
+                var bytes = (byte[])PolFile.ObjectToBytes(data, kind);
                 return $"\"{name}\"=hex:{string.Join(",", bytes.Select(b => b.ToString("x2")))}";
             }
             catch

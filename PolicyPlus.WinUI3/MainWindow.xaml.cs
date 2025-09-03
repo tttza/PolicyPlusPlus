@@ -24,10 +24,12 @@ using PolicyPlus.WinUI3.Models;
 using System.IO;
 using CommunityToolkit.WinUI.UI.Controls;
 using Windows.Foundation;
-using PolicyPlus; // Core APIs
 using PolicyPlus.WinUI3.Dialogs; // FindByRegistryWinUI
-using PolicyPlus.Utilities; // SearchText
-using PolicyPlus.WinUI3.ViewModels; // RegistryViewFormatter
+using PolicyPlus.WinUI3.ViewModels;
+using PolicyPlus.Core.Utilities;
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.Admx; // RegistryViewFormatter
 
 namespace PolicyPlus.WinUI3
 {

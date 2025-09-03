@@ -4,6 +4,8 @@ using PolicyPlus.UI.PolicyDetail;
 using PolicyPlus;
 using Xunit;
 using PolicyPlusModTests.TestHelpers;
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Core;
 
 namespace PolicyPlusModTests
 {

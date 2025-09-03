@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace PolicyPlus
+namespace PolicyPlus.Core.Core
 {
     // Compiled data, more object-oriented and display-worthy than raw data from ADMX files
 

@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Admx;
 
-namespace PolicyPlus
+namespace PolicyPlus.Core.Core
 {
     public class PolicyProcessing
     {

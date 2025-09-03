@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace PolicyPlus
+namespace PolicyPlus.Core.Helpers
 {
     public class Privilege
     {
@@ -9,7 +9,7 @@ namespace PolicyPlus
         {
             var luid = default(PInvokeLuid);
             PInvokeTokenPrivileges priv;
-            IntPtr thisProcToken = default(IntPtr);
+            nint thisProcToken = default;
             PInvoke.OpenProcessToken(PInvoke.GetCurrentProcess(), 0x28U, ref thisProcToken);
             string? argSystemName = null;
             PInvoke.LookupPrivilegeValueW(argSystemName, Name, ref luid);
@@ -17,7 +17,7 @@ namespace PolicyPlus
             priv.PrivilegeCount = 1U;
             priv.LUID = luid;
             uint argReturnLength = 0U;
-            PInvoke.AdjustTokenPrivileges(thisProcToken, false, ref priv, (uint)Marshal.SizeOf(priv), IntPtr.Zero, ref argReturnLength);
+            PInvoke.AdjustTokenPrivileges(thisProcToken, false, ref priv, (uint)Marshal.SizeOf(priv), nint.Zero, ref argReturnLength);
             PInvoke.CloseHandle(thisProcToken);
         }
     }

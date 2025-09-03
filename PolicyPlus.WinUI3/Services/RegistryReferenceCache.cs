@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using PolicyPlus; // for PolicyPlusPolicy, PolicyProcessing
-using PolicyPlus.Utilities;
+
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.Utilities;
 
 namespace PolicyPlus.WinUI3.Services
 {

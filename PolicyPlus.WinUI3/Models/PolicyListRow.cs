@@ -1,10 +1,11 @@
-using PolicyPlus;
 using PolicyPlus.WinUI3.Services;
 using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System.Collections.Generic;
 using System.ComponentModel;
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Core;
 
 namespace PolicyPlus.WinUI3.Models
 {

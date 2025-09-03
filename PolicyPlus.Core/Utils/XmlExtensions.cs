@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Xml;
 
-namespace PolicyPlus
+namespace PolicyPlus.Core.Utils
 {
     public static class XmlExtensions
     {

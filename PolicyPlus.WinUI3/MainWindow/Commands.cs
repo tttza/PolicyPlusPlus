@@ -10,8 +10,9 @@ using Windows.ApplicationModel.DataTransfer;
 using PolicyPlus.WinUI3.Windows;
 using PolicyPlus.WinUI3.Services;
 using PolicyPlus.WinUI3.ViewModels;
-using PolicyPlus;
 using PolicyPlus.WinUI3.Utils;
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Core;
 
 namespace PolicyPlus.WinUI3
 {

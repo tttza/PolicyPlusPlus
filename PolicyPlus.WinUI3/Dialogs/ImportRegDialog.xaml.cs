@@ -1,5 +1,9 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+
+using PolicyPlus.Core.IO;
+using PolicyPlus.Core.Utilities;
+
 using System;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
@@ -43,7 +47,7 @@ namespace PolicyPlus.WinUI3.Dialogs
             try
             {
                 ParsedReg = RegFile.Load(path, "");
-                PreviewBox.Text = PolicyPlus.RegPreviewBuilder.BuildPreview(ParsedReg, maxPerHive: 500);
+                PreviewBox.Text = RegPreviewBuilder.BuildPreview(ParsedReg, maxPerHive: 500);
                 return true;
             }
             catch

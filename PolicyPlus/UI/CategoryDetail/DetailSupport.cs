@@ -1,4 +1,6 @@
-﻿using System;
+﻿using PolicyPlus.Core.Core;
+
+using System;
 using System.Windows.Forms;
 
 namespace PolicyPlus.UI.CategoryDetail

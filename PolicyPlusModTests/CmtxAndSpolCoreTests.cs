@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+
 using Microsoft.Win32;
-using PolicyPlus;
+
+using PolicyPlus.Core.Core;
+using PolicyPlus.Core.IO;
+
 using Xunit;
 
 namespace PolicyPlusModTests

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PolicyPlus;
+using PolicyPlus.Core.Core;
 using PolicyPlus.WinUI3.ViewModels;
 using Xunit;
 

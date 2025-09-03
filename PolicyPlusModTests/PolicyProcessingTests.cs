@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Win32;
-using PolicyPlus;
 using Xunit;
 using PolicyPlusModTests.TestHelpers;
+using PolicyPlus.Core.Core;
 
 namespace PolicyPlusModTests
 {
