@@ -124,8 +124,8 @@ namespace PolicyPlus.WinUI3.ViewModels
             if (data is null) return ("(not set)", "");
             switch (data)
             {
-                case uint u: return ("REG_DWORD", $"0x{u:x8} ({u})");
-                case ulong uq: return ("REG_QWORD", $"0x{uq:x16} ({uq})");
+                case uint u: return ("REG_DWORD", $"{u}");
+                case ulong uq: return ("REG_QWORD", $"{uq}");
                 case string s: return ("REG_SZ", s);
                 case string[] arr: return ("REG_MULTI_SZ", string.Join(" | ", arr));
                 case byte[] bin: return ("REG_BINARY", string.Join(" ", bin.Select(b => b.ToString("x2"))));
