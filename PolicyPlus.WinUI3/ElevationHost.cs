@@ -104,6 +104,13 @@ namespace PolicyPlus.WinUI3
                                 });
                             }
                         }
+                        else if (string.Equals(op, "open-regedit", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string hive = root.TryGetProperty("hive", out var hv) ? hv.GetString() ?? string.Empty : string.Empty;
+                            string key = root.TryGetProperty("subKey", out var sk) ? sk.GetString() ?? string.Empty : string.Empty;
+                            var (ok, error) = OpenRegeditAt(hive, key);
+                            writer.WriteLine(JsonSerializer.Serialize(new { ok, error }));
+                        }
                         else if (string.Equals(op, "shutdown", StringComparison.OrdinalIgnoreCase))
                         {
                             writer.WriteLine("{\"ok\":true}");
@@ -251,6 +258,95 @@ namespace PolicyPlus.WinUI3
                 if (version == 0) version = 0x10001; // default bump both when unknown
                 f.WriteLine("Version=" + version);
             }
+        }
+
+        // --- Elevated regedit navigation ---
+        private static (bool ok, string? error) OpenRegeditAt(string hive, string subKey)
+        {
+            try
+            {
+                string hiveName = NormalizeHive(hive);
+                string normalizedSub = NormalizeKey(subKey ?? string.Empty);
+                string existing = GetDeepestExistingSubKey(hiveName, normalizedSub);
+                string targetPath = string.IsNullOrEmpty(existing) ? hiveName : (hiveName + "\\" + existing);
+
+                using var regedit = Registry.CurrentUser.CreateSubKey(@"Software\\Microsoft\\Windows\\CurrentVersion\\Applets\\Regedit");
+                if (regedit == null) return (false, "regedit key unavailable");
+                regedit.SetValue("DisableLastKey", 0, RegistryValueKind.DWord);
+                string prefix = TryGetCurrentLastKeyPrefixStyle(regedit);
+                string lastKey = prefix + targetPath;
+                regedit.SetValue("LastKey", lastKey, RegistryValueKind.String);
+
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "regedit.exe",
+                    Arguments = "/m",
+                    UseShellExecute = true
+                };
+                System.Diagnostics.Process.Start(psi);
+                return (true, null);
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message);
+            }
+        }
+
+        private static string TryGetCurrentLastKeyPrefixStyle(RegistryKey regedit)
+        {
+            try
+            {
+                var val = regedit.GetValue("LastKey") as string ?? string.Empty;
+                if (val.StartsWith("Computer\\", StringComparison.OrdinalIgnoreCase))
+                    return "Computer\\";
+            }
+            catch { }
+            return string.Empty;
+        }
+
+        private static string NormalizeHive(string hive)
+        {
+            hive = (hive ?? string.Empty).Trim();
+            if (hive.Equals("HKLM", StringComparison.OrdinalIgnoreCase)) return "HKEY_LOCAL_MACHINE";
+            if (hive.Equals("HKCU", StringComparison.OrdinalIgnoreCase)) return "HKEY_CURRENT_USER";
+            if (hive.Equals("HKEY_LOCAL_MACHINE", StringComparison.OrdinalIgnoreCase)) return "HKEY_LOCAL_MACHINE";
+            if (hive.Equals("HKEY_CURRENT_USER", StringComparison.OrdinalIgnoreCase)) return "HKEY_CURRENT_USER";
+            return hive;
+        }
+
+        private static string NormalizeKey(string key)
+        {
+            key = (key ?? string.Empty).Replace('/', '\\').Trim();
+            if (key.StartsWith("\\")) key = key.TrimStart('\\');
+            return key;
+        }
+
+        private static string GetDeepestExistingSubKey(string hiveName, string subPath)
+        {
+            try
+            {
+                using var baseKey = hiveName.Equals("HKEY_LOCAL_MACHINE", StringComparison.OrdinalIgnoreCase)
+                    ? RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default)
+                    : RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
+
+                if (string.IsNullOrEmpty(subPath))
+                    return string.Empty;
+
+                var parts = subPath.Split(new[] { '\\' }, StringSplitOptions.RemoveEmptyEntries);
+                string deepest = string.Empty;
+                using RegistryKey? root = baseKey;
+                RegistryKey? current = root;
+                foreach (var p in parts)
+                {
+                    if (current == null) break;
+                    var next = current.OpenSubKey(p);
+                    if (next == null) break;
+                    deepest = string.IsNullOrEmpty(deepest) ? p : (deepest + "\\" + p);
+                    current = next;
+                }
+                return deepest;
+            }
+            catch { return string.Empty; }
         }
     }
 }

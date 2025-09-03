@@ -68,6 +68,9 @@
                 <Button x:Name="CopyRegBtn" ToolTipService.ToolTip="Copy" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
                     <FontIcon Glyph="&#xE8C8;"/>
                 </Button>
+                <Button x:Name="OpenRegBtn" ToolTipService.ToolTip="Open in Registry Editor" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
+                    <FontIcon Glyph="&#xE8A7;"/>
+                </Button>
             </StackPanel>
 
             <!-- Footer -->

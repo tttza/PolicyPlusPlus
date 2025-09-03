@@ -13,6 +13,7 @@ using Microsoft.UI.Xaml.Input;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx;
+using PolicyPlus.WinUI3.Services;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -37,6 +38,7 @@ namespace PolicyPlus.WinUI3.Windows
             CopyRegBtn.Click += (s, e) => CopyToClipboard(RegBox.Text);
             ToggleViewBtn.Click += ToggleViewBtn_Click;
             CloseBtn.Click += (s, e) => this.Close();
+            if (OpenRegBtn != null) OpenRegBtn.Click += OpenRegBtn_Click;
 
             ApplyThemeResources();
             App.ThemeChanged += (s, e) => ApplyThemeResources();
@@ -73,6 +75,20 @@ namespace PolicyPlus.WinUI3.Windows
         {
             _showRegFile = !_showRegFile;
             RegBox.Text = _showRegFile ? _regFileCache : _regFormattedCache;
+        }
+
+        private async void OpenRegBtn_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var values = PolicyProcessing.GetReferencedRegistryValues(_policy);
+                if (values.Count == 0)
+                    return;
+                var kv = values[0];
+                var hive = _currentSection == AdmxPolicySection.User ? "HKEY_CURRENT_USER" : "HKEY_LOCAL_MACHINE";
+                await RegeditNavigationService.OpenAtKeyAsync(hive, kv.Key);
+            }
+            catch { }
         }
 
         private void CopyToClipboard(string text)

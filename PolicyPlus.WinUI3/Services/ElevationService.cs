@@ -152,6 +152,44 @@ namespace PolicyPlus.WinUI3.Services
             return await WriteLocalGpoBytesAsync(machineBytes, userBytes, triggerRefresh).ConfigureAwait(false);
         }
 
+        // New: ask elevated host to open regedit at a key (avoids repeated UAC prompts)
+        public async Task<(bool ok, string? error)> OpenRegeditAtAsync(string hive, string subKey)
+        {
+            await _ioLock.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await EnsureHostAsync().ConfigureAwait(false);
+                if (_writer == null || _reader == null) return (false, "not connected");
+
+                var payload = new { op = "open-regedit", auth = _authToken, hive, subKey };
+                var json = JsonSerializer.Serialize(payload);
+                await _writer.WriteLineAsync(json).ConfigureAwait(false);
+
+                var readTask = _reader.ReadLineAsync();
+                var timeoutTask = Task.Delay(8000);
+                var completed = await Task.WhenAny(readTask, timeoutTask).ConfigureAwait(false);
+                if (completed == timeoutTask) return (false, "elevated host timeout");
+                string? resp = await readTask.ConfigureAwait(false);
+                if (string.IsNullOrEmpty(resp)) return (false, "no response");
+                try
+                {
+                    using var doc = JsonDocument.Parse(resp);
+                    var root = doc.RootElement;
+                    bool ok = root.TryGetProperty("ok", out var okProp) && okProp.GetBoolean();
+                    string? err = root.TryGetProperty("error", out var errProp) ? errProp.GetString() : null;
+                    return (ok, err);
+                }
+                catch (Exception ex)
+                {
+                    return (false, ex.Message);
+                }
+            }
+            finally
+            {
+                _ioLock.Release();
+            }
+        }
+
         public async Task ShutdownAsync()
         {
             await _ioLock.WaitAsync().ConfigureAwait(false);
