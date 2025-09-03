@@ -421,8 +421,10 @@ namespace PolicyPlus.WinUI3
                 DetailApplies.Blocks.Clear();
                 DetailSupported.Blocks.Clear();
                 if (DetailExplain != null) DetailExplain.Blocks.Clear();
+                try { if (DetailPlaceholder != null) DetailPlaceholder.Visibility = Visibility.Visible; } catch { }
                 return;
             }
+            try { if (DetailPlaceholder != null) DetailPlaceholder.Visibility = Visibility.Collapsed; } catch { }
             SetPlainText(DetailTitle, p.DisplayName);
             SetPlainText(DetailId, p.UniqueID);
             SetPlainText(DetailCategory, p.Category is null ? string.Empty : $"Category: {p.Category.DisplayName}");

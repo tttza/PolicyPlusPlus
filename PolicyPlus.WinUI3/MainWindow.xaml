@@ -238,8 +238,8 @@
                     <Grid Grid.Column="2" x:Name="PolicyDetailGrid">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="8*"/>
-                            <RowDefinition x:Name="SplitterRow" Height="8"/>
-                            <RowDefinition x:Name="DetailRow" Height="2*"/>
+                            <RowDefinition x:Name="SplitterRow" Height="7"/>
+                            <RowDefinition x:Name="DetailRow" Height="3.9*"/>
                         </Grid.RowDefinitions>
 
                         <!-- DataGrid -->
@@ -333,7 +333,7 @@
 
                         <toolkit:GridSplitter x:Name="DetailsSplitter" Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Height="8" HorizontalAlignment="Stretch"/>
 
-                        <Border x:Name="DetailsPane" Grid.Row="2" Margin="0,8,0,0" Padding="12" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}" CornerRadius="4" MinHeight="80">
+                        <Border x:Name="DetailsPane" Grid.Row="2" Margin="0,8,0,0" Padding="12" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}" CornerRadius="4" MinHeight="100">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -349,6 +349,17 @@
                                 <ScrollViewer Grid.Row="1" x:Name="DetailExplainScroll" VerticalScrollBarVisibility="Auto">
                                     <RichTextBlock x:Name="DetailExplain" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
                                 </ScrollViewer>
+
+                                <!-- Placeholder when no policy is selected -->
+                                <StackPanel x:Name="DetailPlaceholder"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Spacing="8"
+                                            Opacity="0.8">
+                                    <FontIcon Glyph="&#xE946;" FontSize="32"/>
+                                    <TextBlock Text="Select a policy to view details here" TextAlignment="Center"/>
+                                    <TextBlock Text="Hint: double-click a row to edit the setting" Opacity="0.8" FontSize="12" TextAlignment="Center"/>
+                                </StackPanel>
                             </Grid>
                         </Border>
                     </Grid>
