@@ -42,6 +42,7 @@ namespace PolicyPlus.WinUI3.Windows
             CopyRegBtn.Click += (s, e) => CopyToClipboard(RegBox.Text);
             ToggleViewBtn.Click += ToggleViewBtn_Click;
             CloseBtn.Click += (s, e) => this.Close();
+            OpenRegBtn.Click += OpenRegBtn_Click;
 
             ApplyThemeResources();
             App.ThemeChanged += (s, e) => ApplyThemeResources();

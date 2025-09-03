@@ -14,26 +14,14 @@ namespace PolicyPlus.WinUI3
             if (items == null || items.Length == 0) return (true, null);
             if (_bundle == null) return (false, "No ADMX bundle loaded");
 
-            (string? compBase64, string? userBase64) = (null, null);
-            try
-            {
-                var requests = items.Select(c => new PolicyChangeRequest
-                {
-                    PolicyId = c.PolicyId,
-                    Scope = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? PolicyTargetScope.User : PolicyTargetScope.Machine,
-                    DesiredState = c.DesiredState,
-                    Options = c.Options
-                }).ToList();
-                var b64 = PolicySavePipeline.BuildLocalGpoBase64(_bundle, requests);
-                compBase64 = b64.machineBase64; userBase64 = b64.userBase64;
-            }
-            catch (Exception ex)
-            {
-                return (false, ex.Message);
-            }
-
-            var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(compBase64, userBase64, triggerRefresh: true);
-            return (res.ok, res.error);
+            // Use the same coordinator and timeout as PendingChangesWindow to avoid UI hangs
+            var (ok, error, _, _) = await Services.SaveChangesCoordinator.SaveAsync(
+                _bundle,
+                items,
+                new ElevationServiceAdapter(),
+                TimeSpan.FromSeconds(8),
+                triggerRefresh: true);
+            return (ok, error);
         }
 
         private async void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -45,7 +33,6 @@ namespace PolicyPlus.WinUI3
                 {
                     SetBusy(true, "Saving...");
                     var (ok, err) = await SavePendingAsync(pending);
-                    SetBusy(false);
 
                     if (ok)
                     {
@@ -62,9 +49,9 @@ namespace PolicyPlus.WinUI3
                     }
                 }
             }
-            catch
+            finally
             {
-                SetBusy(false);
+                try { SetBusy(false); } catch { }
             }
         }
     }

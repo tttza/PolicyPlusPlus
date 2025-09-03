@@ -29,6 +29,22 @@ namespace PolicyPlus.Core.Core
 
     public static class PolicySavePipeline
     {
+        private static PolFile LoadExistingOrNew(bool isUser)
+        {
+            try
+            {
+                string win = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+                string gpRoot = Path.Combine(win, "System32", "GroupPolicy");
+                string path = Path.Combine(gpRoot, isUser ? "User" : "Machine", "Registry.pol");
+                if (File.Exists(path))
+                {
+                    return PolFile.Load(path);
+                }
+            }
+            catch { }
+            return new PolFile();
+        }
+
         // Build updated Local GPO POL buffers by applying the requested changes in-memory
         public static PolicySaveBuffers BuildLocalGpoBuffers(AdmxBundle bundle, IEnumerable<PolicyChangeRequest> changes)
         {
@@ -37,8 +53,21 @@ namespace PolicyPlus.Core.Core
 
             PolFile? compPol = null;
             PolFile? userPol = null;
-            try { compPol = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource() as PolFile; } catch { compPol = new PolFile(); }
-            try { userPol = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource() as PolFile; } catch { userPol = new PolFile(); }
+            try
+            {
+                var compSrc = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource();
+                compPol = compSrc as PolFile;
+            }
+            catch { compPol = null; }
+            try
+            {
+                var userSrc = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
+                userPol = userSrc as PolFile;
+            }
+            catch { userPol = null; }
+
+            if (compPol == null) compPol = LoadExistingOrNew(isUser: false);
+            if (userPol == null) userPol = LoadExistingOrNew(isUser: true);
 
             foreach (var c in changes)
             {

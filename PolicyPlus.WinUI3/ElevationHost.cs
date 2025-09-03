@@ -75,10 +75,13 @@ namespace PolicyPlus.WinUI3
                 using var reader = new StreamReader(server, Encoding.UTF8, false, 4096, leaveOpen: true);
                 using var writer = new StreamWriter(server, Encoding.UTF8, 4096, leaveOpen: true) { AutoFlush = true, NewLine = "\n" };
 
+                const int MaxChars = 12 * 1024 * 1024; // generous cap (~12MB of UTF-8 text)
+
                 while (true)
                 {
-                    string? line = ReadLineLimited(reader, 8 * 1024 * 1024);
+                    string? line = reader.ReadLine();
                     if (line == null) { Log("Client disconnected."); break; }
+                    if (line.Length > MaxChars) { try { writer.WriteLine(JsonSerializer.Serialize(new HostResponse { Ok = false, Error = "request too large" }, AppJsonContext.Default.HostResponse)); } catch { } continue; }
                     try
                     {
                         using var doc = JsonDocument.Parse(line);
@@ -137,20 +140,6 @@ namespace PolicyPlus.WinUI3
             }
             Log("Host exiting.");
             return 0;
-        }
-
-        private static string? ReadLineLimited(StreamReader reader, int maxBytes)
-        {
-            var ms = new MemoryStream();
-            while (true)
-            {
-                int ch = reader.Read();
-                if (ch < 0) return null;
-                if (ch == '\n') break;
-                ms.WriteByte((byte)ch);
-                if (ms.Length > maxBytes) throw new IOException("request too large");
-            }
-            return Encoding.UTF8.GetString(ms.ToArray());
         }
 
         private static bool IsPolBytes(byte[] bytes)

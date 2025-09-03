@@ -37,7 +37,7 @@ namespace PolicyPlus.WinUI3.Serialization
         [JsonPropertyName("error")] public string? Error { get; set; }
     }
 
-    [JsonSourceGenerationOptions(WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonSerializable(typeof(AppSettings))]
     [JsonSerializable(typeof(ColumnsOptions))]
     [JsonSerializable(typeof(SearchOptions))]

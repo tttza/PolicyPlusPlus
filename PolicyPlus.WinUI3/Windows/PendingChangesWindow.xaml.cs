@@ -316,34 +316,11 @@ namespace PolicyPlus.WinUI3.Windows
             if (bundle == null) { SetSaving(false); return; }
 
             var appliedList = items.ToList();
-            bool wroteOk = true; string? writeErr = null;
 
-            // Build POL buffers using Core pipeline
-            (string? compBase64, string? userBase64) = (null, null);
-            await Task.Run(() =>
-            {
-                try
-                {
-                    var requests = appliedList.Select(c => new PolicyChangeRequest
-                    {
-                        PolicyId = c.PolicyId,
-                        Scope = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? PolicyTargetScope.User : PolicyTargetScope.Machine,
-                        DesiredState = c.DesiredState,
-                        Options = c.Options
-                    }).ToList();
-                    var b64 = PolicySavePipeline.BuildLocalGpoBase64(bundle, requests);
-                    compBase64 = b64.machineBase64; userBase64 = b64.userBase64;
-                }
-                catch (Exception ex) { wroteOk = false; writeErr = ex.Message; }
-            }).ConfigureAwait(true);
+            // Use coordinator with timeout so the UI doesn't hang if host is stuck
+            var (ok, error, _, _) = await SaveChangesCoordinator.SaveAsync(bundle, appliedList, _elevation, TimeSpan.FromSeconds(8), triggerRefresh: true);
 
-            if (wroteOk)
-            {
-                var res = await _elevation.WriteLocalGpoBytesAsync(compBase64, userBase64, triggerRefresh: true);
-                if (!res.ok) { wroteOk = false; writeErr = res.error; }
-            }
-
-            if (wroteOk)
+            if (ok)
             {
                 PendingChangesService.Instance.Applied(appliedList.ToArray());
                 try
@@ -358,7 +335,7 @@ namespace PolicyPlus.WinUI3.Windows
             }
             else
             {
-                if (!string.IsNullOrEmpty(writeErr)) ShowLocalInfo("Save failed: " + writeErr);
+                if (!string.IsNullOrEmpty(error)) ShowLocalInfo("Save failed: " + error);
             }
 
             SetSaving(false);

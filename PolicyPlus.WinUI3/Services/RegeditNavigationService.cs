@@ -7,27 +7,20 @@ namespace PolicyPlus.WinUI3.Services
 {
     public static class RegeditNavigationService
     {
-        public static void OpenAtKey(string hive, string subKey)
+        // Try to open regedit non-elevated; returns true if launch was initiated
+        private static bool TryOpenAtKey(string hive, string subKey)
         {
-            if (string.IsNullOrWhiteSpace(hive)) return;
-            subKey ??= string.Empty;
-
+            var hiveName = NormalizeHive(hive);
+            var normalizedSub = NormalizeKey(subKey ?? string.Empty);
             try
             {
-                var hiveName = NormalizeHive(hive);
-                var normalizedSub = NormalizeKey(subKey);
                 var existingPath = GetDeepestExistingSubKey(hiveName, normalizedSub);
                 var targetPath = string.IsNullOrEmpty(existingPath) ? hiveName : $"{hiveName}\\{existingPath}";
 
                 const string regeditKeyPath = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Applets\Regedit";
-
-                // Ensure LastKey feature is enabled
                 Registry.SetValue(regeditKeyPath, "DisableLastKey", 0, RegistryValueKind.DWord);
-
-                // Choose prefix style based on current LastKey format (with or without 'Computer\')
                 string prefixStyle = TryGetCurrentLastKeyPrefixStyle();
                 string lastKeyToSet = prefixStyle + targetPath;
-
                 Registry.SetValue(regeditKeyPath, "LastKey", lastKeyToSet, RegistryValueKind.String);
 
                 var psi = new ProcessStartInfo
@@ -36,29 +29,38 @@ namespace PolicyPlus.WinUI3.Services
                     Arguments = "/m",
                     UseShellExecute = true
                 };
-                Process.Start(psi);
+                var p = Process.Start(psi);
+                return p != null;
             }
             catch
             {
+                return false;
             }
+        }
+
+        public static void OpenAtKey(string hive, string subKey)
+        {
+            // Fire-and-forget best-effort
+            TryOpenAtKey(hive, subKey);
         }
 
         public static async Task OpenAtKeyAsync(string hive, string subKey)
         {
             if (string.IsNullOrWhiteSpace(hive)) return;
             subKey ??= string.Empty;
+            var hiveName = NormalizeHive(hive);
+            var normalizedSub = NormalizeKey(subKey);
+
+            // Prefer elevated host first, so HKLM paths work without access denied, then fallback to non-elevated
             try
             {
-                var (ok, _) = await ElevationService.Instance.OpenRegeditAtAsync(NormalizeHive(hive), NormalizeKey(subKey)).ConfigureAwait(false);
-                if (!ok)
-                {
-                    OpenAtKey(hive, subKey);
-                }
+                var (ok, _) = await ElevationService.Instance.OpenRegeditAtAsync(hiveName, normalizedSub).ConfigureAwait(false);
+                if (ok) return;
             }
-            catch
-            {
-                OpenAtKey(hive, subKey);
-            }
+            catch { }
+
+            // Fallback to non-elevated attempt (works for standard users and HKCU)
+            TryOpenAtKey(hiveName, normalizedSub);
         }
 
         private static string TryGetCurrentLastKeyPrefixStyle()
@@ -71,13 +73,12 @@ namespace PolicyPlus.WinUI3.Services
                     return "Computer\\";
             }
             catch { }
-            // Default to no Computer\ prefix for compatibility
             return string.Empty;
         }
 
         private static string NormalizeHive(string hive)
         {
-            hive = hive.Trim();
+            hive = (hive ?? string.Empty).Trim();
             if (hive.Equals("HKLM", StringComparison.OrdinalIgnoreCase)) return "HKEY_LOCAL_MACHINE";
             if (hive.Equals("HKCU", StringComparison.OrdinalIgnoreCase)) return "HKEY_CURRENT_USER";
             if (hive.Equals("HKEY_LOCAL_MACHINE", StringComparison.OrdinalIgnoreCase)) return "HKEY_LOCAL_MACHINE";
@@ -87,7 +88,7 @@ namespace PolicyPlus.WinUI3.Services
 
         private static string NormalizeKey(string key)
         {
-            key = key.Replace('/', '\\').Trim();
+            key = (key ?? string.Empty).Replace('/', '\\').Trim();
             if (key.StartsWith("\\")) key = key.TrimStart('\\');
             return key;
         }

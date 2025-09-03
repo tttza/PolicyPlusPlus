@@ -52,12 +52,18 @@ namespace PolicyPlus.WinUI3
             try
             {
                 var cmd = Environment.GetCommandLineArgs();
-                if (cmd != null && cmd.Length >= 3 && string.Equals(cmd[1], "--elevation-host", StringComparison.OrdinalIgnoreCase))
+                if (cmd != null && cmd.Length >= 2)
                 {
-                    string pipe = cmd[2];
-                    _ = ElevationHost.Run(pipe);
-                    try { Environment.Exit(0); } catch { }
-                    return;
+                    for (int i = 0; i < cmd.Length; i++)
+                    {
+                        if (string.Equals(cmd[i], "--elevation-host", StringComparison.OrdinalIgnoreCase) && i + 1 < cmd.Length)
+                        {
+                            string pipe = cmd[i + 1];
+                            _ = ElevationHost.Run(pipe);
+                            try { Environment.Exit(0); } catch { }
+                            return;
+                        }
+                    }
                 }
             }
             catch { }

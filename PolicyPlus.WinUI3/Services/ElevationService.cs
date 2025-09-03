@@ -29,6 +29,13 @@ namespace PolicyPlus.WinUI3.Services
 
         private ElevationService() { }
 
+        private static string ClientLogPath => Path.Combine(Path.GetTempPath(), "PolicyPlus_client.log");
+        private static void ClientLog(string msg)
+        {
+            if (!IsHostLoggingEnabled()) return;
+            try { File.AppendAllText(ClientLogPath, DateTime.Now.ToString("s") + "[" + Environment.ProcessId + "] " + msg + Environment.NewLine); } catch { }
+        }
+
         private string GetCurrentExePath()
         {
             try { return Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule!.FileName; } catch { return Process.GetCurrentProcess().MainModule!.FileName; }
@@ -39,9 +46,17 @@ namespace PolicyPlus.WinUI3.Services
             try
             {
                 var ev = Environment.GetEnvironmentVariable("POLICYPLUS_HOST_LOG");
-                return string.Equals(ev, "1", StringComparison.OrdinalIgnoreCase) || string.Equals(ev, "true", StringComparison.OrdinalIgnoreCase);
+                if (string.Equals(ev, "1", StringComparison.OrdinalIgnoreCase) || string.Equals(ev, "true", StringComparison.OrdinalIgnoreCase))
+                    return true;
+                // Also honor a --log cmdline flag on the client
+                var cmd = Environment.GetCommandLineArgs();
+                for (int i = 0; i < cmd.Length; i++)
+                {
+                    if (string.Equals(cmd[i], "--log", StringComparison.OrdinalIgnoreCase)) return true;
+                }
             }
-            catch { return false; }
+            catch { }
+            return false;
         }
 
         private async Task EnsureHostAsync()
@@ -65,17 +80,19 @@ namespace PolicyPlus.WinUI3.Services
                 UseShellExecute = true,
                 Verb = "runas",
                 Arguments = args.ToString(),
-                WindowStyle = ProcessWindowStyle.Hidden
+                WindowStyle = ProcessWindowStyle.Hidden,
+                WorkingDirectory = AppContext.BaseDirectory
             };
 
-            Debug.WriteLine("Starting elevated host: " + psi.Arguments);
-            try { _hostProc = Process.Start(psi); } catch (Exception ex) { Debug.WriteLine("Start failed: " + ex.Message); throw; }
+            ClientLog("Starting elevated host: " + psi.Arguments);
+            try { _hostProc = Process.Start(psi); }
+            catch (Exception ex) { ClientLog("Start failed: " + ex.Message); throw; }
 
             _client = new NamedPipeClientStream(".", _pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
 
             var sw = Stopwatch.StartNew();
             Exception? last = null;
-            while (sw.Elapsed < TimeSpan.FromSeconds(5))
+            while (sw.Elapsed < TimeSpan.FromSeconds(10))
             {
                 try
                 {
@@ -84,12 +101,15 @@ namespace PolicyPlus.WinUI3.Services
                 }
                 catch (Exception ex)
                 {
-                    last = ex; await Task.Delay(100).ConfigureAwait(false);
+                    last = ex;
+                    // Detect early host exit
+                    try { if (_hostProc != null && _hostProc.HasExited) { ClientLog("Host exited early. Code=" + _hostProc.ExitCode); break; } } catch { }
+                    await Task.Delay(100).ConfigureAwait(false);
                 }
             }
             if (_client == null || !_client.IsConnected)
             {
-                Debug.WriteLine("Pipe connect failed: " + last?.Message);
+                ClientLog("Pipe connect failed: " + last?.Message);
                 throw last ?? new InvalidOperationException("pipe connect failed");
             }
 
