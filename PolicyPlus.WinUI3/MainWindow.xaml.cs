@@ -30,6 +30,7 @@ using PolicyPlus.Core.Utilities;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx; // RegistryViewFormatter
+using System.Collections.Specialized;
 
 namespace PolicyPlus.WinUI3
 {
@@ -53,6 +54,9 @@ namespace PolicyPlus.WinUI3
         private IPolicySource? _compSource;
         private IPolicySource? _userSource;
         private bool _configuredOnly = false;
+
+        // Map of visible policy id -> row for fast partial updates
+        private readonly Dictionary<string, PolicyListRow> _rowByPolicyId = new(StringComparer.OrdinalIgnoreCase);
 
         // Temp .pol mode and save tracking
         private string? _tempPolCompPath = null;
@@ -169,9 +173,68 @@ namespace PolicyPlus.WinUI3
             try
             {
                 PendingChangesWindow.ChangesAppliedOrDiscarded += (_, __) => { UpdateUnsavedIndicator(); RefreshList(); PersistHistory(); };
-                PendingChangesService.Instance.Pending.CollectionChanged += (_, __) => { UpdateUnsavedIndicator(); RefreshVisibleRows(); };
+                PendingChangesService.Instance.Pending.CollectionChanged += Pending_CollectionChanged;
                 PendingChangesService.Instance.History.CollectionChanged += (_, __) => { PersistHistory(); };
                 UpdateUnsavedIndicator();
+            }
+            catch { }
+        }
+
+        private void Pending_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            try
+            {
+                var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (e.NewItems != null)
+                {
+                    foreach (var obj in e.NewItems)
+                    {
+                        if (obj is PendingChange pc && !string.IsNullOrEmpty(pc.PolicyId)) ids.Add(pc.PolicyId);
+                    }
+                }
+                if (e.OldItems != null)
+                {
+                    foreach (var obj in e.OldItems)
+                    {
+                        if (obj is PendingChange pc && !string.IsNullOrEmpty(pc.PolicyId)) ids.Add(pc.PolicyId);
+                    }
+                }
+
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    UpdateUnsavedIndicator();
+
+                    // If ConfiguredOnly is active, the visible set may change; rebind
+                    if (_configuredOnly)
+                    {
+                        RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                        return;
+                    }
+
+                    if (ids.Count == 0)
+                    {
+                        // Fallback: refresh visible rows
+                        RefreshVisibleRows();
+                        return;
+                    }
+
+                    UpdateVisibleRowsForPolicyIds(ids);
+                });
+            }
+            catch { }
+        }
+
+        private void UpdateVisibleRowsForPolicyIds(IEnumerable<string> ids)
+        {
+            try
+            {
+                foreach (var id in ids)
+                {
+                    if (_rowByPolicyId.TryGetValue(id, out var row))
+                    {
+                        row.RefreshStateFromSourcesAndPending(_compSource, _userSource);
+                    }
+                }
             }
             catch { }
         }

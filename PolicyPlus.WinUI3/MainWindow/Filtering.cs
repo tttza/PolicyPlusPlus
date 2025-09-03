@@ -340,9 +340,21 @@ namespace PolicyPlus.WinUI3
             }
             _visiblePolicies = ordered.ToList();
 
+            // Rebuild id->row map for flat view
+            _rowByPolicyId.Clear();
+
             if (flat)
             {
                 var rows = ordered.Select(p => (object)PolicyListRow.FromPolicy(p, _compSource, _userSource)).ToList();
+                // populate map
+                foreach (var obj in rows)
+                {
+                    if (obj is PolicyListRow r && r.Policy != null)
+                    {
+                        _rowByPolicyId[r.Policy.UniqueID] = r;
+                    }
+                }
+
                 PolicyList.ItemsSource = rows;
 
                 PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
@@ -382,6 +394,8 @@ namespace PolicyPlus.WinUI3
                 PolicyList.ItemsSource = groupRows;
                 TryRestoreSelectionAsync(groupRows);
             }
+
+            // grouped view not tracked in _rowByPolicyId (partial updates are not supported there)
 
             // Clarify that counts refer to groups in grouped view
             PolicyCount.Text = $"{_visiblePolicies.Count} / {_totalGroupCount} groups";
