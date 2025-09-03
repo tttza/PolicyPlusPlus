@@ -19,7 +19,7 @@
 
     <!-- Scale host wraps real content so scaled content always fills window without gaps -->
     <Grid x:Name="ScaleHost">
-        <Grid x:Name="RootGrid" Background="{ThemeResource WindowBackground}" Loaded="Window_Loaded" KeyDown="RootGrid_KeyDown" PointerPressed="RootGrid_PointerPressed">
+        <Grid x:Name="RootGrid" Background="{ThemeResource WindowBackground}" Loaded="Window_Loaded" KeyDown="RootGrid_KeyDown" PointerPressed="RootGrid_PointerPressed" KeyboardAcceleratorPlacementMode="Hidden">
             <Grid.KeyboardAccelerators>
                 <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="SaveAccelerator_Invoked"/>
                 <KeyboardAccelerator Key="Left" Modifiers="Menu" Invoked="GoBackAccelerator_Invoked"/>
