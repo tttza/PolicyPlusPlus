@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using PolicyPlus.WinUI3.Serialization;
 
 namespace PolicyPlus.WinUI3
 {
@@ -93,7 +94,8 @@ namespace PolicyPlus.WinUI3
                             string? userBytes = root.TryGetProperty("userBytes", out var ub) ? ub.GetString() : null;
                             bool refresh = root.TryGetProperty("refresh", out var r) && r.GetBoolean();
                             var (ok, error) = WriteLocalGpo(machineBytes, userBytes);
-                            writer.WriteLine(JsonSerializer.Serialize(new { ok, error }));
+                            var resp = new HostResponse { Ok = ok, Error = error };
+                            writer.WriteLine(JsonSerializer.Serialize(resp, AppJsonContext.Default.HostResponse));
                             if (ok && refresh)
                             {
                                 Task.Run(async () =>
@@ -109,21 +111,22 @@ namespace PolicyPlus.WinUI3
                             string hive = root.TryGetProperty("hive", out var hv) ? hv.GetString() ?? string.Empty : string.Empty;
                             string key = root.TryGetProperty("subKey", out var sk) ? sk.GetString() ?? string.Empty : string.Empty;
                             var (ok, error) = OpenRegeditAt(hive, key);
-                            writer.WriteLine(JsonSerializer.Serialize(new { ok, error }));
+                            var resp = new HostResponse { Ok = ok, Error = error };
+                            writer.WriteLine(JsonSerializer.Serialize(resp, AppJsonContext.Default.HostResponse));
                         }
                         else if (string.Equals(op, "shutdown", StringComparison.OrdinalIgnoreCase))
                         {
-                            writer.WriteLine("{\"ok\":true}");
+                            writer.WriteLine(JsonSerializer.Serialize(new HostResponse { Ok = true }, AppJsonContext.Default.HostResponse));
                             break;
                         }
                         else
                         {
-                            writer.WriteLine("{\"ok\":false,\"error\":\"unknown op\"}");
+                            writer.WriteLine(JsonSerializer.Serialize(new HostResponse { Ok = false, Error = "unknown op" }, AppJsonContext.Default.HostResponse));
                         }
                     }
                     catch (Exception ex)
                     {
-                        try { writer.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.ToString() })); } catch { }
+                        try { writer.WriteLine(JsonSerializer.Serialize(new HostResponse { Ok = false, Error = ex.ToString() }, AppJsonContext.Default.HostResponse)); } catch { }
                     }
                 }
             }

@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Windows.Storage;
 using Windows.ApplicationModel;
+using PolicyPlus.WinUI3.Serialization;
 
 namespace PolicyPlus.WinUI3.Services
 {
@@ -57,7 +58,7 @@ namespace PolicyPlus.WinUI3.Services
                     if (File.Exists(SettingsPath))
                     {
                         var txt = File.ReadAllText(SettingsPath);
-                        var data = JsonSerializer.Deserialize<AppSettings>(txt, _json);
+                        var data = JsonSerializer.Deserialize(txt, AppJsonContext.Default.AppSettings);
                         return data ?? new AppSettings();
                     }
                 }
@@ -72,7 +73,7 @@ namespace PolicyPlus.WinUI3.Services
             {
                 try
                 {
-                    File.WriteAllText(SettingsPath, JsonSerializer.Serialize(s ?? new AppSettings(), _json));
+                    File.WriteAllText(SettingsPath, JsonSerializer.Serialize(s ?? new AppSettings(), AppJsonContext.Default.AppSettings));
                 }
                 catch { }
             }
@@ -150,7 +151,7 @@ namespace PolicyPlus.WinUI3.Services
                     if (File.Exists(SearchStatsPath))
                     {
                         var txt = File.ReadAllText(SearchStatsPath);
-                        var data = JsonSerializer.Deserialize<SearchStats>(txt, _json) ?? new SearchStats();
+                        var data = JsonSerializer.Deserialize(txt, AppJsonContext.Default.SearchStats) ?? new SearchStats();
                         return (data.Counts ?? new(), data.LastUsed ?? new());
                     }
                 }
@@ -166,7 +167,7 @@ namespace PolicyPlus.WinUI3.Services
                 try
                 {
                     var data = new SearchStats { Counts = counts, LastUsed = lastUsed };
-                    File.WriteAllText(SearchStatsPath, JsonSerializer.Serialize(data, _json));
+                    File.WriteAllText(SearchStatsPath, JsonSerializer.Serialize(data, AppJsonContext.Default.SearchStats));
                 }
                 catch { }
             }
@@ -181,7 +182,7 @@ namespace PolicyPlus.WinUI3.Services
                     if (File.Exists(HistoryPath))
                     {
                         var txt = File.ReadAllText(HistoryPath);
-                        var list = JsonSerializer.Deserialize<List<HistoryRecord>>(txt, _json);
+                        var list = JsonSerializer.Deserialize(txt, AppJsonContext.Default.ListHistoryRecord);
                         return list ?? new List<HistoryRecord>();
                     }
                 }
@@ -196,7 +197,7 @@ namespace PolicyPlus.WinUI3.Services
             {
                 try
                 {
-                    File.WriteAllText(HistoryPath, JsonSerializer.Serialize(records ?? new List<HistoryRecord>(), _json));
+                    File.WriteAllText(HistoryPath, JsonSerializer.Serialize(records ?? new List<HistoryRecord>(), AppJsonContext.Default.ListHistoryRecord));
                 }
                 catch { }
             }

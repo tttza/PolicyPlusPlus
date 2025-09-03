@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Security.Principal;
 using System.Security.Cryptography;
+using PolicyPlus.WinUI3.Serialization;
 
 namespace PolicyPlus.WinUI3.Services
 {
@@ -105,17 +106,16 @@ namespace PolicyPlus.WinUI3.Services
                 await EnsureHostAsync().ConfigureAwait(false);
                 if (_writer == null || _reader == null) return (false, "not connected");
 
-                var payload = new
+                var payload = new HostRequestWriteLocalGpo
                 {
-                    op = "write-local-gpo",
-                    auth = _authToken,
-                    machinePol = (string?)null,
-                    userPol = (string?)null,
-                    machineBytes = machinePolBase64,
-                    userBytes = userPolBase64,
-                    refresh = triggerRefresh
+                    Auth = _authToken,
+                    MachinePol = null,
+                    UserPol = null,
+                    MachineBytes = machinePolBase64,
+                    UserBytes = userPolBase64,
+                    Refresh = triggerRefresh
                 };
-                var json = JsonSerializer.Serialize(payload);
+                var json = JsonSerializer.Serialize(payload, AppJsonContext.Default.HostRequestWriteLocalGpo);
                 await _writer.WriteLineAsync(json).ConfigureAwait(false);
 
                 var readTask = _reader.ReadLineAsync();
@@ -161,8 +161,8 @@ namespace PolicyPlus.WinUI3.Services
                 await EnsureHostAsync().ConfigureAwait(false);
                 if (_writer == null || _reader == null) return (false, "not connected");
 
-                var payload = new { op = "open-regedit", auth = _authToken, hive, subKey };
-                var json = JsonSerializer.Serialize(payload);
+                var payload = new HostRequestOpenRegedit { Auth = _authToken, Hive = hive, SubKey = subKey };
+                var json = JsonSerializer.Serialize(payload, AppJsonContext.Default.HostRequestOpenRegedit);
                 await _writer.WriteLineAsync(json).ConfigureAwait(false);
 
                 var readTask = _reader.ReadLineAsync();
@@ -197,7 +197,8 @@ namespace PolicyPlus.WinUI3.Services
             {
                 if (_connected && _writer != null && _reader != null)
                 {
-                    var json = JsonSerializer.Serialize(new { op = "shutdown", auth = _authToken });
+                    var req = new HostRequestShutdown { Auth = _authToken };
+                    var json = JsonSerializer.Serialize(req, AppJsonContext.Default.HostRequestShutdown);
                     try { await _writer.WriteLineAsync(json).ConfigureAwait(false); } catch { }
                     try { await _writer.FlushAsync().ConfigureAwait(false); } catch { }
                     try { await Task.Delay(200).ConfigureAwait(false); } catch { }
