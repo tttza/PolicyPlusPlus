@@ -1,11 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Text;
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Text;
 using PolicyPlus.WinUI3.Utils;
 using Windows.ApplicationModel.DataTransfer;
 using PolicyPlus.WinUI3.ViewModels;
@@ -28,6 +27,7 @@ namespace PolicyPlus.WinUI3.Windows
         private string _regFormattedCache = string.Empty;
         private string _regFileCache = string.Empty;
         private bool _showRegFile = false;
+        private string _joinSymbol = "+";
 
         public DetailPolicyFormattedWindow()
         {
@@ -49,6 +49,16 @@ namespace PolicyPlus.WinUI3.Windows
             App.RegisterWindow(this);
 
             try { ScaleHelper.Attach(this, ScaleHost, RootShell); } catch { }
+
+            // Load persisted join symbol
+            try
+            {
+                var s = SettingsService.Instance.LoadSettings();
+                if (!string.IsNullOrEmpty(s.PathJoinSymbol))
+                    _joinSymbol = s.PathJoinSymbol!.Substring(0, Math.Min(1, s.PathJoinSymbol!.Length));
+                PathSymbolBtn.Content = _joinSymbol;
+            }
+            catch { }
         }
 
         private void Accel_ToggleView(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
@@ -111,7 +121,7 @@ namespace PolicyPlus.WinUI3.Windows
             DefinedInBox.Text = System.IO.Path.GetFileName(policy.RawPolicy.DefinedIn?.SourceFile ?? string.Empty);
 
             // Build path panel via ViewModel helper for testability
-            PathBox.Text = DetailPathFormatter.BuildPathText(_policy);
+            PathBox.Text = DetailPathFormatter.BuildPathText(_policy, _joinSymbol);
 
             // Build registry panel (formatted + .reg)
             var src = _currentSection == AdmxPolicySection.User ? _userSource : _compSource;
@@ -119,6 +129,28 @@ namespace PolicyPlus.WinUI3.Windows
             _regFileCache = RegistryViewFormatter.BuildRegExport(_policy, src, _currentSection);
             _showRegFile = false;
             RegBox.Text = _regFormattedCache;
+        }
+
+        private void PathSymbolItem_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is MenuFlyoutItem m)
+                {
+                    var sym = (m.Text ?? "+").Trim();
+                    if (string.IsNullOrEmpty(sym)) sym = "+";
+                    _joinSymbol = sym.Substring(0, Math.Min(1, sym.Length));
+                    PathSymbolBtn.Content = _joinSymbol;
+                    PathBox.Text = DetailPathFormatter.BuildPathText(_policy, _joinSymbol);
+                    // persist
+                    try
+                    {
+                        SettingsService.Instance.UpdatePathJoinSymbol(_joinSymbol);
+                    }
+                    catch { }
+                }
+            }
+            catch { }
         }
 
         // BuildPathText now lives in ViewModels.DetailPathFormatter

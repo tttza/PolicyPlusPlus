@@ -134,6 +134,13 @@ namespace PolicyPlus.WinUI3.Services
             SaveSettings(s);
         }
 
+        public void UpdatePathJoinSymbol(string symbol)
+        {
+            var s = LoadSettings();
+            s.PathJoinSymbol = string.IsNullOrEmpty(symbol) ? "+" : symbol.Substring(0, Math.Min(1, symbol.Length));
+            SaveSettings(s);
+        }
+
         public (Dictionary<string, int> counts, Dictionary<string, DateTime> lastUsed) LoadSearchStats()
         {
             lock (_gate)
@@ -206,6 +213,7 @@ namespace PolicyPlus.WinUI3.Services
         public bool? ShowDetails { get; set; }
         public ColumnsOptions? Columns { get; set; }
         public SearchOptions? Search { get; set; }
+        public string? PathJoinSymbol { get; set; }
     }
 
     public class ColumnsOptions

@@ -9,7 +9,7 @@ namespace PolicyPlus.WinUI3.ViewModels
 {
     public static class DetailPathFormatter
     {
-        public static string BuildPathText(PolicyPlusPolicy policy)
+        public static string BuildPathText(PolicyPlusPolicy policy, string joinSymbol = "+")
         {
             var sb = new StringBuilder();
 
@@ -35,8 +35,8 @@ namespace PolicyPlus.WinUI3.ViewModels
                 _ => T("Computer or User Configuration")
             });
 
-            // "Administrative Templates" at depth 1 (2 spaces + "+ ")
-            sb.AppendLine("  + " + T("Administrative Templates"));
+            // Header (Administrative Templates)
+            sb.AppendLine("  " + joinSymbol + " " + T("Administrative Templates"));
 
             // Categories: increase indent per depth
             int depth = 2; // start from depth 2 like legacy implementation
@@ -44,12 +44,12 @@ namespace PolicyPlus.WinUI3.ViewModels
             {
                 foreach (var name in GetCategoryChain(policy.Category))
                 {
-                    sb.AppendLine(new string(' ', depth * 2) + "+ " + name);
+                    sb.AppendLine(new string(' ', depth * 2) + joinSymbol + " " + name);
                     depth++;
                 }
             }
 
-            // Leaf: policy display name, no plus, indented one level deeper than last category
+            // Leaf: policy display name, no symbol
             sb.Append(new string(' ', depth * 2) + " " + policy.DisplayName);
 
             return sb.ToString();

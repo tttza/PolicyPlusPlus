@@ -54,6 +54,20 @@
                 <Button x:Name="CopyPathBtn" ToolTipService.ToolTip="Copy" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
                     <FontIcon Glyph="&#xE8C8;"/>
                 </Button>
+                <!-- Join symbol selector button -->
+                <Button x:Name="PathSymbolBtn" MinWidth="36" MinHeight="36" Content="+" ToolTipService.ToolTip="Join symbol">
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Text="+" Click="PathSymbolItem_Click"/>
+                            <MenuFlyoutItem Text="└" Click="PathSymbolItem_Click"/>
+                            <MenuFlyoutItem Text=">" Click="PathSymbolItem_Click"/>
+                            <MenuFlyoutItem Text="-" Click="PathSymbolItem_Click"/>
+                            <MenuFlyoutItem Text="•" Click="PathSymbolItem_Click"/>
+                            <MenuFlyoutItem Text="→" Click="PathSymbolItem_Click"/>
+                            <MenuFlyoutItem Text="▶" Click="PathSymbolItem_Click"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
             </StackPanel>
 
             <!-- Registry Value -->
