@@ -116,8 +116,9 @@ namespace PolicyPlus.WinUI3
             var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy;
             if (p != null)
             {
+                var text = EnglishTextService.GetCompositePolicyName(p);
                 var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-                dp.SetText(p.DisplayName);
+                dp.SetText(text);
                 Clipboard.SetContent(dp);
             }
         }
@@ -140,10 +141,10 @@ namespace PolicyPlus.WinUI3
             var sb = new StringBuilder();
             var c = p.Category;
             var stack = new Stack<string>();
-            while (c != null) { stack.Push(c.DisplayName); c = c.Parent; }
+            while (c != null) { stack.Push(EnglishTextService.GetCompositeCategoryName(c)); c = c.Parent; }
             sb.AppendLine("Administrative Templates");
             foreach (var name in stack) sb.AppendLine("+ " + name);
-            sb.AppendLine("+ " + p.DisplayName);
+            sb.AppendLine("+ " + EnglishTextService.GetCompositePolicyName(p));
             var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
             dp.SetText(sb.ToString());
             Clipboard.SetContent(dp);

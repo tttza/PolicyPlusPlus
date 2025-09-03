@@ -50,6 +50,12 @@ namespace PolicyPlus.WinUI3
                 var sup = GetFlag("ColSupportedFlag"); if (sup != null) sup.IsChecked = cols.ShowSupported;
                 var us = GetFlag("ColUserStateFlag"); if (us != null) us.IsChecked = cols.ShowUserState;
                 var cs = GetFlag("ColCompStateFlag"); if (cs != null) cs.IsChecked = cols.ShowComputerState;
+                if (ViewSecondNameToggle != null)
+                {
+                    bool enabled = s.SecondLanguageEnabled ?? false;
+                    ViewSecondNameToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                    ViewSecondNameToggle.IsChecked = enabled && (cols.ShowEnglishName);
+                }
             }
             catch { }
         }
@@ -58,7 +64,6 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
-                // Preserve previously saved values when a flag control is not present yet
                 var current = SettingsService.Instance.LoadSettings();
                 var existing = current.Columns ?? new ColumnsOptions();
 
@@ -68,6 +73,7 @@ namespace PolicyPlus.WinUI3
                 bool showSupported = GetFlag("ColSupportedFlag")?.IsChecked ?? existing.ShowSupported;
                 bool showUserState = GetFlag("ColUserStateFlag")?.IsChecked ?? existing.ShowUserState;
                 bool showComputerState = GetFlag("ColCompStateFlag")?.IsChecked ?? existing.ShowComputerState;
+                bool showSecondName = ViewSecondNameToggle?.IsChecked ?? false;
 
                 var cols = new ColumnsOptions
                 {
@@ -77,6 +83,7 @@ namespace PolicyPlus.WinUI3
                     ShowSupported = showSupported,
                     ShowUserState = showUserState,
                     ShowComputerState = showComputerState,
+                    ShowEnglishName = showSecondName,
                 };
                 SettingsService.Instance.UpdateColumns(cols);
             }
@@ -91,6 +98,13 @@ namespace PolicyPlus.WinUI3
                 if (ViewCategoryToggle != null) ViewCategoryToggle.IsChecked = (ColCategoryFlag?.IsChecked == true);
                 if (ViewAppliesToggle != null) ViewAppliesToggle.IsChecked = (ColAppliesFlag?.IsChecked == true);
                 if (ViewSupportedToggle != null) ViewSupportedToggle.IsChecked = (ColSupportedFlag?.IsChecked == true);
+                if (ViewSecondNameToggle != null)
+                {
+                    var s = SettingsService.Instance.LoadSettings();
+                    bool enabled = s.SecondLanguageEnabled ?? false;
+                    ViewSecondNameToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                    ViewSecondNameToggle.IsChecked = enabled && (s.Columns?.ShowEnglishName ?? false);
+                }
             }
             catch { }
         }
@@ -103,7 +117,14 @@ namespace PolicyPlus.WinUI3
                 if (ColCategory != null) ColCategory.Visibility = (ColCategoryFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
                 if (ColApplies != null) ColApplies.Visibility = (ColAppliesFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
                 if (ColSupported != null) ColSupported.Visibility = (ColSupportedFlag?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
-                // Keep menu toggle checks in sync with hidden flags
+
+                var s = SettingsService.Instance.LoadSettings();
+                bool enabled = s.SecondLanguageEnabled ?? false;
+                if (ColSecondName != null)
+                {
+                    ColSecondName.Visibility = (enabled && (ViewSecondNameToggle?.IsChecked == true)) ? Visibility.Visible : Visibility.Collapsed;
+                }
+
                 UpdateColumnMenuChecks();
             }
             catch { }
@@ -164,6 +185,41 @@ namespace PolicyPlus.WinUI3
                 SetScaleFromString(item, updateSelector: false, save: true);
             }
             catch { }
+        }
+
+        private void ApplySecondLanguageVisibilityToViewMenu()
+        {
+            try
+            {
+                var s = SettingsService.Instance.LoadSettings();
+                bool enabled = s.SecondLanguageEnabled ?? false;
+                string lang = s.SecondLanguage ?? "en-US";
+                if (ViewSecondNameToggle != null)
+                {
+                    ViewSecondNameToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                    ViewSecondNameToggle.Text = enabled ? $"2nd Language column ({lang})" : "2nd Language column";
+                    if (!enabled) ViewSecondNameToggle.IsChecked = false;
+                }
+                if (ColSecondName != null)
+                {
+                    ColSecondName.Header = enabled ? $"2nd Language ({lang})" : "2nd Language";
+                    ColSecondName.Visibility = (enabled && (ViewSecondNameToggle?.IsChecked == true)) ? Visibility.Visible : Visibility.Collapsed;
+                }
+            }
+            catch { }
+        }
+
+        private void ViewEnglishToggle_Click(object sender, RoutedEventArgs e)
+        {
+            bool on = (sender as ToggleMenuFlyoutItem)?.IsChecked == true;
+            try { Services.SettingsService.Instance.UpdateShowEnglishNames(on); } catch { }
+            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+        }
+
+        private void ViewEnglishNameToggle_Click(object sender, RoutedEventArgs e)
+        {
+            SaveColumnPrefs();
+            UpdateColumnVisibilityFromFlags();
         }
     }
 }

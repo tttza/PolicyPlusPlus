@@ -20,7 +20,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
@@ -35,7 +35,8 @@
 
             <!-- Name -->
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center"/>
-            <TextBox x:Name="NameBox" Grid.Row="0" Grid.Column="1" IsReadOnly="True"/>
+            <TextBox Grid.Row="0" Grid.Column="1" x:Name="NameBox" IsReadOnly="True"/>
+            <Button Grid.Row="0" Grid.Column="2" x:Name="LangToggle" Content="2nd" ToolTipService.ToolTip="Toggle 2nd Language" MinWidth="44" MinHeight="32"/>
 
             <!-- Unique ID -->
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Unique ID" VerticalAlignment="Center"/>
@@ -54,7 +55,6 @@
                 <Button x:Name="CopyPathBtn" ToolTipService.ToolTip="Copy" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
                     <FontIcon Glyph="&#xE8C8;"/>
                 </Button>
-                <!-- Join symbol selector button -->
                 <Button x:Name="PathSymbolBtn" MinWidth="36" MinHeight="36" Content="+" ToolTipService.ToolTip="Join symbol">
                     <Button.Flyout>
                         <MenuFlyout>

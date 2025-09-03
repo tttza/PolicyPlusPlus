@@ -100,6 +100,21 @@ namespace PolicyPlus.WinUI3.Services
             SaveSettings(s);
         }
 
+        public void UpdateSecondLanguageEnabled(bool enabled)
+        {
+            var s = LoadSettings();
+            s.SecondLanguageEnabled = enabled;
+            if (enabled && string.IsNullOrEmpty(s.SecondLanguage)) s.SecondLanguage = "en-US";
+            SaveSettings(s);
+        }
+
+        public void UpdateSecondLanguage(string lang)
+        {
+            var s = LoadSettings();
+            s.SecondLanguage = lang;
+            SaveSettings(s);
+        }
+
         public void UpdateAdmxSourcePath(string path)
         {
             var s = LoadSettings();
@@ -139,6 +154,13 @@ namespace PolicyPlus.WinUI3.Services
         {
             var s = LoadSettings();
             s.PathJoinSymbol = string.IsNullOrEmpty(symbol) ? "+" : symbol.Substring(0, Math.Min(1, symbol.Length));
+            SaveSettings(s);
+        }
+
+        public void UpdateShowEnglishNames(bool show)
+        {
+            var s = LoadSettings();
+            s.ShowEnglishNames = show;
             SaveSettings(s);
         }
 
@@ -215,6 +237,9 @@ namespace PolicyPlus.WinUI3.Services
         public ColumnsOptions? Columns { get; set; }
         public SearchOptions? Search { get; set; }
         public string? PathJoinSymbol { get; set; }
+        public bool? ShowEnglishNames { get; set; }
+        public bool? SecondLanguageEnabled { get; set; }
+        public string? SecondLanguage { get; set; }
     }
 
     public class ColumnsOptions
@@ -225,6 +250,7 @@ namespace PolicyPlus.WinUI3.Services
         public bool ShowSupported { get; set; } = false;
         public bool ShowUserState { get; set; } = true;
         public bool ShowComputerState { get; set; } = true;
+        public bool ShowEnglishName { get; set; } = true; // new column
     }
 
     public class SearchOptions

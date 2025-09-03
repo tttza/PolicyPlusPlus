@@ -11,5 +11,12 @@
     <StackPanel Spacing="12">
         <TextBlock Text="Choose display language for ADMX policy text."/>
         <ComboBox x:Name="LanguageSelector" Width="240"/>
+        <StackPanel Spacing="8">
+            <CheckBox x:Name="SecondLangEnabled" Content="Enable 2nd language (for alternate texts)"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="2nd Language:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="SecondLanguageSelector" Width="200" IsEnabled="False"/>
+            </StackPanel>
+        </StackPanel>
     </StackPanel>
 </ContentDialog>

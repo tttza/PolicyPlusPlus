@@ -28,6 +28,8 @@ namespace PolicyPlus.WinUI3.Windows
         private string _regFileCache = string.Empty;
         private bool _showRegFile = false;
         private string _joinSymbol = "+";
+        private bool _useSecondLanguage = false;
+        private Button? _langToggleBtn;
 
         public DetailPolicyFormattedWindow()
         {
@@ -38,7 +40,6 @@ namespace PolicyPlus.WinUI3.Windows
             CopyRegBtn.Click += (s, e) => CopyToClipboard(RegBox.Text);
             ToggleViewBtn.Click += ToggleViewBtn_Click;
             CloseBtn.Click += (s, e) => this.Close();
-            if (OpenRegBtn != null) OpenRegBtn.Click += OpenRegBtn_Click;
 
             ApplyThemeResources();
             App.ThemeChanged += (s, e) => ApplyThemeResources();
@@ -49,6 +50,13 @@ namespace PolicyPlus.WinUI3.Windows
             App.RegisterWindow(this);
 
             try { ScaleHelper.Attach(this, ScaleHost, RootShell); } catch { }
+
+            try
+            {
+                _langToggleBtn = RootShell.FindName("LangToggle") as Button;
+                if (_langToggleBtn != null) _langToggleBtn.Click += LangToggle_Click;
+            }
+            catch { }
 
             // Load persisted join symbol
             try
@@ -116,19 +124,17 @@ namespace PolicyPlus.WinUI3.Windows
         {
             _policy = policy; _bundle = bundle; _compSource = compSource; _userSource = userSource; _currentSection = section;
 
-            NameBox.Text = policy.DisplayName;
+            _useSecondLanguage = false;
+            var s = SettingsService.Instance.LoadSettings();
+            if (_langToggleBtn != null)
+                _langToggleBtn.Visibility = (s.SecondLanguageEnabled ?? false) ? Visibility.Visible : Visibility.Collapsed;
+
+            // Basic fields
             IdBox.Text = policy.UniqueID;
             DefinedInBox.Text = System.IO.Path.GetFileName(policy.RawPolicy.DefinedIn?.SourceFile ?? string.Empty);
 
-            // Build path panel via ViewModel helper for testability
-            PathBox.Text = DetailPathFormatter.BuildPathText(_policy, _joinSymbol);
-
-            // Build registry panel (formatted + .reg)
-            var src = _currentSection == AdmxPolicySection.User ? _userSource : _compSource;
-            _regFormattedCache = RegistryViewFormatter.BuildRegistryFormatted(_policy, src, _currentSection);
-            _regFileCache = RegistryViewFormatter.BuildRegExport(_policy, src, _currentSection);
-            _showRegFile = false;
-            RegBox.Text = _regFormattedCache;
+            // Build all dynamic texts in one place to keep language consistent with the current toggle state
+            RefreshTexts();
         }
 
         private void PathSymbolItem_Click(object sender, RoutedEventArgs e)
@@ -153,6 +159,33 @@ namespace PolicyPlus.WinUI3.Windows
             catch { }
         }
 
-        // BuildPathText now lives in ViewModels.DetailPathFormatter
+        private void LangToggle_Click(object sender, RoutedEventArgs e)
+        {
+            _useSecondLanguage = !_useSecondLanguage;
+            RefreshTexts();
+        }
+
+        private void RefreshTexts()
+        {
+            if (_policy == null) return;
+            var s = SettingsService.Instance.LoadSettings();
+            bool enabled = s.SecondLanguageEnabled ?? false;
+            string lang = s.SecondLanguage ?? "en-US";
+
+            if (_langToggleBtn != null)
+            {
+                _langToggleBtn.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                try { _langToggleBtn.Content = enabled ? (lang.Length >= 2 ? lang.Substring(0, 2).ToUpperInvariant() : "2nd") : "2nd"; } catch { }
+            }
+
+            bool useSecond = enabled && _useSecondLanguage;
+            NameBox.Text = useSecond ? LocalizedTextService.GetPolicyNameIn(_policy, lang) : _policy.DisplayName;
+            PathBox.Text = DetailPathFormatter.BuildPathText(_policy, _joinSymbol, useSecond, lang);
+
+            var src = _currentSection == AdmxPolicySection.User ? _userSource : _compSource;
+            _regFormattedCache = RegistryViewFormatter.BuildRegistryFormatted(_policy, src, _currentSection, useSecond, lang);
+            _regFileCache = RegistryViewFormatter.BuildRegExport(_policy, src, _currentSection);
+            RegBox.Text = _showRegFile ? _regFileCache : _regFormattedCache;
+        }
     }
 }

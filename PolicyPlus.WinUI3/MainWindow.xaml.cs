@@ -109,9 +109,9 @@ namespace PolicyPlus.WinUI3
         // Typing suppression flag for navigation pushes
         private bool _navTyping;
 
-        // Lightweight search index for faster case-insensitive substring matching
-        private List<(PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)> _searchIndex = new();
-        private Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)> _searchIndexById = new(StringComparer.OrdinalIgnoreCase);
+        // Lightweight search index for faster case-insensitive substring matching (include English name)
+        private List<(PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)> _searchIndex = new();
+        private Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)> _searchIndexById = new(StringComparer.OrdinalIgnoreCase);
         private CancellationTokenSource? _searchDebounceCts;
 
         // Search options
@@ -368,8 +368,8 @@ namespace PolicyPlus.WinUI3
                 int failureCount = 0;
                 List<PolicyPlusPolicy>? allLocal = null;
                 int totalGroupsLocal = 0;
-                List<(PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)>? searchIndexLocal = null;
-                Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)>? searchIndexByIdLocal = null;
+                List<(PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)>? searchIndexLocal = null;
+                Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)>? searchIndexByIdLocal = null;
 
                 await Task.Run(() =>
                 {
@@ -386,10 +386,11 @@ namespace PolicyPlus.WinUI3
                         searchIndexLocal = allLocal.Select(p => (
                             Policy: p,
                             NameLower: SearchText.Normalize(p.DisplayName),
+                            EnglishLower: SearchText.Normalize(EnglishTextService.GetEnglishPolicyName(p)),
                             IdLower: SearchText.Normalize(p.UniqueID),
                             DescLower: SearchText.Normalize(p.DisplayExplanation)
                         )).ToList();
-                        searchIndexByIdLocal = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
+                        searchIndexByIdLocal = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
                         foreach (var e in searchIndexLocal)
                         {
                             searchIndexByIdLocal[e.Policy.UniqueID] = e;
@@ -397,8 +398,8 @@ namespace PolicyPlus.WinUI3
                     }
                     catch
                     {
-                        searchIndexLocal = new List<(PolicyPlusPolicy, string, string, string)>();
-                        searchIndexByIdLocal = new Dictionary<string, (PolicyPlusPolicy, string, string, string)>(StringComparer.OrdinalIgnoreCase);
+                        searchIndexLocal = new List<(PolicyPlusPolicy, string, string, string, string)>();
+                        searchIndexByIdLocal = new Dictionary<string, (PolicyPlusPolicy, string, string, string, string)>(StringComparer.OrdinalIgnoreCase);
                     }
                 });
 
@@ -438,10 +439,11 @@ namespace PolicyPlus.WinUI3
                 _searchIndex = _allPolicies.Select(p => (
                     Policy: p,
                     NameLower: SearchText.Normalize(p.DisplayName),
+                    EnglishLower: SearchText.Normalize(EnglishTextService.GetEnglishPolicyName(p)),
                     IdLower: SearchText.Normalize(p.UniqueID),
                     DescLower: SearchText.Normalize(p.DisplayExplanation)
                 )).ToList();
-                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
+                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
                 foreach (var e in _searchIndex)
                 {
                     _searchIndexById[e.Policy.UniqueID] = e;
@@ -449,71 +451,9 @@ namespace PolicyPlus.WinUI3
             }
             catch
             {
-                _searchIndex = new List<(PolicyPlusPolicy, string, string, string)>();
-                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy, string, string, string)>(StringComparer.OrdinalIgnoreCase);
+                _searchIndex = new List<(PolicyPlusPolicy, string, string, string, string)>();
+                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy, string, string, string, string)>(StringComparer.OrdinalIgnoreCase);
             }
-        }
-
-        private void BtnLoadLocalGpo_Click(object sender, RoutedEventArgs e)
-        {
-            _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-            _compSource = _loader.OpenSource();
-            _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-            if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
-            ShowInfo("Local GPO sources initialized.");
-        }
-
-        private async void BtnLoadAdmxFolder_Click(object sender, RoutedEventArgs e)
-        {
-            var hwnd = WindowNative.GetWindowHandle(this);
-            var picker = new FolderPicker();
-            InitializeWithWindow.Initialize(picker, hwnd);
-            picker.FileTypeFilter.Add("*");
-            var folder = await picker.PickSingleFolderAsync();
-            if (folder is null) return;
-            try { SettingsService.Instance.UpdateAdmxSourcePath(folder.Path); } catch { }
-            LoadAdmxFolderAsync(folder.Path);
-        }
-
-        private void SearchOption_Toggle_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                string? tag = null; bool isChecked = false;
-                if (sender is ToggleMenuFlyoutItem t)
-                { tag = Convert.ToString(t.Tag); isChecked = t.IsChecked; }
-                else if (sender is CheckBox cb)
-                { tag = Convert.ToString(cb.Tag); isChecked = cb.IsChecked == true; }
-
-                if (tag != null)
-                {
-                    switch (tag)
-                    {
-                        case "name": _searchInName = isChecked; break;
-                        case "id": _searchInId = isChecked; break;
-                        case "desc": _searchInDescription = isChecked; break;
-                        case "regkey": _searchInRegistryKey = isChecked; break;    // key path
-                        case "regvalue": _searchInRegistryValue = isChecked; break; // value name
-                        case "comments": _searchInComments = isChecked; break;
-                    }
-                }
-            }
-            catch { }
-            // Persist
-            try
-            {
-                SettingsService.Instance.UpdateSearchOptions(new SearchOptions
-                {
-                    InName = _searchInName,
-                    InId = _searchInId,
-                    InRegistryKey = _searchInRegistryKey,
-                    InRegistryValue = _searchInRegistryValue,
-                    InDescription = _searchInDescription,
-                    InComments = _searchInComments
-                });
-            }
-            catch { }
-            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
         }
 
         private static int MatchScoreFor(string textLower, string qLower)
@@ -537,17 +477,18 @@ namespace PolicyPlus.WinUI3
             var bestByName = new Dictionary<string, (int score, string name)>(StringComparer.OrdinalIgnoreCase);
             bool smallSubset = allowed.Count > 0 && allowed.Count < (_allPolicies.Count / 2);
 
-            void Consider((PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower) e)
+            void Consider((PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower) e)
             {
                 if (!allowed.Contains(e.Policy.UniqueID)) return;
                 int score = 0;
                 if (!string.IsNullOrEmpty(qLower))
                 {
                     int nameScore = MatchScoreFor(e.NameLower, qLower);
+                    int enScore = string.IsNullOrEmpty(e.EnglishLower) ? -1000 : MatchScoreFor(e.EnglishLower, qLower);
                     int idScore = MatchScoreFor(e.IdLower, qLower);
                     int descScore = _searchInDescription ? MatchScoreFor(e.DescLower, qLower) : -1000;
-                    if (nameScore <= -1000 && idScore <= -1000 && descScore <= -1000) return;
-                    score += Math.Max(0, nameScore) * 3;
+                    if (nameScore <= -1000 && enScore <= -1000 && idScore <= -1000 && descScore <= -1000) return;
+                    score += Math.Max(0, Math.Max(nameScore, enScore)) * 3;
                     score += Math.Max(0, idScore) * 2;
                     score += Math.Max(0, descScore);
                 }
@@ -818,11 +759,27 @@ namespace PolicyPlus.WinUI3
                 if (result == ContentDialogResult.Primary)
                 {
                     var chosen = dlg.SelectedLanguage;
-                    if (!string.IsNullOrEmpty(chosen) && !string.Equals(chosen, currentLang, StringComparison.OrdinalIgnoreCase))
+                    bool langChanged = !string.IsNullOrEmpty(chosen) && !string.Equals(chosen, currentLang, StringComparison.OrdinalIgnoreCase);
+                    if (langChanged)
                     {
-                        try { SettingsService.Instance.UpdateLanguage(chosen); } catch { }
+                        try { SettingsService.Instance.UpdateLanguage(chosen!); } catch { }
                         LoadAdmxFolderAsync(admxPath);
                     }
+                    // 2nd language
+                    bool beforeEnabled = SettingsService.Instance.LoadSettings().SecondLanguageEnabled ?? false;
+                    string beforeSecond = SettingsService.Instance.LoadSettings().SecondLanguage ?? "en-US";
+                    bool afterEnabled = dlg.SecondLanguageEnabled;
+                    string afterSecond = dlg.SelectedSecondLanguage ?? beforeSecond;
+                    try { SettingsService.Instance.UpdateSecondLanguageEnabled(afterEnabled); } catch { }
+                    if (afterEnabled && !string.IsNullOrEmpty(afterSecond))
+                    {
+                        try { SettingsService.Instance.UpdateSecondLanguage(afterSecond); } catch { }
+                    }
+
+                    // Apply UI changes immediately without restart
+                    ApplySecondLanguageVisibilityToViewMenu();
+                    UpdateColumnVisibilityFromFlags();
+                    RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
                 }
             }
             catch
@@ -1133,6 +1090,68 @@ namespace PolicyPlus.WinUI3
             _navTyping = false;
             RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
             UpdateNavButtons();
+        }
+
+        private void BtnLoadLocalGpo_Click(object sender, RoutedEventArgs e)
+        {
+            _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
+            _compSource = _loader.OpenSource();
+            _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
+            if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
+            ShowInfo("Local GPO sources initialized.");
+        }
+
+        private async void BtnLoadAdmxFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var hwnd = WindowNative.GetWindowHandle(this);
+            var picker = new FolderPicker();
+            InitializeWithWindow.Initialize(picker, hwnd);
+            picker.FileTypeFilter.Add("*");
+            var folder = await picker.PickSingleFolderAsync();
+            if (folder is null) return;
+            try { SettingsService.Instance.UpdateAdmxSourcePath(folder.Path); } catch { }
+            LoadAdmxFolderAsync(folder.Path);
+        }
+
+        private void SearchOption_Toggle_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string? tag = null; bool isChecked = false;
+                if (sender is ToggleMenuFlyoutItem t)
+                { tag = Convert.ToString(t.Tag); isChecked = t.IsChecked; }
+                else if (sender is CheckBox cb)
+                { tag = Convert.ToString(cb.Tag); isChecked = cb.IsChecked == true; }
+
+                if (tag != null)
+                {
+                    switch (tag)
+                    {
+                        case "name": _searchInName = isChecked; break;
+                        case "id": _searchInId = isChecked; break;
+                        case "desc": _searchInDescription = isChecked; break;
+                        case "regkey": _searchInRegistryKey = isChecked; break;    // key path
+                        case "regvalue": _searchInRegistryValue = isChecked; break; // value name
+                        case "comments": _searchInComments = isChecked; break;
+                    }
+                }
+            }
+            catch { }
+            // Persist
+            try
+            {
+                SettingsService.Instance.UpdateSearchOptions(new SearchOptions
+                {
+                    InName = _searchInName,
+                    InId = _searchInId,
+                    InRegistryKey = _searchInRegistryKey,
+                    InRegistryValue = _searchInRegistryValue,
+                    InDescription = _searchInDescription,
+                    InComments = _searchInComments
+                });
+            }
+            catch { }
+            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
         }
     }
 }

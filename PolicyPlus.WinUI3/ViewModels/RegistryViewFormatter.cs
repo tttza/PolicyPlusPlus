@@ -14,6 +14,37 @@ namespace PolicyPlus.WinUI3.ViewModels
     {
         public static string BuildRegistryFormatted(PolicyPlusPolicy policy, IPolicySource source, AdmxPolicySection section)
         {
+            // Default: use app UI language for labels
+            var uiLang = GetLanguage();
+            return BuildRegistryFormatted(policy, source, section, useSecondLanguage: false, secondLanguageCode: uiLang);
+        }
+
+        public static string BuildRegistryFormatted(PolicyPlusPolicy policy, IPolicySource source, AdmxPolicySection section, bool useSecondLanguage, string? secondLanguageCode)
+        {
+            string lang = useSecondLanguage ? (secondLanguageCode ?? GetLanguage()) : GetLanguage();
+            bool isJa = lang.StartsWith("ja", StringComparison.OrdinalIgnoreCase);
+            string L(string en)
+            {
+                if (!isJa) return en;
+                return en switch
+                {
+                    "Key" => "キー",
+                    "Name" => "名前",
+                    "Type" => "種類",
+                    "Value" => "値",
+                    _ => en
+                };
+            }
+            string GetText(string en)
+            {
+                if (!isJa) return en;
+                return en switch
+                {
+                    "(no referenced registry values)" => "(参照されているレジストリ値はありません)",
+                    _ => en
+                };
+            }
+
             var sb = new StringBuilder();
             var values = PolicyProcessing.GetReferencedRegistryValues(policy);
             if (values.Count == 0)
@@ -146,33 +177,6 @@ namespace PolicyPlus.WinUI3.ViewModels
             }
             bytes.Add(0); bytes.Add(0);
             return string.Join(",", bytes.Select(b => b.ToString("x2")));
-        }
-
-        private static string GetText(string en)
-        {
-            var lang = GetLanguage();
-            bool isJa = lang.StartsWith("ja", StringComparison.OrdinalIgnoreCase);
-            if (!isJa) return en;
-            return en switch
-            {
-                "(no referenced registry values)" => "(参照されているレジストリ値はありません)",
-                _ => en
-            };
-        }
-
-        private static string L(string en)
-        {
-            var lang = GetLanguage();
-            bool isJa = lang.StartsWith("ja", StringComparison.OrdinalIgnoreCase);
-            if (!isJa) return en;
-            return en switch
-            {
-                "Key" => "キー",
-                "Name" => "名前",
-                "Type" => "種類",
-                "Value" => "値",
-                _ => en
-            };
         }
 
         private static string GetLanguage()

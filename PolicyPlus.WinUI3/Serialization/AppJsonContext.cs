@@ -47,5 +47,5 @@ namespace PolicyPlus.WinUI3.Serialization
     [JsonSerializable(typeof(HostRequestOpenRegedit))]
     [JsonSerializable(typeof(HostRequestShutdown))]
     [JsonSerializable(typeof(HostResponse))]
-    internal partial class AppJsonContext : JsonSerializerContext { }
+    internal partial class AppJsonContext : System.Text.Json.Serialization.JsonSerializerContext { }
 }

@@ -32,8 +32,15 @@
         <KeyboardAccelerator Key="Escape" Invoked="Accel_Close"/>
       </Grid.KeyboardAccelerators>
 
-      <!-- Title -->
-      <TextBlock x:Name="SettingTitle" Grid.Row="0" Grid.ColumnSpan="2" FontSize="18" FontWeight="SemiBold"/>
+      <!-- Title row with 2nd language toggle -->
+      <Grid Grid.Row="0" Grid.ColumnSpan="2">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <TextBlock x:Name="SettingTitle" FontSize="18" FontWeight="SemiBold"/>
+        <CheckBox x:Name="SecondLangToggle" Grid.Column="1" Content="2nd Language" VerticalAlignment="Center"/>
+      </Grid>
 
       <!-- Header -->
       <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnSpacing="20" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}">

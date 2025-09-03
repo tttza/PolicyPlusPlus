@@ -260,11 +260,11 @@ namespace PolicyPlus.WinUI3
             }
         }
 
-        private bool PolicyMatchesQuery((PolicyPlusPolicy Policy, string NameLower, string IdLower, string DescLower) e, string query, string qLower, HashSet<string>? descCandidates)
+        private bool PolicyMatchesQuery((PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower) e, string query, string qLower, HashSet<string>? descCandidates)
         {
             bool hit = false;
 
-            if (_searchInName && e.NameLower.Contains(qLower))
+            if (_searchInName && (e.NameLower.Contains(qLower) || (!string.IsNullOrEmpty(e.EnglishLower) && e.EnglishLower.Contains(qLower))))
                 hit = true;
             if (!hit && _searchInId && e.IdLower.Contains(qLower))
                 hit = true;

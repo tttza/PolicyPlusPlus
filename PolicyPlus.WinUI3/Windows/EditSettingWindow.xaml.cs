@@ -41,6 +41,9 @@ namespace PolicyPlus.WinUI3.Windows
 
         private static readonly Regex UrlRegex = new Regex(@"(https?://[^\s]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+        private bool _useSecondLanguage = false;
+        private CheckBox? _secondLangToggle;
+
         public EditSettingWindow()
         {
             InitializeComponent();
@@ -58,6 +61,23 @@ namespace PolicyPlus.WinUI3.Windows
             RootShell.Loaded += (s, e) =>
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootShell); } catch { }
+                _secondLangToggle = RootShell.FindName("SecondLangToggle") as CheckBox;
+                if (_secondLangToggle != null)
+                {
+                    _secondLangToggle.Checked += SecondLangToggle_Checked;
+                    _secondLangToggle.Unchecked += SecondLangToggle_Checked;
+
+                    // Initialize toggle visibility/text based on settings
+                    try
+                    {
+                        var st = SettingsService.Instance.LoadSettings();
+                        bool enabled = st.SecondLanguageEnabled ?? false;
+                        _secondLangToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                        if (enabled && !string.IsNullOrEmpty(st.SecondLanguage))
+                            _secondLangToggle.Content = $"2nd Language ({st.SecondLanguage})";
+                    }
+                    catch { }
+                }
             };
 
             SectionSelector.SelectionChanged += SectionSelector_SelectionChanged;
@@ -68,6 +88,70 @@ namespace PolicyPlus.WinUI3.Windows
             ApplyBtn.Click += ApplyBtn_Click;
             OkBtn.Click += OkBtn_Click;
             CancelBtn.Click += (s, e) => Close();
+        }
+
+        private void SecondLangToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            _useSecondLanguage = (_secondLangToggle?.IsChecked == true);
+            RefreshLocalizedTexts();
+        }
+
+        private void RefreshLocalizedTexts()
+        {
+            try
+            {
+                var s = SettingsService.Instance.LoadSettings();
+                bool enabled = s.SecondLanguageEnabled ?? false;
+                string lang = s.SecondLanguage ?? "en-US";
+                bool useSecond = _useSecondLanguage && enabled;
+
+                // Title and explanation
+                if (useSecond)
+                {
+                    SettingTitle.Text = LocalizedTextService.GetPolicyNameIn(_policy, lang);
+                    SetExplanationText(LocalizedTextService.GetPolicyExplanationIn(_policy, lang));
+                }
+                else
+                {
+                    SettingTitle.Text = _policy.DisplayName;
+                    SetExplanationText(_policy.DisplayExplanation ?? string.Empty);
+                }
+
+                // Supported on
+                if (useSecond)
+                {
+                    var sup = LocalizedTextService.GetSupportedDisplayIn(_policy, lang);
+                    SupportedBox.Text = string.IsNullOrEmpty(sup) ? (_policy.SupportedOn?.DisplayName ?? string.Empty) : sup;
+                }
+                else
+                {
+                    SupportedBox.Text = _policy.SupportedOn is null ? string.Empty : _policy.SupportedOn.DisplayName;
+                }
+
+                // Rebuild option labels/controls for second language when toggled
+                if (_policy.RawPolicy.Elements != null)
+                {
+                    var pres = useSecond ? LocalizedTextService.GetPresentationIn(_policy, lang) : null;
+                    if (pres != null)
+                    {
+                        // Build temporary copy using localized presentation
+                        var original = _policy.Presentation;
+                        _policy.Presentation = pres;
+                        BuildElements();
+                        LoadStateFromSource();
+                        StateRadio_Checked(this, null!);
+                        _policy.Presentation = original; // restore
+                    }
+                    else
+                    {
+                        // If we don't have a localized presentation, still rebuild once to apply any static label changes
+                        BuildElements();
+                        LoadStateFromSource();
+                        StateRadio_Checked(this, null!);
+                    }
+                }
+            }
+            catch { }
         }
 
         private void Accel_Apply(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
@@ -257,18 +341,48 @@ namespace PolicyPlus.WinUI3.Windows
             {
                 return;
             }
+
+            // Decide language context
+            var settings = SettingsService.Instance.LoadSettings();
+            bool useSecond = _useSecondLanguage && (settings.SecondLanguageEnabled ?? false);
+            string lang = useSecond ? (settings.SecondLanguage ?? "en-US") : (settings.Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name);
+
+            // Choose presentation (localized when available)
+            Presentation presentationToUse = _policy.Presentation;
+            try
+            {
+                if (useSecond)
+                {
+                    var lp = LocalizedTextService.GetPresentationIn(_policy, lang);
+                    if (lp != null) presentationToUse = lp;
+                }
+            }
+            catch { }
+
+            string ResolvePresString(PresentationElement pres, string? fallback)
+            {
+                if (!string.IsNullOrWhiteSpace(fallback)) return fallback!;
+                if (pres == null || string.IsNullOrEmpty(pres.ID)) return fallback ?? string.Empty;
+                var viaString = LocalizedTextService.ResolveString("$(string." + pres.ID + ")", _policy.RawPolicy.DefinedIn, lang);
+                if (!string.IsNullOrEmpty(viaString)) return viaString;
+                return fallback ?? string.Empty;
+            }
+
             var elemDict = _policy.RawPolicy.Elements.ToDictionary(e => e.ID);
-            foreach (var pres in _policy.Presentation.Elements)
+            foreach (var pres in presentationToUse.Elements)
             {
                 FrameworkElement control = null!;
                 string label = string.Empty;
                 switch (pres.ElementType)
                 {
                     case "text":
-                        label = ((LabelPresentationElement)pres).Text;
-                        control = new TextBlock { Text = label };
-                        label = string.Empty;
-                        break;
+                        {
+                            var p = (LabelPresentationElement)pres;
+                            label = ResolvePresString(pres, p.Text);
+                            control = new TextBlock { Text = label };
+                            label = string.Empty; // already placed as a TextBlock
+                            break;
+                        }
                     case "decimalTextBox":
                         {
                             var p = (NumericBoxPresentationElement)pres;
@@ -283,19 +397,20 @@ namespace PolicyPlus.WinUI3.Windows
                                 var tb = new TextBox { Text = p.DefaultValue.ToString() };
                                 control = tb;
                             }
-                            label = p.Label; break;
+                            label = ResolvePresString(pres, p.Label); break;
                         }
                     case "textBox":
                         {
                             var p = (TextBoxPresentationElement)pres;
                             var e = (TextPolicyElement)elemDict[pres.ID];
                             var tb = new TextBox { Text = p.DefaultValue ?? string.Empty, MaxLength = e.MaxLength };
-                            control = tb; label = p.Label; break;
+                            control = tb; label = ResolvePresString(pres, p.Label); break;
                         }
                     case "checkBox":
                         {
                             var p = (CheckBoxPresentationElement)pres;
-                            var cb = new CheckBox { Content = p.Text, IsChecked = p.DefaultState };
+                            var text = ResolvePresString(pres, p.Text);
+                            var cb = new CheckBox { Content = text, IsChecked = p.DefaultState };
                             control = cb; label = string.Empty; break;
                         }
                     case "comboBox":
@@ -303,19 +418,37 @@ namespace PolicyPlus.WinUI3.Windows
                             var p = (ComboBoxPresentationElement)pres;
                             var e = (TextPolicyElement)elemDict[pres.ID];
                             var acb = new AutoSuggestBox { Text = p.DefaultText ?? string.Empty };
-                            acb.ItemsSource = p.Suggestions;
-                            control = acb; label = p.Label; break;
+                            // Suggestions may be in ADML; attempt to resolve each if they look like IDs
+                            var list = new List<string>();
+                            foreach (var s in p.Suggestions)
+                            {
+                                var resolved = LocalizedTextService.ResolveString(s, _policy.RawPolicy.DefinedIn, lang);
+                                list.Add(string.IsNullOrEmpty(resolved) ? s : resolved);
+                            }
+                            acb.ItemsSource = list;
+                            control = acb; label = ResolvePresString(pres, p.Label); break;
                         }
                     case "dropdownList":
                         {
                             var p = (DropDownPresentationElement)pres;
                             var e = (EnumPolicyElement)elemDict[pres.ID];
+                            label = ResolvePresString(pres, p.Label);
                             var cb = new ComboBox { MinWidth = 160 };
                             int selectedIdx = 0;
                             int curIdx = 0;
                             foreach (var enumItem in e.Items)
                             {
-                                var text = _bundle.ResolveString(enumItem.DisplayCode, _policy.RawPolicy.DefinedIn);
+                                string text;
+                                try
+                                {
+                                    text = useSecond
+                                        ? LocalizedTextService.ResolveString(enumItem.DisplayCode, _policy.RawPolicy.DefinedIn, lang)
+                                        : _bundle.ResolveString(enumItem.DisplayCode, _policy.RawPolicy.DefinedIn);
+                                }
+                                catch
+                                {
+                                    text = _bundle.ResolveString(enumItem.DisplayCode, _policy.RawPolicy.DefinedIn);
+                                }
                                 var cbi = new ComboBoxItem { Content = string.IsNullOrWhiteSpace(text) ? enumItem.DisplayCode : text };
                                 cb.Items.Add(cbi);
                                 if (p.DefaultItemID.HasValue && curIdx == p.DefaultItemID.Value)
@@ -329,7 +462,7 @@ namespace PolicyPlus.WinUI3.Windows
                                 if (cb.SelectedIndex < 0 && cb.Items.Count > 0)
                                     cb.SelectedIndex = selectedIdx;
                             };
-                            control = cb; label = p.Label; break;
+                            control = cb; break;
                         }
                     case "listBox":
                         {
@@ -344,7 +477,7 @@ namespace PolicyPlus.WinUI3.Windows
                                 ListEditorWindow.Register(key, win);
                                 _childEditors.Add(win); _childWindows.Add(win);
                                 win.Closed += (ss, ee) => { _childEditors.Remove(win); _childWindows.Remove(win); };
-                                win.Initialize(p.Label, e.UserProvidesNames, btn.Tag);
+                                win.Initialize(ResolvePresString(pres, p.Label), e.UserProvidesNames, btn.Tag);
                                 win.Finished += (ss, ok) =>
                                 {
                                     if (!ok) return;
@@ -358,13 +491,13 @@ namespace PolicyPlus.WinUI3.Windows
                                 t.IsRepeating = false;
                                 t.Tick += (sss, eee) => { try { WindowHelpers.BringToFront(win); win.Activate(); } catch { } }; t.Start();
                             };
-                            control = btn; label = p.Label; break;
+                            control = btn; label = ResolvePresString(pres, p.Label); break;
                         }
                     case "multiTextBox":
                         {
                             var p = (MultiTextPresentationElement)pres;
                             var tb = new TextBox { AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, Height = 120, Text = string.Empty };
-                            control = tb; label = p.Label; break;
+                            control = tb; label = ResolvePresString(pres, p.Label); break;
                         }
                 }
                 if (control != null)
@@ -594,7 +727,6 @@ namespace PolicyPlus.WinUI3.Windows
         {
             try
             {
-                // Build a temporary preview source reflecting current UI selections
                 var preview = new PolFile();
                 var desired = OptEnabled.IsChecked == true ? PolicyState.Enabled
                               : OptDisabled.IsChecked == true ? PolicyState.Disabled
@@ -606,7 +738,6 @@ namespace PolicyPlus.WinUI3.Windows
                 PolicyProcessing.SetPolicyState(preview, _policy, desired, opts ?? new Dictionary<string, object>());
 
                 var win = new DetailPolicyFormattedWindow();
-                // Feed the preview source for both scopes; Initialize will pick current section
                 win.Initialize(_policy, _bundle, preview, preview, _currentSection);
                 win.Activate();
             }

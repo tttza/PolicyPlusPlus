@@ -12,9 +12,7 @@ namespace PolicyPlus.WinUI3.Models
     public sealed class PolicyListRow : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-
-        private void OnPropertyChanged(string name)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        private void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         // Data context
         private readonly bool _isGroup;
@@ -23,6 +21,7 @@ namespace PolicyPlus.WinUI3.Models
         private IPolicySource? _user;
 
         public string DisplayName { get; }
+        public string SecondName { get; } = string.Empty;
         public bool IsCategory { get; }
         public PolicyPlusPolicy? Policy { get; }
         public PolicyPlusCategory? Category { get; }
@@ -39,11 +38,11 @@ namespace PolicyPlus.WinUI3.Models
         private string _userGlyph = string.Empty; public string UserGlyph { get => _userGlyph; private set { if (_userGlyph != value) { _userGlyph = value; OnPropertyChanged(nameof(UserGlyph)); } } }
         private string _computerGlyph = string.Empty; public string ComputerGlyph { get => _computerGlyph; private set { if (_computerGlyph != value) { _computerGlyph = value; OnPropertyChanged(nameof(ComputerGlyph)); } } }
 
-        // Brushes for glyph coloring (nullable for test environments without WinUI runtime)
+        // Brushes for glyph coloring
         private Brush? _userBrush; public Brush? UserBrush { get => _userBrush; private set { if (!ReferenceEquals(_userBrush, value)) { _userBrush = value; OnPropertyChanged(nameof(UserBrush)); } } }
         private Brush? _computerBrush; public Brush? ComputerBrush { get => _computerBrush; private set { if (!ReferenceEquals(_computerBrush, value)) { _computerBrush = value; OnPropertyChanged(nameof(ComputerBrush)); } } }
 
-        // Pending flags to optionally adorn glyphs
+        // Pending flags
         private bool _userPending; public bool UserPending { get => _userPending; private set { if (_userPending != value) { _userPending = value; OnPropertyChanged(nameof(UserPending)); } } }
         private bool _computerPending; public bool ComputerPending { get => _computerPending; private set { if (_computerPending != value) { _computerPending = value; OnPropertyChanged(nameof(ComputerPending)); } } }
 
@@ -55,7 +54,6 @@ namespace PolicyPlus.WinUI3.Models
         private string _userStateText = string.Empty; public string UserStateText { get => _userStateText; private set { if (_userStateText != value) { _userStateText = value; OnPropertyChanged(nameof(UserStateText)); } } }
         private string _computerStateText = string.Empty; public string ComputerStateText { get => _computerStateText; private set { if (_computerStateText != value) { _computerStateText = value; OnPropertyChanged(nameof(ComputerStateText)); } } }
 
-        // Display-only convenience: part after ':' of UniqueId
         public string ShortId
         {
             get
@@ -66,11 +64,12 @@ namespace PolicyPlus.WinUI3.Models
             }
         }
 
-        private PolicyListRow(string displayName, bool isCategory, PolicyPlusPolicy? policy, PolicyPlusCategory? category,
+        private PolicyListRow(string displayName, string secondName, bool isCategory, PolicyPlusPolicy? policy, PolicyPlusCategory? category,
             IPolicySource? comp, IPolicySource? user, IEnumerable<PolicyPlusPolicy>? variants,
             string uniqueId, string categoryName, string appliesText, string supportedText)
         {
             DisplayName = displayName;
+            SecondName = secondName;
             IsCategory = isCategory;
             Policy = policy;
             Category = category;
@@ -83,23 +82,15 @@ namespace PolicyPlus.WinUI3.Models
             AppliesText = appliesText;
             SupportedText = supportedText;
 
-            // Initialize computed state once
             RefreshStateFromSourcesAndPending(comp, user);
         }
 
         public static PolicyListRow FromCategory(PolicyPlusCategory c)
-            => new PolicyListRow(c.DisplayName, true, null, c,
-                null, null, null,
-                string.Empty, string.Empty, string.Empty, string.Empty);
+            => new PolicyListRow(c.DisplayName, string.Empty, true, null, c, null, null, null, string.Empty, string.Empty, string.Empty, string.Empty);
 
         private static Brush? TryGetResourceBrush(string key)
         {
-            try
-            {
-                var obj = Application.Current?.Resources?[key];
-                if (obj is Brush b) return b;
-            }
-            catch { }
+            try { var obj = Application.Current?.Resources?[key]; if (obj is Brush b) return b; } catch { }
             return null;
         }
 
@@ -121,22 +112,35 @@ namespace PolicyPlus.WinUI3.Models
             return string.Empty;
         }
 
+        private static string GetSecondName(PolicyPlusPolicy p)
+        {
+            try
+            {
+                var s = SettingsService.Instance.LoadSettings();
+                if (!(s.SecondLanguageEnabled ?? false)) return string.Empty;
+                var lang = s.SecondLanguage ?? "en-US";
+                return LocalizedTextService.GetPolicyNameIn(p, lang);
+            }
+            catch { return string.Empty; }
+        }
+
         public static PolicyListRow FromPolicy(PolicyPlusPolicy p, IPolicySource? comp, IPolicySource? user)
         {
             string categoryName = p.Category?.DisplayName ?? string.Empty;
             string appliesText = AppliesOf(p);
             string supportedText = p.SupportedOn?.DisplayName ?? string.Empty;
-            return new PolicyListRow(p.DisplayName, false, p, null, comp, user, null,
+            string second = GetSecondName(p);
+            return new PolicyListRow(p.DisplayName, second, false, p, null, comp, user, null,
                 p.UniqueID, categoryName, appliesText, supportedText);
         }
 
-        // Aggregate variant states (User/Machine/Both) for a display-name group
         public static PolicyListRow FromGroup(PolicyPlusPolicy representative, IEnumerable<PolicyPlusPolicy> variants, IPolicySource? comp, IPolicySource? user)
         {
             string categoryName = representative.Category?.DisplayName ?? string.Empty;
             string appliesText = AppliesOf(representative);
             string supportedText = representative.SupportedOn?.DisplayName ?? string.Empty;
-            return new PolicyListRow(representative.DisplayName, false, representative, null, comp, user, variants,
+            string second = GetSecondName(representative);
+            return new PolicyListRow(representative.DisplayName, second, false, representative, null, comp, user, variants,
                 representative.UniqueID, categoryName, appliesText, supportedText);
         }
 
@@ -209,7 +213,7 @@ namespace PolicyPlus.WinUI3.Models
                 ComputerGlyph = anyCompEnabled ? "\uE73E" : (anyCompDisabled ? "\uE711" : string.Empty);
 
                 UserBrush = anyUserEnabled ? apply : (anyUserDisabled ? danger : null);
-                ComputerBrush = anyCompEnabled ? apply : (anyCompDisabled ? danger : null);
+                ComputerBrush = anyCompEnabled ? apply : (anyUserDisabled ? danger : null);
 
                 UserStateText = StateText(anyUserEnabled, anyUserDisabled, anyUserConfigured);
                 ComputerStateText = StateText(anyCompEnabled, anyCompDisabled, anyCompConfigured);
