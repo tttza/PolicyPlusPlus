@@ -720,8 +720,7 @@ namespace PolicyPlus.WinUI3
             for (int i = 0; i < count; i++)
             {
                 var child = VisualTreeHelper.GetChild(root, i);
-                if (child is FrameworkElement fe && string.Equals(fe.Name, name, StringComparison.Ordinal))
-                    return child;
+                if (child is FrameworkElement fe && string.Equals(fe.Name, name, StringComparison.Ordinal)) return child;
                 var result = FindDescendantByName(child, name);
                 if (result != null) return result;
             }
@@ -868,6 +867,16 @@ namespace PolicyPlus.WinUI3
                 ShowInfo($"Using temp .pol (Comp: {_tempPolCompPath}, User: {_tempPolUserPath})");
             else
                 ShowInfo("Using Local GPO");
+        }
+
+        private void UpdateClearCategoryFilterButtonState()
+        {
+            try
+            {
+                var btn = RootGrid?.FindName("ClearCategoryFilterButton") as Button;
+                if (btn != null) btn.IsEnabled = _selectedCategory != null;
+            }
+            catch { }
         }
 
         private async void BtnLanguage_Click(object sender, RoutedEventArgs e)
@@ -1200,6 +1209,7 @@ namespace PolicyPlus.WinUI3
                 SearchBox.PlaceholderText = $"Search policies in {_selectedCategory.DisplayName}";
             else
                 SearchBox.PlaceholderText = "Search policies";
+            UpdateClearCategoryFilterButtonState();
         }
 
         private void ViewDetailsToggle_Click(object sender, RoutedEventArgs e)
@@ -1225,6 +1235,7 @@ namespace PolicyPlus.WinUI3
                 _suppressCategorySelectionChanged = false;
             }
             UpdateSearchPlaceholder();
+            UpdateClearCategoryFilterButtonState();
             _navTyping = false;
             RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
             UpdateNavButtons();

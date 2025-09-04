@@ -63,6 +63,10 @@
     <ProjectReference Include="..\PolicyPlus.Core\PolicyPlus.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controls\" />
+  </ItemGroup>
+
   <!-- Rely on default items for XAML and code-behind, and for MainWindow\*.cs partials -->
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">

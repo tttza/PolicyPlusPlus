@@ -228,7 +228,12 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <Button Content="Clear category filter" Margin="0,0,0,4" Click="ClearCategoryFilter_Click"/>
+                        <Button x:Name="ClearCategoryFilterButton" Margin="0,0,0,4" Click="ClearCategoryFilter_Click" HorizontalAlignment="Stretch" IsEnabled="False" Padding="10,6" CornerRadius="6">
+                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                <FontIcon Glyph="&#xE8E6;"/>
+                                <TextBlock Text="Clear category filter"/>
+                            </StackPanel>
+                        </Button>
                         <controls:TreeView x:Name="CategoryTree" Grid.Row="1" SelectionMode="Single" ItemInvoked="CategoryTree_ItemInvoked" SelectionChanged="CategoryTree_SelectionChanged" DoubleTapped="CategoryTree_DoubleTapped">
                             <controls:TreeView.ItemTemplate>
                                 <DataTemplate>
