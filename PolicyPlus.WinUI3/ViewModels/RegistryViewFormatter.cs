@@ -86,8 +86,45 @@ namespace PolicyPlus.WinUI3.ViewModels
                 }
                 else
                 {
-                    // No specific value name; show just the key header
+                    // List-style or key-only reference: enumerate all present values under the key.
                     sb.AppendLine($"{L("Key")}: {hive}\\{kv.Key}");
+                    sb.AppendLine(); // Blank line before repeating Name/Type/Value blocks for readability
+                    var valueNames = new List<string>();
+                    try { valueNames = source.GetValueNames(kv.Key); } catch { }
+                    bool firstValue = true;
+                    foreach (var name in valueNames)
+                    {
+                        if (!firstValue)
+                        {
+                            // Separate each value block with a blank line
+                            sb.AppendLine();
+                        }
+                        firstValue = false;
+                        var data = source.GetValue(kv.Key, name);
+                        var (typeName, dataText) = GetTypeAndDataText(data);
+                        sb.AppendLine($"{L("Name")}: {name}");
+                        sb.AppendLine($"{L("Type")}: {typeName}");
+                        if (string.IsNullOrEmpty(dataText))
+                        {
+                            sb.AppendLine($"{L("Value")}: ");
+                        }
+                        else
+                        {
+                            var first = true;
+                            foreach (var line in SplitMultiline(dataText))
+                            {
+                                if (first)
+                                {
+                                    sb.AppendLine($"{L("Value")}: {line}");
+                                    first = false;
+                                }
+                                else
+                                {
+                                    sb.AppendLine(line);
+                                }
+                            }
+                        }
+                    }
                 }
                 sb.AppendLine();
             }
@@ -109,6 +146,16 @@ namespace PolicyPlus.WinUI3.ViewModels
                     var data = source.GetValue(kv.Key, kv.Value);
                     if (data is null) continue;
                     sb.AppendLine(FormatRegValue(kv.Value, data));
+                }
+                else
+                {
+                    // Emit all values in the key for list-style entries
+                    foreach (var name in source.GetValueNames(kv.Key))
+                    {
+                        var data = source.GetValue(kv.Key, name);
+                        if (data is null) continue;
+                        sb.AppendLine(FormatRegValue(name, data));
+                    }
                 }
             }
             return sb.ToString();
