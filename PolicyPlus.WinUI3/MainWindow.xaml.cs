@@ -1400,6 +1400,17 @@ namespace PolicyPlus.WinUI3
             catch { }
         }
 
+        private void UnsavedIndicator_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            try
+            {
+                var win = new PendingChangesWindow();
+                win.Activate();
+                try { WindowHelpers.BringToFront(win); } catch { }
+            }
+            catch { }
+        }
+
         // Proxy methods call into real implementations (defined in Filtering.cs)
         partial void Filtering_RunAsyncFilterAndBindProxy();
         partial void Filtering_RunImmediateFilterAndBindProxy();

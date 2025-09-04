@@ -142,7 +142,6 @@
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                         <TextBlock x:Name="VersionText" Margin="0,0,12,0" Opacity="0.7" />
                         <TextBlock x:Name="LoaderInfo" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="UnsavedIndicator" Text="• Unsaved changes" Foreground="OrangeRed" Visibility="Collapsed" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
 
@@ -157,64 +156,71 @@
                 </StackPanel>
 
                 <!-- Filters and counts row -->
-                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="8,4,8,0">
-                    <Button x:Name="BtnBack" Click="BtnBack_Click" IsEnabled="False" ToolTipService.ToolTip="Back (Alt+Left / Mouse Back)" Style="{StaticResource NavIconButtonStyle}">
-                        <FontIcon Glyph="&#xE72B;" FontSize="12"/>
-                    </Button>
-                    <Button x:Name="BtnForward" Click="BtnForward_Click" IsEnabled="False" ToolTipService.ToolTip="Forward (Alt+Right / Mouse Forward)" Style="{StaticResource NavIconButtonStyle}">
-                        <FontIcon Glyph="&#xE72A;" FontSize="12"/>
-                    </Button>
-                    <TextBlock Text="Applies to:" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                    <ComboBox x:Name="AppliesToSelector" Width="140" SelectionChanged="AppliesToSelector_SelectionChanged">
-                        <ComboBoxItem Content="Both" IsSelected="True"/>
-                        <ComboBoxItem Content="Computer"/>
-                        <ComboBoxItem Content="User"/>
-                    </ComboBox>
-                    <TextBlock Text="|" VerticalAlignment="Center"/>
-                    <CheckBox x:Name="ChkConfiguredOnly" Content="Configured only" Checked="ChkConfiguredOnly_Checked" Unchecked="ChkConfiguredOnly_Checked"/>
-                    <TextBlock Text="|" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="PolicyCount" VerticalAlignment="Center"/>
-                    <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Visibility="Collapsed" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
-                    <Grid x:Name="SearchBoxHost" Width="360" Margin="16,0,0,0">
-                        <AutoSuggestBox x:Name="SearchBox"
-                                        Padding="0,0,28,0"
-                                        PlaceholderText="Search policies"
-                                        Loaded="SearchBox_Loaded"
-                                        TextChanged="SearchBox_TextChanged"
-                                        QuerySubmitted="SearchBox_QuerySubmitted"
-                                        SuggestionChosen="SearchBox_SuggestionChosen" />
-                        <!-- Lightweight hitbox to avoid button hover/press visuals -->
-                        <Grid x:Name="SearchClearBtn"
-                              Width="24" Height="24"
-                              HorizontalAlignment="Right"
-                              VerticalAlignment="Center"
-                              Margin="0,-2,6,0"
-                              Background="Transparent"
-                              Visibility="Collapsed"
-                              ToolTipService.ToolTip="Clear search"
-                              Tapped="SearchClearBtn_Tapped">
-                            <FontIcon Glyph="&#xE10A;" FontSize="10" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                <Grid Grid.Row="2" Margin="8,4,8,0" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Button x:Name="BtnBack" Click="BtnBack_Click" IsEnabled="False" ToolTipService.ToolTip="Back (Alt+Left / Mouse Back)" Style="{StaticResource NavIconButtonStyle}">
+                            <FontIcon Glyph="&#xE72B;" FontSize="12"/>
+                        </Button>
+                        <Button x:Name="BtnForward" Click="BtnForward_Click" IsEnabled="False" ToolTipService.ToolTip="Forward (Alt+Right / Mouse Forward)" Style="{StaticResource NavIconButtonStyle}">
+                            <FontIcon Glyph="&#xE72A;" FontSize="12"/>
+                        </Button>
+                        <TextBlock Text="Applies to:" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                        <ComboBox x:Name="AppliesToSelector" Width="140" SelectionChanged="AppliesToSelector_SelectionChanged">
+                            <ComboBoxItem Content="Both" IsSelected="True"/>
+                            <ComboBoxItem Content="Computer"/>
+                            <ComboBoxItem Content="User"/>
+                        </ComboBox>
+                        <TextBlock Text="|" VerticalAlignment="Center"/>
+                        <CheckBox x:Name="ChkConfiguredOnly" Content="Configured only" Checked="ChkConfiguredOnly_Checked" Unchecked="ChkConfiguredOnly_Checked"/>
+                        <TextBlock Text="|" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="PolicyCount" VerticalAlignment="Center"/>
+                        <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Visibility="Collapsed" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
+                        <Grid x:Name="SearchBoxHost" Width="360" Margin="16,0,0,0">
+                            <AutoSuggestBox x:Name="SearchBox"
+                                            Padding="0,0,28,0"
+                                            PlaceholderText="Search policies"
+                                            Loaded="SearchBox_Loaded"
+                                            TextChanged="SearchBox_TextChanged"
+                                            QuerySubmitted="SearchBox_QuerySubmitted"
+                                            SuggestionChosen="SearchBox_SuggestionChosen" />
+                            <!-- Lightweight hitbox to avoid button hover/press visuals -->
+                            <Grid x:Name="SearchClearBtn"
+                                  Width="24" Height="24"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center"
+                                  Margin="0,-2,6,0"
+                                  Background="Transparent"
+                                  Visibility="Collapsed"
+                                  ToolTipService.ToolTip="Clear search"
+                                  Tapped="SearchClearBtn_Tapped">
+                                <FontIcon Glyph="&#xE10A;" FontSize="10" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                            </Grid>
                         </Grid>
-                    </Grid>
-                    <Button x:Name="SearchOptionsBtn" Style="{StaticResource NavIconButtonStyle}" ToolTipService.ToolTip="Search options">
-                        <FontIcon Glyph="&#xE713;" FontSize="12"/>
-                        <Button.Flyout>
-                            <Flyout Opened="SearchOptionsFlyout_Opened">
-                                <StackPanel>
-                                    <CheckBox x:Name="SearchOptName" Content="Search name" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                    <CheckBox x:Name="SearchOptDesc" Content="Search description" IsChecked="False" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                    <CheckBox x:Name="SearchOptComments" Content="Search comments" IsChecked="False" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                    <!-- Divider -->
-                                    <Border Height="1" Background="{ThemeResource ControlStrokeColorDefaultBrush}" Margin="0,6,0,6" />
-                                    <CheckBox x:Name="SearchOptId" Content="Search ID" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                    <CheckBox x:Name="SearchOptRegKey" Content="Search registry key path" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                    <CheckBox x:Name="SearchOptRegValue" Content="Search registry value name" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                </StackPanel>
-                            </Flyout>
-                        </Button.Flyout>
-                    </Button>
-                    <controls:ProgressRing x:Name="SearchSpinner" Width="16" Height="16" IsActive="True" Visibility="Collapsed" VerticalAlignment="Center" ToolTipService.ToolTip="Searching..."/>
-                </StackPanel>
+                        <Button x:Name="SearchOptionsBtn" Style="{StaticResource NavIconButtonStyle}" ToolTipService.ToolTip="Search options">
+                            <FontIcon Glyph="&#xE713;" FontSize="12"/>
+                            <Button.Flyout>
+                                <Flyout Opened="SearchOptionsFlyout_Opened">
+                                    <StackPanel>
+                                        <CheckBox x:Name="SearchOptName" Content="Search name" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                        <CheckBox x:Name="SearchOptDesc" Content="Search description" IsChecked="False" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                        <CheckBox x:Name="SearchOptComments" Content="Search comments" IsChecked="False" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                        <!-- Divider -->
+                                        <Border Height="1" Background="{ThemeResource ControlStrokeColorDefaultBrush}" Margin="0,6,0,6" />
+                                        <CheckBox x:Name="SearchOptId" Content="Search ID" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                        <CheckBox x:Name="SearchOptRegKey" Content="Search registry key path" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                        <CheckBox x:Name="SearchOptRegValue" Content="Search registry value name" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                        <controls:ProgressRing x:Name="SearchSpinner" Width="16" Height="16" IsActive="True" Visibility="Collapsed" VerticalAlignment="Center" ToolTipService.ToolTip="Searching..."/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" x:Name="UnsavedIndicator" Text="• Unsaved changes" Foreground="OrangeRed" Visibility="Collapsed" VerticalAlignment="Center" Margin="12,0,0,0" Tapped="UnsavedIndicator_Tapped"/>
+                </Grid>
 
                 <Grid Grid.Row="3" Margin="8">
                     <Grid.ColumnDefinitions>
