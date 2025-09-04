@@ -1,9 +1,8 @@
 name: Publish
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  # Tag push trigger disabled (legacy build). Manual dispatch only.
+  workflow_dispatch:
 
 jobs:
   BuildLatest:
