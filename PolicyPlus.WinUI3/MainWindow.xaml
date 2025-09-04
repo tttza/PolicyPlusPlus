@@ -193,16 +193,16 @@
                     <Button x:Name="SearchOptionsBtn" Style="{StaticResource NavIconButtonStyle}" ToolTipService.ToolTip="Search options">
                         <FontIcon Glyph="&#xE713;" FontSize="12"/>
                         <Button.Flyout>
-                            <Flyout>
+                            <Flyout Opened="SearchOptionsFlyout_Opened">
                                 <StackPanel>
-                                    <CheckBox Tag="name" Content="Search name" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                    <CheckBox Tag="desc" Content="Search description" IsChecked="False" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                    <CheckBox Tag="comments" Content="Search comments" IsChecked="False" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                    <CheckBox x:Name="SearchOptName" Content="Search name" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                    <CheckBox x:Name="SearchOptDesc" Content="Search description" IsChecked="False" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                    <CheckBox x:Name="SearchOptComments" Content="Search comments" IsChecked="False" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
                                     <!-- Divider -->
                                     <Border Height="1" Background="{ThemeResource ControlStrokeColorDefaultBrush}" Margin="0,6,0,6" />
-                                    <CheckBox Tag="id" Content="Search ID" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                    <CheckBox Tag="regkey" Content="Search registry key path" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                    <CheckBox Tag="regvalue" Content="Search registry value name" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                    <CheckBox x:Name="SearchOptId" Content="Search ID" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                    <CheckBox x:Name="SearchOptRegKey" Content="Search registry key path" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                    <CheckBox x:Name="SearchOptRegValue" Content="Search registry value name" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
                                 </StackPanel>
                             </Flyout>
                         </Button.Flyout>

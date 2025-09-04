@@ -71,6 +71,9 @@ namespace PolicyPlus.WinUI3
         private bool _suppressAppliesToSelectionChanged;
         private bool _suppressConfiguredOnlyChanged;
 
+        // Suppress Search options change handlers while syncing UI
+        private bool _suppressSearchOptionEvents;
+
         // Auto-close InfoBar cancellation
         private CancellationTokenSource? _infoBarCloseCts;
 
@@ -141,6 +144,8 @@ namespace PolicyPlus.WinUI3
 
         public MainWindow()
         {
+            // Suppress Search option change events during InitializeComponent to avoid overwriting saved settings
+            _suppressSearchOptionEvents = true;
             this.InitializeComponent();
             HookPendingQueue();
 
@@ -148,6 +153,100 @@ namespace PolicyPlus.WinUI3
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
             };
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var s = SettingsService.Instance.LoadSettings();
+
+                _hideEmptyCategories = s.HideEmptyCategories ?? true;
+                try { ToggleHideEmptyMenu.IsChecked = _hideEmptyCategories; } catch { }
+
+                // Apply persisted detail pane ratio before showing
+                ApplySavedDetailPaneRatioIfAny();
+
+                _showDetails = s.ShowDetails ?? true;
+                try { ViewDetailsToggle.IsChecked = _showDetails; } catch { }
+                ApplyDetailsPaneVisibility();
+
+                _limitUnfilteredTo1000 = s.LimitUnfilteredTo1000 ?? true; // default enabled
+                try { ToggleLimitUnfilteredMenu.IsChecked = _limitUnfilteredTo1000; } catch { }
+
+                var themePref = s.Theme ?? "System";
+                ApplyTheme(themePref);
+                App.SetGlobalTheme(themePref switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
+                try
+                {
+                    var itemsObj = ThemeSelector?.Items;
+                    var items = itemsObj?.OfType<ComboBoxItem>()?.ToList();
+                    var match = items?.FirstOrDefault(i => string.Equals(Convert.ToString(i.Content), themePref, StringComparison.OrdinalIgnoreCase));
+                    if (match != null) ThemeSelector!.SelectedItem = match;
+                }
+                catch { }
+
+                var scalePref = s.UIScale ?? "100%";
+                SetScaleFromString(scalePref, updateSelector: true, save: false);
+
+                // Column visibility from settings via menu toggles
+                LoadColumnPrefs();
+
+                // Apply saved layout (widths, sort)
+                try { ApplyPersistedLayout(); } catch { }
+
+                HookDoubleTapHandlers();
+
+                string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
+                string lastPath = s.AdmxSourcePath ?? defaultPath;
+                if (Directory.Exists(lastPath))
+                {
+                    LoadAdmxFolderAsync(lastPath);
+                }
+
+                try { InitNavigation(); } catch { }
+                try { UpdateSearchClearButtonVisibility(); } catch { }
+
+                try
+                {
+                    var hist = SettingsService.Instance.LoadHistory();
+                    foreach (var h in hist) PendingChangesService.Instance.History.Add(h);
+                }
+                catch { }
+
+                var so = s.Search;
+                if (so != null)
+                {
+                    _searchInName = so.InName;
+                    _searchInId = so.InId;
+                    _searchInRegistryKey = so.InRegistryKey;
+                    _searchInRegistryValue = so.InRegistryValue;
+                    _searchInDescription = so.InDescription;
+                    _searchInComments = so.InComments;
+                }
+
+                // Sync initial UI state for search options (after reading settings)
+                var so2 = s.Search;
+                if (so2 != null)
+                {
+                    try
+                    {
+                        _suppressSearchOptionEvents = true;
+                        if (SearchOptName != null) SearchOptName.IsChecked = so2.InName;
+                        if (SearchOptId != null) SearchOptId.IsChecked = so2.InId;
+                        if (SearchOptDesc != null) SearchOptDesc.IsChecked = so2.InDescription;
+                        if (SearchOptComments != null) SearchOptComments.IsChecked = so2.InComments;
+                        if (SearchOptRegKey != null) SearchOptRegKey.IsChecked = so2.InRegistryKey;
+                        if (SearchOptRegValue != null) SearchOptRegValue.IsChecked = so2.InRegistryValue;
+                    }
+                    finally { _suppressSearchOptionEvents = false; }
+                }
+            }
+            finally
+            {
+                // Ensure suppression is released even if an exception occurs
+                _suppressSearchOptionEvents = false;
+            }
         }
 
         private void HookDoubleTapHandlers()
@@ -333,79 +432,6 @@ namespace PolicyPlus.WinUI3
             if (BusyOverlay == null) return;
             try { if (BusyText != null && !string.IsNullOrEmpty(message)) BusyText.Text = message; } catch { }
             BusyOverlay.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var s = SettingsService.Instance.LoadSettings();
-
-                _hideEmptyCategories = s.HideEmptyCategories ?? true;
-                try { ToggleHideEmptyMenu.IsChecked = _hideEmptyCategories; } catch { }
-
-                // Apply persisted detail pane ratio before showing
-                ApplySavedDetailPaneRatioIfAny();
-
-                _showDetails = s.ShowDetails ?? true;
-                try { ViewDetailsToggle.IsChecked = _showDetails; } catch { }
-                ApplyDetailsPaneVisibility();
-
-                _limitUnfilteredTo1000 = s.LimitUnfilteredTo1000 ?? true; // default enabled
-                try { ToggleLimitUnfilteredMenu.IsChecked = _limitUnfilteredTo1000; } catch { }
-
-                var themePref = s.Theme ?? "System";
-                ApplyTheme(themePref);
-                App.SetGlobalTheme(themePref switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
-                try
-                {
-                    var itemsObj = ThemeSelector?.Items;
-                    var items = itemsObj?.OfType<ComboBoxItem>()?.ToList();
-                    var match = items?.FirstOrDefault(i => string.Equals(Convert.ToString(i.Content), themePref, StringComparison.OrdinalIgnoreCase));
-                    if (match != null) ThemeSelector!.SelectedItem = match;
-                }
-                catch { }
-
-                var scalePref = s.UIScale ?? "100%";
-                SetScaleFromString(scalePref, updateSelector: true, save: false);
-
-                // Column visibility from settings via menu toggles
-                LoadColumnPrefs();
-
-                // Apply saved layout (widths, sort)
-                try { ApplyPersistedLayout(); } catch { }
-
-                HookDoubleTapHandlers();
-
-                string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
-                string lastPath = s.AdmxSourcePath ?? defaultPath;
-                if (Directory.Exists(lastPath))
-                {
-                    LoadAdmxFolderAsync(lastPath);
-                }
-
-                try { InitNavigation(); } catch { }
-                try { UpdateSearchClearButtonVisibility(); } catch { }
-
-                try
-                {
-                    var hist = SettingsService.Instance.LoadHistory();
-                    foreach (var h in hist) PendingChangesService.Instance.History.Add(h);
-                }
-                catch { }
-
-                var so = s.Search;
-                if (so != null)
-                {
-                    _searchInName = so.InName;
-                    _searchInId = so.InId;
-                    _searchInRegistryKey = so.InRegistryKey;
-                    _searchInRegistryValue = so.InRegistryValue;
-                    _searchInDescription = so.InDescription;
-                    _searchInComments = so.InComments;
-                }
-            }
-            catch { }
         }
 
         // preference helper implementations are defined in MainWindow.Preferences.cs
@@ -1214,26 +1240,15 @@ namespace PolicyPlus.WinUI3
 
         private void SearchOption_Toggle_Click(object sender, RoutedEventArgs e)
         {
+            if (_suppressSearchOptionEvents) return;
             try
             {
-                string? tag = null; bool isChecked = false;
-                if (sender is ToggleMenuFlyoutItem t)
-                { tag = Convert.ToString(t.Tag); isChecked = t.IsChecked; }
-                else if (sender is CheckBox cb)
-                { tag = Convert.ToString(cb.Tag); isChecked = cb.IsChecked == true; }
-
-                if (tag != null)
-                {
-                    switch (tag)
-                    {
-                        case "name": _searchInName = isChecked; break;
-                        case "id": _searchInId = isChecked; break;
-                        case "desc": _searchInDescription = isChecked; break;
-                        case "regkey": _searchInRegistryKey = isChecked; break;    // key path
-                        case "regvalue": _searchInRegistryValue = isChecked; break; // value name
-                        case "comments": _searchInComments = isChecked; break;
-                    }
-                }
+                _searchInName = SearchOptName?.IsChecked == true;
+                _searchInId = SearchOptId?.IsChecked == true;
+                _searchInDescription = SearchOptDesc?.IsChecked == true;
+                _searchInComments = SearchOptComments?.IsChecked == true;
+                _searchInRegistryKey = SearchOptRegKey?.IsChecked == true;
+                _searchInRegistryValue = SearchOptRegValue?.IsChecked == true;
             }
             catch { }
             // Persist
@@ -1265,6 +1280,22 @@ namespace PolicyPlus.WinUI3
                 }
             }
             catch { }
+        }
+
+        private void SearchOptionsFlyout_Opened(object sender, object e)
+        {
+            try
+            {
+                var so = SettingsService.Instance.LoadSettings().Search ?? new SearchOptions();
+                _suppressSearchOptionEvents = true;
+                if (SearchOptName != null) SearchOptName.IsChecked = so.InName;
+                if (SearchOptId != null) SearchOptId.IsChecked = so.InId;
+                if (SearchOptDesc != null) SearchOptDesc.IsChecked = so.InDescription;
+                if (SearchOptComments != null) SearchOptComments.IsChecked = so.InComments;
+                if (SearchOptRegKey != null) SearchOptRegKey.IsChecked = so.InRegistryKey;
+                if (SearchOptRegValue != null) SearchOptRegValue.IsChecked = so.InRegistryValue;
+            }
+            finally { _suppressSearchOptionEvents = false; }
         }
     }
 }
