@@ -263,6 +263,13 @@ namespace PolicyPlus.WinUI3.Services
                 catch { }
             }
         }
+
+        public void UpdateLimitUnfilteredTo1000(bool enabled)
+        {
+            var s = LoadSettings();
+            s.LimitUnfilteredTo1000 = enabled;
+            SaveSettings(s);
+        }
     }
 
     public class AppSettings
@@ -290,6 +297,9 @@ namespace PolicyPlus.WinUI3.Services
 
         // DataGrid layout
         public List<ColumnState>? ColumnStates { get; set; }
+
+        // Limit unfiltered list size option
+        public bool? LimitUnfilteredTo1000 { get; set; }
     }
 
     public class ColumnsOptions

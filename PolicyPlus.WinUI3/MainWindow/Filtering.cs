@@ -338,6 +338,15 @@ namespace PolicyPlus.WinUI3
                                  .ThenBy(p => p.UniqueID, StringComparer.InvariantCultureIgnoreCase)
                                  .ToList();
             }
+
+            // Apply cap when no category filter and option enabled
+            if (_selectedCategory == null && _limitUnfilteredTo1000)
+            {
+                if (ordered.Count > 1000)
+                {
+                    ordered = ordered.Take(1000).ToList();
+                }
+            }
             _visiblePolicies = ordered.ToList();
 
             // Rebuild id->row map for flat view

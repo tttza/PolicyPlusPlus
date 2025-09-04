@@ -54,6 +54,7 @@ namespace PolicyPlus.WinUI3
         private IPolicySource? _compSource;
         private IPolicySource? _userSource;
         private bool _configuredOnly = false;
+        private bool _limitUnfilteredTo1000 = true;
 
         // Map of visible policy id -> row for fast partial updates
         private readonly Dictionary<string, PolicyListRow> _rowByPolicyId = new(StringComparer.OrdinalIgnoreCase);
@@ -179,7 +180,7 @@ namespace PolicyPlus.WinUI3
             catch { }
         }
 
-        private void Pending_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        private void Pending_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             try
             {
@@ -345,6 +346,9 @@ namespace PolicyPlus.WinUI3
                 _showDetails = s.ShowDetails ?? true;
                 try { ViewDetailsToggle.IsChecked = _showDetails; } catch { }
                 ApplyDetailsPaneVisibility();
+
+                _limitUnfilteredTo1000 = s.LimitUnfilteredTo1000 ?? true; // default enabled
+                try { ToggleLimitUnfilteredMenu.IsChecked = _limitUnfilteredTo1000; } catch { }
 
                 var themePref = s.Theme ?? "System";
                 ApplyTheme(themePref);
@@ -1205,6 +1209,20 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
             RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+        }
+
+        private void ToggleLimitUnfilteredMenu_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is ToggleMenuFlyoutItem t)
+                {
+                    _limitUnfilteredTo1000 = t.IsChecked;
+                    SettingsService.Instance.UpdateLimitUnfilteredTo1000(_limitUnfilteredTo1000);
+                    RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                }
+            }
+            catch { }
         }
     }
 }
