@@ -42,7 +42,6 @@ namespace PolicyPlus.WinUI3.Windows
         private static readonly Regex UrlRegex = new Regex(@"(https?://[^\s]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private bool _useSecondLanguage = false;
-        private Button? _secondLangButton;
         private ToggleButton? _secondLangToggle;
 
         public EditSettingWindow()
@@ -62,22 +61,18 @@ namespace PolicyPlus.WinUI3.Windows
             RootShell.Loaded += (s, e) =>
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootShell); } catch { }
-                _secondLangButton = RootShell.FindName("SecondLangToggle") as Button;
                 _secondLangToggle = RootShell.FindName("SecondLangToggle") as ToggleButton;
                 if (_secondLangToggle != null)
                 {
                     _secondLangToggle.Checked += SecondLangToggle_Checked;
                     _secondLangToggle.Unchecked += SecondLangToggle_Checked;
-                }
-                if (_secondLangButton != null)
-                {
                     try
                     {
                         var st = SettingsService.Instance.LoadSettings();
                         bool enabled = st.SecondLanguageEnabled ?? false;
-                        _secondLangButton.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                        _secondLangToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
                         string code = st.SecondLanguage ?? "en-US";
-                        ToolTipService.SetToolTip(_secondLangButton, enabled ? $"Toggle 2nd language ({code})" : "2nd language disabled in preferences");
+                        ToolTipService.SetToolTip(_secondLangToggle, enabled ? $"Toggle 2nd language ({code})" : "2nd language disabled in preferences");
                     }
                     catch { }
                 }
@@ -136,8 +131,8 @@ namespace PolicyPlus.WinUI3.Windows
                 // Update tooltip to reflect current language code
                 try
                 {
-                    if (_secondLangButton != null)
-                        ToolTipService.SetToolTip(_secondLangButton, enabled ? $"Toggle 2nd language ({lang})" : "2nd language disabled in preferences");
+                    if (_secondLangToggle != null)
+                        ToolTipService.SetToolTip(_secondLangToggle, enabled ? $"Toggle 2nd language ({lang})" : "2nd language disabled in preferences");
                 }
                 catch { }
 

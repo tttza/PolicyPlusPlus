@@ -93,7 +93,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <ToggleButton x:Name="LangToggle" Grid.Column="1" MinWidth="36" MinHeight="36" ToolTipService.ToolTip="Toggle 2nd language">
+                <ToggleButton x:Name="LangToggle" Grid.Column="1" MinWidth="36" MinHeight="36" ToolTipService.ToolTip="Toggle 2nd language" Visibility="Collapsed">
                     <FontIcon Glyph="&#xF2B7;"/>
                 </ToggleButton>
                 <Button x:Name="CloseBtn" Grid.Column="2" Content="Close" Style="{StaticResource PrimaryButtonStyle}" MinWidth="90"/>

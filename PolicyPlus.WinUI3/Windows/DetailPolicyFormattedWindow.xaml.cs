@@ -29,7 +29,6 @@ namespace PolicyPlus.WinUI3.Windows
         private string _regFileCache = string.Empty;
         private bool _showRegFile = false;
         private string _joinSymbol = "+";
-        private Button? _langToggleBtn;
         private ToggleButton? _langToggle;
         private bool _useSecondLanguage = false;
 
@@ -56,7 +55,6 @@ namespace PolicyPlus.WinUI3.Windows
 
             try
             {
-                _langToggleBtn = RootShell.FindName("LangToggle") as Button;
                 _langToggle = RootShell.FindName("LangToggle") as ToggleButton;
                 if (_langToggle != null)
                 {
@@ -133,10 +131,10 @@ namespace PolicyPlus.WinUI3.Windows
             _policy = policy; _bundle = bundle; _compSource = compSource; _userSource = userSource; _currentSection = section;
 
             var s = SettingsService.Instance.LoadSettings();
-            if (_langToggleBtn != null)
+            if (_langToggle != null)
             {
-                _langToggleBtn.Visibility = (s.SecondLanguageEnabled ?? false) ? Visibility.Visible : Visibility.Collapsed;
-                ToolTipService.SetToolTip(_langToggleBtn, (s.SecondLanguageEnabled ?? false) ? $"Toggle 2nd language ({s.SecondLanguage ?? "en-US"})" : "2nd language disabled in preferences");
+                _langToggle.Visibility = (s.SecondLanguageEnabled ?? false) ? Visibility.Visible : Visibility.Collapsed;
+                ToolTipService.SetToolTip(_langToggle, (s.SecondLanguageEnabled ?? false) ? $"Toggle 2nd language ({s.SecondLanguage ?? "en-US"})" : "2nd language disabled in preferences");
             }
 
             // Basic fields
@@ -181,10 +179,10 @@ namespace PolicyPlus.WinUI3.Windows
             bool enabled = s.SecondLanguageEnabled ?? false;
             string lang = s.SecondLanguage ?? "en-US";
 
-            if (_langToggleBtn != null)
+            if (_langToggle != null)
             {
-                _langToggleBtn.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
-                ToolTipService.SetToolTip(_langToggleBtn, enabled ? $"Toggle 2nd language ({lang})" : "2nd language disabled in preferences");
+                _langToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                ToolTipService.SetToolTip(_langToggle, enabled ? $"Toggle 2nd language ({lang})" : "2nd language disabled in preferences");
             }
 
             bool useSecond = enabled && _useSecondLanguage;

@@ -111,7 +111,7 @@
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button x:Name="ViewDetailApplyBtn" Content="Preview Details" ToolTipService.ToolTip="Open formatted details without saving" Style="{StaticResource PrimaryButtonStyle}"/>
         </StackPanel>
-        <ToggleButton x:Name="SecondLangToggle" Grid.Column="1" MinWidth="36" MinHeight="36" VerticalAlignment="Center" ToolTipService.ToolTip="Toggle 2nd language">
+        <ToggleButton x:Name="SecondLangToggle" Grid.Column="1" MinWidth="36" MinHeight="36" VerticalAlignment="Center" ToolTipService.ToolTip="Toggle 2nd language" Visibility="Collapsed">
           <FontIcon Glyph="&#xF2B7;"/>
         </ToggleButton>
         <Button x:Name="ApplyBtn" Grid.Column="2" Content="Apply" Style="{StaticResource ApplyButtonStyle}"/>
