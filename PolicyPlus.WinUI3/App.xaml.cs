@@ -114,7 +114,7 @@ namespace PolicyPlus.WinUI3
             catch { }
 
             Window = new MainWindow();
-            try { Window.Title = $"PolicyPlus - {BuildInfo.Version}"; } catch { }
+            try { Window.Title = "PolicyPlusMod"; } catch { }
             ApplyThemeTo(Window);
 
             TryApplyIconTo(Window);
@@ -182,7 +182,7 @@ namespace PolicyPlus.WinUI3
                     {
                         _iconPathCache = path;
                         w.AppWindow?.SetIcon(path);
-                    }
+                      }
                 }
             }
             catch { }

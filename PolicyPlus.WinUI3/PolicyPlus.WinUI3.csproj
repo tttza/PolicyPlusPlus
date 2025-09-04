@@ -67,8 +67,6 @@
     <Folder Include="Controls\" />
   </ItemGroup>
 
-  <!-- Rely on default items for XAML and code-behind, and for MainWindow\*.cs partials -->
-
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <PublishReadyToRun>False</PublishReadyToRun>
     <PublishTrimmed>False</PublishTrimmed>
@@ -79,7 +77,6 @@
     <PublishSingleFile>False</PublishSingleFile>
   </PropertyGroup>
 
-  <!-- Single-file self-contained publish tuning for WinUI 3 / Windows App SDK -->
   <PropertyGroup Condition="'$(PublishSingleFile)'=='true'">
     <PublishReadyToRun>false</PublishReadyToRun>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
@@ -117,7 +114,7 @@
     <PropertyGroup>
       <_GitVersionFile>$(IntermediateOutputPath)gitversion.txt</_GitVersionFile>
     </PropertyGroup>
-    <Exec Command="git describe --tags --always --dirty > &quot;$(_GitVersionFile)&quot;" IgnoreExitCode="true" />
+    <Exec Command="git describe --tags --always --dirty &gt; &quot;$(_GitVersionFile)&quot;" IgnoreExitCode="true" />
     <ReadLinesFromFile File="$(_GitVersionFile)">
       <Output TaskParameter="Lines" PropertyName="GitVersionRaw" />
     </ReadLinesFromFile>

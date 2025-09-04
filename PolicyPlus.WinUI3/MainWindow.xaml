@@ -11,7 +11,7 @@
     xmlns:converters="using:PolicyPlus.WinUI3.Converters"
     xmlns:models="using:PolicyPlus.WinUI3.Models"
     mc:Ignorable="d"
-    Title="PolicyPlus">
+    Title="PolicyPlusMod">
 
     <Window.SystemBackdrop>
         <MicaBackdrop />
@@ -40,7 +40,6 @@
                 <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
                 <converters:NotBoolToVisibilityConverter x:Key="NotBoolToVisibilityConverter"/>
                 <models:ColumnWidths x:Key="ColumnWidthsModel" />
-                <!-- Subtle alternating row background to reduce reliance on grid lines -->
                 <SolidColorBrush x:Key="AltRowBrush" Color="#0F000000" />
                 <Style x:Key="NavIconButtonStyle" TargetType="Button">
                     <Setter Property="Width" Value="28"/>
@@ -59,15 +58,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <controls:InfoBar x:Name="StatusBar"
-                              Grid.RowSpan="2"
-                              VerticalAlignment="Bottom"
-                              HorizontalAlignment="Stretch"
-                              Margin="12"
-                              Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
-                              IsOpen="False"
-                              Severity="Informational"
-                              Canvas.ZIndex="5" />
+            <controls:InfoBar x:Name="StatusBar" Grid.RowSpan="2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="12" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" IsOpen="False" Severity="Informational" Canvas.ZIndex="5" />
 
             <Grid Grid.Row="1">
                 <Grid.RowDefinitions>
@@ -77,8 +68,8 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Menu bar -->
-                <Grid Grid.Row="0" Margin="8,8,8,0">
+                <!-- Menu bar row acts as title bar drag region -->
+                <Grid x:Name="AppTitleBar" Grid.Row="0" Margin="8,8,8,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
                         <ColumnDefinition Width="Auto"/>
@@ -137,6 +128,9 @@
                                 <ToggleMenuFlyoutItem x:Name="Scale200Menu" Text="200%" Click="ScaleMenu_Click" />
                             </MenuFlyoutSubItem>
                         </controls:MenuBarItem>
+                        <controls:MenuBarItem Title="Help">
+                            <MenuFlyoutItem Text="About..." Click="BtnAbout_Click" />
+                        </controls:MenuBarItem>
                     </controls:MenuBar>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -180,23 +174,8 @@
                         <TextBlock x:Name="PolicyCount" VerticalAlignment="Center"/>
                         <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Visibility="Collapsed" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
                         <Grid x:Name="SearchBoxHost" Width="360" Margin="16,0,0,0">
-                            <AutoSuggestBox x:Name="SearchBox"
-                                            Padding="0,0,28,0"
-                                            PlaceholderText="Search policies"
-                                            Loaded="SearchBox_Loaded"
-                                            TextChanged="SearchBox_TextChanged"
-                                            QuerySubmitted="SearchBox_QuerySubmitted"
-                                            SuggestionChosen="SearchBox_SuggestionChosen" />
-                            <!-- Lightweight hitbox to avoid button hover/press visuals -->
-                            <Grid x:Name="SearchClearBtn"
-                                  Width="24" Height="24"
-                                  HorizontalAlignment="Right"
-                                  VerticalAlignment="Center"
-                                  Margin="0,-2,6,0"
-                                  Background="Transparent"
-                                  Visibility="Collapsed"
-                                  ToolTipService.ToolTip="Clear search"
-                                  Tapped="SearchClearBtn_Tapped">
+                            <AutoSuggestBox x:Name="SearchBox" Padding="0,0,28,0" PlaceholderText="Search policies" Loaded="SearchBox_Loaded" TextChanged="SearchBox_TextChanged" QuerySubmitted="SearchBox_QuerySubmitted" SuggestionChosen="SearchBox_SuggestionChosen" />
+                            <Grid x:Name="SearchClearBtn" Width="24" Height="24" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,-2,6,0" Background="Transparent" Visibility="Collapsed" ToolTipService.ToolTip="Clear search" Tapped="SearchClearBtn_Tapped">
                                 <FontIcon Glyph="&#xE10A;" FontSize="10" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                             </Grid>
                         </Grid>

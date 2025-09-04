@@ -31,6 +31,8 @@ using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx; // RegistryViewFormatter
 using System.Collections.Specialized;
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
 
 namespace PolicyPlus.WinUI3
 {
@@ -147,15 +149,50 @@ namespace PolicyPlus.WinUI3
 
         public MainWindow()
         {
-            // Suppress Search option change events during InitializeComponent to avoid overwriting saved settings
             _suppressSearchOptionEvents = true;
             this.InitializeComponent();
             HookPendingQueue();
-
+            TryInitCustomTitleBar();
             RootGrid.Loaded += (s, e) =>
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
+                try { (RootGrid?.FindName("TitleBarVersion") as TextBlock)!.Text = BuildInfo.Version; } catch { }
             };
+        }
+
+        private void TryInitCustomTitleBar()
+        {
+            try
+            {
+                var appWindow = this.AppWindow;
+                if (appWindow is not null)
+                {
+                    appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+                    var transparent = global::Windows.UI.Color.FromArgb(0, 0, 0, 0);
+                    appWindow.TitleBar.ButtonBackgroundColor = transparent;
+                    appWindow.TitleBar.ButtonInactiveBackgroundColor = transparent;
+                    UpdateTitleBarMargin(appWindow);
+                }
+                if (Content is FrameworkElement fe)
+                {
+                    fe.Loaded += (_, __) => this.SetTitleBar(fe.FindName("AppTitleBar") as UIElement);
+                }
+            }
+            catch { }
+        }
+
+        private void UpdateTitleBarMargin(AppWindow appWindow)
+        {
+            try
+            {
+                if (RootGrid?.FindName("AppTitleBar") is FrameworkElement bar)
+                {
+                    var left = appWindow.TitleBar.LeftInset;
+                    var right = appWindow.TitleBar.RightInset;
+                    bar.Margin = new Thickness(left + 8, bar.Margin.Top, right + 8, bar.Margin.Bottom);
+                }
+            }
+            catch { }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -1414,5 +1451,16 @@ namespace PolicyPlus.WinUI3
         // Proxy methods call into real implementations (defined in Filtering.cs)
         partial void Filtering_RunAsyncFilterAndBindProxy();
         partial void Filtering_RunImmediateFilterAndBindProxy();
+
+        private async void BtnAbout_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new Dialogs.AboutDialog();
+                if (Content is FrameworkElement root) dlg.XamlRoot = root.XamlRoot;
+                await dlg.ShowAsync();
+            }
+            catch { }
+        }
     }
 }
