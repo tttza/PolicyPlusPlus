@@ -140,6 +140,7 @@
                     </controls:MenuBar>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <TextBlock x:Name="VersionText" Margin="0,0,12,0" Opacity="0.7" />
                         <TextBlock x:Name="LoaderInfo" VerticalAlignment="Center"/>
                         <TextBlock x:Name="UnsavedIndicator" Text="• Unsaved changes" Foreground="OrangeRed" Visibility="Collapsed" VerticalAlignment="Center"/>
                     </StackPanel>

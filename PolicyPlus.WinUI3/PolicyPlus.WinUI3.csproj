@@ -111,4 +111,26 @@
     </ItemGroup>
     <RemoveDir Directories="@(RemovingFolders)" />
   </Target>
+
+  <!-- Generate git version text file and copy to output as gitversion.txt -->
+  <Target Name="GenerateGitVersion" BeforeTargets="BeforeBuild">
+    <PropertyGroup>
+      <_GitVersionFile>$(IntermediateOutputPath)gitversion.txt</_GitVersionFile>
+    </PropertyGroup>
+    <Exec Command="git describe --tags --always --dirty > &quot;$(_GitVersionFile)&quot;" IgnoreExitCode="true" />
+    <ReadLinesFromFile File="$(_GitVersionFile)">
+      <Output TaskParameter="Lines" PropertyName="GitVersionRaw" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <GitVersion Condition="'$(GitVersionRaw)'==''">dev</GitVersion>
+      <GitVersion Condition="'$(GitVersionRaw)'!=''">$(GitVersionRaw)</GitVersion>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(IntermediateOutputPath)gitversion.runtime.txt" Overwrite="true" Lines="$(GitVersion)" />
+    <ItemGroup>
+      <None Include="$(IntermediateOutputPath)gitversion.runtime.txt">
+        <Link>gitversion.txt</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+  </Target>
 </Project>

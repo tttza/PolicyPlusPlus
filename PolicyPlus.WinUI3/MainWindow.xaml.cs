@@ -160,6 +160,7 @@ namespace PolicyPlus.WinUI3
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            try { (RootGrid?.FindName("VersionText") as TextBlock)!.Text = BuildInfo.Version; } catch { }
             try
             {
                 var s = SettingsService.Instance.LoadSettings();

@@ -22,6 +22,31 @@ using Microsoft.UI.Windowing;
 
 namespace PolicyPlus.WinUI3
 {
+    internal static partial class BuildInfo
+    {
+        private static string? _cached;
+        public static string Version
+        {
+            get
+            {
+                if (_cached != null) return _cached;
+                try
+                {
+                    string baseDir = AppContext.BaseDirectory;
+                    string path = System.IO.Path.Combine(baseDir, "gitversion.txt");
+                    if (File.Exists(path))
+                    {
+                        var txt = File.ReadAllText(path).Trim();
+                        if (!string.IsNullOrEmpty(txt)) { _cached = txt; return _cached; }
+                    }
+                }
+                catch { }
+                _cached = "dev";
+                return _cached;
+            }
+        }
+        public static string CreditsHeader => $"PolicyPlusMod {Version}";
+    }
     public partial class App : Application
     {
         public static Window? Window { get; private set; }
@@ -89,6 +114,7 @@ namespace PolicyPlus.WinUI3
             catch { }
 
             Window = new MainWindow();
+            try { Window.Title = $"PolicyPlus - {BuildInfo.Version}"; } catch { }
             ApplyThemeTo(Window);
 
             TryApplyIconTo(Window);
