@@ -305,8 +305,8 @@ namespace PolicyPlus.WinUI3
             var rows = new List<object>();
             try
             {
-                // Insert subcategories of the selected category (navigation aid) when no active search query
-                if (_selectedCategory != null && string.IsNullOrWhiteSpace(SearchBox?.Text))
+                // Insert subcategories of the selected category (navigation aid) when no active search query and not in Configured Only mode
+                if (_selectedCategory != null && string.IsNullOrWhiteSpace(SearchBox?.Text) && !_configuredOnly)
                 {
                     foreach (var child in _selectedCategory.Children.OrderBy(c => c.DisplayName))
                     {
