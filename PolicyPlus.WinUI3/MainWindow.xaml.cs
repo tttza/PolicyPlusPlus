@@ -743,17 +743,34 @@ namespace PolicyPlus.WinUI3
 
             if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
-                _navTyping = true;
                 var q = (SearchBox.Text ?? string.Empty).Trim();
+                if (string.IsNullOrEmpty(q))
+                {
+                    // User cleared input: cancel any pending search tasks and immediately show baseline
+                    try { _navTyping = false; } catch { }
+                    try { _searchDebounceCts?.Cancel(); } catch { }
+                    try { _typingRebindCts?.Cancel(); } catch { }
+                    try { RunImmediateFilterAndBind(); } catch { }
+                    try { ShowBaselineSuggestions(); } catch { }
+                    UpdateNavButtons();
+                    return;
+                }
+                _navTyping = true;
                 RunAsyncSearchAndBind(q);
             }
         }
 
-        private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
-        { _navTyping = false; var q = args.QueryText ?? string.Empty; RunAsyncSearchAndBind(q); UpdateNavButtons(); }
-
-        private void SearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
-        { _navTyping = false; var chosen = args.SelectedItem?.ToString() ?? string.Empty; RunAsyncSearchAndBind(chosen); UpdateNavButtons(); }
+        private void ShowBaselineSuggestions()
+        {
+            try
+            {
+                if (SearchBox == null) return;
+                var allowed = new HashSet<string>(_allPolicies.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase);
+                var list = BuildSuggestions(string.Empty, allowed);
+                SearchBox.ItemsSource = list;
+            }
+            catch { }
+        }
 
         private void AppliesToSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -1321,5 +1338,65 @@ namespace PolicyPlus.WinUI3
             }
             finally { _suppressSearchOptionEvents = false; }
         }
+
+        private void RebindConsideringAsync(string q)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(q))
+                {
+                    RunAsyncFilterAndBind();
+                }
+                else
+                {
+                    RunAsyncSearchAndBind(q);
+                }
+            }
+            catch { }
+        }
+
+        private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            try
+            {
+                _navTyping = false;
+                var q = args?.QueryText ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(q))
+                {
+                    RunImmediateFilterAndBind();
+                    ShowBaselineSuggestions();
+                }
+                else
+                {
+                    RunAsyncSearchAndBind(q.Trim());
+                }
+                UpdateNavButtons();
+            }
+            catch { }
+        }
+
+        private void SearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+            try
+            {
+                _navTyping = false;
+                var chosen = args?.SelectedItem?.ToString() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(chosen))
+                {
+                    RunImmediateFilterAndBind();
+                    ShowBaselineSuggestions();
+                }
+                else
+                {
+                    RunAsyncSearchAndBind(chosen.Trim());
+                }
+                UpdateNavButtons();
+            }
+            catch { }
+        }
+
+        // Proxy methods call into real implementations (defined in Filtering.cs)
+        partial void Filtering_RunAsyncFilterAndBindProxy();
+        partial void Filtering_RunImmediateFilterAndBindProxy();
     }
 }

@@ -12,12 +12,16 @@ using PolicyPlus.WinUI3.Dialogs; // FindByRegistryWinUI
 using PolicyPlus.Core.Utilities;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core; // SearchText
+using System.Threading;
 
 namespace PolicyPlus.WinUI3
 {
     public sealed partial class MainWindow
     {
-        // N-gram indexes for fast substring candidate filtering
+        private const int LargeResultThreshold = 200;
+        private const int SearchInitialDelayMs = 120;
+        private const int PartialExpandDelayMs = 260;
+
         private readonly NGramTextIndex _descIndex = new(2);
         private readonly NGramTextIndex _nameIndex = new(2);
         private readonly NGramTextIndex _enIndex = new(2);
@@ -27,27 +31,22 @@ namespace PolicyPlus.WinUI3
         private bool _enIndexBuilt;
         private bool _idIndexBuilt;
 
+        private int _searchGeneration; // generation counter to avoid stale updates
+        private System.Threading.CancellationTokenSource? _typingRebindCts = null; // explicit init suppress warning
+
         private void EnsureDescIndex()
         {
             if (_descIndexBuilt) return;
-
-            // Try load from cache with fingerprint
             try
             {
                 if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
                 {
                     var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
                     if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _descIndex.N, "desc", out var snap) && snap != null)
-                    {
-                        _descIndex.LoadSnapshot(snap);
-                        _descIndexBuilt = true;
-                        return;
-                    }
+                    { _descIndex.LoadSnapshot(snap); _descIndexBuilt = true; return; }
                 }
             }
             catch { }
-
-            // Build and save
             try
             {
                 var items = _allPolicies.Select(p => (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayExplanation)));
@@ -55,10 +54,7 @@ namespace PolicyPlus.WinUI3
                 try
                 {
                     if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
-                    {
-                        var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
-                        CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "desc", _descIndex.GetSnapshot());
-                    }
+                    { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "desc", _descIndex.GetSnapshot()); }
                 }
                 catch { }
                 _descIndexBuilt = true;
@@ -68,20 +64,12 @@ namespace PolicyPlus.WinUI3
 
         private void EnsureNameIdEnIndexes()
         {
-            // Name
             if (!_nameIndexBuilt)
             {
                 try
                 {
                     if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
-                    {
-                        var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
-                        if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _nameIndex.N, "name", out var snap) && snap != null)
-                        {
-                            _nameIndex.LoadSnapshot(snap);
-                            _nameIndexBuilt = true;
-                        }
-                    }
+                    { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _nameIndex.N, "name", out var snap) && snap != null) { _nameIndex.LoadSnapshot(snap); _nameIndexBuilt = true; } }
                 }
                 catch { }
                 if (!_nameIndexBuilt)
@@ -91,30 +79,18 @@ namespace PolicyPlus.WinUI3
                         var items = _allPolicies.Select(p => (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayName)));
                         _nameIndex.Build(items);
                         if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
-                        {
-                            var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
-                            CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "name", _nameIndex.GetSnapshot());
-                        }
+                        { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "name", _nameIndex.GetSnapshot()); }
                         _nameIndexBuilt = true;
                     }
                     catch { }
                 }
             }
-
-            // English name
             if (!_enIndexBuilt)
             {
                 try
                 {
                     if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
-                    {
-                        var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
-                        if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _enIndex.N, "en", out var snap) && snap != null)
-                        {
-                            _enIndex.LoadSnapshot(snap);
-                            _enIndexBuilt = true;
-                        }
-                    }
+                    { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _enIndex.N, "en", out var snap) && snap != null) { _enIndex.LoadSnapshot(snap); _enIndexBuilt = true; } }
                 }
                 catch { }
                 if (!_enIndexBuilt)
@@ -124,30 +100,18 @@ namespace PolicyPlus.WinUI3
                         var items = _allPolicies.Select(p => (id: p.UniqueID, normalizedText: SearchText.Normalize(EnglishTextService.GetEnglishPolicyName(p))));
                         _enIndex.Build(items);
                         if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
-                        {
-                            var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
-                            CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "en", _enIndex.GetSnapshot());
-                        }
+                        { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "en", _enIndex.GetSnapshot()); }
                         _enIndexBuilt = true;
                     }
                     catch { }
                 }
             }
-
-            // ID
             if (!_idIndexBuilt)
             {
                 try
                 {
                     if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
-                    {
-                        var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
-                        if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _idIndex.N, "id", out var snap) && snap != null)
-                        {
-                            _idIndex.LoadSnapshot(snap);
-                            _idIndexBuilt = true;
-                        }
-                    }
+                    { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _idIndex.N, "id", out var snap) && snap != null) { _idIndex.LoadSnapshot(snap); _idIndexBuilt = true; } }
                 }
                 catch { }
                 if (!_idIndexBuilt)
@@ -157,10 +121,7 @@ namespace PolicyPlus.WinUI3
                         var items = _allPolicies.Select(p => (id: p.UniqueID, normalizedText: SearchText.Normalize(p.UniqueID)));
                         _idIndex.Build(items);
                         if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
-                        {
-                            var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
-                            CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "id", _idIndex.GetSnapshot());
-                        }
+                        { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "id", _idIndex.GetSnapshot()); }
                         _idIndexBuilt = true;
                     }
                     catch { }
@@ -170,132 +131,33 @@ namespace PolicyPlus.WinUI3
 
         private HashSet<string>? GetTextCandidates(string qLower)
         {
-            // Union of name/en/id candidates depending on toggles
             HashSet<string>? union = null;
             try
             {
-                if (_searchInName || _searchInId)
-                {
-                    EnsureNameIdEnIndexes();
-                }
-
+                if (_searchInName || _searchInId) EnsureNameIdEnIndexes();
                 if (_searchInName)
                 {
                     var nameSet = _nameIndex.TryQuery(qLower);
-                    if (nameSet != null)
-                    {
-                        union ??= new HashSet<string>(nameSet, StringComparer.OrdinalIgnoreCase);
-                        if (!object.ReferenceEquals(union, nameSet)) union.UnionWith(nameSet);
-                    }
+                    if (nameSet != null) { union ??= new HashSet<string>(nameSet, StringComparer.OrdinalIgnoreCase); if (!ReferenceEquals(union, nameSet)) union.UnionWith(nameSet); }
                     var enSet = _enIndex.TryQuery(qLower);
-                    if (enSet != null)
-                    {
-                        union ??= new HashSet<string>(enSet, StringComparer.OrdinalIgnoreCase);
-                        if (!object.ReferenceEquals(union, enSet)) union.UnionWith(enSet);
-                    }
+                    if (enSet != null) { union ??= new HashSet<string>(enSet, StringComparer.OrdinalIgnoreCase); if (!ReferenceEquals(union, enSet)) union.UnionWith(enSet); }
                 }
                 if (_searchInId)
                 {
                     var idSet = _idIndex.TryQuery(qLower);
-                    if (idSet != null)
-                    {
-                        union ??= new HashSet<string>(idSet, StringComparer.OrdinalIgnoreCase);
-                        if (!object.ReferenceEquals(union, idSet)) union.UnionWith(idSet);
-                    }
+                    if (idSet != null) { union ??= new HashSet<string>(idSet, StringComparer.OrdinalIgnoreCase); if (!ReferenceEquals(union, idSet)) union.UnionWith(idSet); }
                 }
             }
             catch { }
-            return union; // may be null -> no hint
+            return union;
         }
 
-        private IEnumerable<PolicyPlusPolicy> BaseSequenceForFilters(bool includeSubcategories)
-        {
-            IEnumerable<PolicyPlusPolicy> seq = _allPolicies;
-            if (_appliesFilter == AdmxPolicySection.Machine)
-                seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both);
-            else if (_appliesFilter == AdmxPolicySection.User)
-                seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both);
+        private IEnumerable<PolicyPlusPolicy> BaseSequenceForFilters(bool includeSubcategories) => BaseSequenceForFilters(new FilterSnapshot(_appliesFilter, _selectedCategory, includeSubcategories, _configuredOnly, _compSource, _userSource));
 
-            if (_selectedCategory is not null)
-            {
-                if (includeSubcategories)
-                {
-                    var allowed = new HashSet<string>();
-                    CollectPoliciesRecursive(_selectedCategory, allowed);
-                    seq = seq.Where(p => allowed.Contains(p.UniqueID));
-                }
-                else
-                {
-                    var direct = new HashSet<string>(_selectedCategory.Policies.Select(p => p.UniqueID));
-                    seq = seq.Where(p => direct.Contains(p.UniqueID));
-                }
-            }
-
-            if (_configuredOnly)
-            {
-                EnsureLocalSources();
-                var pending = PendingChangesService.Instance.Pending?.ToList() ?? new List<PendingChange>();
-                if (_compSource != null || _userSource != null || pending.Count > 0)
-                {
-                    seq = seq.Where(p =>
-                    {
-                        bool configured = false;
-                        try
-                        {
-                            bool effUser = false, effComp = false;
-
-                            if (p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both)
-                            {
-                                var pendUser = pending.FirstOrDefault(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
-                                                                         && string.Equals(pc.Scope, "User", StringComparison.OrdinalIgnoreCase));
-                                if (pendUser != null)
-                                {
-                                    effUser = (pendUser.DesiredState == PolicyState.Enabled || pendUser.DesiredState == PolicyState.Disabled);
-                                }
-                                else if (_userSource != null)
-                                {
-                                    var st = PolicyProcessing.GetPolicyState(_userSource, p);
-                                    effUser = (st == PolicyState.Enabled || st == PolicyState.Disabled);
-                                }
-                            }
-
-                            if (p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both)
-                            {
-                                var pendComp = pending.FirstOrDefault(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
-                                                                         && string.Equals(pc.Scope, "Computer", StringComparison.OrdinalIgnoreCase));
-                                if (pendComp != null)
-                                {
-                                    effComp = (pendComp.DesiredState == PolicyState.Enabled || pendComp.DesiredState == PolicyState.Disabled);
-                                }
-                                else if (_compSource != null)
-                                {
-                                    var st = PolicyProcessing.GetPolicyState(_compSource, p);
-                                    effComp = (st == PolicyState.Enabled || st == PolicyState.Disabled);
-                                }
-                            }
-
-                            configured = effUser || effComp;
-                        }
-                        catch { }
-                        return configured;
-                    });
-                }
-            }
-            return seq;
-        }
-
-        // Snapshot for background search computation to avoid touching UI-bound state
         private readonly struct FilterSnapshot
         {
             public FilterSnapshot(AdmxPolicySection applies, PolicyPlusCategory? category, bool includeSubcats, bool configuredOnly, IPolicySource? comp, IPolicySource? user)
-            {
-                Applies = applies;
-                Category = category;
-                IncludeSubcategories = includeSubcats;
-                ConfiguredOnly = configuredOnly;
-                CompSource = comp;
-                UserSource = user;
-            }
+            { Applies = applies; Category = category; IncludeSubcategories = includeSubcats; ConfiguredOnly = configuredOnly; CompSource = comp; UserSource = user; }
             public AdmxPolicySection Applies { get; }
             public PolicyPlusCategory? Category { get; }
             public bool IncludeSubcategories { get; }
@@ -307,26 +169,13 @@ namespace PolicyPlus.WinUI3
         private IEnumerable<PolicyPlusPolicy> BaseSequenceForFilters(FilterSnapshot snap)
         {
             IEnumerable<PolicyPlusPolicy> seq = _allPolicies;
-            if (snap.Applies == AdmxPolicySection.Machine)
-                seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both);
-            else if (snap.Applies == AdmxPolicySection.User)
-                seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both);
-
+            if (snap.Applies == AdmxPolicySection.Machine) seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both);
+            else if (snap.Applies == AdmxPolicySection.User) seq = seq.Where(p => p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both);
             if (snap.Category is not null)
             {
-                if (snap.IncludeSubcategories)
-                {
-                    var allowed = new HashSet<string>();
-                    CollectPoliciesRecursive(snap.Category, allowed);
-                    seq = seq.Where(p => allowed.Contains(p.UniqueID));
-                }
-                else
-                {
-                    var direct = new HashSet<string>(snap.Category.Policies.Select(p => p.UniqueID));
-                    seq = seq.Where(p => direct.Contains(p.UniqueID));
-                }
+                if (snap.IncludeSubcategories) { var allowed = new HashSet<string>(); CollectPoliciesRecursive(snap.Category, allowed); seq = seq.Where(p => allowed.Contains(p.UniqueID)); }
+                else { var direct = new HashSet<string>(snap.Category.Policies.Select(p => p.UniqueID)); seq = seq.Where(p => direct.Contains(p.UniqueID)); }
             }
-
             if (snap.ConfiguredOnly)
             {
                 var pending = PendingChangesService.Instance.Pending?.ToList() ?? new List<PendingChange>();
@@ -335,320 +184,145 @@ namespace PolicyPlus.WinUI3
                     var compLocal = snap.CompSource; var userLocal = snap.UserSource;
                     seq = seq.Where(p =>
                     {
-                        bool configured = false;
                         try
                         {
                             bool effUser = false, effComp = false;
-
                             if (p.RawPolicy.Section == AdmxPolicySection.User || p.RawPolicy.Section == AdmxPolicySection.Both)
                             {
-                                var pendUser = pending.FirstOrDefault(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
-                                                                         && string.Equals(pc.Scope, "User", StringComparison.OrdinalIgnoreCase));
-                                if (pendUser != null)
-                                {
-                                    effUser = (pendUser.DesiredState == PolicyState.Enabled || pendUser.DesiredState == PolicyState.Disabled);
-                                }
-                                else if (userLocal != null)
-                                {
-                                    var st = PolicyProcessing.GetPolicyState(userLocal, p);
-                                    effUser = (st == PolicyState.Enabled || st == PolicyState.Disabled);
-                                }
+                                var pu = pending.FirstOrDefault(pc => pc.PolicyId == p.UniqueID && pc.Scope.Equals("User", StringComparison.OrdinalIgnoreCase));
+                                effUser = pu != null ? (pu.DesiredState == PolicyState.Enabled || pu.DesiredState == PolicyState.Disabled) : (userLocal != null && (PolicyProcessing.GetPolicyState(userLocal, p) is PolicyState.Enabled or PolicyState.Disabled));
                             }
-
                             if (p.RawPolicy.Section == AdmxPolicySection.Machine || p.RawPolicy.Section == AdmxPolicySection.Both)
                             {
-                                var pendComp = pending.FirstOrDefault(pc => string.Equals(pc.PolicyId, p.UniqueID, StringComparison.OrdinalIgnoreCase)
-                                                                         && string.Equals(pc.Scope, "Computer", StringComparison.OrdinalIgnoreCase));
-                                if (pendComp != null)
-                                {
-                                    effComp = (pendComp.DesiredState == PolicyState.Enabled || pendComp.DesiredState == PolicyState.Disabled);
-                                }
-                                else if (compLocal != null)
-                                {
-                                    var st = PolicyProcessing.GetPolicyState(compLocal, p);
-                                    effComp = (st == PolicyState.Enabled || st == PolicyState.Disabled);
-                                }
+                                var pc = pending.FirstOrDefault(pc2 => pc2.PolicyId == p.UniqueID && pc2.Scope.Equals("Computer", StringComparison.OrdinalIgnoreCase));
+                                effComp = pc != null ? (pc.DesiredState == PolicyState.Enabled || pc.DesiredState == PolicyState.Disabled) : (compLocal != null && (PolicyProcessing.GetPolicyState(compLocal, p) is PolicyState.Enabled or PolicyState.Disabled));
                             }
-
-                            configured = effUser || effComp;
+                            return effUser || effComp;
                         }
-                        catch { }
-                        return configured;
+                        catch { return false; }
                     });
                 }
             }
             return seq;
         }
 
+        private List<PolicyPlusPolicy> MatchPolicies(string query, IEnumerable<PolicyPlusPolicy> baseSeq, out HashSet<string> allowedSet)
+        {
+            var qLower = SearchText.Normalize(query);
+            allowedSet = new HashSet<string>(baseSeq.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase);
+            var matched = new List<PolicyPlusPolicy>();
+            HashSet<string>? baseCandidates = GetTextCandidates(qLower);
+            HashSet<string>? descCandidates = null;
+            if (_searchInDescription) { EnsureDescIndex(); descCandidates = _descIndex.TryQuery(qLower); }
+            HashSet<string> scanSet = allowedSet;
+            if (baseCandidates != null && baseCandidates.Count > 0)
+            {
+                scanSet = new HashSet<string>(allowedSet, StringComparer.OrdinalIgnoreCase);
+                scanSet.IntersectWith(baseCandidates);
+                if (descCandidates != null && descCandidates.Count > 0)
+                { var tmp = new HashSet<string>(scanSet, StringComparer.OrdinalIgnoreCase); tmp.UnionWith(descCandidates); tmp.IntersectWith(allowedSet); scanSet = tmp; }
+            }
+            else if (descCandidates != null && descCandidates.Count > 0)
+            { scanSet = new HashSet<string>(allowedSet, StringComparer.OrdinalIgnoreCase); scanSet.IntersectWith(descCandidates); }
+            bool smallSubset = scanSet.Count > 0 && scanSet.Count < (_allPolicies.Count / 2);
+            if (smallSubset)
+            {
+                foreach (var id in scanSet)
+                    if (_searchIndexById.TryGetValue(id, out var e) && PolicyMatchesQuery(e, query, qLower, descCandidates)) matched.Add(e.Policy);
+            }
+            else
+            {
+                foreach (var e in _searchIndex)
+                    if (scanSet.Contains(e.Policy.UniqueID) && PolicyMatchesQuery(e, query, qLower, descCandidates)) matched.Add(e.Policy);
+            }
+            return matched;
+        }
+
         private void ApplyFiltersAndBind(string query = "", PolicyPlusCategory? category = null)
         {
             if (PolicyList == null || PolicyCount == null) return;
             if (category != null) _selectedCategory = category;
-
             PreserveScrollPosition();
             UpdateSearchPlaceholder();
-
-            bool searching = !string.IsNullOrWhiteSpace(query);
-            // Always use flat view (no name grouping)
-            bool flat = true;
             IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(includeSubcategories: true);
-            if (searching)
-            {
-                var qLower = SearchText.Normalize(query);
-                var allowed = new HashSet<string>(seq.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase);
-                var matched = new List<PolicyPlusPolicy>();
-
-                // Pre-candidates from indexes (name/en/id, desc)
-                HashSet<string>? baseCandidates = GetTextCandidates(qLower);
-                HashSet<string>? descCandidates = null;
-                if (_searchInDescription)
-                {
-                    EnsureDescIndex();
-                    descCandidates = _descIndex.TryQuery(qLower);
-                }
-
-                HashSet<string> scanSet = allowed;
-                if (baseCandidates != null && baseCandidates.Count > 0)
-                {
-                    scanSet = new HashSet<string>(allowed, StringComparer.OrdinalIgnoreCase);
-                    scanSet.IntersectWith(baseCandidates);
-                    if (descCandidates != null && descCandidates.Count > 0)
-                    {
-                        // Also include description candidates because user may search only desc
-                        var tmp = new HashSet<string>(scanSet, StringComparer.OrdinalIgnoreCase);
-                        tmp.UnionWith(descCandidates);
-                        tmp.IntersectWith(allowed);
-                        scanSet = tmp;
-                    }
-                }
-                else if (descCandidates != null && descCandidates.Count > 0)
-                {
-                    scanSet = new HashSet<string>(allowed, StringComparer.OrdinalIgnoreCase);
-                    scanSet.IntersectWith(descCandidates);
-                }
-
-                bool smallSubset = scanSet.Count > 0 && scanSet.Count < (_allPolicies.Count / 2);
-
-                if (smallSubset)
-                {
-                    foreach (var id in scanSet)
-                    {
-                        if (!_searchIndexById.TryGetValue(id, out var e)) continue;
-                        if (PolicyMatchesQuery(e, query, qLower, descCandidates))
-                            matched.Add(e.Policy);
-                    }
-                }
-                else
-                {
-                    foreach (var e in _searchIndex)
-                    {
-                        if (!scanSet.Contains(e.Policy.UniqueID)) continue;
-                        if (PolicyMatchesQuery(e, query, qLower, descCandidates))
-                            matched.Add(e.Policy);
-                    }
-                }
-                seq = matched;
-            }
-
-            BindSequenceEnhanced(seq, flat);
+            if (!string.IsNullOrWhiteSpace(query)) { seq = MatchPolicies(query, seq, out _); }
+            BindSequenceEnhanced(seq, flat: true);
             RestorePositionOrSelection();
-            // Ensure a baseline state exists so first change enables Back
-            if (ViewNavigationService.Instance.Current == null)
-            {
-                MaybePushCurrentState();
-            }
+            if (ViewNavigationService.Instance.Current == null) MaybePushCurrentState();
         }
 
         private bool PolicyMatchesQuery((PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower) e, string query, string qLower, HashSet<string>? descCandidates)
         {
-            bool hit = false;
-
-            if (_searchInName && (e.NameLower.Contains(qLower) || (!string.IsNullOrEmpty(e.EnglishLower) && e.EnglishLower.Contains(qLower))))
-                hit = true;
-            if (!hit && _searchInId && e.IdLower.Contains(qLower))
-                hit = true;
-            if (!hit && _searchInDescription)
+            if (_searchInName && (e.NameLower.Contains(qLower) || (!string.IsNullOrEmpty(e.EnglishLower) && e.EnglishLower.Contains(qLower)))) return true;
+            if (_searchInId && e.IdLower.Contains(qLower)) return true;
+            if (_searchInDescription)
             {
                 bool allowDesc = descCandidates == null || descCandidates.Contains(e.Policy.UniqueID);
-                if (allowDesc && e.DescLower.Contains(qLower))
-                    hit = true;
+                if (allowDesc && e.DescLower.Contains(qLower)) return true;
             }
-
-            if (!hit && _searchInComments)
+            if (_searchInComments)
             {
-                var qn = qLower;
-                if (_compComments.TryGetValue(e.Policy.UniqueID, out var c1) && !string.IsNullOrEmpty(c1) && SearchText.Normalize(c1).IndexOf(qn, StringComparison.Ordinal) >= 0)
-                    hit = true;
-                else if (_userComments.TryGetValue(e.Policy.UniqueID, out var c2) && !string.IsNullOrEmpty(c2) && SearchText.Normalize(c2).IndexOf(qn, StringComparison.Ordinal) >= 0)
-                    hit = true;
+                if ((_compComments.TryGetValue(e.Policy.UniqueID, out var c1) && !string.IsNullOrEmpty(c1) && SearchText.Normalize(c1).Contains(qLower)) ||
+                    (_userComments.TryGetValue(e.Policy.UniqueID, out var c2) && !string.IsNullOrEmpty(c2) && SearchText.Normalize(c2).Contains(qLower))) return true;
             }
-
-            if (!hit && (_searchInRegistryKey || _searchInRegistryValue))
+            if (_searchInRegistryKey || _searchInRegistryValue)
             {
-                var qn = qLower;
-                bool keyHit = false, valHit = false;
-                if (_searchInRegistryKey)
-                    keyHit = FindByRegistryWinUI.SearchRegistry(e.Policy, qn, string.Empty, allowSubstring: true);
-                if (!keyHit && _searchInRegistryValue)
-                    valHit = FindByRegistryWinUI.SearchRegistryValueNameOnly(e.Policy, qn, allowSubstring: true);
-                if (keyHit || valHit) hit = true;
+                if (_searchInRegistryKey && FindByRegistryWinUI.SearchRegistry(e.Policy, qLower, string.Empty, allowSubstring: true)) return true;
+                if (_searchInRegistryValue && FindByRegistryWinUI.SearchRegistryValueNameOnly(e.Policy, qLower, allowSubstring: true)) return true;
             }
-
-            return hit;
+            return false;
         }
 
         private void BindSequenceEnhanced(IEnumerable<PolicyPlusPolicy> seq, bool flat)
         {
-            EnsureLocalSources();
-
-            // Apply sorting if any
+            List<PolicyPlusPolicy> ordered;
             Func<PolicyPlusPolicy, object>? primary = null;
-            bool desc = _sortDirection == CommunityToolkit.WinUI.UI.Controls.DataGridSortDirection.Descending;
+            bool descSort = _sortDirection == CommunityToolkit.WinUI.UI.Controls.DataGridSortDirection.Descending;
             if (!string.IsNullOrEmpty(_sortColumn))
             {
-                switch (_sortColumn)
+                primary = _sortColumn switch
                 {
-                    case nameof(PolicyListRow.DisplayName): primary = p => p.DisplayName ?? string.Empty; break;
-                    case nameof(PolicyListRow.ShortId):
-                        primary = p =>
-                        {
-                            var id = p.UniqueID ?? string.Empty;
-                            int idx = id.LastIndexOf(':');
-                            return idx >= 0 && idx + 1 < id.Length ? id[(idx + 1)..] : id;
-                        };
-                        break;
-                    case nameof(PolicyListRow.CategoryName): primary = p => p.Category?.DisplayName ?? string.Empty; break;
-                    case nameof(PolicyListRow.AppliesText): primary = p => p.RawPolicy.Section switch { AdmxPolicySection.Machine => 1, AdmxPolicySection.User => 2, _ => 0 }; break;
-                    case nameof(PolicyListRow.SupportedText): primary = p => p.SupportedOn?.DisplayName ?? string.Empty; break;
-                }
+                    nameof(PolicyListRow.DisplayName) => p => p.DisplayName ?? string.Empty,
+                    nameof(PolicyListRow.ShortId) => p => { var id = p.UniqueID ?? string.Empty; int i = id.LastIndexOf(':'); return i >= 0 && i + 1 < id.Length ? id[(i + 1)..] : id; },
+                    nameof(PolicyListRow.CategoryName) => p => p.Category?.DisplayName ?? string.Empty,
+                    nameof(PolicyListRow.AppliesText) => p => p.RawPolicy.Section switch { AdmxPolicySection.Machine => 1, AdmxPolicySection.User => 2, _ => 0 },
+                    nameof(PolicyListRow.SupportedText) => p => p.SupportedOn?.DisplayName ?? string.Empty,
+                    _ => null
+                };
             }
-
-            List<PolicyPlusPolicy> ordered;
-            if (primary != null)
-            {
-                if (desc)
-                    ordered = seq.OrderByDescending(primary).ThenBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).ThenBy(p => p.UniqueID, StringComparer.InvariantCultureIgnoreCase).ToList();
-                else
-                    ordered = seq.OrderBy(primary).ThenBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).ThenBy(p => p.UniqueID, StringComparer.InvariantCultureIgnoreCase).ToList();
-            }
-            else
-            {
-                ordered = seq.OrderBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
-                                 .ThenBy(p => p.UniqueID, StringComparer.InvariantCultureIgnoreCase)
-                                 .ToList();
-            }
-
-            // Apply cap when no category filter and option enabled
-            if (_selectedCategory == null && _limitUnfilteredTo1000)
-            {
-                if (ordered.Count > 1000)
-                {
-                    ordered = ordered.Take(1000).ToList();
-                }
-            }
+            ordered = primary != null
+                ? (descSort ? seq.OrderByDescending(primary).ThenBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList() : seq.OrderBy(primary).ThenBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList())
+                : seq.OrderBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList();
+            if (_selectedCategory == null && _limitUnfilteredTo1000 && ordered.Count > 1000) ordered = ordered.Take(1000).ToList();
             _visiblePolicies = ordered.ToList();
-
-            // Rebuild id->row map for flat view
+            bool computeStatesNow = !_navTyping || _visiblePolicies.Count <= LargeResultThreshold;
+            if (computeStatesNow) { try { EnsureLocalSources(); } catch { } }
             _rowByPolicyId.Clear();
-
-            if (flat)
-            {
-                var rows = ordered.Select(p => (object)PolicyListRow.FromPolicy(p, _compSource, _userSource)).ToList();
-                // populate map
-                foreach (var obj in rows)
-                {
-                    if (obj is PolicyListRow r && r.Policy != null)
-                    {
-                        _rowByPolicyId[r.Policy.UniqueID] = r;
-                    }
-                }
-
-                PolicyList.ItemsSource = rows;
-
-                PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
-                TryRestoreSelectionAsync(rows);
-                MaybePushCurrentState();
-                return;
-            }
-
-            var grouped = seq.GroupBy(p => p.DisplayName, System.StringComparer.InvariantCultureIgnoreCase);
-            _nameGroups = grouped.ToDictionary(g => g.Key, g => g.ToList(), StringComparer.InvariantCultureIgnoreCase);
-            var representatives = grouped.Select(g => PickRepresentative(g)).OrderBy(p => p.DisplayName).ToList();
-
-            _visiblePolicies = representatives;
-
-            var groupRows = representatives.Select(p =>
-            {
-                _nameGroups.TryGetValue(p.DisplayName, out var groupList);
-                groupList ??= new List<PolicyPlusPolicy> { p };
-                return (object)PolicyListRow.FromGroup(p, groupList, _compSource, _userSource);
-            }).ToList<object>();
-
-            if (_selectedCategory != null && !_configuredOnly)
-            {
-                var items = new List<object>();
-                var children = _selectedCategory.Children
-                    .Where(c => !_hideEmptyCategories || HasAnyVisiblePolicyInCategory(c))
-                    .OrderBy(c => c.DisplayName)
-                    .Select(c => (object)PolicyListRow.FromCategory(c))
-                    .ToList();
-                items.AddRange(children);
-                items.AddRange(groupRows);
-                PolicyList.ItemsSource = items;
-                TryRestoreSelectionAsync(items);
-            }
-            else
-            {
-                PolicyList.ItemsSource = groupRows;
-                TryRestoreSelectionAsync(groupRows);
-            }
-
-            // grouped view not tracked in _rowByPolicyId (partial updates are not supported there)
-
-            // Clarify that counts refer to groups in grouped view
-            PolicyCount.Text = $"{_visiblePolicies.Count} / {_totalGroupCount} groups";
+            var compSrc = computeStatesNow ? _compSource : null; var userSrc = computeStatesNow ? _userSource : null;
+            var rows = ordered.Select(p => (object)PolicyListRow.FromPolicy(p, compSrc, userSrc)).ToList();
+            foreach (var obj in rows) if (obj is PolicyListRow r && r.Policy != null) _rowByPolicyId[r.Policy.UniqueID] = r;
+            PolicyList.ItemsSource = rows;
+            PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
+            TryRestoreSelectionAsync(rows);
             MaybePushCurrentState();
         }
 
         private PolicyPlusPolicy PickRepresentative(IGrouping<string, PolicyPlusPolicy> g)
-        {
-            var list = g.ToList();
-            var both = list.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Both);
-            if (both != null) return both;
-            var comp = list.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Machine);
-            return comp ?? list[0];
-        }
+        { var list = g.ToList(); return list.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Both) ?? list.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Machine) ?? list[0]; }
 
         private void CollectPoliciesRecursive(PolicyPlusCategory cat, HashSet<string> sink)
-        {
-            foreach (var p in cat.Policies) sink.Add(p.UniqueID);
-            foreach (var child in cat.Children) CollectPoliciesRecursive(child, sink);
-        }
+        { foreach (var p in cat.Policies) sink.Add(p.UniqueID); foreach (var child in cat.Children) CollectPoliciesRecursive(child, sink); }
 
         private void PolicyList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            var row = PolicyList?.SelectedItem;
-            var p = (row as PolicyListRow)?.Policy ?? row as PolicyPlusPolicy;
-            SetDetails(p);
-        }
+        { var row = PolicyList?.SelectedItem; var p = (row as PolicyListRow)?.Policy ?? row as PolicyPlusPolicy; SetDetails(p); }
 
         private void SetDetails(PolicyPlusPolicy? p)
         {
             if (DetailTitle == null) return;
             if (p is null)
-            {
-                DetailTitle.Blocks.Clear();
-                DetailId.Blocks.Clear();
-                DetailCategory.Blocks.Clear();
-                DetailApplies.Blocks.Clear();
-                DetailSupported.Blocks.Clear();
-                if (DetailExplain != null) DetailExplain.Blocks.Clear();
-                try { if (DetailPlaceholder != null) DetailPlaceholder.Visibility = Visibility.Visible; } catch { }
-                return;
-            }
+            { DetailTitle.Blocks.Clear(); DetailId.Blocks.Clear(); DetailCategory.Blocks.Clear(); DetailApplies.Blocks.Clear(); DetailSupported.Blocks.Clear(); if (DetailExplain != null) DetailExplain.Blocks.Clear(); try { if (DetailPlaceholder != null) DetailPlaceholder.Visibility = Visibility.Visible; } catch { } return; }
             try { if (DetailPlaceholder != null) DetailPlaceholder.Visibility = Visibility.Collapsed; } catch { }
-            SetPlainText(DetailTitle, p.DisplayName);
-            SetPlainText(DetailId, p.UniqueID);
+            SetPlainText(DetailTitle, p.DisplayName); SetPlainText(DetailId, p.UniqueID);
             SetPlainText(DetailCategory, p.Category is null ? string.Empty : $"Category: {p.Category.DisplayName}");
             var applies = p.RawPolicy.Section switch { AdmxPolicySection.Machine => "Computer", AdmxPolicySection.User => "User", _ => "Both" };
             SetPlainText(DetailApplies, $"Applies to: {applies}");
@@ -657,260 +331,98 @@ namespace PolicyPlus.WinUI3
         }
 
         private static void SetPlainText(RichTextBlock rtb, string text)
-        {
-            rtb.Blocks.Clear();
-            var p = new Paragraph();
-            p.Inlines.Add(new Run { Text = text ?? string.Empty });
-            rtb.Blocks.Add(p);
-        }
+        { rtb.Blocks.Clear(); var p = new Paragraph(); p.Inlines.Add(new Run { Text = text ?? string.Empty }); rtb.Blocks.Add(p); }
 
         private static bool IsInsideDoubleQuotes(string s, int index)
-        {
-            bool inQuote = false;
-            int i = 0;
-            while (i < index)
-            {
-                if (s[i] == '"')
-                {
-                    int bs = 0; int j = i - 1; while (j >= 0 && s[j] == '\\') { bs++; j--; }
-                    if ((bs % 2) == 0) inQuote = !inQuote;
-                }
-                i++;
-            }
-            return inQuote;
-        }
+        { bool inQuote = false; for (int i = 0; i < index; i++) if (s[i] == '"') { int bs = 0; for (int j = i - 1; j >= 0 && s[j] == '\\'; j--) bs++; if ((bs % 2) == 0) inQuote = !inQuote; } return inQuote; }
 
         private void SetExplanationText(string text)
         {
-            if (DetailExplain == null) return;
-            DetailExplain.Blocks.Clear();
-            var para = new Paragraph();
-            if (string.IsNullOrEmpty(text)) { DetailExplain.Blocks.Add(para); return; }
-
-            int lastIndex = 0;
-            foreach (Match m in UrlRegex.Matches(text))
-            {
-                if (IsInsideDoubleQuotes(text, m.Index))
-                    continue;
-
-                if (m.Index > lastIndex)
-                {
-                    var before = text.Substring(lastIndex, m.Index - lastIndex);
-                    para.Inlines.Add(new Run { Text = before });
-                }
-
-                string url = m.Value;
-                var link = new Hyperlink();
-                link.Inlines.Add(new Run { Text = url });
-                link.Click += async (s, e) =>
-                {
-                    if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
-                    {
-                        try { await Launcher.LaunchUriAsync(uri); } catch { }
-                    }
-                };
-                para.Inlines.Add(link);
-                lastIndex = m.Index + m.Length;
-            }
-            if (lastIndex < text.Length)
-            {
-                para.Inlines.Add(new Run { Text = text.Substring(lastIndex) });
-            }
-            DetailExplain.Blocks.Add(para);
+            if (DetailExplain == null) return; DetailExplain.Blocks.Clear(); var para = new Paragraph(); if (string.IsNullOrEmpty(text)) { DetailExplain.Blocks.Add(para); return; }
+            int lastIndex = 0; foreach (Match m in UrlRegex.Matches(text)) { if (IsInsideDoubleQuotes(text, m.Index)) continue; if (m.Index > lastIndex) para.Inlines.Add(new Run { Text = text[lastIndex..m.Index] }); string url = m.Value; var link = new Hyperlink(); link.Inlines.Add(new Run { Text = url }); link.Click += async (s, e) => { if (Uri.TryCreate(url, UriKind.Absolute, out var uri)) { try { await Launcher.LaunchUriAsync(uri); } catch { } } }; para.Inlines.Add(link); lastIndex = m.Index + m.Length; } if (lastIndex < text.Length) para.Inlines.Add(new Run { Text = text[lastIndex..] }); DetailExplain.Blocks.Add(para);
         }
 
         private void RunAsyncSearchAndBind(string q)
         {
-            _searchDebounceCts?.Cancel();
-            _searchDebounceCts = new System.Threading.CancellationTokenSource();
-            var token = _searchDebounceCts.Token;
-
-            // Show spinner right away on UI thread
+            _searchDebounceCts?.Cancel(); _searchDebounceCts = new System.Threading.CancellationTokenSource(); var token = _searchDebounceCts.Token; int gen = Interlocked.Increment(ref _searchGeneration);
             try { if (SearchSpinner != null) { SearchSpinner.Visibility = Visibility.Visible; SearchSpinner.IsActive = true; } } catch { }
-
-            var applies = _appliesFilter;
-            var category = _selectedCategory;
-            var configuredOnly = _configuredOnly;
-            if (configuredOnly)
-            {
-                try { EnsureLocalSources(); } catch { }
-            }
-            var comp = _compSource;
-            var user = _userSource;
-
+            var applies = _appliesFilter; var category = _selectedCategory; var configuredOnly = _configuredOnly; if (configuredOnly) { try { EnsureLocalSources(); } catch { } }
+            var comp = _compSource; var user = _userSource;
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
-                try { await System.Threading.Tasks.Task.Delay(120, token); } catch { return; }
+                try { await System.Threading.Tasks.Task.Delay(SearchInitialDelayMs, token); } catch { return; }
                 if (token.IsCancellationRequested) { FinishSpinner(); return; }
-
-                var snap = new FilterSnapshot(applies, category, includeSubcats: true, configuredOnly: configuredOnly, comp: comp, user: user);
-
-                List<string> allowedIds;
-                List<PolicyPlusPolicy> matches;
-                List<string> suggestions;
+                var snap = new FilterSnapshot(applies, category, true, configuredOnly, comp, user);
+                List<PolicyPlusPolicy> matches; List<string> suggestions;
                 try
                 {
                     var baseSeq = BaseSequenceForFilters(snap);
-                    allowedIds = baseSeq.Select(p => p.UniqueID).ToList();
-
-                    var allowedSet = new HashSet<string>(allowedIds, StringComparer.OrdinalIgnoreCase);
+                    matches = MatchPolicies(q, baseSeq, out var allowedSet);
                     suggestions = BuildSuggestions(q, allowedSet);
-
-                    var qLower = SearchText.Normalize(q);
-                    var matched = new List<PolicyPlusPolicy>();
-
-                    // Pre-candidates from indexes (name/en/id, desc)
-                    HashSet<string>? baseCandidates = GetTextCandidates(qLower);
-                    HashSet<string>? descCandidates = null;
-                    if (_searchInDescription)
-                    {
-                        EnsureDescIndex();
-                        descCandidates = _descIndex.TryQuery(qLower);
-                    }
-
-                    HashSet<string> scanSet = allowedSet;
-                    if (baseCandidates != null && baseCandidates.Count > 0)
-                    {
-                        scanSet = new HashSet<string>(allowedSet, StringComparer.OrdinalIgnoreCase);
-                        scanSet.IntersectWith(baseCandidates);
-                        if (descCandidates != null && descCandidates.Count > 0)
-                        {
-                            var tmp = new HashSet<string>(scanSet, StringComparer.OrdinalIgnoreCase);
-                            tmp.UnionWith(descCandidates);
-                            tmp.IntersectWith(allowedSet);
-                            scanSet = tmp;
-                        }
-                    }
-                    else if (descCandidates != null && descCandidates.Count > 0)
-                    {
-                        scanSet = new HashSet<string>(allowedSet, StringComparer.OrdinalIgnoreCase);
-                        scanSet.IntersectWith(descCandidates);
-                    }
-
-                    bool smallSubset = scanSet.Count > 0 && scanSet.Count < (_allPolicies.Count / 2);
-
-                    if (smallSubset)
-                    {
-                        foreach (var id in scanSet)
-                        {
-                            if (!_searchIndexById.TryGetValue(id, out var e2)) continue;
-                            if (PolicyMatchesQuery(e2, q, qLower, descCandidates)) matched.Add(e2.Policy);
-                        }
-                    }
-                    else
-                    {
-                        foreach (var e2 in _searchIndex)
-                        {
-                            if (!scanSet.Contains(e2.Policy.UniqueID)) continue;
-                            if (PolicyMatchesQuery(e2, q, qLower, descCandidates)) matched.Add(e2.Policy);
-                        }
-                    }
-                    matches = matched;
                 }
-                catch
-                {
-                    suggestions = new List<string>();
-                    matches = new List<PolicyPlusPolicy>();
-                }
-
+                catch { suggestions = new List<string>(); matches = new List<PolicyPlusPolicy>(); }
                 if (token.IsCancellationRequested) { FinishSpinner(); return; }
                 DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (token.IsCancellationRequested) { FinishSpinner(); return; }
+                    if (token.IsCancellationRequested || gen != _searchGeneration) { FinishSpinner(); return; }
                     try
                     {
-                        SearchBox.ItemsSource = suggestions;
-                        bool flat = true; // always flat
-                        BindSequenceEnhanced(matches, flat);
-                        UpdateNavButtons();
+                        SearchBox.ItemsSource = suggestions; bool flat = true;
+                        if (_navTyping && matches.Count > LargeResultThreshold)
+                        {
+                            var partial = matches.Take(LargeResultThreshold).ToList();
+                            BindSequenceEnhanced(partial, flat); UpdateNavButtons();
+                            ScheduleFullResultBind(gen, q, matches, flat);
+                        }
+                        else { BindSequenceEnhanced(matches, flat); UpdateNavButtons(); }
                     }
-                    finally
-                    {
-                        FinishSpinner();
-                    }
+                    finally { FinishSpinner(); }
                 });
             });
-
-            void FinishSpinner()
-            {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    try { if (SearchSpinner != null) { SearchSpinner.IsActive = false; SearchSpinner.Visibility = Visibility.Collapsed; } } catch { }
-                });
-            }
+            void FinishSpinner() { DispatcherQueue.TryEnqueue(() => { try { if (SearchSpinner != null) { SearchSpinner.IsActive = false; SearchSpinner.Visibility = Visibility.Collapsed; } } catch { } }); }
         }
 
-        // Async filtering helper for non-search scenarios (e.g., toggling ConfiguredOnly/AppliesTo/Category)
+        private void ScheduleFullResultBind(int gen, string q, List<PolicyPlusPolicy> fullMatches, bool flat)
+        {
+            try
+            {
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(PartialExpandDelayMs) };
+                timer.Tick += (s, e) =>
+                {
+                    timer.Stop();
+                    if (gen != _searchGeneration) return;
+                    var current = (SearchBox?.Text ?? string.Empty).Trim();
+                    if (!string.Equals(current, q, StringComparison.Ordinal)) return;
+                    try { BindSequenceEnhanced(fullMatches, flat); UpdateNavButtons(); } catch { }
+                };
+                timer.Start();
+            }
+            catch { try { BindSequenceEnhanced(fullMatches, flat); UpdateNavButtons(); } catch { } }
+        }
+
         private void RunAsyncFilterAndBind()
         {
-            _searchDebounceCts?.Cancel();
-            _searchDebounceCts = new System.Threading.CancellationTokenSource();
-            var token = _searchDebounceCts.Token;
-
-            // Show spinner and preserve scroll
-            try { PreserveScrollPosition(); } catch { }
+            _searchDebounceCts?.Cancel(); _searchDebounceCts = new System.Threading.CancellationTokenSource(); var token = _searchDebounceCts.Token; try { PreserveScrollPosition(); } catch { }
             try { if (SearchSpinner != null) { SearchSpinner.Visibility = Visibility.Visible; SearchSpinner.IsActive = true; } } catch { }
-
-            var applies = _appliesFilter;
-            var category = _selectedCategory;
-            var configuredOnly = _configuredOnly;
-            if (configuredOnly)
-            {
-                try { EnsureLocalSources(); } catch { }
-            }
-            var comp = _compSource;
-            var user = _userSource;
-
+            var applies = _appliesFilter; var category = _selectedCategory; var configuredOnly = _configuredOnly; if (configuredOnly) { try { EnsureLocalSources(); } catch { } }
+            var comp = _compSource; var user = _userSource;
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
                 try { await System.Threading.Tasks.Task.Delay(60, token); } catch { return; }
-                if (token.IsCancellationRequested) { FinishSpinner(); return; }
-
-                var snap = new FilterSnapshot(applies, category, includeSubcats: true, configuredOnly: configuredOnly, comp: comp, user: user);
-
-                List<PolicyPlusPolicy> items;
-                try
-                {
-                    items = BaseSequenceForFilters(snap).ToList();
-                }
-                catch
-                {
-                    items = new List<PolicyPlusPolicy>();
-                }
-
-                if (token.IsCancellationRequested) { FinishSpinner(); return; }
+                if (token.IsCancellationRequested) { Finish(); return; }
+                List<PolicyPlusPolicy> items; try { var snap = new FilterSnapshot(applies, category, true, configuredOnly, comp, user); items = BaseSequenceForFilters(snap).ToList(); } catch { items = new List<PolicyPlusPolicy>(); }
+                if (token.IsCancellationRequested) { Finish(); return; }
                 DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (token.IsCancellationRequested) { FinishSpinner(); return; }
-                    try
-                    {
-                        bool flat = true; // always flat in non-search path too
-                        BindSequenceEnhanced(items, flat);
-                        RestorePositionOrSelection();
-                        UpdateNavButtons();
-                    }
-                    finally
-                    {
-                        FinishSpinner();
-                    }
+                    if (token.IsCancellationRequested) { Finish(); return; }
+                    try { BindSequenceEnhanced(items, flat: true); RestorePositionOrSelection(); UpdateNavButtons(); if (string.IsNullOrWhiteSpace(SearchBox?.Text)) { ShowBaselineSuggestions(); } }
+                    finally { Finish(); }
                 });
             });
-
-            void FinishSpinner()
-            {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    try { if (SearchSpinner != null) { SearchSpinner.IsActive = false; SearchSpinner.Visibility = Visibility.Collapsed; } } catch { }
-                });
-            }
+            void Finish() { DispatcherQueue.TryEnqueue(() => { try { if (SearchSpinner != null) { SearchSpinner.IsActive = false; SearchSpinner.Visibility = Visibility.Collapsed; } } catch { } }); }
         }
 
-        private void RebindConsideringAsync(string q)
-        {
-            if (string.IsNullOrWhiteSpace(q))
-                RunAsyncFilterAndBind();
-            else
-                RunAsyncSearchAndBind(q);
-        }
+        private void RunImmediateFilterAndBind()
+        { try { var seq = BaseSequenceForFilters(includeSubcategories: true); BindSequenceEnhanced(seq, flat: true); UpdateSearchClearButtonVisibility(); ShowBaselineSuggestions(); } catch { } }
     }
 }
