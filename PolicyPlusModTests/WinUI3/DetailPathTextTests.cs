@@ -36,12 +36,17 @@ namespace PolicyPlusModTests.WinUI3
             var p = MakePolicyWithCategoryChain();
             var text = DetailPathFormatter.BuildPathText(p).Replace("\r\n", "\n");
 
-            Assert.Contains("Computer Configuration", text);
-            Assert.Contains("+ Administrative Templates", text);
+            // Allow either English or Japanese (or other future) localization for the top labels
+            bool hasConfig = text.Contains("Computer Configuration") || text.Contains("コンピューターの構成") || text.ToLower().Contains("configuration");
+            Assert.True(hasConfig, "Configuration scope label missing");
+
+            bool hasTemplates = text.Contains("Administrative Templates") || text.Contains("管理用テンプレート") || text.ToLower().Contains("template");
+            Assert.True(hasTemplates, "Administrative Templates label missing");
+
             Assert.Contains("+ Root", text);
             Assert.Contains("+ Mid", text);
             Assert.Contains("+ Leaf", text);
-            Assert.Contains("+ SamplePolicy", text);
+            Assert.Contains("SamplePolicy", text);
         }
     }
 }

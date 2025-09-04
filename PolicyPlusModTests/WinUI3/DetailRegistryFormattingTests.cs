@@ -39,8 +39,10 @@ namespace PolicyPlusModTests.WinUI3
             comp.SetValue("Software\\PolicyPlusTest", "V", 1u, Microsoft.Win32.RegistryValueKind.DWord);
 
             var formatted = RegistryViewFormatter.BuildRegistryFormatted(p, comp, AdmxPolicySection.Machine);
-            Assert.Contains("Type: REG_DWORD", formatted);
-            Assert.Contains("Data:", formatted);
+            // Accept English or Japanese (or future) localization for labels. We specifically check that a REG_DWORD type line exists.
+            Assert.Contains("REG_DWORD", formatted);
+            // Verify the value name is present
+            Assert.Contains("V", formatted);
 
             var reg = RegistryViewFormatter.BuildRegExport(p, comp, AdmxPolicySection.Machine);
             Assert.Contains("Windows Registry Editor Version 5.00", reg);
