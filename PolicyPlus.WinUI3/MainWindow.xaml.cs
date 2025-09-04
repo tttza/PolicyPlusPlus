@@ -122,6 +122,9 @@ namespace PolicyPlus.WinUI3
         private Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)> _searchIndexById = new(StringComparer.OrdinalIgnoreCase);
         private CancellationTokenSource? _searchDebounceCts;
 
+        // Debounce for search option changes
+        private CancellationTokenSource? _searchOptionsDebounceCts;
+
         // Search options
         private bool _searchInName = true;
         private bool _searchInId = true;
@@ -1265,7 +1268,28 @@ namespace PolicyPlus.WinUI3
                 });
             }
             catch { }
-            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+
+            // Optimization: if no query text, do not reload the list
+            var q = (SearchBox?.Text ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(q))
+            {
+                return;
+            }
+
+            // Debounce rebind when toggling multiple options rapidly
+            _searchOptionsDebounceCts?.Cancel();
+            _searchOptionsDebounceCts = new CancellationTokenSource();
+            var token = _searchOptionsDebounceCts.Token;
+            _ = Task.Run(async () =>
+            {
+                try { await Task.Delay(250, token); } catch { return; }
+                if (token.IsCancellationRequested) return;
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (token.IsCancellationRequested) return;
+                    RunAsyncSearchAndBind(q);
+                });
+            });
         }
 
         private void ToggleLimitUnfilteredMenu_Click(object sender, RoutedEventArgs e)
