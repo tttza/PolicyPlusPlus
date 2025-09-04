@@ -299,8 +299,25 @@ namespace PolicyPlus.WinUI3
             if (computeStatesNow) { try { EnsureLocalSources(); } catch { } }
             _rowByPolicyId.Clear();
             var compSrc = computeStatesNow ? _compSource : null; var userSrc = computeStatesNow ? _userSource : null;
-            var rows = ordered.Select(p => (object)PolicyListRow.FromPolicy(p, compSrc, userSrc)).ToList();
-            foreach (var obj in rows) if (obj is PolicyListRow r && r.Policy != null) _rowByPolicyId[r.Policy.UniqueID] = r;
+
+            var rows = new List<object>();
+            try
+            {
+                // Insert subcategories of the selected category (navigation aid) when no active search query
+                if (_selectedCategory != null && string.IsNullOrWhiteSpace(SearchBox?.Text))
+                {
+                    foreach (var child in _selectedCategory.Children.OrderBy(c => c.DisplayName))
+                    {
+                        rows.Add(PolicyListRow.FromCategory(child));
+                    }
+                }
+            }
+            catch { }
+
+            rows.AddRange(ordered.Select(p => (object)PolicyListRow.FromPolicy(p, compSrc, userSrc)));
+            foreach (var obj in rows)
+                if (obj is PolicyListRow r && r.Policy != null)
+                    _rowByPolicyId[r.Policy.UniqueID] = r;
             PolicyList.ItemsSource = rows;
             PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
             TryRestoreSelectionAsync(rows);

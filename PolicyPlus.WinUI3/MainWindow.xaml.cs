@@ -1159,7 +1159,6 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
-                // Determine sort column key by column name
                 string? key = null;
                 if (e.Column == ColName) key = nameof(PolicyListRow.DisplayName);
                 else if (e.Column == ColId) key = nameof(PolicyListRow.ShortId);
@@ -1168,10 +1167,22 @@ namespace PolicyPlus.WinUI3
                 else if (e.Column == ColSupported) key = nameof(PolicyListRow.SupportedText);
                 if (string.IsNullOrEmpty(key)) return;
 
-                // Toggle direction if same column, else ascending
                 if (string.Equals(_sortColumn, key, StringComparison.Ordinal))
                 {
-                    _sortDirection = (_sortDirection == DataGridSortDirection.Ascending) ? DataGridSortDirection.Descending : DataGridSortDirection.Ascending;
+                    if (_sortDirection == DataGridSortDirection.Ascending)
+                    {
+                        _sortDirection = DataGridSortDirection.Descending;
+                    }
+                    else if (_sortDirection == DataGridSortDirection.Descending)
+                    {
+                        // Clear sort (third click)
+                        _sortColumn = null;
+                        _sortDirection = null;
+                    }
+                    else
+                    {
+                        _sortDirection = DataGridSortDirection.Ascending;
+                    }
                 }
                 else
                 {
@@ -1179,22 +1190,25 @@ namespace PolicyPlus.WinUI3
                     _sortDirection = DataGridSortDirection.Ascending;
                 }
 
-                // Persist sort
                 try
                 {
-                    string dir = _sortDirection == DataGridSortDirection.Descending ? "Desc" : "Asc";
-                    SettingsService.Instance.UpdateSort(_sortColumn, dir);
+                    if (_sortColumn == null || _sortDirection == null)
+                        SettingsService.Instance.UpdateSort(null, null);
+                    else
+                        SettingsService.Instance.UpdateSort(_sortColumn, _sortDirection == DataGridSortDirection.Descending ? "Desc" : "Asc");
                 }
                 catch { }
 
-                // Update glyph
-                foreach (var col in PolicyList.Columns)
+                foreach (var col in PolicyList.Columns) col.SortDirection = null;
+                if (_sortColumn != null && _sortDirection != null)
                 {
-                    col.SortDirection = null;
+                    if (_sortColumn == nameof(PolicyListRow.DisplayName)) ColName.SortDirection = _sortDirection;
+                    else if (_sortColumn == nameof(PolicyListRow.ShortId)) ColId.SortDirection = _sortDirection;
+                    else if (_sortColumn == nameof(PolicyListRow.CategoryName)) ColCategory.SortDirection = _sortDirection;
+                    else if (_sortColumn == nameof(PolicyListRow.AppliesText)) ColApplies.SortDirection = _sortDirection;
+                    else if (_sortColumn == nameof(PolicyListRow.SupportedText)) ColSupported.SortDirection = _sortDirection;
                 }
-                e.Column.SortDirection = _sortDirection;
 
-                // Rebind with new sort
                 RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
             }
             catch { }
