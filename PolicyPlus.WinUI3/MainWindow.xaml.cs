@@ -180,17 +180,9 @@ namespace PolicyPlus.WinUI3
                 var themePref = s.Theme ?? "System";
                 ApplyTheme(themePref);
                 App.SetGlobalTheme(themePref switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
-                try
-                {
-                    var itemsObj = ThemeSelector?.Items;
-                    var items = itemsObj?.OfType<ComboBoxItem>()?.ToList();
-                    var match = items?.FirstOrDefault(i => string.Equals(Convert.ToString(i.Content), themePref, StringComparison.OrdinalIgnoreCase));
-                    if (match != null) ThemeSelector!.SelectedItem = match;
-                }
-                catch { }
 
                 var scalePref = s.UIScale ?? "100%";
-                SetScaleFromString(scalePref, updateSelector: true, save: false);
+                SetScaleFromString(scalePref, updateSelector: false, save: false);
 
                 // Column visibility from settings via menu toggles
                 LoadColumnPrefs();

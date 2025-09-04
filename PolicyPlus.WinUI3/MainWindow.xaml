@@ -77,7 +77,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Menu bar and theme/scale selector -->
+                <!-- Menu bar -->
                 <Grid Grid.Row="0" Margin="8,8,8,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
@@ -106,37 +106,38 @@
                             <MenuFlyoutItem Text="Pending/History..." Click="BtnPendingChanges_Click" />
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="View">
+                            <ToggleMenuFlyoutItem x:Name="ViewDetailsToggle" Text="Details pane" IsChecked="True" Click="ViewDetailsToggle_Click"/>
+                        </controls:MenuBarItem>
+                        <controls:MenuBarItem Title="Columns">
                             <ToggleMenuFlyoutItem x:Name="ViewIdToggle" Text="ID" IsChecked="True" Tag="ColIdFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewCategoryToggle" Text="Category" IsChecked="False" Tag="ColCategoryFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewAppliesToggle" Text="Applies to" IsChecked="False" Tag="ColAppliesFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewSupportedToggle" Text="Supported on" IsChecked="False" Tag="ColSupportedFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewSecondNameToggle" Text="2nd Language Name" IsChecked="False" Click="ViewSecoundNameToggle_Click"/>
-                            <MenuFlyoutSeparator/>
-                            <ToggleMenuFlyoutItem x:Name="ViewDetailsToggle" Text="Details pane" IsChecked="True" Click="ViewDetailsToggle_Click"/>
+                        </controls:MenuBarItem>
+                        <controls:MenuBarItem Title="Appearance">
+                            <MenuFlyoutSubItem Text="Theme">
+                                <ToggleMenuFlyoutItem x:Name="ThemeSystemMenu" Text="System" IsChecked="True" Click="ThemeMenu_Click" />
+                                <ToggleMenuFlyoutItem x:Name="ThemeDarkMenu" Text="Dark" Click="ThemeMenu_Click" />
+                                <ToggleMenuFlyoutItem x:Name="ThemeLightMenu" Text="Light" Click="ThemeMenu_Click" />
+                            </MenuFlyoutSubItem>
+                            <MenuFlyoutSubItem Text="Scale">
+                                <ToggleMenuFlyoutItem x:Name="Scale50Menu" Text="50%" Click="ScaleMenu_Click" />
+                                <ToggleMenuFlyoutItem x:Name="Scale67Menu" Text="67%" Click="ScaleMenu_Click" />
+                                <ToggleMenuFlyoutItem x:Name="Scale75Menu" Text="75%" Click="ScaleMenu_Click" />
+                                <ToggleMenuFlyoutItem x:Name="Scale80Menu" Text="80%" Click="ScaleMenu_Click" />
+                                <ToggleMenuFlyoutItem x:Name="Scale90Menu" Text="90%" Click="ScaleMenu_Click" />
+                                <ToggleMenuFlyoutItem x:Name="Scale100Menu" Text="100%" IsChecked="True" Click="ScaleMenu_Click" />
+                                <ToggleMenuFlyoutItem x:Name="Scale110Menu" Text="110%" Click="ScaleMenu_Click" />
+                                <ToggleMenuFlyoutItem x:Name="Scale125Menu" Text="125%" Click="ScaleMenu_Click" />
+                                <ToggleMenuFlyoutItem x:Name="Scale150Menu" Text="150%" Click="ScaleMenu_Click" />
+                                <ToggleMenuFlyoutItem x:Name="Scale175Menu" Text="175%" Click="ScaleMenu_Click" />
+                                <ToggleMenuFlyoutItem x:Name="Scale200Menu" Text="200%" Click="ScaleMenu_Click" />
+                            </MenuFlyoutSubItem>
                         </controls:MenuBarItem>
                     </controls:MenuBar>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <TextBlock Text="Theme:" VerticalAlignment="Center"/>
-                        <ComboBox x:Name="ThemeSelector" Width="160" SelectionChanged="ThemeSelector_SelectionChanged">
-                            <ComboBoxItem Content="System" IsSelected="True"/>
-                            <ComboBoxItem Content="Dark"/>
-                            <ComboBoxItem Content="Light"/>
-                        </ComboBox>
-                        <TextBlock Text="Scale:" VerticalAlignment="Center" Margin="12,0,0,0"/>
-                        <ComboBox x:Name="ScaleSelector" Width="100" SelectionChanged="ScaleSelector_SelectionChanged">
-                            <ComboBoxItem Content="50%"/>
-                            <ComboBoxItem Content="67%"/>
-                            <ComboBoxItem Content="75%"/>
-                            <ComboBoxItem Content="80%"/>
-                            <ComboBoxItem Content="90%"/>
-                            <ComboBoxItem Content="100%" IsSelected="True"/>
-                            <ComboBoxItem Content="110%"/>
-                            <ComboBoxItem Content="125%"/>
-                            <ComboBoxItem Content="150%"/>
-                            <ComboBoxItem Content="175%"/>
-                            <ComboBoxItem Content="200%"/>
-                        </ComboBox>
                         <TextBlock x:Name="LoaderInfo" VerticalAlignment="Center"/>
                         <TextBlock x:Name="UnsavedIndicator" Text="• Unsaved changes" Foreground="OrangeRed" Visibility="Collapsed" VerticalAlignment="Center"/>
                     </StackPanel>

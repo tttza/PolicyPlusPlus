@@ -331,6 +331,8 @@ namespace PolicyPlus.WinUI3
             ApplyColumnVisibilityFromToggles();
         }
 
+        private ToggleMenuFlyoutItem? FindMenu(string name) => RootGrid?.FindName(name) as ToggleMenuFlyoutItem;
+
         private void ApplyTheme(string pref)
         {
             if (RootGrid == null) return;
@@ -338,52 +340,71 @@ namespace PolicyPlus.WinUI3
             RootGrid.RequestedTheme = theme;
             App.SetGlobalTheme(theme);
             try { SettingsService.Instance.UpdateTheme(pref); } catch { }
+
+            // Sync menu checks
+            try
+            {
+                var system = FindMenu("ThemeSystemMenu");
+                var dark = FindMenu("ThemeDarkMenu");
+                var light = FindMenu("ThemeLightMenu");
+                if (system != null) system.IsChecked = pref.Equals("System", StringComparison.OrdinalIgnoreCase);
+                if (dark != null) dark.IsChecked = pref.Equals("Dark", StringComparison.OrdinalIgnoreCase);
+                if (light != null) light.IsChecked = pref.Equals("Light", StringComparison.OrdinalIgnoreCase);
+            }
+            catch { }
         }
 
-        private void ThemeSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ThemeMenu_Click(object sender, RoutedEventArgs e)
         {
-            var cb = ThemeSelector as ComboBox;
-            var item = ((cb?.SelectedItem as ComboBoxItem)?.Content?.ToString());
-            var pref = item ?? "System";
-            ApplyTheme(pref);
+            try
+            {
+                if (sender is ToggleMenuFlyoutItem clicked)
+                {
+                    // Uncheck all theme items first
+                    foreach (var id in new[] { "ThemeSystemMenu", "ThemeDarkMenu", "ThemeLightMenu" })
+                    {
+                        var mi = FindMenu(id); if (mi != null) mi.IsChecked = false;
+                    }
+                    clicked.IsChecked = true;
+                    var pref = clicked.Text;
+                    ApplyTheme(pref);
+                }
+            }
+            catch { }
         }
 
         private void SetScaleFromString(string s, bool updateSelector, bool save)
         {
             double scale = 1.0;
-            if (!string.IsNullOrEmpty(s) && s.EndsWith("%"))
-            {
-                if (double.TryParse(s.TrimEnd('%'), out var pct))
-                {
-                    scale = Math.Max(0.5, pct / 100.0);
-                }
-            }
+            if (!string.IsNullOrEmpty(s) && s.EndsWith("%") && double.TryParse(s.TrimEnd('%'), out var pct))
+                scale = Math.Max(0.5, pct / 100.0);
             App.SetGlobalScale(scale);
-            if (updateSelector)
+            if (save) { try { SettingsService.Instance.UpdateScale(s); } catch { } }
+            try
             {
-                try
+                foreach (var id in new[] { "Scale50Menu","Scale67Menu","Scale75Menu","Scale80Menu","Scale90Menu","Scale100Menu","Scale110Menu","Scale125Menu","Scale150Menu","Scale175Menu","Scale200Menu" })
                 {
-                    if (ScaleSelector != null)
-                    {
-                        var items = ScaleSelector.Items?.OfType<ComboBoxItem>()?.ToList();
-                        var match = items?.FirstOrDefault(i => string.Equals(Convert.ToString(i.Content), s, StringComparison.OrdinalIgnoreCase));
-                        if (match != null) ScaleSelector.SelectedItem = match;
-                    }
+                    var mi = FindMenu(id); if (mi != null) mi.IsChecked = string.Equals(mi.Text, s, StringComparison.OrdinalIgnoreCase);
                 }
-                catch { }
             }
-            if (save)
-            {
-                try { SettingsService.Instance.UpdateScale(s); } catch { }
-            }
+            catch { }
         }
 
-        private void ScaleSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ScaleMenu_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                var item = (ScaleSelector?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "100%";
-                SetScaleFromString(item, updateSelector: false, save: true);
+                if (sender is ToggleMenuFlyoutItem clicked)
+                {
+                    // Uncheck all scale items
+                    foreach (var id in new[] { "Scale50Menu","Scale67Menu","Scale75Menu","Scale80Menu","Scale90Menu","Scale100Menu","Scale110Menu","Scale125Menu","Scale150Menu","Scale175Menu","Scale200Menu" })
+                    {
+                        var mi = FindMenu(id); if (mi != null) mi.IsChecked = false;
+                    }
+                    clicked.IsChecked = true;
+                    var scaleText = clicked.Text; // e.g. "125%"
+                    SetScaleFromString(scaleText, updateSelector: false, save: true);
+                }
             }
             catch { }
         }
