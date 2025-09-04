@@ -24,6 +24,7 @@ namespace PolicyPlus.WinUI3
         private static volatile bool s_logEnabled = false;
         private static string? s_clientSid;
         private static string? s_authToken;
+        private static readonly Encoding Utf8NoBom = new UTF8Encoding(false); // ensure no BOM when writing files
 
         private static string HostLogPath => Path.Combine(Path.GetTempPath(), "PolicyPlus_host.log");
         private static void Log(string msg)
@@ -214,7 +215,7 @@ namespace PolicyPlus.WinUI3
                 }
                 if (bumpMachine) lo = (lo + 1) & 0xFFFF;
                 if (bumpUser) hi = (hi + 1) & 0xFFFF;
-                using var f = new StreamWriter(gptIniPath, false, Encoding.UTF8);
+                using var f = new StreamWriter(gptIniPath, false, Utf8NoBom);
                 foreach (var line in lines)
                 {
                     if (line.StartsWith("Version", StringComparison.InvariantCultureIgnoreCase))
@@ -240,7 +241,7 @@ namespace PolicyPlus.WinUI3
             }
             else
             {
-                using var f = new StreamWriter(gptIniPath, false, Encoding.UTF8);
+                using var f = new StreamWriter(gptIniPath, false, Utf8NoBom);
                 f.WriteLine("[General]");
                 f.WriteLine(MachExtensionsLine);
                 f.WriteLine(UserExtensionsLine);
