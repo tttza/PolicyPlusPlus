@@ -16,6 +16,8 @@ namespace PolicyPlus.WinUI3.Services
             _n = Math.Max(1, n);
         }
 
+        public int N => _n;
+
         public void Clear()
         {
             _postings.Clear();
@@ -64,6 +66,33 @@ namespace PolicyPlus.WinUI3.Services
                 result.IntersectWith(grams[i]);
             }
             return result;
+        }
+
+        // Serializable snapshot for caching
+        public sealed class NGramSnapshot
+        {
+            public int N { get; set; }
+            public Dictionary<string, string[]> Postings { get; set; } = new(StringComparer.Ordinal);
+        }
+
+        public NGramSnapshot GetSnapshot()
+        {
+            var dict = new Dictionary<string, string[]>(StringComparer.Ordinal);
+            foreach (var kv in _postings)
+            {
+                dict[kv.Key] = kv.Value.ToArray();
+            }
+            return new NGramSnapshot { N = _n, Postings = dict };
+        }
+
+        public void LoadSnapshot(NGramSnapshot snapshot)
+        {
+            _postings.Clear();
+            if (snapshot == null || snapshot.Postings == null) return;
+            foreach (var kv in snapshot.Postings)
+            {
+                _postings[kv.Key] = new HashSet<string>(kv.Value ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+            }
         }
     }
 }

@@ -18,6 +18,7 @@ namespace PolicyPlus.WinUI3.Services
         private string SettingsPath => Path.Combine(_baseDir, "settings.json");
         private string HistoryPath => Path.Combine(_baseDir, "history.json");
         private string SearchStatsPath => Path.Combine(_baseDir, "searchstats.json");
+        public string CacheDirectory => Path.Combine(_baseDir, "Cache");
 
         private JsonSerializerOptions _json = new JsonSerializerOptions
         {
@@ -45,6 +46,7 @@ namespace PolicyPlus.WinUI3.Services
                     _baseDir = Path.Combine(root, "PolicyPlusMod");
                 }
                 Directory.CreateDirectory(_baseDir);
+                try { Directory.CreateDirectory(CacheDirectory); } catch { }
             }
             catch { }
         }
@@ -212,7 +214,7 @@ namespace PolicyPlus.WinUI3.Services
                     if (File.Exists(SearchStatsPath))
                     {
                         var txt = File.ReadAllText(SearchStatsPath);
-                        var data = JsonSerializer.Deserialize(txt, AppJsonContext.Default.SearchStats) ?? new SearchStats();
+                        var data = JsonSerializer.Deserialize<SearchStats>(txt) ?? new SearchStats();
                         return (data.Counts ?? new(), data.LastUsed ?? new());
                     }
                 }
@@ -228,7 +230,7 @@ namespace PolicyPlus.WinUI3.Services
                 try
                 {
                     var data = new SearchStats { Counts = counts, LastUsed = lastUsed };
-                    File.WriteAllText(SearchStatsPath, JsonSerializer.Serialize(data, AppJsonContext.Default.SearchStats));
+                    File.WriteAllText(SearchStatsPath, JsonSerializer.Serialize(data));
                 }
                 catch { }
             }

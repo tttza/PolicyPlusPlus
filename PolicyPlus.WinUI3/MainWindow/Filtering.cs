@@ -17,19 +17,195 @@ namespace PolicyPlus.WinUI3
 {
     public sealed partial class MainWindow
     {
-        // N-gram index for normalized description to speed up substring queries
+        // N-gram indexes for fast substring candidate filtering
         private readonly NGramTextIndex _descIndex = new(2);
+        private readonly NGramTextIndex _nameIndex = new(2);
+        private readonly NGramTextIndex _enIndex = new(2);
+        private readonly NGramTextIndex _idIndex = new(2);
         private bool _descIndexBuilt;
+        private bool _nameIndexBuilt;
+        private bool _enIndexBuilt;
+        private bool _idIndexBuilt;
+
         private void EnsureDescIndex()
         {
             if (_descIndexBuilt) return;
+
+            // Try load from cache with fingerprint
+            try
+            {
+                if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
+                {
+                    var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
+                    if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _descIndex.N, "desc", out var snap) && snap != null)
+                    {
+                        _descIndex.LoadSnapshot(snap);
+                        _descIndexBuilt = true;
+                        return;
+                    }
+                }
+            }
+            catch { }
+
+            // Build and save
             try
             {
                 var items = _allPolicies.Select(p => (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayExplanation)));
                 _descIndex.Build(items);
+                try
+                {
+                    if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
+                    {
+                        var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
+                        CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "desc", _descIndex.GetSnapshot());
+                    }
+                }
+                catch { }
+                _descIndexBuilt = true;
             }
             catch { }
-            _descIndexBuilt = true;
+        }
+
+        private void EnsureNameIdEnIndexes()
+        {
+            // Name
+            if (!_nameIndexBuilt)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
+                    {
+                        var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
+                        if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _nameIndex.N, "name", out var snap) && snap != null)
+                        {
+                            _nameIndex.LoadSnapshot(snap);
+                            _nameIndexBuilt = true;
+                        }
+                    }
+                }
+                catch { }
+                if (!_nameIndexBuilt)
+                {
+                    try
+                    {
+                        var items = _allPolicies.Select(p => (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayName)));
+                        _nameIndex.Build(items);
+                        if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
+                        {
+                            var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
+                            CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "name", _nameIndex.GetSnapshot());
+                        }
+                        _nameIndexBuilt = true;
+                    }
+                    catch { }
+                }
+            }
+
+            // English name
+            if (!_enIndexBuilt)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
+                    {
+                        var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
+                        if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _enIndex.N, "en", out var snap) && snap != null)
+                        {
+                            _enIndex.LoadSnapshot(snap);
+                            _enIndexBuilt = true;
+                        }
+                    }
+                }
+                catch { }
+                if (!_enIndexBuilt)
+                {
+                    try
+                    {
+                        var items = _allPolicies.Select(p => (id: p.UniqueID, normalizedText: SearchText.Normalize(EnglishTextService.GetEnglishPolicyName(p))));
+                        _enIndex.Build(items);
+                        if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
+                        {
+                            var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
+                            CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "en", _enIndex.GetSnapshot());
+                        }
+                        _enIndexBuilt = true;
+                    }
+                    catch { }
+                }
+            }
+
+            // ID
+            if (!_idIndexBuilt)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
+                    {
+                        var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
+                        if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _idIndex.N, "id", out var snap) && snap != null)
+                        {
+                            _idIndex.LoadSnapshot(snap);
+                            _idIndexBuilt = true;
+                        }
+                    }
+                }
+                catch { }
+                if (!_idIndexBuilt)
+                {
+                    try
+                    {
+                        var items = _allPolicies.Select(p => (id: p.UniqueID, normalizedText: SearchText.Normalize(p.UniqueID)));
+                        _idIndex.Build(items);
+                        if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
+                        {
+                            var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage);
+                            CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "id", _idIndex.GetSnapshot());
+                        }
+                        _idIndexBuilt = true;
+                    }
+                    catch { }
+                }
+            }
+        }
+
+        private HashSet<string>? GetTextCandidates(string qLower)
+        {
+            // Union of name/en/id candidates depending on toggles
+            HashSet<string>? union = null;
+            try
+            {
+                if (_searchInName || _searchInId)
+                {
+                    EnsureNameIdEnIndexes();
+                }
+
+                if (_searchInName)
+                {
+                    var nameSet = _nameIndex.TryQuery(qLower);
+                    if (nameSet != null)
+                    {
+                        union ??= new HashSet<string>(nameSet, StringComparer.OrdinalIgnoreCase);
+                        if (!object.ReferenceEquals(union, nameSet)) union.UnionWith(nameSet);
+                    }
+                    var enSet = _enIndex.TryQuery(qLower);
+                    if (enSet != null)
+                    {
+                        union ??= new HashSet<string>(enSet, StringComparer.OrdinalIgnoreCase);
+                        if (!object.ReferenceEquals(union, enSet)) union.UnionWith(enSet);
+                    }
+                }
+                if (_searchInId)
+                {
+                    var idSet = _idIndex.TryQuery(qLower);
+                    if (idSet != null)
+                    {
+                        union ??= new HashSet<string>(idSet, StringComparer.OrdinalIgnoreCase);
+                        if (!object.ReferenceEquals(union, idSet)) union.UnionWith(idSet);
+                    }
+                }
+            }
+            catch { }
+            return union; // may be null -> no hint
         }
 
         private IEnumerable<PolicyPlusPolicy> BaseSequenceForFilters(bool includeSubcategories)
@@ -221,8 +397,9 @@ namespace PolicyPlus.WinUI3
                 var qLower = SearchText.Normalize(query);
                 var allowed = new HashSet<string>(seq.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase);
                 var matched = new List<PolicyPlusPolicy>();
-                bool smallSubset = allowed.Count > 0 && allowed.Count < (_allPolicies.Count / 2);
 
+                // Pre-candidates from indexes (name/en/id, desc)
+                HashSet<string>? baseCandidates = GetTextCandidates(qLower);
                 HashSet<string>? descCandidates = null;
                 if (_searchInDescription)
                 {
@@ -230,9 +407,31 @@ namespace PolicyPlus.WinUI3
                     descCandidates = _descIndex.TryQuery(qLower);
                 }
 
+                HashSet<string> scanSet = allowed;
+                if (baseCandidates != null && baseCandidates.Count > 0)
+                {
+                    scanSet = new HashSet<string>(allowed, StringComparer.OrdinalIgnoreCase);
+                    scanSet.IntersectWith(baseCandidates);
+                    if (descCandidates != null && descCandidates.Count > 0)
+                    {
+                        // Also include description candidates because user may search only desc
+                        var tmp = new HashSet<string>(scanSet, StringComparer.OrdinalIgnoreCase);
+                        tmp.UnionWith(descCandidates);
+                        tmp.IntersectWith(allowed);
+                        scanSet = tmp;
+                    }
+                }
+                else if (descCandidates != null && descCandidates.Count > 0)
+                {
+                    scanSet = new HashSet<string>(allowed, StringComparer.OrdinalIgnoreCase);
+                    scanSet.IntersectWith(descCandidates);
+                }
+
+                bool smallSubset = scanSet.Count > 0 && scanSet.Count < (_allPolicies.Count / 2);
+
                 if (smallSubset)
                 {
-                    foreach (var id in allowed)
+                    foreach (var id in scanSet)
                     {
                         if (!_searchIndexById.TryGetValue(id, out var e)) continue;
                         if (PolicyMatchesQuery(e, query, qLower, descCandidates))
@@ -243,7 +442,7 @@ namespace PolicyPlus.WinUI3
                 {
                     foreach (var e in _searchIndex)
                     {
-                        if (!allowed.Contains(e.Policy.UniqueID)) continue;
+                        if (!scanSet.Contains(e.Policy.UniqueID)) continue;
                         if (PolicyMatchesQuery(e, query, qLower, descCandidates))
                             matched.Add(e.Policy);
                     }
@@ -559,8 +758,9 @@ namespace PolicyPlus.WinUI3
 
                     var qLower = SearchText.Normalize(q);
                     var matched = new List<PolicyPlusPolicy>();
-                    bool smallSubset = allowedSet.Count > 0 && allowedSet.Count < (_allPolicies.Count / 2);
 
+                    // Pre-candidates from indexes (name/en/id, desc)
+                    HashSet<string>? baseCandidates = GetTextCandidates(qLower);
                     HashSet<string>? descCandidates = null;
                     if (_searchInDescription)
                     {
@@ -568,9 +768,30 @@ namespace PolicyPlus.WinUI3
                         descCandidates = _descIndex.TryQuery(qLower);
                     }
 
+                    HashSet<string> scanSet = allowedSet;
+                    if (baseCandidates != null && baseCandidates.Count > 0)
+                    {
+                        scanSet = new HashSet<string>(allowedSet, StringComparer.OrdinalIgnoreCase);
+                        scanSet.IntersectWith(baseCandidates);
+                        if (descCandidates != null && descCandidates.Count > 0)
+                        {
+                            var tmp = new HashSet<string>(scanSet, StringComparer.OrdinalIgnoreCase);
+                            tmp.UnionWith(descCandidates);
+                            tmp.IntersectWith(allowedSet);
+                            scanSet = tmp;
+                        }
+                    }
+                    else if (descCandidates != null && descCandidates.Count > 0)
+                    {
+                        scanSet = new HashSet<string>(allowedSet, StringComparer.OrdinalIgnoreCase);
+                        scanSet.IntersectWith(descCandidates);
+                    }
+
+                    bool smallSubset = scanSet.Count > 0 && scanSet.Count < (_allPolicies.Count / 2);
+
                     if (smallSubset)
                     {
-                        foreach (var id in allowedSet)
+                        foreach (var id in scanSet)
                         {
                             if (!_searchIndexById.TryGetValue(id, out var e2)) continue;
                             if (PolicyMatchesQuery(e2, q, qLower, descCandidates)) matched.Add(e2.Policy);
@@ -580,7 +801,7 @@ namespace PolicyPlus.WinUI3
                     {
                         foreach (var e2 in _searchIndex)
                         {
-                            if (!allowedSet.Contains(e2.Policy.UniqueID)) continue;
+                            if (!scanSet.Contains(e2.Policy.UniqueID)) continue;
                             if (PolicyMatchesQuery(e2, q, qLower, descCandidates)) matched.Add(e2.Policy);
                         }
                     }

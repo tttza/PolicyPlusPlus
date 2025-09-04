@@ -43,7 +43,6 @@ namespace PolicyPlus.WinUI3.Serialization
     [JsonSerializable(typeof(ColumnState))]
     [JsonSerializable(typeof(List<ColumnState>))]
     [JsonSerializable(typeof(SearchOptions))]
-    [JsonSerializable(typeof(SearchStats))]
     [JsonSerializable(typeof(List<HistoryRecord>))]
     [JsonSerializable(typeof(HostRequestWriteLocalGpo))]
     [JsonSerializable(typeof(HostRequestOpenRegedit))]

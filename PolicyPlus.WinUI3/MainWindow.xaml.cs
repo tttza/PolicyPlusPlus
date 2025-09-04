@@ -135,6 +135,10 @@ namespace PolicyPlus.WinUI3
         private string? _sortColumn;
         private DataGridSortDirection? _sortDirection;
 
+        // Track current ADMX path and language for cache keys
+        private string? _currentAdmxPath;
+        private string? _currentLanguage;
+
         public MainWindow()
         {
             this.InitializeComponent();
@@ -239,16 +243,6 @@ namespace PolicyPlus.WinUI3
             catch { }
         }
 
-        private void PersistHistory()
-        {
-            try
-            {
-                var list = PendingChangesService.Instance.History.ToList();
-                SettingsService.Instance.SaveHistory(list);
-            }
-            catch { }
-        }
-
         private void RefreshVisibleRows()
         {
             try
@@ -263,6 +257,16 @@ namespace PolicyPlus.WinUI3
                         }
                     }
                 }
+            }
+            catch { }
+        }
+
+        private void PersistHistory()
+        {
+            try
+            {
+                var list = PendingChangesService.Instance.History.ToList();
+                SettingsService.Instance.SaveHistory(list);
             }
             catch { }
         }
@@ -406,12 +410,46 @@ namespace PolicyPlus.WinUI3
 
         // preference helper implementations are defined in MainWindow.Preferences.cs
 
+        private void StartPrebuildDescIndex()
+        {
+            try
+            {
+                var path = _currentAdmxPath;
+                var lang = _currentLanguage;
+                var fp = (!string.IsNullOrEmpty(path) && !string.IsNullOrEmpty(lang)) ? CacheService.ComputeAdmxFingerprint(path!, lang!) : string.Empty;
+                var policies = _allPolicies.ToList();
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        var idx = new NGramTextIndex(2);
+                        var items = policies.Select(p => (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayExplanation)));
+                        idx.Build(items);
+                        var snap = idx.GetSnapshot();
+                        if (!string.IsNullOrEmpty(path) && !string.IsNullOrEmpty(lang))
+                        {
+                            if (!string.IsNullOrEmpty(fp))
+                                CacheService.SaveNGramSnapshot(path!, lang!, fp, snap);
+                            else
+                                CacheService.SaveNGramSnapshot(path!, lang!, snap);
+                        }
+                        _descIndex.LoadSnapshot(snap);
+                        _descIndexBuilt = true;
+                    }
+                    catch { }
+                });
+            }
+            catch { }
+        }
+
         private async void LoadAdmxFolderAsync(string path)
         {
             SetBusy(true, "Loading...");
             try
             {
                 var langPref = SettingsService.Instance.LoadSettings().Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
+                _currentAdmxPath = path; // for cache keys
+                _currentLanguage = langPref; // for cache keys
 
                 AdmxBundle? newBundle = null;
                 int failureCount = 0;
@@ -456,6 +494,7 @@ namespace PolicyPlus.WinUI3
                 _allPolicies = allLocal ?? new List<PolicyPlusPolicy>();
                 _totalGroupCount = totalGroupsLocal;
                 RegistryReferenceCache.Clear();
+                _descIndexBuilt = false; // force rebuild or load from cache for description index
 
                 // Adopt prebuilt search index
                 if (searchIndexLocal != null && searchIndexByIdLocal != null)
@@ -467,6 +506,9 @@ namespace PolicyPlus.WinUI3
                 {
                     RebuildSearchIndex();
                 }
+
+                // Prebuild description index and cache in the background
+                StartPrebuildDescIndex();
 
                 BuildCategoryTreeAsync();
 
