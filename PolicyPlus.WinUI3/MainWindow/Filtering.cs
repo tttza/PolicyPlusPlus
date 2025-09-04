@@ -285,6 +285,8 @@ namespace PolicyPlus.WinUI3
                     nameof(PolicyListRow.DisplayName) => p => p.DisplayName ?? string.Empty,
                     nameof(PolicyListRow.ShortId) => p => { var id = p.UniqueID ?? string.Empty; int i = id.LastIndexOf(':'); return i >= 0 && i + 1 < id.Length ? id[(i + 1)..] : id; },
                     nameof(PolicyListRow.CategoryName) => p => p.Category?.DisplayName ?? string.Empty,
+                    nameof(PolicyListRow.TopCategoryName) => p => { var c = p.Category; while (c?.Parent != null) c = c.Parent; return c?.DisplayName ?? string.Empty; },
+                    nameof(PolicyListRow.CategoryFullPath) => p => { var parts = new List<string>(); var c = p.Category; while (c != null) { parts.Add(c.DisplayName ?? string.Empty); c = c.Parent; } parts.Reverse(); return string.Join(" / ", parts); },
                     nameof(PolicyListRow.AppliesText) => p => p.RawPolicy.Section switch { AdmxPolicySection.Machine => 1, AdmxPolicySection.User => 2, _ => 0 },
                     nameof(PolicyListRow.SupportedText) => p => p.SupportedOn?.DisplayName ?? string.Empty,
                     _ => null

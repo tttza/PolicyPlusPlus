@@ -110,7 +110,9 @@
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Columns">
                             <ToggleMenuFlyoutItem x:Name="ViewIdToggle" Text="ID" IsChecked="True" Tag="ColIdFlag" Click="ColumnToggle_Click"/>
-                            <ToggleMenuFlyoutItem x:Name="ViewCategoryToggle" Text="Category" IsChecked="False" Tag="ColCategoryFlag" Click="ColumnToggle_Click"/>
+                            <ToggleMenuFlyoutItem x:Name="ViewCategoryToggle" Text="Parent Category" IsChecked="False" Tag="ColCategoryFlag" Click="ColumnToggle_Click"/>
+                            <ToggleMenuFlyoutItem x:Name="ViewTopCategoryToggle" Text="Top Category" IsChecked="False" Tag="ColTopCategoryFlag" Click="ColumnToggle_Click"/>
+                            <ToggleMenuFlyoutItem x:Name="ViewCategoryPathToggle" Text="Category Path" IsChecked="False" Tag="ColCategoryPathFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewAppliesToggle" Text="Applies to" IsChecked="False" Tag="ColAppliesFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewSupportedToggle" Text="Supported on" IsChecked="False" Tag="ColSupportedFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewSecondNameToggle" Text="2nd Language Name" IsChecked="False" Click="ViewSecoundNameToggle_Click"/>
@@ -147,6 +149,8 @@
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Visibility="Collapsed">
                     <CheckBox x:Name="ColIdFlag" IsChecked="True" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
                     <CheckBox x:Name="ColCategoryFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
+                    <CheckBox x:Name="ColTopCategoryFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
+                    <CheckBox x:Name="ColCategoryPathFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
                     <CheckBox x:Name="ColAppliesFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
                     <CheckBox x:Name="ColSupportedFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
                 </StackPanel>
@@ -259,7 +263,11 @@
                                           CanUserSortColumns="True"
                                           CanUserResizeColumns="True"
                                           CanUserReorderColumns="True"
-                                          Sorting="PolicyList_Sorting">
+                                          Sorting="PolicyList_Sorting"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                          ScrollViewer.HorizontalScrollMode="Auto"
+                                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                          ScrollViewer.VerticalScrollMode="Auto">
                             <datagrid:DataGrid.Columns>
                                 <datagrid:DataGridTemplateColumn x:Name="ColCatIcon" Header="" Width="SizeToCells" CanUserSort="False">
                                     <datagrid:DataGridTemplateColumn.CellTemplate>
@@ -311,7 +319,9 @@
                                 <datagrid:DataGridTextColumn x:Name="ColName" Header="Name" Binding="{Binding DisplayName}" Width="3*" MinWidth="260"/>
                                 <datagrid:DataGridTextColumn x:Name="ColSecondName" Header="2nd Language Name" Binding="{Binding SecondName}" Width="2*" MinWidth="200" Visibility="Collapsed"/>
                                 <datagrid:DataGridTextColumn x:Name="ColId" Header="ID" Binding="{Binding ShortId}" Width="2*"/>
-                                <datagrid:DataGridTextColumn x:Name="ColCategory" Header="Category" Binding="{Binding CategoryName}" Width="2*"/>
+                                <datagrid:DataGridTextColumn x:Name="ColCategory" Header="Parent Category" Binding="{Binding CategoryName}" Width="2*"/>
+                                <datagrid:DataGridTextColumn x:Name="ColTopCategory" Header="Top Category" Binding="{Binding TopCategoryName}" Width="2*" Visibility="Collapsed"/>
+                                <datagrid:DataGridTextColumn x:Name="ColCategoryPath" Header="Category Path" Binding="{Binding CategoryFullPath}" Width="3*" Visibility="Collapsed"/>
                                 <datagrid:DataGridTextColumn x:Name="ColApplies" Header="Applies to" Binding="{Binding AppliesText}" Width="*"/>
                                 <datagrid:DataGridTextColumn x:Name="ColSupported" Header="Supported on" Binding="{Binding SupportedText}" Width="2*"/>
                             </datagrid:DataGrid.Columns>

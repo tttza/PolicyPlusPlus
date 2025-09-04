@@ -307,19 +307,21 @@ namespace PolicyPlus.WinUI3.Services
     public class ColumnsOptions
     {
         public bool ShowId { get; set; } = true;
-        public bool ShowCategory { get; set; } = false;
+        public bool ShowCategory { get; set; } = false; // Parent Category
+        public bool ShowTopCategory { get; set; } = false; // Top Category
+        public bool ShowCategoryPath { get; set; } = false; // Full path
         public bool ShowApplies { get; set; } = false;
         public bool ShowSupported { get; set; } = false;
         public bool ShowUserState { get; set; } = true;
         public bool ShowComputerState { get; set; } = true;
-        public bool ShowEnglishName { get; set; } = true; // new column
+        public bool ShowEnglishName { get; set; } = true;
     }
 
     public class ColumnState
     {
-        public string Key { get; set; } = string.Empty; // e.g., "Name","Id","Category","Applies","Supported","SecondName"
+        public string Key { get; set; } = string.Empty;
         public int Index { get; set; }
-        public double Width { get; set; } // pixels
+        public double Width { get; set; }
         public bool Visible { get; set; }
     }
 

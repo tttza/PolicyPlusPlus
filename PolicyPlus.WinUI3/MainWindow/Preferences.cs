@@ -12,7 +12,7 @@ namespace PolicyPlus.WinUI3
 {
     public sealed partial class MainWindow
     {
-        private readonly string[] _columnKeys = new[] { "CatIcon", "UserIcon", "ComputerIcon", "Name", "SecondName", "Id", "Category", "Applies", "Supported" };
+        private readonly string[] _columnKeys = new[] { "CatIcon", "UserIcon", "ComputerIcon", "Name", "SecondName", "Id", "Category", "TopCategory", "CategoryPath", "Applies", "Supported" };
 
         private void ApplyDetailsPaneVisibility()
         {
@@ -89,7 +89,9 @@ namespace PolicyPlus.WinUI3
 
                 // Reflect into View menu toggles first
                 if (ViewIdToggle != null) ViewIdToggle.IsChecked = cols.ShowId;
-                if (ViewCategoryToggle != null) ViewCategoryToggle.IsChecked = cols.ShowCategory;
+                if (ViewCategoryToggle != null) ViewCategoryToggle.IsChecked = cols.ShowCategory; // parent
+                if (ViewTopCategoryToggle != null) ViewTopCategoryToggle.IsChecked = cols.ShowTopCategory;
+                if (ViewCategoryPathToggle != null) ViewCategoryPathToggle.IsChecked = cols.ShowCategoryPath;
                 if (ViewAppliesToggle != null) ViewAppliesToggle.IsChecked = cols.ShowApplies;
                 if (ViewSupportedToggle != null) ViewSupportedToggle.IsChecked = cols.ShowSupported;
 
@@ -174,6 +176,8 @@ namespace PolicyPlus.WinUI3
             if (col == ColSecondName) return "SecondName";
             if (col == ColId) return "Id";
             if (col == ColCategory) return "Category";
+            if (col == ColTopCategory) return "TopCategory";
+            if (col == ColCategoryPath) return "CategoryPath";
             if (col == ColApplies) return "Applies";
             if (col == ColSupported) return "Supported";
             return string.Empty;
@@ -190,6 +194,8 @@ namespace PolicyPlus.WinUI3
                 "SecondName" => ColSecondName,
                 "Id" => ColId,
                 "Category" => ColCategory,
+                "TopCategory" => ColTopCategory,
+                "CategoryPath" => ColCategoryPath,
                 "Applies" => ColApplies,
                 "Supported" => ColSupported,
                 _ => null
@@ -208,7 +214,7 @@ namespace PolicyPlus.WinUI3
                 {
                     var col = GetColumnByKey(st.Key);
                     if (col == null) continue;
-                    if (col == ColId || col == ColCategory || col == ColApplies || col == ColSupported || col == ColSecondName)
+                    if (col == ColId || col == ColCategory || col == ColTopCategory || col == ColCategoryPath || col == ColApplies || col == ColSupported || col == ColSecondName)
                     {
                         col.Visibility = st.Visible ? Visibility.Visible : Visibility.Collapsed;
                     }
@@ -259,7 +265,9 @@ namespace PolicyPlus.WinUI3
                 var s = SettingsService.Instance.LoadSettings();
 
                 bool showId = ViewIdToggle?.IsChecked == true;
-                bool showCategory = ViewCategoryToggle?.IsChecked == true;
+                bool showCategory = ViewCategoryToggle?.IsChecked == true; // parent
+                bool showTopCategory = ViewTopCategoryToggle?.IsChecked == true;
+                bool showCategoryPath = ViewCategoryPathToggle?.IsChecked == true;
                 bool showApplies = ViewAppliesToggle?.IsChecked == true;
                 bool showSupported = ViewSupportedToggle?.IsChecked == true;
                 bool showSecondName = ViewSecondNameToggle?.IsChecked == true;
@@ -268,6 +276,8 @@ namespace PolicyPlus.WinUI3
                 {
                     ShowId = showId,
                     ShowCategory = showCategory,
+                    ShowTopCategory = showTopCategory,
+                    ShowCategoryPath = showCategoryPath,
                     ShowApplies = showApplies,
                     ShowSupported = showSupported,
                     ShowEnglishName = showSecondName,
@@ -290,6 +300,8 @@ namespace PolicyPlus.WinUI3
                 // Keep menu toggles in sync with actual visibility
                 if (ViewIdToggle != null) ViewIdToggle.IsChecked = ColId?.Visibility == Visibility.Visible;
                 if (ViewCategoryToggle != null) ViewCategoryToggle.IsChecked = ColCategory?.Visibility == Visibility.Visible;
+                if (ViewTopCategoryToggle != null) ViewTopCategoryToggle.IsChecked = ColTopCategory?.Visibility == Visibility.Visible;
+                if (ViewCategoryPathToggle != null) ViewCategoryPathToggle.IsChecked = ColCategoryPath?.Visibility == Visibility.Visible;
                 if (ViewAppliesToggle != null) ViewAppliesToggle.IsChecked = ColApplies?.Visibility == Visibility.Visible;
                 if (ViewSupportedToggle != null) ViewSupportedToggle.IsChecked = ColSupported?.Visibility == Visibility.Visible;
 
@@ -310,6 +322,8 @@ namespace PolicyPlus.WinUI3
             {
                 if (ColId != null) ColId.Visibility = (ViewIdToggle?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
                 if (ColCategory != null) ColCategory.Visibility = (ViewCategoryToggle?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+                if (ColTopCategory != null) ColTopCategory.Visibility = (ViewTopCategoryToggle?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+                if (ColCategoryPath != null) ColCategoryPath.Visibility = (ViewCategoryPathToggle?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
                 if (ColApplies != null) ColApplies.Visibility = (ViewAppliesToggle?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
                 if (ColSupported != null) ColSupported.Visibility = (ViewSupportedToggle?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
 
@@ -319,7 +333,6 @@ namespace PolicyPlus.WinUI3
                 {
                     ColSecondName.Visibility = (secondEnabled && (ViewSecondNameToggle?.IsChecked == true)) ? Visibility.Visible : Visibility.Collapsed;
                 }
-
                 UpdateColumnMenuChecks();
             }
             catch { }

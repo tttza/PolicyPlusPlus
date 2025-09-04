@@ -1154,40 +1154,25 @@ namespace PolicyPlus.WinUI3
                 string? key = null;
                 if (e.Column == ColName) key = nameof(PolicyListRow.DisplayName);
                 else if (e.Column == ColId) key = nameof(PolicyListRow.ShortId);
-                else if (e.Column == ColCategory) key = nameof(PolicyListRow.CategoryName);
+                else if (e.Column == ColCategory) key = nameof(PolicyListRow.CategoryName); // Parent
+                else if (e.Column == ColTopCategory) key = nameof(PolicyListRow.TopCategoryName); // Top
+                else if (e.Column == ColCategoryPath) key = nameof(PolicyListRow.CategoryFullPath); // Full path
                 else if (e.Column == ColApplies) key = nameof(PolicyListRow.AppliesText);
                 else if (e.Column == ColSupported) key = nameof(PolicyListRow.SupportedText);
                 if (string.IsNullOrEmpty(key)) return;
 
                 if (string.Equals(_sortColumn, key, StringComparison.Ordinal))
                 {
-                    if (_sortDirection == DataGridSortDirection.Ascending)
-                    {
-                        _sortDirection = DataGridSortDirection.Descending;
-                    }
-                    else if (_sortDirection == DataGridSortDirection.Descending)
-                    {
-                        // Clear sort (third click)
-                        _sortColumn = null;
-                        _sortDirection = null;
-                    }
-                    else
-                    {
-                        _sortDirection = DataGridSortDirection.Ascending;
-                    }
+                    if (_sortDirection == DataGridSortDirection.Ascending) _sortDirection = DataGridSortDirection.Descending;
+                    else if (_sortDirection == DataGridSortDirection.Descending) { _sortColumn = null; _sortDirection = null; }
+                    else _sortDirection = DataGridSortDirection.Ascending;
                 }
-                else
-                {
-                    _sortColumn = key;
-                    _sortDirection = DataGridSortDirection.Ascending;
-                }
+                else { _sortColumn = key; _sortDirection = DataGridSortDirection.Ascending; }
 
                 try
                 {
-                    if (_sortColumn == null || _sortDirection == null)
-                        SettingsService.Instance.UpdateSort(null, null);
-                    else
-                        SettingsService.Instance.UpdateSort(_sortColumn, _sortDirection == DataGridSortDirection.Descending ? "Desc" : "Asc");
+                    if (_sortColumn == null || _sortDirection == null) SettingsService.Instance.UpdateSort(null, null);
+                    else SettingsService.Instance.UpdateSort(_sortColumn, _sortDirection == DataGridSortDirection.Descending ? "Desc" : "Asc");
                 }
                 catch { }
 
@@ -1197,6 +1182,8 @@ namespace PolicyPlus.WinUI3
                     if (_sortColumn == nameof(PolicyListRow.DisplayName)) ColName.SortDirection = _sortDirection;
                     else if (_sortColumn == nameof(PolicyListRow.ShortId)) ColId.SortDirection = _sortDirection;
                     else if (_sortColumn == nameof(PolicyListRow.CategoryName)) ColCategory.SortDirection = _sortDirection;
+                    else if (_sortColumn == nameof(PolicyListRow.TopCategoryName)) ColTopCategory.SortDirection = _sortDirection;
+                    else if (_sortColumn == nameof(PolicyListRow.CategoryFullPath)) ColCategoryPath.SortDirection = _sortDirection;
                     else if (_sortColumn == nameof(PolicyListRow.AppliesText)) ColApplies.SortDirection = _sortDirection;
                     else if (_sortColumn == nameof(PolicyListRow.SupportedText)) ColSupported.SortDirection = _sortDirection;
                 }

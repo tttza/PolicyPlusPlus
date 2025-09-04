@@ -14,7 +14,6 @@ namespace PolicyPlus.WinUI3.Models
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-        // Data context
         private readonly bool _isGroup;
         private readonly IEnumerable<PolicyPlusPolicy>? _variants; // when group
         private IPolicySource? _comp;
@@ -26,7 +25,6 @@ namespace PolicyPlus.WinUI3.Models
         public PolicyPlusPolicy? Policy { get; }
         public PolicyPlusCategory? Category { get; }
 
-        // Computed state (mutable, notifies)
         private bool _userConfigured; public bool UserConfigured { get => _userConfigured; private set { if (_userConfigured != value) { _userConfigured = value; OnPropertyChanged(nameof(UserConfigured)); } } }
         private bool _computerConfigured; public bool ComputerConfigured { get => _computerConfigured; private set { if (_computerConfigured != value) { _computerConfigured = value; OnPropertyChanged(nameof(ComputerConfigured)); } } }
 
@@ -38,17 +36,16 @@ namespace PolicyPlus.WinUI3.Models
         private string _userGlyph = string.Empty; public string UserGlyph { get => _userGlyph; private set { if (_userGlyph != value) { _userGlyph = value; OnPropertyChanged(nameof(UserGlyph)); } } }
         private string _computerGlyph = string.Empty; public string ComputerGlyph { get => _computerGlyph; private set { if (_computerGlyph != value) { _computerGlyph = value; OnPropertyChanged(nameof(ComputerGlyph)); } } }
 
-        // Brushes for glyph coloring
         private Brush? _userBrush; public Brush? UserBrush { get => _userBrush; private set { if (!ReferenceEquals(_userBrush, value)) { _userBrush = value; OnPropertyChanged(nameof(UserBrush)); } } }
         private Brush? _computerBrush; public Brush? ComputerBrush { get => _computerBrush; private set { if (!ReferenceEquals(_computerBrush, value)) { _computerBrush = value; OnPropertyChanged(nameof(ComputerBrush)); } } }
 
-        // Pending flags
         private bool _userPending; public bool UserPending { get => _userPending; private set { if (_userPending != value) { _userPending = value; OnPropertyChanged(nameof(UserPending)); } } }
         private bool _computerPending; public bool ComputerPending { get => _computerPending; private set { if (_computerPending != value) { _computerPending = value; OnPropertyChanged(nameof(ComputerPending)); } } }
 
-        // Optional column values
         public string UniqueId { get; }
-        public string CategoryName { get; }
+        public string CategoryName { get; } // immediate category (Parent Category column)
+        public string TopCategoryName { get; } = string.Empty; // root-most category (Top Category column)
+        public string CategoryFullPath { get; } = string.Empty; // full path root -> immediate
         public string AppliesText { get; }
         public string SupportedText { get; }
         private string _userStateText = string.Empty; public string UserStateText { get => _userStateText; private set { if (_userStateText != value) { _userStateText = value; OnPropertyChanged(nameof(UserStateText)); } } }
@@ -60,13 +57,33 @@ namespace PolicyPlus.WinUI3.Models
             {
                 if (string.IsNullOrEmpty(UniqueId)) return string.Empty;
                 int idx = UniqueId.LastIndexOf(':');
-                return idx >= 0 && idx + 1 < UniqueId.Length ? UniqueId.Substring(idx + 1) : UniqueId;
+                return idx >= 0 && idx + 1 < UniqueId.Length ? UniqueId[(idx + 1)..] : UniqueId;
             }
+        }
+
+        private static string ComputeTopCategory(PolicyPlusCategory? cat)
+        {
+            if (cat == null) return string.Empty;
+            while (cat.Parent != null) cat = cat.Parent;
+            return cat.DisplayName ?? string.Empty;
+        }
+
+        private static string ComputeFullPath(PolicyPlusCategory? cat)
+        {
+            if (cat == null) return string.Empty;
+            var stack = new Stack<string>();
+            var cur = cat;
+            while (cur != null)
+            {
+                if (!string.IsNullOrEmpty(cur.DisplayName)) stack.Push(cur.DisplayName);
+                cur = cur.Parent;
+            }
+            return string.Join(" / ", stack); // delimiter
         }
 
         private PolicyListRow(string displayName, string secondName, bool isCategory, PolicyPlusPolicy? policy, PolicyPlusCategory? category,
             IPolicySource? comp, IPolicySource? user, IEnumerable<PolicyPlusPolicy>? variants,
-            string uniqueId, string categoryName, string appliesText, string supportedText)
+            string uniqueId, string categoryName, string topCategoryName, string categoryFullPath, string appliesText, string supportedText)
         {
             DisplayName = displayName;
             SecondName = secondName;
@@ -79,6 +96,8 @@ namespace PolicyPlus.WinUI3.Models
             _isGroup = variants != null;
             UniqueId = uniqueId;
             CategoryName = categoryName;
+            TopCategoryName = topCategoryName;
+            CategoryFullPath = categoryFullPath;
             AppliesText = appliesText;
             SupportedText = supportedText;
 
@@ -86,7 +105,7 @@ namespace PolicyPlus.WinUI3.Models
         }
 
         public static PolicyListRow FromCategory(PolicyPlusCategory c)
-            => new PolicyListRow(c.DisplayName, string.Empty, true, null, c, null, null, null, string.Empty, string.Empty, string.Empty, string.Empty);
+            => new PolicyListRow(c.DisplayName, string.Empty, true, null, c, null, null, null, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
 
         private static Brush? TryGetResourceBrush(string key)
         {
@@ -94,15 +113,12 @@ namespace PolicyPlus.WinUI3.Models
             return null;
         }
 
-        private static string AppliesOf(PolicyPlusPolicy p)
+        private static string AppliesOf(PolicyPlusPolicy p) => p.RawPolicy.Section switch
         {
-            return p.RawPolicy.Section switch
-            {
-                AdmxPolicySection.Machine => "Computer",
-                AdmxPolicySection.User => "User",
-                _ => "Both"
-            };
-        }
+            AdmxPolicySection.Machine => "Computer",
+            AdmxPolicySection.User => "User",
+            _ => "Both"
+        };
 
         private static string StateText(bool enabled, bool disabled, bool configured)
         {
@@ -126,22 +142,26 @@ namespace PolicyPlus.WinUI3.Models
 
         public static PolicyListRow FromPolicy(PolicyPlusPolicy p, IPolicySource? comp, IPolicySource? user)
         {
-            string categoryName = p.Category?.DisplayName ?? string.Empty;
+            string categoryName = p.Category?.DisplayName ?? string.Empty; // immediate
+            string topCategoryName = ComputeTopCategory(p.Category);
+            string fullPath = ComputeFullPath(p.Category);
             string appliesText = AppliesOf(p);
             string supportedText = p.SupportedOn?.DisplayName ?? string.Empty;
             string second = GetSecondName(p);
             return new PolicyListRow(p.DisplayName, second, false, p, null, comp, user, null,
-                p.UniqueID, categoryName, appliesText, supportedText);
+                p.UniqueID, categoryName, topCategoryName, fullPath, appliesText, supportedText);
         }
 
         public static PolicyListRow FromGroup(PolicyPlusPolicy representative, IEnumerable<PolicyPlusPolicy> variants, IPolicySource? comp, IPolicySource? user)
         {
             string categoryName = representative.Category?.DisplayName ?? string.Empty;
+            string topCategoryName = ComputeTopCategory(representative.Category);
+            string fullPath = ComputeFullPath(representative.Category);
             string appliesText = AppliesOf(representative);
             string supportedText = representative.SupportedOn?.DisplayName ?? string.Empty;
             string second = GetSecondName(representative);
             return new PolicyListRow(representative.DisplayName, second, false, representative, null, comp, user, variants,
-                representative.UniqueID, categoryName, appliesText, supportedText);
+                representative.UniqueID, categoryName, topCategoryName, fullPath, appliesText, supportedText);
         }
 
         public void RefreshStateFromSourcesAndPending(IPolicySource? compUpdate, IPolicySource? userUpdate)
@@ -164,7 +184,6 @@ namespace PolicyPlus.WinUI3.Models
                 {
                     foreach (var v in _variants)
                     {
-                        // User scope effective
                         if (v.RawPolicy.Section == AdmxPolicySection.User || v.RawPolicy.Section == AdmxPolicySection.Both)
                         {
                             bool cfg = false, en = false, dis = false, pend = false;
@@ -183,7 +202,6 @@ namespace PolicyPlus.WinUI3.Models
                             }
                             anyUserConfigured |= cfg; anyUserEnabled |= en; anyUserDisabled |= dis; anyUserPending |= pend;
                         }
-                        // Computer scope effective
                         if (v.RawPolicy.Section == AdmxPolicySection.Machine || v.RawPolicy.Section == AdmxPolicySection.Both)
                         {
                             bool cfg = false, en = false, dis = false, pend = false;
@@ -213,7 +231,7 @@ namespace PolicyPlus.WinUI3.Models
                 ComputerGlyph = anyCompEnabled ? "\uE73E" : (anyCompDisabled ? "\uE711" : string.Empty);
 
                 UserBrush = anyUserEnabled ? apply : (anyUserDisabled ? danger : null);
-                ComputerBrush = anyCompEnabled ? apply : (anyUserDisabled ? danger : null);
+                ComputerBrush = anyCompEnabled ? apply : (anyCompDisabled ? danger : null);
 
                 UserStateText = StateText(anyUserEnabled, anyUserDisabled, anyUserConfigured);
                 ComputerStateText = StateText(anyCompEnabled, anyCompDisabled, anyCompConfigured);
@@ -243,7 +261,6 @@ namespace PolicyPlus.WinUI3.Models
                 }
                 catch { }
 
-                // Overlay pending desired states if present
                 try
                 {
                     var pend = PendingChangesService.Instance.Pending;
