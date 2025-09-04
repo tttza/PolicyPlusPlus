@@ -139,7 +139,6 @@ namespace PolicyPlus.WinUI3
             this.InitializeComponent();
             HookPendingQueue();
 
-            // attach scaling for main window content when layout is ready
             RootGrid.Loaded += (s, e) =>
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
@@ -289,13 +288,8 @@ namespace PolicyPlus.WinUI3
 
         private void ColumnToggle_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is ToggleMenuFlyoutItem t && t.Tag is string name)
-            {
-                if (RootGrid?.FindName(name) is CheckBox cb)
-                    cb.IsChecked = t.IsChecked;
-            }
             SaveColumnPrefs();
-            UpdateColumnVisibilityFromFlags();
+            ApplyColumnVisibilityFromToggles();
             _navTyping = false;
             RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
             UpdateNavButtons();
@@ -303,8 +297,9 @@ namespace PolicyPlus.WinUI3
 
         private void HiddenFlag_Checked(object sender, RoutedEventArgs e)
         {
+            // keep compatibility but drive from toggles
             SaveColumnPrefs();
-            UpdateColumnVisibilityFromFlags();
+            ApplyColumnVisibilityFromToggles();
         }
 
         private void UpdateUnsavedIndicator()
@@ -337,21 +332,20 @@ namespace PolicyPlus.WinUI3
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            // Stop using ConfigurationStorage; migrate from it (one-time) to SettingsService
             try
             {
                 var s = SettingsService.Instance.LoadSettings();
 
-                // Hide empty categories
                 _hideEmptyCategories = s.HideEmptyCategories ?? true;
                 try { ToggleHideEmptyMenu.IsChecked = _hideEmptyCategories; } catch { }
 
-                // Details pane
+                // Apply persisted detail pane ratio before showing
+                ApplySavedDetailPaneRatioIfAny();
+
                 _showDetails = s.ShowDetails ?? true;
                 try { ViewDetailsToggle.IsChecked = _showDetails; } catch { }
                 ApplyDetailsPaneVisibility();
 
-                // Theme
                 var themePref = s.Theme ?? "System";
                 ApplyTheme(themePref);
                 App.SetGlobalTheme(themePref switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
@@ -364,26 +358,17 @@ namespace PolicyPlus.WinUI3
                 }
                 catch { }
 
-                // Scale
                 var scalePref = s.UIScale ?? "100%";
                 SetScaleFromString(scalePref, updateSelector: true, save: false);
 
-                // Columns
-                var cols = s.Columns;
-                if (cols != null)
-                {
-                    var id = GetFlag("ColIdFlag"); if (id != null) id.IsChecked = cols.ShowId;
-                    var cat = GetFlag("ColCategoryFlag"); if (cat != null) cat.IsChecked = cols.ShowCategory;
-                    var app = GetFlag("ColAppliesFlag"); if (app != null) app.IsChecked = cols.ShowApplies;
-                    var sup = GetFlag("ColSupportedFlag"); if (sup != null) sup.IsChecked = cols.ShowSupported;
-                    var us = GetFlag("ColUserStateFlag"); if (us != null) us.IsChecked = cols.ShowUserState;
-                    var cs = GetFlag("ColCompStateFlag"); if (cs != null) cs.IsChecked = cols.ShowComputerState;
-                }
-                UpdateColumnVisibilityFromFlags();
+                // Column visibility from settings via menu toggles
+                LoadColumnPrefs();
+
+                // Apply saved layout (widths, sort)
+                try { ApplyPersistedLayout(); } catch { }
 
                 HookDoubleTapHandlers();
 
-                // ADMX path
                 string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
                 string lastPath = s.AdmxSourcePath ?? defaultPath;
                 if (Directory.Exists(lastPath))
@@ -391,11 +376,9 @@ namespace PolicyPlus.WinUI3
                     LoadAdmxFolderAsync(lastPath);
                 }
 
-                // Init navigation and search UI
                 try { InitNavigation(); } catch { }
                 try { UpdateSearchClearButtonVisibility(); } catch { }
 
-                // Load history
                 try
                 {
                     var hist = SettingsService.Instance.LoadHistory();
@@ -403,7 +386,6 @@ namespace PolicyPlus.WinUI3
                 }
                 catch { }
 
-                // Search options
                 var so = s.Search;
                 if (so != null)
                 {
@@ -1104,6 +1086,14 @@ namespace PolicyPlus.WinUI3
                     _sortColumn = key;
                     _sortDirection = DataGridSortDirection.Ascending;
                 }
+
+                // Persist sort
+                try
+                {
+                    string dir = _sortDirection == DataGridSortDirection.Descending ? "Desc" : "Asc";
+                    SettingsService.Instance.UpdateSort(_sortColumn, dir);
+                }
+                catch { }
 
                 // Update glyph
                 foreach (var col in PolicyList.Columns)

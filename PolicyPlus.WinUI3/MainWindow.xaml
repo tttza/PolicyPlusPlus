@@ -232,7 +232,7 @@
                         </controls:TreeView>
                     </Grid>
 
-                    <toolkit:GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Width="8" HorizontalAlignment="Stretch"/>
+                    <toolkit:GridSplitter x:Name="CategorySplitter" Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Width="8" HorizontalAlignment="Stretch" PointerReleased="CategorySplitter_PointerReleased"/>
 
                     <!-- Policy list and details -->
                     <Grid Grid.Column="2" x:Name="PolicyDetailGrid">
@@ -255,6 +255,8 @@
                                           DoubleTapped="PolicyList_DoubleTapped"
                                           RightTapped="PolicyList_RightTapped"
                                           CanUserSortColumns="True"
+                                          CanUserResizeColumns="True"
+                                          CanUserReorderColumns="True"
                                           Sorting="PolicyList_Sorting">
                             <datagrid:DataGrid.Columns>
                                 <datagrid:DataGridTemplateColumn x:Name="ColCatIcon" Header="" Width="SizeToCells" CanUserSort="False">
@@ -331,7 +333,7 @@
                             </datagrid:DataGrid.RowStyle>
                         </datagrid:DataGrid>
 
-                        <toolkit:GridSplitter x:Name="DetailsSplitter" Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Height="8" HorizontalAlignment="Stretch"/>
+                        <toolkit:GridSplitter x:Name="DetailsSplitter" Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Height="8" HorizontalAlignment="Stretch" PointerReleased="DetailsSplitter_PointerReleased"/>
 
                         <Border x:Name="DetailsPane" Grid.Row="2" Margin="0,8,0,0" Padding="12" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}" CornerRadius="4" MinHeight="100">
                             <Grid>

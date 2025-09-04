@@ -40,6 +40,8 @@ namespace PolicyPlus.WinUI3.Serialization
     [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonSerializable(typeof(AppSettings))]
     [JsonSerializable(typeof(ColumnsOptions))]
+    [JsonSerializable(typeof(ColumnState))]
+    [JsonSerializable(typeof(List<ColumnState>))]
     [JsonSerializable(typeof(SearchOptions))]
     [JsonSerializable(typeof(SearchStats))]
     [JsonSerializable(typeof(List<HistoryRecord>))]

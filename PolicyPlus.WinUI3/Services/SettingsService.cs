@@ -143,6 +143,23 @@ namespace PolicyPlus.WinUI3.Services
             SaveSettings(s);
         }
 
+        public void UpdateColumnLayout(List<ColumnState> states)
+        {
+            var s = LoadSettings();
+            s.ColumnStates = states;
+            SaveSettings(s);
+        }
+
+        public List<ColumnState> LoadColumnLayout()
+        {
+            try
+            {
+                var s = LoadSettings();
+                return s.ColumnStates ?? new List<ColumnState>();
+            }
+            catch { return new List<ColumnState>(); }
+        }
+
         public void UpdateSearchOptions(SearchOptions opts)
         {
             var s = LoadSettings();
@@ -161,6 +178,28 @@ namespace PolicyPlus.WinUI3.Services
         {
             var s = LoadSettings();
             s.ShowEnglishNames = show;
+            SaveSettings(s);
+        }
+
+        public void UpdateCategoryPaneWidth(double width)
+        {
+            var s = LoadSettings();
+            s.CategoryPaneWidth = Math.Max(0, width);
+            SaveSettings(s);
+        }
+
+        public void UpdateDetailPaneHeightStar(double star)
+        {
+            var s = LoadSettings();
+            s.DetailPaneHeightStar = Math.Max(0, star);
+            SaveSettings(s);
+        }
+
+        public void UpdateSort(string? column, string? direction)
+        {
+            var s = LoadSettings();
+            s.SortColumn = column;
+            s.SortDirection = direction; // "Asc" or "Desc" or null
             SaveSettings(s);
         }
 
@@ -240,6 +279,17 @@ namespace PolicyPlus.WinUI3.Services
         public bool? ShowEnglishNames { get; set; }
         public bool? SecondLanguageEnabled { get; set; }
         public string? SecondLanguage { get; set; }
+
+        // New persisted UI layout settings
+        public double? CategoryPaneWidth { get; set; }
+        public double? DetailPaneHeightStar { get; set; }
+
+        // Grid sort persistence
+        public string? SortColumn { get; set; } // e.g., "DisplayName", "ShortId", etc.
+        public string? SortDirection { get; set; } // "Asc" or "Desc"
+
+        // DataGrid layout
+        public List<ColumnState>? ColumnStates { get; set; }
     }
 
     public class ColumnsOptions
@@ -251,6 +301,14 @@ namespace PolicyPlus.WinUI3.Services
         public bool ShowUserState { get; set; } = true;
         public bool ShowComputerState { get; set; } = true;
         public bool ShowEnglishName { get; set; } = true; // new column
+    }
+
+    public class ColumnState
+    {
+        public string Key { get; set; } = string.Empty; // e.g., "Name","Id","Category","Applies","Supported","SecondName"
+        public int Index { get; set; }
+        public double Width { get; set; } // pixels
+        public bool Visible { get; set; }
     }
 
     public class SearchOptions
