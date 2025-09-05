@@ -49,33 +49,30 @@ namespace PolicyPlus.WinUI3.Windows
             InitializeComponent();
             Title = "Edit Policy Setting";
 
-            ApplyWindowTheme();
-            App.ThemeChanged += (s, e) => ApplyWindowTheme();
-
-            // grow initial size by display scale (e.g., 250%) but keep within work area
-            WindowHelpers.ResizeForDisplayScale(this, 800, 600);
-            this.Activated += (s, e) => WindowHelpers.BringToFront(this);
-            this.Closed += (s, e) => App.UnregisterWindow(this);
-            App.RegisterWindow(this);
+            // Centralized common window setup
+            ChildWindowCommon.Initialize(this, 800, 600, ApplyWindowTheme);
 
             RootShell.Loaded += (s, e) =>
             {
-                try { ScaleHelper.Attach(this, ScaleHost, RootShell); } catch { }
-                _secondLangToggle = RootShell.FindName("SecondLangToggle") as ToggleButton;
-                if (_secondLangToggle != null)
+                try
                 {
-                    _secondLangToggle.Checked += SecondLangToggle_Checked;
-                    _secondLangToggle.Unchecked += SecondLangToggle_Checked;
-                    try
+                    _secondLangToggle = RootShell.FindName("SecondLangToggle") as ToggleButton;
+                    if (_secondLangToggle != null)
                     {
-                        var st = SettingsService.Instance.LoadSettings();
-                        bool enabled = st.SecondLanguageEnabled ?? false;
-                        _secondLangToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
-                        string code = st.SecondLanguage ?? "en-US";
-                        ToolTipService.SetToolTip(_secondLangToggle, enabled ? $"Toggle 2nd language ({code})" : "2nd language disabled in preferences");
+                        _secondLangToggle.Checked += SecondLangToggle_Checked;
+                        _secondLangToggle.Unchecked += SecondLangToggle_Checked;
+                        try
+                        {
+                            var st = SettingsService.Instance.LoadSettings();
+                            bool enabled = st.SecondLanguageEnabled ?? false;
+                            _secondLangToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                            string code = st.SecondLanguage ?? "en-US";
+                            ToolTipService.SetToolTip(_secondLangToggle, enabled ? $"Toggle 2nd language ({code})" : "2nd language disabled in preferences");
+                        }
+                        catch { }
                     }
-                    catch { }
                 }
+                catch { }
             };
 
             SectionSelector.SelectionChanged += SectionSelector_SelectionChanged;
@@ -142,7 +139,6 @@ namespace PolicyPlus.WinUI3.Windows
                     var pres = useSecond ? LocalizedTextService.GetPresentationIn(_policy, lang) : null;
                     if (pres != null)
                     {
-                        // Build temporary copy using localized presentation
                         var original = _policy.Presentation;
                         _policy.Presentation = pres;
                         BuildElements();
@@ -152,7 +148,6 @@ namespace PolicyPlus.WinUI3.Windows
                     }
                     else
                     {
-                        // If we don't have a localized presentation, still rebuild once to apply any static label changes
                         BuildElements();
                         LoadStateFromSource();
                         StateRadio_Checked(this, null!);
@@ -177,14 +172,16 @@ namespace PolicyPlus.WinUI3.Windows
 
         private void ApplyWindowTheme()
         {
-            if (Content is FrameworkElement fe)
-                fe.RequestedTheme = App.CurrentTheme;
-            // Force text boxes to theme-aware colors
-            var textBg = Application.Current.Resources["TextControlBackground"] as Brush;
-            var textFg = Application.Current.Resources["TextFillColorPrimaryBrush"] as Brush;
-            CommentBox.Background = textBg; CommentBox.Foreground = textFg;
-            SupportedBox.Background = textBg; SupportedBox.Foreground = textFg;
-            // RichTextBlock uses theme brushes automatically; no explicit background needed
+            try
+            {
+                if (Content is FrameworkElement fe)
+                    fe.RequestedTheme = App.CurrentTheme;
+                var textBg = Application.Current.Resources["TextControlBackground"] as Brush;
+                var textFg = Application.Current.Resources["TextFillColorPrimaryBrush"] as Brush;
+                CommentBox.Background = textBg; CommentBox.Foreground = textFg;
+                SupportedBox.Background = textBg; SupportedBox.Foreground = textFg;
+            }
+            catch { }
         }
 
         public void Initialize(PolicyPlusPolicy policy, AdmxPolicySection section, AdmxBundle bundle,
@@ -290,7 +287,6 @@ namespace PolicyPlus.WinUI3.Windows
                         if (val is bool b) ch.IsChecked = b; else ch.IsChecked = (Convert.ToString(val)?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
                         break;
                     case Button btn:
-                        // list editor data
                         if (val is List<string> list)
                         { btn.Tag = list; btn.Content = $"Edit... ({list.Count})"; }
                         else if (val is IEnumerable<KeyValuePair<string, string>> kvpList)

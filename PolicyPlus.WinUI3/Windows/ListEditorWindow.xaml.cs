@@ -45,21 +45,12 @@ namespace PolicyPlus.WinUI3.Windows
             InitializeComponent();
             this.Title = "Edit list";
 
-            ApplyThemeResources();
-            App.ThemeChanged += (s, e) => ApplyThemeResources();
+            // Centralized common window init
+            ChildWindowCommon.Initialize(this, 560, 480, ApplyThemeResources);
 
             AddBtn.Click += (s, e) => { var tb = AddListRow(string.Empty, true); tb?.Focus(FocusState.Programmatic); };
             OkBtn.Click += Ok_Click;
             CancelBtn.Click += Cancel_Click;
-
-            // adapt initial size by monitor scale
-            WindowHelpers.ResizeForDisplayScale(this, 560, 480);
-            this.Activated += (s, e) => WindowHelpers.BringToFront(this);
-            this.Closed += (s, e) => App.UnregisterWindow(this);
-            App.RegisterWindow(this);
-
-            TryAttachScale();
-            this.Activated += (s, e) => TryAttachScale();
         }
 
         private void Accel_Add(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
@@ -69,26 +60,9 @@ namespace PolicyPlus.WinUI3.Windows
         private void Accel_Close(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
         { try { Close(); } catch { } args.Handled = true; }
 
-        private void TryAttachScale()
-        {
-            try
-            {
-                if (Content is FrameworkElement fe)
-                {
-                    var host = fe.FindName("ScaleHost") as FrameworkElement;
-                    var root = fe.FindName("RootShell") as FrameworkElement;
-                    if (host != null && root != null)
-                    {
-                        ScaleHelper.Attach(this, host, root);
-                      }
-                }
-            }
-            catch { }
-        }
-
         private void ApplyThemeResources()
         {
-            if (Content is FrameworkElement fe) fe.RequestedTheme = App.CurrentTheme;
+            try { if (Content is FrameworkElement fe) fe.RequestedTheme = App.CurrentTheme; } catch { }
         }
 
         public void BringToFront() => WindowHelpers.BringToFront(this);

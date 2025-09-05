@@ -43,15 +43,8 @@ namespace PolicyPlus.WinUI3.Windows
             CloseBtn.Click += (s, e) => this.Close();
             OpenRegBtn.Click += OpenRegBtn_Click;
 
-            ApplyThemeResources();
-            App.ThemeChanged += (s, e) => ApplyThemeResources();
-
-            WindowHelpers.ResizeForDisplayScale(this, 600, 520);
-            this.Activated += (s, e) => WindowHelpers.BringToFront(this);
-            this.Closed += (s, e) => App.UnregisterWindow(this);
-            App.RegisterWindow(this);
-
-            try { ScaleHelper.Attach(this, ScaleHost, RootShell); } catch { }
+            // Centralized child window boilerplate
+            ChildWindowCommon.Initialize(this, 600, 520, ApplyThemeResources);
 
             try
             {
@@ -86,13 +79,17 @@ namespace PolicyPlus.WinUI3.Windows
 
         private void ApplyThemeResources()
         {
-            if (Content is FrameworkElement fe) fe.RequestedTheme = App.CurrentTheme;
-            var inputBg = (Brush)Application.Current.Resources["ControlFillColorDefaultBrush"]; var inputStroke = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"]; var inputFg = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
-            NameBox.Background = inputBg; NameBox.BorderBrush = inputStroke; NameBox.Foreground = inputFg;
-            IdBox.Background = inputBg; IdBox.BorderBrush = inputStroke; IdBox.Foreground = inputFg;
-            DefinedInBox.Background = inputBg; DefinedInBox.BorderBrush = inputStroke; DefinedInBox.Foreground = inputFg;
-            PathBox.Background = inputBg; PathBox.BorderBrush = inputStroke; PathBox.Foreground = inputFg;
-            RegBox.Background = inputBg; RegBox.BorderBrush = inputStroke; RegBox.Foreground = inputFg;
+            try
+            {
+                if (Content is FrameworkElement fe) fe.RequestedTheme = App.CurrentTheme;
+                var inputBg = (Brush)Application.Current.Resources["ControlFillColorDefaultBrush"]; var inputStroke = (Brush)Application.Current.Resources["ControlStrokeColorDefaultBrush"]; var inputFg = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
+                NameBox.Background = inputBg; NameBox.BorderBrush = inputStroke; NameBox.Foreground = inputFg;
+                IdBox.Background = inputBg; IdBox.BorderBrush = inputStroke; IdBox.Foreground = inputFg;
+                DefinedInBox.Background = inputBg; DefinedInBox.BorderBrush = inputStroke; DefinedInBox.Foreground = inputFg;
+                PathBox.Background = inputBg; PathBox.BorderBrush = inputStroke; PathBox.Foreground = inputFg;
+                RegBox.Background = inputBg; RegBox.BorderBrush = inputStroke; RegBox.Foreground = inputFg;
+            }
+            catch { }
         }
 
         private void ToggleViewBtn_Click(object sender, RoutedEventArgs e)

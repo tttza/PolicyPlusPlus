@@ -28,18 +28,16 @@ namespace PolicyPlus.WinUI3.Windows
         private List<HistoryRecord> _historyView = new();
         private IElevationService _elevation;
 
-        // For app use
         public PendingChangesWindow() : this(new ElevationServiceAdapter()) { }
 
-        // For tests (dependency injection)
         public PendingChangesWindow(IElevationService elevation)
         {
             _elevation = elevation;
             InitializeComponent();
             Title = "Pending changes";
 
-            ApplyThemeResources();
-            App.ThemeChanged += (s, e) => ApplyThemeResources();
+            // Centralized common window init
+            ChildWindowCommon.Initialize(this, 900, 640, ApplyThemeResources);
 
             BtnClose.Click += (s, e) => this.Close();
             BtnApplySelected.Click += BtnApplySelected_Click;
@@ -51,22 +49,13 @@ namespace PolicyPlus.WinUI3.Windows
 
             PendingList.DoubleTapped += (s, e) => Pending_ContextView_Click(s, e);
 
-            // Listen to main window save to surface info here too
             var main = App.Window as MainWindow;
             if (main != null)
             {
                 main.Saved += (s, e) => { ShowLocalInfo("Saved."); RefreshViews(); };
             }
 
-            // Scale-aware initial size based on monitor DPI
-            WindowHelpers.ResizeForDisplayScale(this, 900, 640);
-            this.Activated += (s, e) => WindowHelpers.BringToFront(this);
-            this.Closed += (s, e) => { UnsubscribeCollectionChanges(); App.UnregisterWindow(this); };
-            App.RegisterWindow(this);
-
-            try { ScaleHelper.Attach(this, ScaleHost, RootShell!); } catch { }
-
-            SubscribeCollectionChanges();
+            try { SubscribeCollectionChanges(); } catch { }
         }
 
         private void Accel_SaveAll(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
@@ -298,7 +287,7 @@ namespace PolicyPlus.WinUI3.Windows
 
         private void ApplyThemeResources()
         {
-            if (Content is FrameworkElement fe) fe.RequestedTheme = App.CurrentTheme;
+            try { if (Content is FrameworkElement fe) fe.RequestedTheme = App.CurrentTheme; } catch { }
         }
 
         private void SetSaving(bool saving)
@@ -317,7 +306,6 @@ namespace PolicyPlus.WinUI3.Windows
 
             var appliedList = items.ToList();
 
-            // Use coordinator with timeout so the UI doesn't hang if host is stuck
             var (ok, error, _, _) = await SaveChangesCoordinator.SaveAsync(bundle, appliedList, _elevation, TimeSpan.FromSeconds(8), triggerRefresh: true);
 
             if (ok)

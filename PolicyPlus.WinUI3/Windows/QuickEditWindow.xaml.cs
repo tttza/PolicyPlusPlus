@@ -17,10 +17,7 @@ namespace PolicyPlus.WinUI3.Windows
 {
     public sealed partial class QuickEditWindow : Window
     {
-        // Track child list editor windows so they can be closed when this window closes.
         private readonly List<ListEditorWindow> _childEditors = new();
-
-        // For saving
         private AdmxBundle? _bundle;
         private IPolicySource? _compSource;
         private IPolicySource? _userSource;
@@ -33,21 +30,16 @@ namespace PolicyPlus.WinUI3.Windows
             InitializeComponent();
             try { SystemBackdrop = new MicaBackdrop(); } catch { }
 
-            // Wire up dynamic references
+            ChildWindowCommon.Initialize(this, 680, 520, ApplyCurrentTheme);
+
             if (_grid != null) _grid.ParentQuickEditWindow = this;
 
-            // Events
             if (_saveButton != null) _saveButton.Click += async (_, __) => await SaveAsync();
             if (_closeButton != null) _closeButton.Click += (_, __) => Close();
 
-            // Keyboard accelerator (Ctrl+S)
             var saveAccel = new KeyboardAccelerator { Key = global::Windows.System.VirtualKey.S, Modifiers = global::Windows.System.VirtualKeyModifiers.Control };
             saveAccel.Invoked += async (a, b) => { if (_saveButton?.IsEnabled == true && !_isSaving) { await SaveAsync(); b.Handled = true; } };
             _root?.KeyboardAccelerators.Add(saveAccel);
-
-            // Theme
-            ApplyCurrentTheme();
-            App.ThemeChanged += App_ThemeChanged;
 
             Closed += (s, e) =>
             {
@@ -57,12 +49,11 @@ namespace PolicyPlus.WinUI3.Windows
                     PendingChangesService.Instance.Pending.CollectionChanged -= Pending_CollectionChanged;
                     foreach (var w in _childEditors.ToList()) { try { w.Close(); } catch { } }
                     _childEditors.Clear();
-                    App.UnregisterWindow(this);
                 }
                 catch { }
             };
 
-            try { App.RegisterWindow(this); } catch { }
+            App.ThemeChanged += App_ThemeChanged;
         }
 
         private void App_ThemeChanged(object? sender, System.EventArgs e) => ApplyCurrentTheme();
