@@ -1,2 +1,3 @@
-* Leave existing comments in the source code as they are, and keep any comments added by Copilot to a minimum. Self-explanatory comments and comments highlighting the changes made in this fix are not necessary.
-* Please write comments in English only. Questions will be answered in the language in which they were asked.
+* Write code that is highly readable.
+* Add comments only when they serve as element separators or when explanations improve understanding for others.
+* Write comments in English only. Responses to questions should be provided in the language of the question.

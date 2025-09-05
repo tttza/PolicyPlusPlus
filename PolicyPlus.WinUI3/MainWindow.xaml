@@ -109,9 +109,9 @@
                         <controls:MenuBarItem Title="Columns">
                             <ToggleMenuFlyoutItem x:Name="ViewBookmarkToggle" Text="Bookmark" IsChecked="True" Click="ViewBookmarkToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewIdToggle" Text="ID" IsChecked="True" Tag="ColIdFlag" Click="ColumnToggle_Click"/>
-                            <ToggleMenuFlyoutItem x:Name="ViewCategoryToggle" Text="Parent Category" IsChecked="False" Tag="ColCategoryFlag" Click="ColumnToggle_Click"/>
-                            <ToggleMenuFlyoutItem x:Name="ViewTopCategoryToggle" Text="Top Category" IsChecked="False" Tag="ColTopCategoryFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewCategoryPathToggle" Text="Category Path" IsChecked="False" Tag="ColCategoryPathFlag" Click="ColumnToggle_Click"/>
+                            <ToggleMenuFlyoutItem x:Name="ViewTopCategoryToggle" Text="Top Category" IsChecked="False" Tag="ColTopCategoryFlag" Click="ColumnToggle_Click"/>
+                            <ToggleMenuFlyoutItem x:Name="ViewCategoryToggle" Text="Parent Category" IsChecked="False" Tag="ColCategoryFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewAppliesToggle" Text="Applies to" IsChecked="False" Tag="ColAppliesFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewSupportedToggle" Text="Supported on" IsChecked="False" Tag="ColSupportedFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewSecondNameToggle" Text="2nd Language Name" IsChecked="False" Click="ViewSecoundNameToggle_Click"/>
