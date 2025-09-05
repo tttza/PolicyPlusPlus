@@ -11,6 +11,7 @@ namespace PolicyPlus.WinUI3.Utils
         {
             if (host == null || innerRoot == null) return;
 
+            // Keep alignment predictable
             innerRoot.HorizontalAlignment = HorizontalAlignment.Left;
             innerRoot.VerticalAlignment = VerticalAlignment.Top;
             innerRoot.Margin = new Thickness(0);
@@ -30,6 +31,17 @@ namespace PolicyPlus.WinUI3.Utils
                 host.Clip = clip;
             }
 
+            bool AllowAutoSize()
+            {
+                try
+                {
+                    if (host.Tag is string s && (s.Contains("AllowAutoSize", StringComparison.OrdinalIgnoreCase) || s.Contains("AllowAutoHeight", StringComparison.OrdinalIgnoreCase)))
+                        return true;
+                }
+                catch { }
+                return false;
+            }
+
             void Apply()
             {
                 try
@@ -40,12 +52,21 @@ namespace PolicyPlus.WinUI3.Utils
 
                     double w = host.ActualWidth;
                     double h = host.ActualHeight;
-                    if (w > 0 && h > 0)
+                    bool auto = AllowAutoSize();
+
+                    if (auto)
                     {
-                        innerRoot.Width = Math.Ceiling(w / scale);
-                        innerRoot.Height = Math.Ceiling(h / scale);
-                        clip.Rect = new Rect(0, 0, w, h);
+                        if (!double.IsNaN(innerRoot.Width)) innerRoot.Width = double.NaN;
+                        if (!double.IsNaN(innerRoot.Height)) innerRoot.Height = double.NaN;
                     }
+                    else
+                    {
+                        if (w > 0) innerRoot.Width = Math.Ceiling(w / scale);
+                        if (h > 0) innerRoot.Height = Math.Ceiling(h / scale);
+                    }
+
+                    if (w > 0 && h > 0)
+                        clip.Rect = new Rect(0, 0, w, h);
 
                     innerRoot.UpdateLayout();
                 }

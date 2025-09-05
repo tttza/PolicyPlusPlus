@@ -5,8 +5,8 @@
     xmlns:win="using:PolicyPlus.WinUI3.Windows"
     Title="Quick Edit">
     <!-- Consistent scaling structure: ScaleHost (host) -> RootShell (scaled content) -->
-    <Grid x:Name="ScaleHost">
-        <Grid x:Name="RootShell" Padding="12">
+    <Grid x:Name="ScaleHost" Tag="AllowAutoSize">
+        <Grid x:Name="RootShell" Padding="12" VerticalAlignment="Top">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />

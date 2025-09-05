@@ -52,13 +52,11 @@ namespace PolicyPlus.WinUI3.Windows
 
         private void AdjustOptionColumnsToContent()
         {
-            // Find widest stackpanel in user options and computer options among realized items
             double userMax = 0; double compMax = 0;
             try
             {
                 var rootScroll = this.Content as FrameworkElement;
                 if (rootScroll == null) return;
-                // Traverse visual tree for stackpanels inside user/computer option scrollviewers
                 var stack = new Stack<DependencyObject>();
                 stack.Push(rootScroll);
                 while (stack.Count > 0)
@@ -86,11 +84,11 @@ namespace PolicyPlus.WinUI3.Windows
                 }
             }
             catch { }
-            // Add padding
-            userMax += 40; compMax += 40;
-            // Minimum fallback
-            if (userMax < 520) userMax = 520;
-            if (compMax < 520) compMax = 520;
+            // Add minimal padding
+            userMax += 16; compMax += 16;
+            // Clamp to visual MaxWidth (300) and enforce a modest minimum (260)
+            if (userMax < 260) userMax = 260; if (userMax > 300) userMax = 300;
+            if (compMax < 260) compMax = 260; if (compMax > 300) compMax = 300;
             Columns.UserOptions = new GridLength(userMax);
             Columns.ComputerOptions = new GridLength(compMax);
         }
@@ -175,9 +173,9 @@ namespace PolicyPlus.WinUI3.Windows
         private GridLength _name = new GridLength(340); public GridLength Name { get => _name; set { if (_name.Value != value.Value) { _name = value; OnChanged(nameof(Name)); } } }
         private GridLength _id = new GridLength(160); public GridLength Id { get => _id; set { if (_id.Value != value.Value) { _id = value; OnChanged(nameof(Id)); } } }
         private GridLength _userState = new GridLength(170); public GridLength UserState { get => _userState; set { if (_userState.Value != value.Value) { _userState = value; OnChanged(nameof(UserState)); } } }
-        private GridLength _userOptions = new GridLength(520); public GridLength UserOptions { get => _userOptions; set { if (_userOptions.Value != value.Value) { _userOptions = value; OnChanged(nameof(UserOptions)); } } }
+        private GridLength _userOptions = new GridLength(300); public GridLength UserOptions { get => _userOptions; set { double v = Math.Min(300, value.Value); if (_userOptions.Value != v) { _userOptions = new GridLength(v); OnChanged(nameof(UserOptions)); } } }
         private GridLength _computerState = new GridLength(170); public GridLength ComputerState { get => _computerState; set { if (_computerState.Value != value.Value) { _computerState = value; OnChanged(nameof(ComputerState)); } } }
-        private GridLength _computerOptions = new GridLength(520); public GridLength ComputerOptions { get => _computerOptions; set { if (_computerOptions.Value != value.Value) { _computerOptions = value; OnChanged(nameof(ComputerOptions)); } } }
+        private GridLength _computerOptions = new GridLength(300); public GridLength ComputerOptions { get => _computerOptions; set { double v = Math.Min(300, value.Value); if (_computerOptions.Value != v) { _computerOptions = new GridLength(v); OnChanged(nameof(ComputerOptions)); } } }
 
         public void Adjust(string id, double delta)
         {
