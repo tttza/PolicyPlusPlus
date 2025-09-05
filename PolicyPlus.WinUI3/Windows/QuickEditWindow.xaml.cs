@@ -39,7 +39,7 @@ namespace PolicyPlus.WinUI3.Windows
 
             var saveAccel = new KeyboardAccelerator { Key = global::Windows.System.VirtualKey.S, Modifiers = global::Windows.System.VirtualKeyModifiers.Control };
             saveAccel.Invoked += async (a, b) => { if (_saveButton?.IsEnabled == true && !_isSaving) { await SaveAsync(); b.Handled = true; } };
-            _root?.KeyboardAccelerators.Add(saveAccel);
+            RootShell?.KeyboardAccelerators.Add(saveAccel);
 
             Closed += (s, e) =>
             {
@@ -52,8 +52,6 @@ namespace PolicyPlus.WinUI3.Windows
                 }
                 catch { }
             };
-
-            App.ThemeChanged += App_ThemeChanged;
         }
 
         private void App_ThemeChanged(object? sender, System.EventArgs e) => ApplyCurrentTheme();
@@ -61,21 +59,21 @@ namespace PolicyPlus.WinUI3.Windows
         {
             try
             {
-                if (_root == null) return;
+                if (RootShell == null) return;
                 var theme = App.CurrentTheme;
-                _root.RequestedTheme = theme;
+                RootShell.RequestedTheme = theme;
                 if (theme == ElementTheme.Light)
                 {
-                    _root.Background = new SolidColorBrush(Microsoft.UI.Colors.White);
+                    RootShell.Background = new SolidColorBrush(Microsoft.UI.Colors.White);
                 }
                 else if (theme == ElementTheme.Dark)
                 {
-                    _root.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20));
+                    RootShell.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20));
                 }
                 else
                 {
                     if (Application.Current.Resources.TryGetValue("WindowBackground", out var bg) && bg is Brush b)
-                        _root.Background = b;
+                        RootShell.Background = b;
                 }
             }
             catch { }
@@ -114,7 +112,7 @@ namespace PolicyPlus.WinUI3.Windows
 
         private void TryScheduleInitialResize()
         {
-            if (_initialResizeDone || _root == null) return;
+            if (_initialResizeDone || RootShell == null) return;
             _initialResizeDone = true;
             try
             {
