@@ -6,6 +6,7 @@ using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx;
 using PolicyPlus.Core.IO;
 using PolicyPlus.WinUI3.Services;
+using System.Text; // added
 
 namespace PolicyPlus.WinUI3.ViewModels
 {
@@ -242,14 +243,18 @@ namespace PolicyPlus.WinUI3.ViewModels
                     }
                 }
                 var action = desired switch { PolicyState.Enabled => "Enable", PolicyState.Disabled => "Disable", _ => "Clear" };
+
+                // Build details (short + full) so PendingChanges shows option values (e.g. text input)
+                (string details, string detailsFull) = BuildDetails(action, desired, options);
+
                 PendingChangesService.Instance.Add(new PendingChange
                 {
                     PolicyId = Policy.UniqueID,
                     PolicyName = Policy.DisplayName ?? Policy.UniqueID,
                     Scope = scope,
                     Action = action,
-                    Details = action,
-                    DetailsFull = action,
+                    Details = details,
+                    DetailsFull = detailsFull,
                     DesiredState = desired,
                     Options = options
                 });
@@ -257,6 +262,70 @@ namespace PolicyPlus.WinUI3.ViewModels
             catch { }
         }
 
+        private (string shortText, string longText) BuildDetails(string action, PolicyState desired, Dictionary<string, object>? options)
+        {
+            try
+            {
+                if (desired != PolicyState.Enabled || options == null || options.Count == 0)
+                {
+                    // For Disable / Clear or no options just echo the action
+                    return (action, action);
+                }
+                var shortSb = new StringBuilder();
+                shortSb.Append(action);
+                var optionPairs = new List<string>();
+                int shown = 0;
+                foreach (var kv in options)
+                {
+                    if (shown >= 4) break; // cap short summary
+                    optionPairs.Add(kv.Key + "=" + FormatOpt(kv.Value));
+                    shown++;
+                }
+                if (optionPairs.Count > 0)
+                {
+                    shortSb.Append(": ");
+                    shortSb.Append(string.Join(", ", optionPairs));
+                    if (options.Count > optionPairs.Count)
+                        shortSb.Append($" (+{options.Count - optionPairs.Count} more)");
+                }
+
+                var longSb = new StringBuilder();
+                longSb.AppendLine(action);
+                try
+                {
+                    longSb.AppendLine("Registry values:");
+                    foreach (var kv in PolicyProcessing.GetReferencedRegistryValues(Policy))
+                    {
+                        longSb.AppendLine("  ? " + kv.Key + (string.IsNullOrEmpty(kv.Value) ? string.Empty : $" ({kv.Value})"));
+                    }
+                }
+                catch { }
+                longSb.AppendLine("Options:");
+                foreach (var kv in options)
+                {
+                    longSb.AppendLine("  - " + kv.Key + " = " + FormatOpt(kv.Value));
+                }
+                return (shortSb.ToString(), longSb.ToString());
+            }
+            catch { return (action, action); }
+        }
+
+        private static string FormatOpt(object v)
+        {
+            if (v == null) return string.Empty;
+            if (v is string s) return s;
+            if (v is bool b) return b ? "true" : "false";
+            if (v is int i) return i.ToString();
+            if (v is uint ui) return ui.ToString();
+            if (v is IEnumerable<string> strList) return string.Join("|", strList); // use '|' to keep commas clear in list
+            if (v is System.Collections.IEnumerable en && v is not string)
+            {
+                try { return string.Join(", ", en.Cast<object>().Select(o => Convert.ToString(o) ?? string.Empty)); } catch { }
+            }
+            return Convert.ToString(v) ?? string.Empty;
+        }
+
+        // Restored methods
         public void ReplaceList(bool isUser, List<string> newItems)
         {
             if (isUser) UserListItems = newItems; else ComputerListItems = newItems;
