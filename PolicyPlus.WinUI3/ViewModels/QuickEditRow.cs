@@ -16,12 +16,15 @@ namespace PolicyPlus.WinUI3.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnChanged(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
 
+        // Suppress queuing pending changes while constructing / loading from sources
+        private bool _initializing;
+
         public PolicyPlusPolicy Policy { get; }
         public bool SupportsUser => Policy.RawPolicy.Section == AdmxPolicySection.User || Policy.RawPolicy.Section == AdmxPolicySection.Both;
         public bool SupportsComputer => Policy.RawPolicy.Section == AdmxPolicySection.Machine || Policy.RawPolicy.Section == AdmxPolicySection.Both;
 
-        private QuickEditState _userState; public QuickEditState UserState { get => _userState; set { if (_userState != value) { _userState = value; OnChanged(nameof(UserState)); QueuePending("User"); UpdateEnablement(); } } }
-        private QuickEditState _computerState; public QuickEditState ComputerState { get => _computerState; set { if (_computerState != value) { _computerState = value; OnChanged(nameof(ComputerState)); QueuePending("Computer"); UpdateEnablement(); } } }
+        private QuickEditState _userState; public QuickEditState UserState { get => _userState; set { if (_userState != value) { _userState = value; OnChanged(nameof(UserState)); if (!_initializing) QueuePending("User"); UpdateEnablement(); } } }
+        private QuickEditState _computerState; public QuickEditState ComputerState { get => _computerState; set { if (_computerState != value) { _computerState = value; OnChanged(nameof(ComputerState)); if (!_initializing) QueuePending("Computer"); UpdateEnablement(); } } }
 
         public bool HasEnumElement => EnumElement != null;
         public bool HasListElement => ListElement != null;
@@ -66,6 +69,7 @@ namespace PolicyPlus.WinUI3.ViewModels
 
         public QuickEditRow(PolicyPlusPolicy policy, AdmxBundle bundle, IPolicySource? comp, IPolicySource? user)
         {
+            _initializing = true;
             Policy = policy; _bundle = bundle; _compSource = comp; _userSource = user;
             // discover first element of each supported type
             if (policy.RawPolicy.Elements != null)
@@ -90,6 +94,7 @@ namespace PolicyPlus.WinUI3.ViewModels
                 }
             }
             LoadInitialStates();
+            _initializing = false; // from now on, user modifications create pending changes
         }
 
         private void UpdateEnablement()
@@ -148,6 +153,7 @@ namespace PolicyPlus.WinUI3.ViewModels
 
         private void QueuePending(string scope)
         {
+            if (_initializing) return; // suppress during initial load
             try
             {
                 bool isUser = scope.Equals("User", StringComparison.OrdinalIgnoreCase);

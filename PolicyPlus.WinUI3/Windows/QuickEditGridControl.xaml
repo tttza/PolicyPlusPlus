@@ -30,7 +30,8 @@
                           CanUserSortColumns="True"
                           ColumnHeaderStyle="{StaticResource GridHeaderStyle}"
                           HorizontalScrollBarVisibility="Auto"
-                          VerticalScrollBarVisibility="Auto">
+                          VerticalScrollBarVisibility="Auto"
+                          IsReadOnly="True">
             <toolkit:DataGrid.Columns>
                 <!-- Rebalanced star layout: Name 3, ID 2.2, State columns 1.1 each, Option columns 3 each -->
                 <toolkit:DataGridTextColumn Header="Name" Binding="{Binding Policy.DisplayName}" Width="3*" MinWidth="240"/>
@@ -38,7 +39,7 @@
                 <toolkit:DataGridTemplateColumn Header="User State" Width="1.1*" MinWidth="130">
                     <toolkit:DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <ComboBox Width="130" SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}">
+                            <ComboBox Width="130" VerticalAlignment="Center" SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}">
                                 <ComboBoxItem Content="Not Configured"/>
                                 <ComboBoxItem Content="Enabled"/>
                                 <ComboBoxItem Content="Disabled"/>
@@ -65,7 +66,7 @@
                 <toolkit:DataGridTemplateColumn Header="Computer State" Width="1.1*" MinWidth="140">
                     <toolkit:DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <ComboBox Width="140" SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}">
+                            <ComboBox Width="140" VerticalAlignment="Center" SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}">
                                 <ComboBoxItem Content="Not Configured"/>
                                 <ComboBoxItem Content="Enabled"/>
                                 <ComboBoxItem Content="Disabled"/>
