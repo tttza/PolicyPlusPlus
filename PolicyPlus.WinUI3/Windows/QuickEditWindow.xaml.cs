@@ -7,6 +7,7 @@ using PolicyPlus.Core.Core;
 using PolicyPlus.Core.IO;
 using PolicyPlus.WinUI3.ViewModels;
 using PolicyPlus.WinUI3.Services;
+using PolicyPlus.WinUI3.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,15 +15,8 @@ using Color = Windows.UI.Color;
 
 namespace PolicyPlus.WinUI3.Windows
 {
-    public sealed class QuickEditWindow : Window
+    public sealed partial class QuickEditWindow : Window
     {
-        private readonly QuickEditGridControl _grid = new();
-        private TextBlock _headerCount = null!;
-        private TextBlock _unsavedText = null!;
-        private Button _saveButton = null!;
-        private TextBlock _statusText = null!;
-        private Grid _savingOverlay = null!;
-        private Grid _root = null!; // keep reference for theme switching
         // Track child list editor windows so they can be closed when this window closes.
         private readonly List<ListEditorWindow> _childEditors = new();
 
@@ -32,79 +26,30 @@ namespace PolicyPlus.WinUI3.Windows
         private IPolicySource? _userSource;
         private readonly IElevationService _elevation = new ElevationServiceAdapter();
         private bool _isSaving;
+        private bool _initialResizeDone;
 
         public QuickEditWindow()
         {
-            Title = "Quick Edit";
-
-            // Try to match other windows (Mica + dynamic theme)
+            InitializeComponent();
             try { SystemBackdrop = new MicaBackdrop(); } catch { }
 
-            var root = new Grid { Padding = new Thickness(12), MinWidth = 1280, MinHeight = 650 };
-            _root = root;
-            // Let Mica show through; if you want solid use WindowBackground like main window
-            try { root.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent); } catch { }
+            // Wire up dynamic references
+            if (_grid != null) _grid.ParentQuickEditWindow = this;
 
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            // Events
+            if (_saveButton != null) _saveButton.Click += async (_, __) => await SaveAsync();
+            if (_closeButton != null) _closeButton.Click += (_, __) => Close();
 
-            var headerPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16 };
-            headerPanel.Children.Add(new TextBlock { Text = "Quick Edit", FontSize = 20, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
-            _headerCount = new TextBlock { Opacity = 0.7, VerticalAlignment = VerticalAlignment.Center };
-            headerPanel.Children.Add(_headerCount);
-            _unsavedText = new TextBlock { Opacity = 0.8, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12,0,0,0) };
-            headerPanel.Children.Add(_unsavedText);
-            root.Children.Add(headerPanel);
+            // Keyboard accelerator (Ctrl+S)
+            var saveAccel = new KeyboardAccelerator { Key = global::Windows.System.VirtualKey.S, Modifiers = global::Windows.System.VirtualKeyModifiers.Control };
+            saveAccel.Invoked += async (a, b) => { if (_saveButton?.IsEnabled == true && !_isSaving) { await SaveAsync(); b.Handled = true; } };
+            _root?.KeyboardAccelerators.Add(saveAccel);
 
-            _grid.ParentQuickEditWindow = this;
-            Grid.SetRow(_grid, 1);
-            root.Children.Add(_grid);
-
-            var buttonsGrid = new Grid { Margin = new Thickness(0, 8, 0, 0) };
-            buttonsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            buttonsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            buttonsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            buttonsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            _statusText = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Opacity = 0.75 };
-            Grid.SetColumn(_statusText, 0);
-            buttonsGrid.Children.Add(_statusText);
-
-            _saveButton = new Button { Content = "Save", IsEnabled = false, Margin = new Thickness(0,0,8,0) };
-            _saveButton.Click += async (_, __) => await SaveAsync();
-            Grid.SetColumn(_saveButton, 1);
-            buttonsGrid.Children.Add(_saveButton);
-
-            var close = new Button { Content = "Close" }; close.Click += (_, __) => Close();
-            Grid.SetColumn(close, 2);
-            buttonsGrid.Children.Add(close);
-
-            Grid.SetRow(buttonsGrid, 2);
-            root.Children.Add(buttonsGrid);
-
-            // Saving overlay
-            _savingOverlay = new Grid
-            {
-                Background = new SolidColorBrush(Color.FromArgb(128, 0, 0, 0)),
-                Visibility = Visibility.Collapsed
-            };
-            var overlayStack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Spacing = 8 };
-            var ring = new ProgressRing { IsActive = true, Width = 48, Height = 48 };
-            overlayStack.Children.Add(ring);
-            overlayStack.Children.Add(new TextBlock { Text = "Saving...", Foreground = new SolidColorBrush(Microsoft.UI.Colors.White), HorizontalAlignment = HorizontalAlignment.Center });
-            _savingOverlay.Children.Add(overlayStack);
-            Grid.SetRowSpan(_savingOverlay, 3);
-            root.Children.Add(_savingOverlay);
-
-            Content = root;
-
-            // Register as secondary window so global theme & icon apply
-            try { App.RegisterWindow(this); } catch { }
+            // Theme
             ApplyCurrentTheme();
             App.ThemeChanged += App_ThemeChanged;
 
-            this.Closed += (s, e) =>
+            Closed += (s, e) =>
             {
                 try
                 {
@@ -117,9 +62,7 @@ namespace PolicyPlus.WinUI3.Windows
                 catch { }
             };
 
-            var saveAccel = new KeyboardAccelerator { Key = global::Windows.System.VirtualKey.S, Modifiers = global::Windows.System.VirtualKeyModifiers.Control };
-            saveAccel.Invoked += async (a, b) => { if (_saveButton.IsEnabled && !_isSaving) { await SaveAsync(); b.Handled = true; } };
-            root.KeyboardAccelerators.Add(saveAccel);
+            try { App.RegisterWindow(this); } catch { }
         }
 
         private void App_ThemeChanged(object? sender, System.EventArgs e) => ApplyCurrentTheme();
@@ -130,7 +73,6 @@ namespace PolicyPlus.WinUI3.Windows
                 if (_root == null) return;
                 var theme = App.CurrentTheme;
                 _root.RequestedTheme = theme;
-                // Force explicit light/dark background so OS high-contrast or system dark does not override app preference
                 if (theme == ElementTheme.Light)
                 {
                     _root.Background = new SolidColorBrush(Microsoft.UI.Colors.White);
@@ -139,7 +81,7 @@ namespace PolicyPlus.WinUI3.Windows
                 {
                     _root.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20));
                 }
-                else // System -> fallback to resource (may be dark depending on OS)
+                else
                 {
                     if (Application.Current.Resources.TryGetValue("WindowBackground", out var bg) && bg is Brush b)
                         _root.Background = b;
@@ -167,12 +109,65 @@ namespace PolicyPlus.WinUI3.Windows
         public void Initialize(AdmxBundle bundle, IPolicySource? comp, IPolicySource? user, IEnumerable<PolicyPlusPolicy> policies)
         {
             _bundle = bundle; _compSource = comp; _userSource = user;
-            _grid.Rows.Clear();
-            foreach (var p in policies) _grid.Rows.Add(new QuickEditRow(p, bundle, comp, user));
-            _headerCount.Text = $"{_grid.Rows.Count} policies";
+            if (_grid != null)
+            {
+                _grid.Rows.Clear();
+                foreach (var p in policies) _grid.Rows.Add(new QuickEditRow(p, bundle, comp, user));
+            }
+            if (_headerCount != null) _headerCount.Text = $"{_grid?.Rows.Count ?? 0} policies";
 
             try { PendingChangesService.Instance.Pending.CollectionChanged += Pending_CollectionChanged; } catch { }
             UpdateUnsavedIndicator();
+            TryScheduleInitialResize();
+        }
+
+        private void TryScheduleInitialResize()
+        {
+            if (_initialResizeDone || _root == null) return;
+            _initialResizeDone = true;
+            try
+            {
+                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Normal, () =>
+                {
+                    try { WindowHelpers.ResizeClientWidthToContent(this, 60); } catch { }
+                });
+                var timer = DispatcherQueue.CreateTimer();
+                timer.Interval = System.TimeSpan.FromMilliseconds(220);
+                timer.IsRepeating = false;
+                timer.Tick += (s, e) =>
+                {
+                    try
+                    {
+                        WindowHelpers.ResizeClientWidthToContent(this, 60);
+                        AdjustInitialHeight();
+                    }
+                    catch { }
+                };
+                timer.Start();
+            }
+            catch { }
+        }
+
+        private void AdjustInitialHeight()
+        {
+            try
+            {
+                if (_grid == null) return;
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+                var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+                var appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId(id);
+                if (appWindow == null) return;
+                int currentH = appWindow.ClientSize.Height;
+                int rows = _grid.Rows.Count;
+                int showRows = rows == 0 ? 4 : System.Math.Min(rows, 10);
+                int target = 42 + (46 * showRows) + 40 + 32;
+                if (target < 400) target = 400;
+                if (target < currentH)
+                {
+                    appWindow.ResizeClient(new global::Windows.Graphics.SizeInt32(appWindow.ClientSize.Width, target));
+                }
+            }
+            catch { }
         }
 
         private void Pending_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -182,6 +177,7 @@ namespace PolicyPlus.WinUI3.Windows
         {
             try
             {
+                if (_grid == null || _unsavedText == null || _saveButton == null) return;
                 var ids = _grid.Rows.Select(r => r.Policy.UniqueID).ToHashSet(System.StringComparer.OrdinalIgnoreCase);
                 var relevant = PendingChangesService.Instance.Pending.Where(p => ids.Contains(p.PolicyId)).ToList();
                 int count = relevant.Count;
@@ -193,11 +189,11 @@ namespace PolicyPlus.WinUI3.Windows
 
         private async Task SaveAsync()
         {
-            if (_bundle == null || _isSaving) return;
+            if (_bundle == null || _isSaving || _grid == null) return;
             var ids = _grid.Rows.Select(r => r.Policy.UniqueID).ToHashSet(System.StringComparer.OrdinalIgnoreCase);
             var relevant = PendingChangesService.Instance.Pending.Where(p => ids.Contains(p.PolicyId)).ToList();
             if (relevant.Count == 0) return;
-            _isSaving = true; SetStatus("Saving..."); SetSaving(true); _saveButton.IsEnabled = false;
+            _isSaving = true; SetStatus("Saving..."); SetSaving(true); if (_saveButton != null) _saveButton.IsEnabled = false;
 
             try
             {
@@ -225,5 +221,4 @@ namespace PolicyPlus.WinUI3.Windows
         private void SetStatus(string text)
         { if (_statusText != null) _statusText.Text = text; }
     }
-
 }

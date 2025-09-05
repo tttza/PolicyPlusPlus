@@ -51,7 +51,7 @@
     </When>
   </Choose>
 
-  <!-- Remove obsolete XAML pages -->
+  <!-- Remove obsolete XAML pages (re-include needed ones later) -->
   <ItemGroup>
     <Page Remove="Dialogs\ManageBookmarksDialog.xaml" />
     <Page Remove="Windows\QuickEditGridControl.xaml" />
@@ -74,11 +74,9 @@
     <Folder Include="Controls" />
   </ItemGroup>
 
+  <!-- Remove old None Update for QuickEditWindow (switch to Page include) -->
   <ItemGroup>
     <None Update="Windows\QuickEditGridControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-    <None Update="Windows\QuickEditWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
   </ItemGroup>
@@ -125,7 +123,6 @@
     <RemoveDir Directories="@(RemovingFolders)" />
   </Target>
 
-  <!-- Generate git version text file and copy to output as gitversion.txt -->
   <Target Name="GenerateGitVersion" BeforeTargets="BeforeBuild">
     <PropertyGroup>
       <_GitVersionFile>$(IntermediateOutputPath)gitversion.txt</_GitVersionFile>
@@ -146,7 +143,10 @@
       </None>
     </ItemGroup>
   </Target>
+
+  <!-- Re-include pages -->
   <ItemGroup>
     <Page Include="Windows\QuickEditGridControl.xaml" />
+    <Page Include="Windows\QuickEditWindow.xaml" />
   </ItemGroup>
 </Project>

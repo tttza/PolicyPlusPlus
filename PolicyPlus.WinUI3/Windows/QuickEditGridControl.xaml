@@ -18,17 +18,17 @@
                 <!-- Header row -->
                 <Grid Height="42" Background="{ThemeResource LayerFillColorDefaultBrush}">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="{Binding Columns.Name, ElementName=RootControl}" MinWidth="240" />
+                        <ColumnDefinition Width="{Binding Columns.Name, ElementName=RootControl}" MinWidth="300" />
                         <ColumnDefinition Width="6" />
-                        <ColumnDefinition Width="{Binding Columns.Id, ElementName=RootControl}" MinWidth="220" />
+                        <ColumnDefinition Width="{Binding Columns.Id, ElementName=RootControl}" MinWidth="140" />
                         <ColumnDefinition Width="6" />
-                        <ColumnDefinition Width="{Binding Columns.UserState, ElementName=RootControl}" MinWidth="200" />
+                        <ColumnDefinition Width="{Binding Columns.UserState, ElementName=RootControl}" MinWidth="160" />
                         <ColumnDefinition Width="6" />
-                        <ColumnDefinition Width="{Binding Columns.UserOptions, ElementName=RootControl}" MinWidth="430" />
+                        <ColumnDefinition Width="{Binding Columns.UserOptions, ElementName=RootControl}" MinWidth="240" MaxWidth="300"/>
                         <ColumnDefinition Width="6" />
-                        <ColumnDefinition Width="{Binding Columns.ComputerState, ElementName=RootControl}" MinWidth="200" />
+                        <ColumnDefinition Width="{Binding Columns.ComputerState, ElementName=RootControl}" MinWidth="160" />
                         <ColumnDefinition Width="6" />
-                        <ColumnDefinition Width="{Binding Columns.ComputerOptions, ElementName=RootControl}" MinWidth="440" />
+                        <ColumnDefinition Width="{Binding Columns.ComputerOptions, ElementName=RootControl}" MinWidth="240" MaxWidth="300" />
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0" Text="Name" VerticalAlignment="Center" Margin="8,0" />
@@ -54,25 +54,25 @@
                             <DataTemplate x:DataType="vm:QuickEditRow">
                                 <Grid Height="46">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="{Binding Columns.Name, ElementName=RootControl}" MinWidth="240" />
+                                        <ColumnDefinition Width="{Binding Columns.Name, ElementName=RootControl}" MinWidth="300" />
                                         <ColumnDefinition Width="6" />
-                                        <ColumnDefinition Width="{Binding Columns.Id, ElementName=RootControl}" MinWidth="220" />
+                                        <ColumnDefinition Width="{Binding Columns.Id, ElementName=RootControl}" MinWidth="140" />
                                         <ColumnDefinition Width="6" />
-                                        <ColumnDefinition Width="{Binding Columns.UserState, ElementName=RootControl}" MinWidth="200" />
+                                        <ColumnDefinition Width="{Binding Columns.UserState, ElementName=RootControl}" MinWidth="160" />
                                         <ColumnDefinition Width="6" />
-                                        <ColumnDefinition Width="{Binding Columns.UserOptions, ElementName=RootControl}" MinWidth="430" />
+                                        <ColumnDefinition Width="{Binding Columns.UserOptions, ElementName=RootControl}" MinWidth="250" MaxWidth="300" />
                                         <ColumnDefinition Width="6" />
-                                        <ColumnDefinition Width="{Binding Columns.ComputerState, ElementName=RootControl}" MinWidth="200" />
+                                        <ColumnDefinition Width="{Binding Columns.ComputerState, ElementName=RootControl}" MinWidth="160" />
                                         <ColumnDefinition Width="6" />
-                                        <ColumnDefinition Width="{Binding Columns.ComputerOptions, ElementName=RootControl}" MinWidth="440" />
+                                        <ColumnDefinition Width="{Binding Columns.ComputerOptions, ElementName=RootControl}" MinWidth="250" MaxWidth="300" />
                                     </Grid.ColumnDefinitions>
 
-                                    <!-- Name / ID are read-only text -->
+                                    <!-- Name / ID -->
                                     <TextBlock Grid.Column="0" Text="{Binding Policy.DisplayName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" />
-                                    <TextBlock Grid.Column="2" Text="{Binding Policy.UniqueID}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" />
+                                    <TextBlock Grid.Column="2" Text="{Binding IdTail}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" />
 
                                     <!-- User State -->
-                                    <ComboBox Grid.Column="4" Width="180" SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}" VerticalAlignment="Center">
+                                    <ComboBox Grid.Column="4" Width="150" SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}" VerticalAlignment="Center">
                                         <ComboBoxItem Content="Not Configured" />
                                         <ComboBoxItem Content="Enabled" />
                                         <ComboBoxItem Content="Disabled" />
@@ -81,17 +81,17 @@
                                     <!-- User Options -->
                                     <ScrollViewer Grid.Column="6" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                                         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                            <ComboBox Width="150" Visibility="{Binding HasEnumElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" SelectedIndex="{Binding UserEnumIndex, Mode=TwoWay}" ItemsSource="{Binding EnumChoices}"/>
+                                            <ComboBox MinWidth="170" Width="280" Visibility="{Binding HasEnumElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" SelectedIndex="{Binding UserEnumIndex, Mode=TwoWay}" ItemsSource="{Binding EnumChoices}"/>
                                             <CheckBox Content="Bool" Visibility="{Binding HasBooleanElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" IsChecked="{Binding UserBool, Mode=TwoWay}"/>
-                                            <TextBox Width="180" Visibility="{Binding HasTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Text="{Binding UserText, Mode=TwoWay}"/>
+                                            <TextBox MinWidth="200" Width="280" Visibility="{Binding HasTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Text="{Binding UserText, Mode=TwoWay}"/>
                                             <NumberBox Width="90" Visibility="{Binding HasDecimalElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Value="{Binding UserNumber, Mode=TwoWay}" SpinButtonPlacementMode="Inline"/>
-                                            <Button Width="115" Visibility="{Binding HasListElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Content="{Binding UserListSummary}" Click="UserList_Click" />
-                                            <Button Width="115" Visibility="{Binding HasMultiTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Content="{Binding UserMultiTextSummary}" Click="UserMulti_Click" />
+                                            <Button MinWidth="110" Width="130" Visibility="{Binding HasListElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Content="{Binding UserListSummary}" Click="UserList_Click" />
+                                            <Button MinWidth="110" Width="130" Visibility="{Binding HasMultiTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Content="{Binding UserMultiTextSummary}" Click="UserMulti_Click" />
                                         </StackPanel>
                                     </ScrollViewer>
 
                                     <!-- Computer State -->
-                                    <ComboBox Grid.Column="8" Width="180" SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}" VerticalAlignment="Center">
+                                    <ComboBox Grid.Column="8" Width="150" SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}" VerticalAlignment="Center">
                                         <ComboBoxItem Content="Not Configured" />
                                         <ComboBoxItem Content="Enabled" />
                                         <ComboBoxItem Content="Disabled" />
@@ -100,12 +100,12 @@
                                     <!-- Computer Options -->
                                     <ScrollViewer Grid.Column="10" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                                         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                            <ComboBox Width="150" Visibility="{Binding HasEnumElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" SelectedIndex="{Binding ComputerEnumIndex, Mode=TwoWay}" ItemsSource="{Binding EnumChoices}"/>
+                                            <ComboBox MinWidth="170" Width="280" Visibility="{Binding HasEnumElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" SelectedIndex="{Binding ComputerEnumIndex, Mode=TwoWay}" ItemsSource="{Binding EnumChoices}"/>
                                             <CheckBox Content="Bool" Visibility="{Binding HasBooleanElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" IsChecked="{Binding ComputerBool, Mode=TwoWay}"/>
-                                            <TextBox Width="180" Visibility="{Binding HasTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Text="{Binding ComputerText, Mode=TwoWay}"/>
+                                            <TextBox MinWidth="200" Width="280" Visibility="{Binding HasTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Text="{Binding ComputerText, Mode=TwoWay}"/>
                                             <NumberBox Width="90" Visibility="{Binding HasDecimalElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Value="{Binding ComputerNumber, Mode=TwoWay}" SpinButtonPlacementMode="Inline"/>
-                                            <Button Width="115" Visibility="{Binding HasListElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Content="{Binding ComputerListSummary}" Click="ComputerList_Click" />
-                                            <Button Width="115" Visibility="{Binding HasMultiTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Content="{Binding ComputerMultiTextSummary}" Click="ComputerMulti_Click" />
+                                            <Button MinWidth="110" Width="130" Visibility="{Binding HasListElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Content="{Binding ComputerListSummary}" Click="ComputerList_Click" />
+                                            <Button MinWidth="110" Width="130" Visibility="{Binding HasMultiTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Content="{Binding ComputerMultiTextSummary}" Click="ComputerMulti_Click" />
                                         </StackPanel>
                                     </ScrollViewer>
                                 </Grid>

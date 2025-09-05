@@ -23,6 +23,23 @@ namespace PolicyPlus.WinUI3.ViewModels
         public bool SupportsUser => Policy.RawPolicy.Section == AdmxPolicySection.User || Policy.RawPolicy.Section == AdmxPolicySection.Both;
         public bool SupportsComputer => Policy.RawPolicy.Section == AdmxPolicySection.Machine || Policy.RawPolicy.Section == AdmxPolicySection.Both;
 
+        // Expose only the portion of the ID after the first ':' for compact display.
+        public string IdTail
+        {
+            get
+            {
+                try
+                {
+                    var id = Policy.UniqueID ?? string.Empty;
+                    int idx = id.IndexOf(':');
+                    if (idx >= 0 && idx + 1 < id.Length)
+                        return id.Substring(idx + 1);
+                    return id;
+                }
+                catch { return Policy.UniqueID; }
+            }
+        }
+
         private QuickEditState _userState; public QuickEditState UserState { get => _userState; set { if (_userState != value) { _userState = value; OnChanged(nameof(UserState)); if (!_initializing) QueuePending("User"); UpdateEnablement(); } } }
         private QuickEditState _computerState; public QuickEditState ComputerState { get => _computerState; set { if (_computerState != value) { _computerState = value; OnChanged(nameof(ComputerState)); if (!_initializing) QueuePending("Computer"); UpdateEnablement(); } } }
 
@@ -93,7 +110,14 @@ namespace PolicyPlus.WinUI3.ViewModels
                     EnumChoices.Add(string.IsNullOrWhiteSpace(text) ? it.DisplayCode : text);
                 }
             }
+            // Load existing states and option values
             LoadInitialStates();
+            // After loading, if enum index still unset, select first item as default (do not queue pending while _initializing)
+            if (EnumElement != null)
+            {
+                if (_userEnumIndex == -1 && EnumChoices.Count > 0) _userEnumIndex = 0;
+                if (_computerEnumIndex == -1 && EnumChoices.Count > 0) _computerEnumIndex = 0;
+            }
             _initializing = false; // from now on, user modifications create pending changes
         }
 

@@ -60,6 +60,18 @@ namespace PolicyPlus.WinUI3.Utils
             catch { }
         }
 
+        public static void ResizeClient(Window window, int clientWidth, int clientHeight)
+        {
+            try
+            {
+                var hwnd = WindowNative.GetWindowHandle(window);
+                var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+                var appWindow = AppWindow.GetFromWindowId(id);
+                appWindow?.ResizeClient(new SizeInt32(clientWidth, clientHeight));
+            }
+            catch { }
+        }
+
         public static double GetDisplayScale(Window window)
         {
             try
@@ -94,6 +106,42 @@ namespace PolicyPlus.WinUI3.Utils
                 }
 
                 appWindow.Resize(new SizeInt32(Math.Max(200, targetW), Math.Max(200, targetH)));
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Resize only the client area width of a window to fit its current content DesiredSize, capped by work area.
+        /// Keeps current client height. Uses AppWindow.ResizeClient for precise client sizing.
+        /// </summary>
+        public static void ResizeClientWidthToContent(Window window, double horizontalPadding = 0, double maxWorkAreaFraction = 0.95)
+        {
+            try
+            {
+                if (window?.Content is not FrameworkElement root) return;
+                root.UpdateLayout();
+                if (root.DesiredSize.Width <= 0.1)
+                    root.Measure(new global::Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+
+                double desiredDipWidth = root.DesiredSize.Width + horizontalPadding;
+                if (desiredDipWidth < 50) desiredDipWidth = 50;
+
+                var hwnd = WindowNative.GetWindowHandle(window);
+                var id = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+                var appWindow = AppWindow.GetFromWindowId(id);
+                if (appWindow == null) return;
+                double scale = GetDisplayScale(window);
+                int desiredClientPixelWidth = (int)Math.Ceiling(desiredDipWidth * scale);
+                int currentClientHeight = appWindow.ClientSize.Height;
+                if (currentClientHeight < 200) currentClientHeight = 200;
+                var area = DisplayArea.GetFromWindowId(id, DisplayAreaFallback.Primary);
+                if (area != null)
+                {
+                    int maxWidth = (int)Math.Round(area.WorkArea.Width * maxWorkAreaFraction);
+                    if (desiredClientPixelWidth > maxWidth) desiredClientPixelWidth = maxWidth;
+                }
+                if (desiredClientPixelWidth < 200) desiredClientPixelWidth = 200;
+                appWindow.ResizeClient(new SizeInt32(desiredClientPixelWidth, currentClientHeight));
             }
             catch { }
         }

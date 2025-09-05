@@ -6,6 +6,8 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using System.ComponentModel;
+using Microsoft.UI.Xaml.Media;
+using System;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -21,9 +23,76 @@ namespace PolicyPlus.WinUI3.Windows
         public QuickEditColumns Columns { get; } = new();
         public QuickEditGridControl Root => this; // for x:Bind in item template
 
+        private bool _measured;
+
         public QuickEditGridControl()
         {
             this.InitializeComponent();
+            this.Loaded += QuickEditGridControl_Loaded;
+        }
+
+        private void QuickEditGridControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (_measured) return;
+            _measured = true;
+            try { AdjustOptionColumnsToContent(); } catch { }
+        }
+
+        private double MeasureChildWidth(FrameworkElement fe)
+        {
+            if (fe == null) return 0;
+            if (double.IsNaN(fe.Width) || fe.Width == 0)
+            {
+                fe.Measure(new global::Windows.Foundation.Size(double.PositiveInfinity, fe.ActualHeight > 0 ? fe.ActualHeight : double.PositiveInfinity));
+            }
+            double w = fe.ActualWidth;
+            if (w <= 1) w = fe.DesiredSize.Width;
+            return w;
+        }
+
+        private void AdjustOptionColumnsToContent()
+        {
+            // Find widest stackpanel in user options and computer options among realized items
+            double userMax = 0; double compMax = 0;
+            try
+            {
+                var rootScroll = this.Content as FrameworkElement;
+                if (rootScroll == null) return;
+                // Traverse visual tree for stackpanels inside user/computer option scrollviewers
+                var stack = new Stack<DependencyObject>();
+                stack.Push(rootScroll);
+                while (stack.Count > 0)
+                {
+                    var cur = stack.Pop();
+                    int count = VisualTreeHelper.GetChildrenCount(cur);
+                    for (int i = 0; i < count; i++)
+                    {
+                        var child = VisualTreeHelper.GetChild(cur, i);
+                        stack.Push(child);
+                        if (child is ScrollViewer sv && sv.Content is StackPanel sp && sp.Orientation == Orientation.Horizontal)
+                        {
+                            double width = MeasureChildWidth(sp);
+                            // Heuristic: user options column before computer options in grid; determine based on parent grid column
+                            if (sp.Parent is ScrollViewer sv2 && sv2.Parent is Grid g)
+                            {
+                                int col = Grid.GetColumn(sv2);
+                                if (col == 6) // user options column index in template grid
+                                    userMax = Math.Max(userMax, width);
+                                else if (col == 10) // computer options column index
+                                    compMax = Math.Max(compMax, width);
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            // Add padding
+            userMax += 40; compMax += 40;
+            // Minimum fallback
+            if (userMax < 520) userMax = 520;
+            if (compMax < 520) compMax = 520;
+            Columns.UserOptions = new GridLength(userMax);
+            Columns.ComputerOptions = new GridLength(compMax);
         }
 
         private static string BuildKey(QuickEditRow row, string suffix) => $"{row.Policy.UniqueID}:{suffix}";
@@ -102,26 +171,24 @@ namespace PolicyPlus.WinUI3.Windows
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnChanged(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
 
-        // Initial widths roughly matching former star layout
-        private GridLength _name = new GridLength(300); public GridLength Name { get => _name; set { if (_name.Value != value.Value) { _name = value; OnChanged(nameof(Name)); } } }
-        private GridLength _id = new GridLength(220); public GridLength Id { get => _id; set { if (_id.Value != value.Value) { _id = value; OnChanged(nameof(Id)); } } }
-        private GridLength _userState = new GridLength(200); public GridLength UserState { get => _userState; set { if (_userState.Value != value.Value) { _userState = value; OnChanged(nameof(UserState)); } } }
-        private GridLength _userOptions = new GridLength(600); public GridLength UserOptions { get => _userOptions; set { if (_userOptions.Value != value.Value) { _userOptions = value; OnChanged(nameof(UserOptions)); } } }
-        private GridLength _computerState = new GridLength(200); public GridLength ComputerState { get => _computerState; set { if (_computerState.Value != value.Value) { _computerState = value; OnChanged(nameof(ComputerState)); } } }
-        private GridLength _computerOptions = new GridLength(600); public GridLength ComputerOptions { get => _computerOptions; set { if (_computerOptions.Value != value.Value) { _computerOptions = value; OnChanged(nameof(ComputerOptions)); } } }
-
-        private const double Min = 60;
+        // Updated initial widths (will be overridden for options after load)
+        private GridLength _name = new GridLength(340); public GridLength Name { get => _name; set { if (_name.Value != value.Value) { _name = value; OnChanged(nameof(Name)); } } }
+        private GridLength _id = new GridLength(160); public GridLength Id { get => _id; set { if (_id.Value != value.Value) { _id = value; OnChanged(nameof(Id)); } } }
+        private GridLength _userState = new GridLength(170); public GridLength UserState { get => _userState; set { if (_userState.Value != value.Value) { _userState = value; OnChanged(nameof(UserState)); } } }
+        private GridLength _userOptions = new GridLength(520); public GridLength UserOptions { get => _userOptions; set { if (_userOptions.Value != value.Value) { _userOptions = value; OnChanged(nameof(UserOptions)); } } }
+        private GridLength _computerState = new GridLength(170); public GridLength ComputerState { get => _computerState; set { if (_computerState.Value != value.Value) { _computerState = value; OnChanged(nameof(ComputerState)); } } }
+        private GridLength _computerOptions = new GridLength(520); public GridLength ComputerOptions { get => _computerOptions; set { if (_computerOptions.Value != value.Value) { _computerOptions = value; OnChanged(nameof(ComputerOptions)); } } }
 
         public void Adjust(string id, double delta)
         {
             switch (id)
             {
-                case "Name": Name = New(Name, delta, 240); break;
-                case "Id": Id = New(Id, delta, 220); break;
+                case "Name": Name = New(Name, delta, 300); break;
+                case "Id": Id = New(Id, delta, 140); break;
                 case "UserState": UserState = New(UserState, delta, 160); break;
-                case "UserOptions": UserOptions = New(UserOptions, delta, 300); break;
+                case "UserOptions": UserOptions = New(UserOptions, delta, 420); break;
                 case "ComputerState": ComputerState = New(ComputerState, delta, 160); break;
-                case "ComputerOptions": ComputerOptions = New(ComputerOptions, delta, 300); break;
+                case "ComputerOptions": ComputerOptions = New(ComputerOptions, delta, 420); break;
             }
         }
         private static GridLength New(GridLength g, double delta, double min)
