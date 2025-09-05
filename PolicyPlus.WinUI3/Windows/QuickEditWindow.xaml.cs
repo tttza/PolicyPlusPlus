@@ -6,6 +6,7 @@ using PolicyPlus.Core.IO;
 using PolicyPlus.WinUI3.ViewModels;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -13,6 +14,8 @@ namespace PolicyPlus.WinUI3.Windows
     {
         private readonly QuickEditGridControl _grid = new();
         private TextBlock _headerCount = null!;
+        // Track child list editor windows so they can be closed when this window closes.
+        private readonly List<ListEditorWindow> _childEditors = new();
 
         public QuickEditWindow()
         {
@@ -28,6 +31,8 @@ namespace PolicyPlus.WinUI3.Windows
             headerPanel.Children.Add(_headerCount);
             root.Children.Add(headerPanel);
 
+            // Provide parent reference for tracking child windows.
+            _grid.ParentQuickEditWindow = this;
             Grid.SetRow(_grid, 1);
             root.Children.Add(_grid);
 
@@ -38,6 +43,26 @@ namespace PolicyPlus.WinUI3.Windows
             root.Children.Add(buttons);
 
             Content = root;
+
+            // Ensure child editors are closed when QuickEdit closes.
+            this.Closed += (s, e) =>
+            {
+                try
+                {
+                    foreach (var w in _childEditors.ToList())
+                    {
+                        try { w.Close(); } catch { }
+                    }
+                    _childEditors.Clear();
+                }
+                catch { }
+            };
+        }
+
+        internal void RegisterChild(ListEditorWindow w)
+        {
+            _childEditors.Add(w);
+            w.Closed += (s, e) => _childEditors.Remove(w);
         }
 
         public static IEnumerable<PolicyPlusPolicy> BuildSourcePolicies(IEnumerable<PolicyPlusPolicy> allVisible, IEnumerable<PolicyPlusPolicy> selected, IEnumerable<string> bookmarkIds, bool bookmarksOnly, int cap = 500)
@@ -57,4 +82,5 @@ namespace PolicyPlus.WinUI3.Windows
             _headerCount.Text = $"{_grid.Rows.Count} policies";
         }
     }
+
 }
