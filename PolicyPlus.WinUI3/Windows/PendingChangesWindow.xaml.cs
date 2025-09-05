@@ -17,6 +17,7 @@ using Microsoft.UI.Xaml.Input;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx;
+using System.Text.Json; // added for JsonElement handling
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -349,77 +350,181 @@ namespace PolicyPlus.WinUI3.Windows
             }
         }
 
-        private void ExecuteReapply(HistoryRecord h)
+        private async Task ExecuteReapplyAsync(HistoryRecord h)
         {
             if (h == null || string.IsNullOrEmpty(h.PolicyId)) return;
             var main = App.Window as MainWindow;
-            var compSrcField = typeof(MainWindow).GetField("_compSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var userSrcField = typeof(MainWindow).GetField("_userSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             var bundleField = typeof(MainWindow).GetField("_bundle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var compSrc = (IPolicySource?)compSrcField?.GetValue(main);
-            var userSrc = (IPolicySource?)userSrcField?.GetValue(main);
             var bundle = (AdmxBundle?)bundleField?.GetValue(main);
             if (bundle == null || !bundle.Policies.TryGetValue(h.PolicyId, out var pol)) return;
-            var src = string.Equals(h.Scope, "User", StringComparison.OrdinalIgnoreCase) ? userSrc : compSrc;
-            if (src == null) return;
 
-            PolicyProcessing.ForgetPolicy(src, pol);
-            if (h.DesiredState == PolicyState.Enabled)
-            {
-                PolicyProcessing.SetPolicyState(src, pol, PolicyState.Enabled, h.Options ?? new System.Collections.Generic.Dictionary<string, object>());
-            }
-            else if (h.DesiredState == PolicyState.Disabled)
-            {
-                PolicyProcessing.SetPolicyState(src, pol, PolicyState.Disabled, new System.Collections.Generic.Dictionary<string, object>());
-            }
+            // Normalize option value types (they may be JsonElement after JSON round-trip)
+            var normalizedOptions = NormalizeOptions(h.Options);
 
-            PendingChangesService.Instance.History.Add(new HistoryRecord
+            // Build a synthetic pending change and run through normal save pipeline so disk + registry actually updated
+            var pending = new PendingChange
             {
                 PolicyId = h.PolicyId,
                 PolicyName = h.PolicyName,
                 Scope = h.Scope,
-                Action = "Reapply",
-                Result = "Reapplied",
-                Details = h.Details,
-                AppliedAt = DateTime.Now,
                 DesiredState = h.DesiredState,
-                Options = h.Options
-            });
+                Action = h.DesiredState switch
+                {
+                    PolicyState.Enabled => "Enable",
+                    PolicyState.Disabled => "Disable",
+                    _ => "Clear"
+                },
+                Options = normalizedOptions,
+                Details = h.Details,
+                DetailsFull = h.DetailsFull
+            };
 
-            try { SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList()); } catch { }
-
-            RefreshViews();
-            ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
-            ShowLocalInfo("Reapplied.");
+            SetSaving(true);
+            try
+            {
+                var list = new List<PendingChange> { pending };
+                var (ok, error, _, _) = await SaveChangesCoordinator.SaveAsync(bundle, list, _elevation, TimeSpan.FromSeconds(8), triggerRefresh: true);
+                if (ok)
+                {
+                    // Record history entry (do not add to Pending collection first)
+                    PendingChangesService.Instance.History.Add(new HistoryRecord
+                    {
+                        PolicyId = h.PolicyId,
+                        PolicyName = h.PolicyName,
+                        Scope = h.Scope,
+                        Action = "Reapply",
+                        Result = "Reapplied",
+                        Details = h.Details,
+                        DetailsFull = h.DetailsFull,
+                        AppliedAt = DateTime.Now,
+                        DesiredState = h.DesiredState,
+                        Options = normalizedOptions
+                    });
+                    try { SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList()); } catch { }
+                    try { main?.RefreshLocalSources(); } catch { }
+                    RefreshViews();
+                    ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
+                    ShowLocalInfo("Reapplied.");
+                }
+                else
+                {
+                    ShowLocalInfo(string.IsNullOrEmpty(error) ? "Reapply failed." : "Reapply failed: " + error);
+                }
+            }
+            finally
+            {
+                SetSaving(false);
+            }
         }
 
+        // Legacy sync wrapper kept for minimal impact (unused internally now)
+        private void ExecuteReapply(HistoryRecord h) => _ = ExecuteReapplyAsync(h);
+
         private void History_ContextReapply_Click(object sender, RoutedEventArgs e)
-        { if ((sender as FrameworkElement)?.DataContext is HistoryRecord h) ExecuteReapply(h); }
+        {
+            if ((sender as FrameworkElement)?.DataContext is HistoryRecord h)
+            {
+                ExecuteReapply(h);
+            }
+        }
+
         private void BtnReapplySelected_Click(object sender, RoutedEventArgs e)
         {
-            var items = HistoryList.SelectedItems; if (items == null || items.Count == 0) return;
-            for (int i = 0; i < items.Count; i++) if (items[i] is HistoryRecord h) ExecuteReapply(h);
+            var items = HistoryList?.SelectedItems;
+            if (items == null || items.Count == 0) return;
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i] is HistoryRecord h) ExecuteReapply(h);
+            }
         }
 
         private async void PendingList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
-            var selected = PendingList?.SelectedItem as PendingChange;
-            if (selected != null)
+            try
             {
+                var selected = PendingList?.SelectedItem as PendingChange;
+                if (selected == null) return;
                 var section = string.Equals(selected.Scope, "User", StringComparison.OrdinalIgnoreCase) ? AdmxPolicySection.User : AdmxPolicySection.Machine;
-                var main = App.Window as MainWindow; if (main == null) return;
-                await main.OpenEditDialogForPolicyIdAsync(selected.PolicyId, section, true);
+                if (App.Window is MainWindow main)
+                {
+                    await main.OpenEditDialogForPolicyIdAsync(selected.PolicyId, section, true);
+                }
             }
+            catch { }
         }
 
         private async void HistoryList_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
         {
-            var selected = HistoryList?.SelectedItem as HistoryRecord;
-            if (selected != null)
+            try
             {
+                var selected = HistoryList?.SelectedItem as HistoryRecord;
+                if (selected == null) return;
                 var section = string.Equals(selected.Scope, "User", StringComparison.OrdinalIgnoreCase) ? AdmxPolicySection.User : AdmxPolicySection.Machine;
-                var main = App.Window as MainWindow; if (main == null) return;
-                await main.OpenEditDialogForPolicyIdAsync(selected.PolicyId, section, true);
+                if (App.Window is MainWindow main)
+                {
+                    await main.OpenEditDialogForPolicyIdAsync(selected.PolicyId, section, true);
+                }
+            }
+            catch { }
+        }
+
+        private static Dictionary<string, object>? NormalizeOptions(Dictionary<string, object>? raw)
+        {
+            if (raw == null) return null;
+            var result = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in raw)
+            {
+                object v = kv.Value ?? string.Empty;
+                if (v is JsonElement je)
+                {
+                    v = ConvertJsonElement(je) ?? string.Empty;
+                }
+                if (v is IEnumerable<object> en && v is not string && en.Any() && en.First() is JsonElement)
+                {
+                    var list = new List<string>();
+                    foreach (var item in en)
+                    {
+                        if (item is JsonElement je2) list.Add(Convert.ToString(ConvertJsonElement(je2)) ?? string.Empty);
+                        else list.Add(Convert.ToString(item) ?? string.Empty);
+                    }
+                    v = list.ToArray();
+                }
+                result[kv.Key] = v;
+            }
+            return result;
+        }
+
+        private static object? ConvertJsonElement(JsonElement je)
+        {
+            switch (je.ValueKind)
+            {
+                case JsonValueKind.String: return je.GetString();
+                case JsonValueKind.Number:
+                    if (je.TryGetInt64(out var l)) return l;
+                    if (je.TryGetDouble(out var d)) return d;
+                    return je.ToString();
+                case JsonValueKind.True: return true;
+                case JsonValueKind.False: return false;
+                case JsonValueKind.Array:
+                    var items = new List<object>();
+                    foreach (var elem in je.EnumerateArray())
+                    {
+                        if (elem.ValueKind == JsonValueKind.Object && elem.TryGetProperty("Key", out var keyProp) && elem.TryGetProperty("Value", out var valProp))
+                        {
+                            items.Add(new KeyValuePair<string, string>(keyProp.GetString() ?? string.Empty, valProp.GetString() ?? string.Empty));
+                        }
+                        else
+                        {
+                            items.Add(ConvertJsonElement(elem) ?? string.Empty);
+                        }
+                    }
+                    if (items.All(i => i is KeyValuePair<string, string>))
+                        return items.Cast<KeyValuePair<string, string>>().ToList();
+                    return items.Select(i => Convert.ToString(i) ?? string.Empty).ToArray();
+                case JsonValueKind.Object:
+                    return je.ToString();
+                default:
+                    return null;
             }
         }
     }

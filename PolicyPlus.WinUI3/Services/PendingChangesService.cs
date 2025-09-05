@@ -46,6 +46,50 @@ namespace PolicyPlus.WinUI3.Services
 
         private PendingChangesService() { }
 
+        private static Dictionary<string, object>? CloneOptions(Dictionary<string, object>? src)
+        {
+            if (src == null) return null;
+            var clone = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in src)
+            {
+                var v = kv.Value;
+                if (v is null)
+                {
+                    clone[kv.Key] = string.Empty;
+                }
+                else if (v is string s)
+                {
+                    clone[kv.Key] = s; // string immutable, direct assign
+                }
+                else if (v is bool || v is int || v is long || v is uint || v is double)
+                {
+                    clone[kv.Key] = v; // value types safe
+                }
+                else if (v is string[] arr)
+                {
+                    clone[kv.Key] = arr.ToArray();
+                }
+                else if (v is IEnumerable<string> strEnum)
+                {
+                    clone[kv.Key] = strEnum.ToList();
+                }
+                else if (v is List<string> strList)
+                {
+                    clone[kv.Key] = new List<string>(strList);
+                }
+                else if (v is IEnumerable<KeyValuePair<string, string>> kvps)
+                {
+                    clone[kv.Key] = kvps.Select(p => new KeyValuePair<string, string>(p.Key, p.Value)).ToList();
+                }
+                else
+                {
+                    // fallback to string representation
+                    clone[kv.Key] = v.ToString() ?? string.Empty;
+                }
+            }
+            return clone;
+        }
+
         public void Add(PendingChange change)
         {
             if (change == null) return;
@@ -59,7 +103,7 @@ namespace PolicyPlus.WinUI3.Services
                 existing.Details = change.Details;
                 existing.DetailsFull = change.DetailsFull;
                 existing.DesiredState = change.DesiredState;
-                existing.Options = change.Options;
+                existing.Options = CloneOptions(change.Options);
                 existing.PolicyName = change.PolicyName;
                 existing.CreatedAt = DateTime.Now;
 
@@ -73,6 +117,8 @@ namespace PolicyPlus.WinUI3.Services
             }
             else
             {
+                // clone options so later mutation does not affect history snapshot
+                change.Options = CloneOptions(change.Options);
                 Pending.Add(change);
             }
         }
@@ -92,7 +138,7 @@ namespace PolicyPlus.WinUI3.Services
                     DetailsFull = c.DetailsFull,
                     AppliedAt = DateTime.Now,
                     DesiredState = c.DesiredState,
-                    Options = c.Options
+                    Options = CloneOptions(c.Options)
                 });
                 Pending.Remove(c);
             }
@@ -113,7 +159,7 @@ namespace PolicyPlus.WinUI3.Services
                     DetailsFull = c.DetailsFull,
                     AppliedAt = DateTime.Now,
                     DesiredState = c.DesiredState,
-                    Options = c.Options
+                    Options = CloneOptions(c.Options)
                 });
                 Pending.Remove(c);
             }
