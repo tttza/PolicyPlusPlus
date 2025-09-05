@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using System.ComponentModel;
 using Microsoft.UI.Xaml.Media;
 using System;
+using Microsoft.UI.Xaml.Input;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -36,6 +37,19 @@ namespace PolicyPlus.WinUI3.Windows
             if (_measured) return;
             _measured = true;
             try { AdjustOptionColumnsToContent(); } catch { }
+        }
+
+        // Double tap policy name opens EditSetting window via parent
+        private void NameText_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            try
+            {
+                if ((sender as FrameworkElement)?.DataContext is QuickEditRow row && row.Policy != null)
+                {
+                    ParentQuickEditWindow?.OpenEditForPolicy(row.Policy.UniqueID);
+                }
+            }
+            catch { }
         }
 
         private double MeasureChildWidth(FrameworkElement fe)

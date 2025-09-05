@@ -246,5 +246,82 @@ namespace PolicyPlus.WinUI3.ViewModels
             if (isUser && UserState == QuickEditState.Enabled) QueuePending("User");
             if (!isUser && ComputerState == QuickEditState.Enabled) QueuePending("Computer");
         }
+
+        public void ApplyExternal(string scope, PolicyState desired, Dictionary<string, object>? options)
+        {
+            bool isUser = scope.Equals("User", StringComparison.OrdinalIgnoreCase);
+            _initializing = true; // prevent queueing while we synchronize
+            try
+            {
+                var newState = desired switch { PolicyState.Enabled => QuickEditState.Enabled, PolicyState.Disabled => QuickEditState.Disabled, _ => QuickEditState.NotConfigured };
+                if (isUser)
+                {
+                    UserState = newState;
+                    if (newState == QuickEditState.Enabled && options != null)
+                        ApplyOptionSet(options, true);
+                    else if (newState != QuickEditState.Enabled)
+                        ClearOptions(true);
+                }
+                else
+                {
+                    ComputerState = newState;
+                    if (newState == QuickEditState.Enabled && options != null)
+                        ApplyOptionSet(options, false);
+                    else if (newState != QuickEditState.Enabled)
+                        ClearOptions(false);
+                }
+                RefreshListSummaries();
+            }
+            catch { }
+            finally { _initializing = false; }
+        }
+
+        private void ClearOptions(bool isUser)
+        {
+            if (EnumElement != null)
+            {
+                if (isUser) _userEnumIndex = -1; else _computerEnumIndex = -1; OnChanged(isUser ? nameof(UserEnumIndex) : nameof(ComputerEnumIndex));
+            }
+            if (BooleanElement != null)
+            { if (isUser) _userBool = false; else _computerBool = false; OnChanged(isUser ? nameof(UserBool) : nameof(ComputerBool)); }
+            if (TextElement != null)
+            { if (isUser) _userText = string.Empty; else _computerText = string.Empty; OnChanged(isUser ? nameof(UserText) : nameof(ComputerText)); }
+            if (DecimalElement != null)
+            { if (isUser) _userNumber = null; else _computerNumber = null; OnChanged(isUser ? nameof(UserNumber) : nameof(ComputerNumber)); }
+            if (ListElement != null)
+            { if (isUser) UserListItems = new(); else ComputerListItems = new(); }
+            if (MultiTextElement != null)
+            { if (isUser) UserMultiTextItems = new(); else ComputerMultiTextItems = new(); }
+        }
+
+        private void ApplyOptionSet(Dictionary<string, object> opts, bool isUser)
+        {
+            try
+            {
+                if (EnumElement != null && opts.TryGetValue(EnumElement.ID, out var ev) && ev is int ei)
+                { if (isUser) _userEnumIndex = ei; else _computerEnumIndex = ei; OnChanged(isUser ? nameof(UserEnumIndex) : nameof(ComputerEnumIndex)); }
+                if (BooleanElement != null && opts.TryGetValue(BooleanElement.ID, out var bv) && bv is bool b)
+                { if (isUser) _userBool = b; else _computerBool = b; OnChanged(isUser ? nameof(UserBool) : nameof(ComputerBool)); }
+                if (TextElement != null && opts.TryGetValue(TextElement.ID, out var tv) && tv is string ts)
+                { if (isUser) _userText = ts; else _computerText = ts; OnChanged(isUser ? nameof(UserText) : nameof(ComputerText)); }
+                if (DecimalElement != null && opts.TryGetValue(DecimalElement.ID, out var dv))
+                {
+                    if (dv is uint du) { if (isUser) _userNumber = du; else _computerNumber = du; }
+                    else if (dv is int di && di >= 0) { if (isUser) _userNumber = (uint)di; else _computerNumber = (uint)di; }
+                    OnChanged(isUser ? nameof(UserNumber) : nameof(ComputerNumber));
+                }
+                if (ListElement != null && opts.TryGetValue(ListElement.ID, out var lv))
+                {
+                    if (lv is List<string> ll) { if (isUser) UserListItems = ll.ToList(); else ComputerListItems = ll.ToList(); }
+                    else if (lv is IEnumerable<string> enumerable) { var list = enumerable.ToList(); if (isUser) UserListItems = list; else ComputerListItems = list; }
+                }
+                if (MultiTextElement != null && opts.TryGetValue(MultiTextElement.ID, out var mv))
+                {
+                    if (mv is List<string> ml) { if (isUser) UserMultiTextItems = ml.ToList(); else ComputerMultiTextItems = ml.ToList(); }
+                    else if (mv is IEnumerable<string> en) { var list = en.ToList(); if (isUser) UserMultiTextItems = list; else ComputerMultiTextItems = list; }
+                }
+            }
+            catch { }
+        }
     }
 }

@@ -17,6 +17,7 @@ using Microsoft.UI.Xaml.Input;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx;
+using PolicyPlus.WinUI3.ViewModels; // added for QuickEditRow
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -38,6 +39,7 @@ namespace PolicyPlus.WinUI3.Windows
         private readonly List<Window> _childWindows = new();
 
         public event EventHandler? Saved;
+        public event EventHandler<(string Scope, PolicyState State, Dictionary<string, object>? Options)>? SavedDetail; // added
 
         private static readonly Regex UrlRegex = new Regex(@"(https?://[^\s]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -83,6 +85,81 @@ namespace PolicyPlus.WinUI3.Windows
             ApplyBtn.Click += ApplyBtn_Click;
             OkBtn.Click += OkBtn_Click;
             CancelBtn.Click += (s, e) => Close();
+        }
+
+        // Overlay current QuickEditRow (unsaved) values into this window (both scopes).
+        internal void OverlayFromQuickEdit(QuickEditRow row)
+        {
+            if (row == null || _policy == null || !string.Equals(row.Policy.UniqueID, _policy.UniqueID, StringComparison.OrdinalIgnoreCase)) return;
+            try
+            {
+                void ApplyScope(bool isUser)
+                {
+                    _currentSection = isUser ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+                    if (SectionSelector != null)
+                    {
+                        SectionSelector.SelectedIndex = isUser ? 1 : 0; // 0=Computer,1=User
+                    }
+                    // Ensure elements exist for this section
+                    LoadStateFromSource();
+                    StateRadio_Checked(this, new RoutedEventArgs());
+                    var state = isUser ? row.UserState : row.ComputerState;
+                    if (OptEnabled != null) OptEnabled.IsChecked = state == QuickEditState.Enabled;
+                    if (OptDisabled != null) OptDisabled.IsChecked = state == QuickEditState.Disabled;
+                    if (OptNotConfigured != null) OptNotConfigured.IsChecked = state == QuickEditState.NotConfigured;
+                    StateRadio_Checked(this, new RoutedEventArgs());
+                    if (state != QuickEditState.Enabled) return;
+
+                    // Map each element
+                    if (row.EnumElement != null && _elementControls.TryGetValue(row.EnumElement.ID, out var enumCtrl) && enumCtrl is ComboBox cb)
+                    {
+                        cb.SelectedIndex = isUser ? row.UserEnumIndex : row.ComputerEnumIndex;
+                    }
+                    if (row.BooleanElement != null && _elementControls.TryGetValue(row.BooleanElement.ID, out var boolCtrl) && boolCtrl is CheckBox chk)
+                    {
+                        chk.IsChecked = isUser ? row.UserBool : row.ComputerBool;
+                    }
+                    if (row.TextElement != null && _elementControls.TryGetValue(row.TextElement.ID, out var textCtrl))
+                    {
+                        string txt = isUser ? row.UserText : row.ComputerText;
+                        if (textCtrl is TextBox tb) tb.Text = txt;
+                        else if (textCtrl is AutoSuggestBox asb) asb.Text = txt;
+                    }
+                    if (row.DecimalElement != null && _elementControls.TryGetValue(row.DecimalElement.ID, out var numCtrl))
+                    {
+                        uint? val = isUser ? row.UserNumber : row.ComputerNumber;
+                        if (numCtrl is NumberBox nb && val.HasValue) nb.Value = val.Value;
+                        else if (numCtrl is TextBox tb2 && val.HasValue) tb2.Text = val.Value.ToString();
+                    }
+                    if (row.ListElement != null && _elementControls.TryGetValue(row.ListElement.ID, out var listCtrl) && listCtrl is Button btn)
+                    {
+                        var items = isUser ? row.UserListItems : row.ComputerListItems;
+                        btn.Tag = items.ToList();
+                        btn.Content = $"Edit... ({items.Count})";
+                    }
+                    if (row.MultiTextElement != null && _elementControls.TryGetValue(row.MultiTextElement.ID, out var multiCtrl) && multiCtrl is TextBox mtb)
+                    {
+                        var lines = isUser ? row.UserMultiTextItems : row.ComputerMultiTextItems;
+                        mtb.Text = string.Join("\r\n", lines);
+                    }
+                }
+
+                // Apply both scopes that policy supports to reflect unsaved changes fully
+                if (_policy.RawPolicy.Section == AdmxPolicySection.Both)
+                {
+                    ApplyScope(false); // Computer
+                    ApplyScope(true);  // User
+                    // Restore previously selected section (keep computer first unless user was enabled and computer not)
+                    var preferUser = row.UserState == QuickEditState.Enabled && row.ComputerState != QuickEditState.Enabled;
+                    SectionSelector.SelectedIndex = preferUser ? 1 : 0;
+                    _currentSection = SectionSelector.SelectedIndex == 1 ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+                }
+                else
+                {
+                    ApplyScope(_policy.RawPolicy.Section == AdmxPolicySection.User);
+                }
+            }
+            catch { }
         }
 
         private void SecondLangButton_Click(object sender, RoutedEventArgs e) { }
@@ -645,6 +722,12 @@ namespace PolicyPlus.WinUI3.Windows
             catch { }
 
             Saved?.Invoke(this, EventArgs.Empty);
+            try
+            {
+                var scope = (_currentSection == AdmxPolicySection.User) ? "User" : "Computer";
+                SavedDetail?.Invoke(this, (scope, desired, options));
+            }
+            catch { }
         }
 
         private (string shortText, string longText) BuildDetailsForPending(Dictionary<string, object> options)

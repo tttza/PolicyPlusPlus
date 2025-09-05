@@ -16,6 +16,7 @@ using System.Collections.Specialized;
 using Windows.Foundation;
 using Windows.Graphics;
 using System.ComponentModel;
+using System;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -25,6 +26,9 @@ namespace PolicyPlus.WinUI3.Windows
         private AdmxBundle? _bundle; private IPolicySource? _compSource; private IPolicySource? _userSource;
         private readonly IElevationService _elevation = new ElevationServiceAdapter();
         private bool _isSaving; private bool _initialized; private bool _pendingSize;
+
+        // Track opened EditSetting windows per policy (only one allowed)
+        private readonly Dictionary<string, EditSettingWindow> _editWindows = new(System.StringComparer.OrdinalIgnoreCase);
 
         public QuickEditWindow()
         {
@@ -38,7 +42,16 @@ namespace PolicyPlus.WinUI3.Windows
             saveAccel.Invoked += async (a, b) => { if (_saveButton?.IsEnabled == true && !_isSaving) { await SaveAsync(); b.Handled = true; } };
             RootShell?.KeyboardAccelerators.Add(saveAccel);
             try { App.ScaleChanged += (_, __) => ScheduleSize(); } catch { }
-            Closed += (s, e) => { try { PendingChangesService.Instance.Pending.CollectionChanged -= Pending_CollectionChanged; } catch { } };
+            Closed += (s, e) =>
+            {
+                try { PendingChangesService.Instance.Pending.CollectionChanged -= Pending_CollectionChanged; } catch { }
+                // Close any edit windows opened from here
+                foreach (var win in _editWindows.Values.ToList())
+                {
+                    try { win.Close(); } catch { }
+                }
+                _editWindows.Clear();
+            };
         }
 
         public void Initialize(AdmxBundle bundle, IPolicySource? comp, IPolicySource? user, IEnumerable<PolicyPlusPolicy> policies)
@@ -53,6 +66,105 @@ namespace PolicyPlus.WinUI3.Windows
             try { PendingChangesService.Instance.Pending.CollectionChanged += Pending_CollectionChanged; } catch { }
             UpdateUnsavedIndicator();
             _initialized = true; ScheduleSize();
+        }
+
+        // Open EditSetting window for given policy id; if already open, activate existing
+        internal void OpenEditForPolicy(string policyId)
+        {
+            if (_bundle == null) return;
+            if (_editWindows.TryGetValue(policyId, out var existing))
+            {
+                try { existing.Activate(); WindowHelpers.BringToFront(existing); } catch { }
+                return;
+            }
+            var row = _grid?.Rows.FirstOrDefault(r => r.Policy.UniqueID.Equals(policyId, System.StringComparison.OrdinalIgnoreCase));
+            var policy = row?.Policy;
+            if (policy == null || _compSource == null || _userSource == null) return;
+
+            // Decide initial section with priority:
+            // 1. Pending change scope (Computer preferred when both pending)
+            // 2. Configured state in Computer
+            // 3. Configured state in User
+            // 4. Default to Computer (Machine)
+            AdmxPolicySection initialSection;
+            if (policy.RawPolicy.Section == AdmxPolicySection.Both)
+            {
+                var pend = PendingChangesService.Instance.Pending.Where(p => string.Equals(p.PolicyId, policyId, StringComparison.OrdinalIgnoreCase)).ToList();
+                bool hasUserPending = pend.Any(p => string.Equals(p.Scope, "User", StringComparison.OrdinalIgnoreCase));
+                bool hasCompPending = pend.Any(p => string.Equals(p.Scope, "Computer", StringComparison.OrdinalIgnoreCase));
+                if (hasCompPending) initialSection = AdmxPolicySection.Machine;
+                else if (hasUserPending) initialSection = AdmxPolicySection.User;
+                else
+                {
+                    try
+                    {
+                        var compState = PolicyProcessing.GetPolicyState(_compSource, policy);
+                        bool compConfigured = compState == PolicyState.Enabled || compState == PolicyState.Disabled;
+                        if (compConfigured) initialSection = AdmxPolicySection.Machine;
+                        else
+                        {
+                            var userState = PolicyProcessing.GetPolicyState(_userSource, policy);
+                            bool userConfigured = userState == PolicyState.Enabled || userState == PolicyState.Disabled;
+                            initialSection = userConfigured ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+                        }
+                    }
+                    catch { initialSection = AdmxPolicySection.Machine; }
+                }
+            }
+            else
+            {
+                initialSection = policy.RawPolicy.Section == AdmxPolicySection.User ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+            }
+
+            var compLoader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
+            var userLoader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true);
+
+            var win = new EditSettingWindow();
+            win.Initialize(policy, initialSection, _bundle, _compSource, _userSource, compLoader, userLoader, null, null);
+            // Overlay current (possibly unsaved) QuickEdit row values
+            try { if (row != null) win.OverlayFromQuickEdit(row); } catch { }
+            win.Saved += (_, __) => { try { RefreshRowFromSources(row); } catch { } };
+            win.SavedDetail += (_, detail) =>
+            {
+                try
+                {
+                    if (row != null)
+                    {
+                        row.ApplyExternal(detail.Scope, detail.State, detail.Options);
+                    }
+                }
+                catch { }
+            };
+            win.Closed += (_, __) => { _editWindows.Remove(policyId); };
+            _editWindows[policyId] = win;
+            win.Activate();
+            try { WindowHelpers.BringToFront(win); } catch { }
+        }
+
+        private void RefreshRowFromSources(QuickEditRow? row)
+        {
+            if (row == null || _compSource == null || _userSource == null) return;
+            try
+            {
+                // Recreate a temp row to read fresh state then copy over
+                var fresh = new QuickEditRow(row.Policy, _bundle!, _compSource, _userSource);
+                row.UserState = fresh.UserState;
+                row.ComputerState = fresh.ComputerState;
+                row.UserEnumIndex = fresh.UserEnumIndex;
+                row.ComputerEnumIndex = fresh.ComputerEnumIndex;
+                row.UserBool = fresh.UserBool;
+                row.ComputerBool = fresh.ComputerBool;
+                row.UserText = fresh.UserText;
+                row.ComputerText = fresh.ComputerText;
+                row.UserNumber = fresh.UserNumber;
+                row.ComputerNumber = fresh.ComputerNumber;
+                row.UserListItems = fresh.UserListItems;
+                row.ComputerListItems = fresh.ComputerListItems;
+                row.UserMultiTextItems = fresh.UserMultiTextItems;
+                row.ComputerMultiTextItems = fresh.ComputerMultiTextItems;
+                row.RefreshListSummaries();
+            }
+            catch { }
         }
 
         private void Columns_PropertyChanged(object? s, PropertyChangedEventArgs e) => ScheduleSize();
@@ -88,19 +200,16 @@ namespace PolicyPlus.WinUI3.Windows
                 var c = _grid.Columns;
                 double model = c.Name.Value + c.Id.Value + c.UserState.Value + c.UserOptions.Value + c.ComputerState.Value + c.ComputerOptions.Value + (6 * 5);
                 try { model += RootShell.Padding.Left + RootShell.Padding.Right; } catch { }
-                // Base slack: per-column inner margins + cell content spacing
-                double baseSlack = 8 /*base*/ + (6 * 8); // 8px * 6 columns ~= 56
-                if (customScale < 0.9) baseSlack += 12;   // small extra for rounding
-                if (customScale < 0.8) baseSlack += 24;   // more extra for very small scales (e.g. 67%)
+                double baseSlack = 8 + (6 * 8);
+                if (customScale < 0.9) baseSlack += 12;
+                if (customScale < 0.8) baseSlack += 24;
                 if (model > 0 && (model + baseSlack) < logicalW)
-                    logicalW = model + baseSlack; // only shrink, keep slack
+                    logicalW = model + baseSlack;
             }
 
-            // Convert to client pixel size: logical * customScale * dpiScale
-            double targetClientW = logicalW * customScale * dpiScale + 2; // +2 slack
+            double targetClientW = logicalW * customScale * dpiScale + 2;
             double targetClientH = logicalH * customScale * dpiScale + 2;
 
-            // Clamp to work area
             try
             {
                 var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -152,6 +261,8 @@ namespace PolicyPlus.WinUI3.Windows
                     PendingChangesService.Instance.Applied(relevant.ToArray());
                     try { SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList()); } catch { }
                     SetStatus(relevant.Count == 1 ? "Saved 1 change." : $"Saved {relevant.Count} changes.");
+                    // After successful save refresh all rows to reflect persisted state
+                    foreach (var row in _grid.Rows) { try { RefreshRowFromSources(row); } catch { } }
                 }
                 else SetStatus(string.IsNullOrEmpty(error) ? "Save failed." : $"Save failed: {error}");
             }

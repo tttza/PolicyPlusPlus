@@ -68,7 +68,7 @@
                                     </Grid.ColumnDefinitions>
 
                                     <!-- Name / ID -->
-                                    <TextBlock Grid.Column="0" Text="{Binding Policy.DisplayName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" />
+                                    <TextBlock Grid.Column="0" Text="{Binding Policy.DisplayName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" DoubleTapped="NameText_DoubleTapped" />
                                     <TextBlock Grid.Column="2" Text="{Binding IdTail}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" />
 
                                     <!-- User State -->
