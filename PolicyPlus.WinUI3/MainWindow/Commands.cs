@@ -122,7 +122,17 @@ namespace PolicyPlus.WinUI3
         { if (sender is ToggleMenuFlyoutItem t) { ChkUseTempPol.IsChecked = t.IsChecked; ChkUseTempPol_Checked(ChkUseTempPol, new RoutedEventArgs()); } }
 
         private void BookmarkToggle_Click(object sender, RoutedEventArgs e)
-        { if (sender is FrameworkElement fe && fe.Tag is PolicyPlusPolicy p) { try { BookmarkService.Instance.Toggle(p.UniqueID); } catch { } RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } }
+        {
+            if (sender is FrameworkElement fe && fe.Tag is PolicyPlusPolicy p)
+            {
+                try { BookmarkService.Instance.Toggle(p.UniqueID); } catch { }
+                // Only rebind when the active view is restricted to bookmarks; otherwise just update icon via event.
+                if (_bookmarksOnly)
+                {
+                    RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                }
+            }
+        }
 
         private void ChkBookmarksOnly_Checked(object sender, RoutedEventArgs e)
         { _bookmarksOnly = (sender as CheckBox)?.IsChecked == true; RebindConsideringAsync(SearchBox?.Text ?? string.Empty); }
@@ -185,6 +195,12 @@ namespace PolicyPlus.WinUI3
                 win.Activate();
             }
             catch { }
+        }
+
+        private void BookmarkToggle_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            // Swallow double-tap so row edit doesn't open when user rapidly toggles bookmark.
+            e.Handled = true;
         }
     }
 }

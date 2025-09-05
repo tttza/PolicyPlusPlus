@@ -272,7 +272,7 @@
                                 <datagrid:DataGridTemplateColumn x:Name="ColBookmark" Header="★" Width="SizeToCells" CanUserSort="False">
                                     <datagrid:DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Padding="0" Background="Transparent" Click="BookmarkToggle_Click" Tag="{Binding Policy}" ToolTipService.ToolTip="Toggle bookmark">
+                                            <Button Padding="0" Background="Transparent" Click="BookmarkToggle_Click" DoubleTapped="BookmarkToggle_DoubleTapped" Tag="{Binding Policy}" ToolTipService.ToolTip="Toggle bookmark">
                                                 <FontIcon x:Name="BookmarkGlyph" Glyph="&#xE735;" Foreground="Gold" Opacity="{Binding IsBookmarked, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Opacity}"/>
                                             </Button>
                                         </DataTemplate>

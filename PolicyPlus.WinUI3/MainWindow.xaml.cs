@@ -1150,9 +1150,27 @@ namespace PolicyPlus.WinUI3
             }
         }
 
+        private bool IsFromBookmarkButton(DependencyObject? dep)
+        {
+            while (dep != null)
+            {
+                if (dep is Button btn && btn.Tag is PolicyPlusPolicy)
+                {
+                    // Bookmark button identified by having a Policy tag and no complex content (FontIcon only)
+                    return true;
+                }
+                dep = VisualTreeHelper.GetParent(dep);
+            }
+            return false;
+        }
+
         private void PolicyList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             DependencyObject? dep = e.OriginalSource as DependencyObject;
+
+            // Suppress edit when the double-tap was on the bookmark toggle button
+            if (IsFromBookmarkButton(dep)) { e.Handled = true; return; }
+
             object? item = null;
 
             var dgRow = FindAncestorDataGridRow(dep);
