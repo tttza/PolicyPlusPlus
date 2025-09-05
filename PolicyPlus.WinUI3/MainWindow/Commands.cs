@@ -157,9 +157,9 @@ namespace PolicyPlus.WinUI3
                 }
                 if (policies.Count == 0)
                 {
-                    // fallback: bookmarked policies
+                    // fallback: all bookmarked policies regardless of current view filters
                     var set = new System.Collections.Generic.HashSet<string>(BookmarkService.Instance.ActiveIds, System.StringComparer.OrdinalIgnoreCase);
-                    foreach (var p in _visiblePolicies)
+                    foreach (var p in _allPolicies)
                         if (set.Contains(p.UniqueID)) policies.Add(p);
                 }
                 if (policies.Count == 0) return;
@@ -188,7 +188,8 @@ namespace PolicyPlus.WinUI3
                     if (it is Models.PolicyListRow r && r.Policy != null) selectedPolicies.Add(r.Policy);
                 var bookmarkIds = BookmarkService.Instance.ActiveIds;
                 bool bookmarksOnly = _bookmarksOnly;
-                var sourcePolicies = Windows.QuickEditWindow.BuildSourcePolicies(_visiblePolicies, selectedPolicies, bookmarkIds, bookmarksOnly).ToList();
+                // Use all policies so bookmarked items outside current filters are included (option 2)
+                var sourcePolicies = Windows.QuickEditWindow.BuildSourcePolicies(_allPolicies, selectedPolicies, bookmarkIds, bookmarksOnly).ToList();
                 if (sourcePolicies.Count == 0) return;
                 var win = new Windows.QuickEditWindow();
                 win.Initialize(_bundle, _compSource, _userSource, sourcePolicies);
