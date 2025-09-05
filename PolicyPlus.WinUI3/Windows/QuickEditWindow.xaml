@@ -12,6 +12,9 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="Auto"/>
+			</Grid.ColumnDefinitions>
 
             <!-- Header -->
             <StackPanel Orientation="Horizontal" Spacing="16">
