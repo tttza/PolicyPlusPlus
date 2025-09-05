@@ -145,23 +145,16 @@ namespace PolicyPlus.WinUI3
         private void BookmarkManageMenu_Click(object sender, RoutedEventArgs e)
         { ShowInfo("Bookmark list management not implemented yet."); }
 
-        private void OpenQuickEditForSelection()
+        // Always open Quick Edit using only bookmarked policies (ignore selection)
+        private void OpenQuickEditBookmarks()
         {
             try
             {
                 if (_bundle == null) return;
-                var policies = new System.Collections.Generic.List<PolicyPlus.Core.Core.PolicyPlusPolicy>();
-                foreach (var it in PolicyList?.SelectedItems ?? new System.Collections.Generic.List<object>())
-                {
-                    if (it is Models.PolicyListRow row && row.Policy != null) policies.Add(row.Policy);
-                }
-                if (policies.Count == 0)
-                {
-                    // fallback: all bookmarked policies regardless of current view filters
-                    var set = new System.Collections.Generic.HashSet<string>(BookmarkService.Instance.ActiveIds, System.StringComparer.OrdinalIgnoreCase);
-                    foreach (var p in _allPolicies)
-                        if (set.Contains(p.UniqueID)) policies.Add(p);
-                }
+                var bookmarkIds = BookmarkService.Instance.ActiveIds;
+                if (bookmarkIds == null || !bookmarkIds.Any()) return;
+                var set = new HashSet<string>(bookmarkIds, System.StringComparer.OrdinalIgnoreCase);
+                var policies = _allPolicies.Where(p => set.Contains(p.UniqueID)).ToList();
                 if (policies.Count == 0) return;
                 EnsureLocalSources();
                 var win = new Windows.QuickEditWindow();
@@ -173,30 +166,10 @@ namespace PolicyPlus.WinUI3
         }
 
         private void ContextQuickEdit_Click(object sender, RoutedEventArgs e)
-        {
-            OpenQuickEditForSelection();
-        }
+        { OpenQuickEditBookmarks(); }
 
         private void BtnQuickEdit_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (_bundle == null) return;
-                EnsureLocalSources();
-                var selectedPolicies = new List<PolicyPlusPolicy>();
-                foreach (var it in PolicyList?.SelectedItems ?? new List<object>())
-                    if (it is Models.PolicyListRow r && r.Policy != null) selectedPolicies.Add(r.Policy);
-                var bookmarkIds = BookmarkService.Instance.ActiveIds;
-                bool bookmarksOnly = _bookmarksOnly;
-                // Use all policies so bookmarked items outside current filters are included (option 2)
-                var sourcePolicies = Windows.QuickEditWindow.BuildSourcePolicies(_allPolicies, selectedPolicies, bookmarkIds, bookmarksOnly).ToList();
-                if (sourcePolicies.Count == 0) return;
-                var win = new Windows.QuickEditWindow();
-                win.Initialize(_bundle, _compSource, _userSource, sourcePolicies);
-                win.Activate();
-            }
-            catch { }
-        }
+        { OpenQuickEditBookmarks(); }
 
         private void BookmarkToggle_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
