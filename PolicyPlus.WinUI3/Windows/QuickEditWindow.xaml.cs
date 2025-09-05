@@ -10,6 +10,7 @@ using PolicyPlus.WinUI3.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Color = Windows.UI.Color;
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -21,6 +22,7 @@ namespace PolicyPlus.WinUI3.Windows
         private Button _saveButton = null!;
         private TextBlock _statusText = null!;
         private Grid _savingOverlay = null!;
+        private Grid _root = null!; // keep reference for theme switching
         // Track child list editor windows so they can be closed when this window closes.
         private readonly List<ListEditorWindow> _childEditors = new();
 
@@ -34,7 +36,15 @@ namespace PolicyPlus.WinUI3.Windows
         public QuickEditWindow()
         {
             Title = "Quick Edit";
+
+            // Try to match other windows (Mica + dynamic theme)
+            try { SystemBackdrop = new MicaBackdrop(); } catch { }
+
             var root = new Grid { Padding = new Thickness(12), MinWidth = 1280, MinHeight = 650 };
+            _root = root;
+            // Let Mica show through; if you want solid use WindowBackground like main window
+            try { root.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent); } catch { }
+
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -47,7 +57,6 @@ namespace PolicyPlus.WinUI3.Windows
             headerPanel.Children.Add(_unsavedText);
             root.Children.Add(headerPanel);
 
-            // Provide parent reference for tracking child windows.
             _grid.ParentQuickEditWindow = this;
             Grid.SetRow(_grid, 1);
             root.Children.Add(_grid);
@@ -77,38 +86,66 @@ namespace PolicyPlus.WinUI3.Windows
             // Saving overlay
             _savingOverlay = new Grid
             {
-                Background = new SolidColorBrush(global::Windows.UI.Color.FromArgb(128, 0, 0, 0)),
+                Background = new SolidColorBrush(Color.FromArgb(128, 0, 0, 0)),
                 Visibility = Visibility.Collapsed
             };
             var overlayStack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Spacing = 8 };
             var ring = new ProgressRing { IsActive = true, Width = 48, Height = 48 };
             overlayStack.Children.Add(ring);
-            overlayStack.Children.Add(new TextBlock { Text = "Saving...", Foreground = new SolidColorBrush(global::Windows.UI.Color.FromArgb(255,255,255,255)), HorizontalAlignment = HorizontalAlignment.Center });
+            overlayStack.Children.Add(new TextBlock { Text = "Saving...", Foreground = new SolidColorBrush(Microsoft.UI.Colors.White), HorizontalAlignment = HorizontalAlignment.Center });
             _savingOverlay.Children.Add(overlayStack);
             Grid.SetRowSpan(_savingOverlay, 3);
             root.Children.Add(_savingOverlay);
 
             Content = root;
 
-            // Ensure child editors are closed when QuickEdit closes.
+            // Register as secondary window so global theme & icon apply
+            try { App.RegisterWindow(this); } catch { }
+            ApplyCurrentTheme();
+            App.ThemeChanged += App_ThemeChanged;
+
             this.Closed += (s, e) =>
             {
                 try
                 {
+                    App.ThemeChanged -= App_ThemeChanged;
                     PendingChangesService.Instance.Pending.CollectionChanged -= Pending_CollectionChanged;
-                    foreach (var w in _childEditors.ToList())
-                    {
-                        try { w.Close(); } catch { }
-                    }
+                    foreach (var w in _childEditors.ToList()) { try { w.Close(); } catch { } }
                     _childEditors.Clear();
+                    App.UnregisterWindow(this);
                 }
                 catch { }
             };
 
-            // Keyboard accelerator (Ctrl+S) added to root grid
             var saveAccel = new KeyboardAccelerator { Key = global::Windows.System.VirtualKey.S, Modifiers = global::Windows.System.VirtualKeyModifiers.Control };
             saveAccel.Invoked += async (a, b) => { if (_saveButton.IsEnabled && !_isSaving) { await SaveAsync(); b.Handled = true; } };
             root.KeyboardAccelerators.Add(saveAccel);
+        }
+
+        private void App_ThemeChanged(object? sender, System.EventArgs e) => ApplyCurrentTheme();
+        private void ApplyCurrentTheme()
+        {
+            try
+            {
+                if (_root == null) return;
+                var theme = App.CurrentTheme;
+                _root.RequestedTheme = theme;
+                // Force explicit light/dark background so OS high-contrast or system dark does not override app preference
+                if (theme == ElementTheme.Light)
+                {
+                    _root.Background = new SolidColorBrush(Microsoft.UI.Colors.White);
+                }
+                else if (theme == ElementTheme.Dark)
+                {
+                    _root.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20));
+                }
+                else // System -> fallback to resource (may be dark depending on OS)
+                {
+                    if (Application.Current.Resources.TryGetValue("WindowBackground", out var bg) && bg is Brush b)
+                        _root.Background = b;
+                }
+            }
+            catch { }
         }
 
         internal void RegisterChild(ListEditorWindow w)
@@ -134,7 +171,6 @@ namespace PolicyPlus.WinUI3.Windows
             foreach (var p in policies) _grid.Rows.Add(new QuickEditRow(p, bundle, comp, user));
             _headerCount.Text = $"{_grid.Rows.Count} policies";
 
-            // Track pending changes
             try { PendingChangesService.Instance.Pending.CollectionChanged += Pending_CollectionChanged; } catch { }
             UpdateUnsavedIndicator();
         }

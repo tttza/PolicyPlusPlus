@@ -1,96 +1,119 @@
 <UserControl
     x:Class="PolicyPlus.WinUI3.Windows.QuickEditGridControl"
+    x:Name="RootControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls"
-    xmlns:pr="using:CommunityToolkit.WinUI.UI.Controls.Primitives"
-    xmlns:conv="using:PolicyPlus.WinUI3.Converters">
+    xmlns:conv="using:PolicyPlus.WinUI3.Converters"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:vm="using:PolicyPlus.WinUI3.ViewModels">
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+        <conv:QuickEditStateToIndexConverter x:Key="StateIndex" />
+        <conv:HeaderGlyphConverter x:Key="HeaderGlyph" />
+    </UserControl.Resources>
     <Grid>
-        <Grid.Resources>
-            <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
-            <conv:QuickEditStateToIndexConverter x:Key="StateIndex" />
-            <conv:HeaderGlyphConverter x:Key="HeaderGlyph" />
-            <DataTemplate x:Key="HeaderWithGlyphTemplate">
-                <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                    <FontIcon Glyph="{Binding Converter={StaticResource HeaderGlyph}}" FontSize="14" />
-                    <TextBlock Text="{Binding}" />
-                </StackPanel>
-            </DataTemplate>
-            <Style x:Key="GridHeaderStyle" TargetType="pr:DataGridColumnHeader">
-                <Setter Property="ContentTemplate" Value="{StaticResource HeaderWithGlyphTemplate}" />
-                <Setter Property="Padding" Value="6,0,6,0" />
-            </Style>
-        </Grid.Resources>
-        <toolkit:DataGrid x:Name="DataGrid"
-                          AutoGenerateColumns="False"
-                          ItemsSource="{x:Bind Rows, Mode=OneWay}"
-                          RowHeight="46"
-                          CanUserReorderColumns="True"
-                          CanUserResizeColumns="True"
-                          CanUserSortColumns="True"
-                          ColumnHeaderStyle="{StaticResource GridHeaderStyle}"
-                          HorizontalScrollBarVisibility="Auto"
-                          VerticalScrollBarVisibility="Auto"
-                          IsReadOnly="True">
-            <toolkit:DataGrid.Columns>
-                <!-- Rebalanced star layout: Name 3, ID 2.2, State columns 1.1 each, Option columns 3 each -->
-                <toolkit:DataGridTextColumn Header="Name" Binding="{Binding Policy.DisplayName}" Width="3*" MinWidth="240"/>
-                <toolkit:DataGridTextColumn Header="ID" Binding="{Binding Policy.UniqueID}" Width="2.2*" MinWidth="220"/>
-                <toolkit:DataGridTemplateColumn Header="User State" Width="1.1*" MinWidth="130">
-                    <toolkit:DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <ComboBox Width="130" VerticalAlignment="Center" SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}">
-                                <ComboBoxItem Content="Not Configured"/>
-                                <ComboBoxItem Content="Enabled"/>
-                                <ComboBoxItem Content="Disabled"/>
-                            </ComboBox>
-                        </DataTemplate>
-                    </toolkit:DataGridTemplateColumn.CellTemplate>
-                </toolkit:DataGridTemplateColumn>
-                <toolkit:DataGridTemplateColumn Header="User Options" Width="3*" MinWidth="430">
-                    <toolkit:DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                    <ComboBox Width="150" Visibility="{Binding HasEnumElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" SelectedIndex="{Binding UserEnumIndex, Mode=TwoWay}" ItemsSource="{Binding EnumChoices}"/>
-                                    <CheckBox Content="Bool" Visibility="{Binding HasBooleanElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" IsChecked="{Binding UserBool, Mode=TwoWay}"/>
-                                    <TextBox Width="180" Visibility="{Binding HasTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Text="{Binding UserText, Mode=TwoWay}"/>
-                                    <NumberBox Width="90" Visibility="{Binding HasDecimalElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Value="{Binding UserNumber, Mode=TwoWay}" SpinButtonPlacementMode="Inline"/>
-                                    <Button Width="115" Visibility="{Binding HasListElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Content="{Binding UserListSummary}" Click="UserList_Click" />
-                                    <Button Width="115" Visibility="{Binding HasMultiTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Content="{Binding UserMultiTextSummary}" Click="UserMulti_Click" />
-                                </StackPanel>
-                            </ScrollViewer>
-                        </DataTemplate>
-                    </toolkit:DataGridTemplateColumn.CellTemplate>
-                </toolkit:DataGridTemplateColumn>
-                <toolkit:DataGridTemplateColumn Header="Computer State" Width="1.1*" MinWidth="140">
-                    <toolkit:DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <ComboBox Width="140" VerticalAlignment="Center" SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}">
-                                <ComboBoxItem Content="Not Configured"/>
-                                <ComboBoxItem Content="Enabled"/>
-                                <ComboBoxItem Content="Disabled"/>
-                            </ComboBox>
-                        </DataTemplate>
-                    </toolkit:DataGridTemplateColumn.CellTemplate>
-                </toolkit:DataGridTemplateColumn>
-                <toolkit:DataGridTemplateColumn Header="Computer Options" Width="3*" MinWidth="440">
-                    <toolkit:DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                    <ComboBox Width="150" Visibility="{Binding HasEnumElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" SelectedIndex="{Binding ComputerEnumIndex, Mode=TwoWay}" ItemsSource="{Binding EnumChoices}"/>
-                                    <CheckBox Content="Bool" Visibility="{Binding HasBooleanElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" IsChecked="{Binding ComputerBool, Mode=TwoWay}"/>
-                                    <TextBox Width="180" Visibility="{Binding HasTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Text="{Binding ComputerText, Mode=TwoWay}"/>
-                                    <NumberBox Width="90" Visibility="{Binding HasDecimalElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Value="{Binding ComputerNumber, Mode=TwoWay}" SpinButtonPlacementMode="Inline"/>
-                                    <Button Width="115" Visibility="{Binding HasListElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Content="{Binding ComputerListSummary}" Click="ComputerList_Click" />
-                                    <Button Width="115" Visibility="{Binding HasMultiTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Content="{Binding ComputerMultiTextSummary}" Click="ComputerMulti_Click" />
-                                </StackPanel>
-                            </ScrollViewer>
-                        </DataTemplate>
-                    </toolkit:DataGridTemplateColumn.CellTemplate>
-                </toolkit:DataGridTemplateColumn>
-            </toolkit:DataGrid.Columns>
-        </toolkit:DataGrid>
+        <!-- Horizontal scroll shared between header and rows -->
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <!-- Header row -->
+                <Grid Height="42" Background="{ThemeResource LayerFillColorDefaultBrush}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{Binding Columns.Name, ElementName=RootControl}" MinWidth="240" />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="{Binding Columns.Id, ElementName=RootControl}" MinWidth="220" />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="{Binding Columns.UserState, ElementName=RootControl}" MinWidth="200" />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="{Binding Columns.UserOptions, ElementName=RootControl}" MinWidth="430" />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="{Binding Columns.ComputerState, ElementName=RootControl}" MinWidth="200" />
+                        <ColumnDefinition Width="6" />
+                        <ColumnDefinition Width="{Binding Columns.ComputerOptions, ElementName=RootControl}" MinWidth="440" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="Name" VerticalAlignment="Center" Margin="8,0" />
+                    <Thumb Grid.Column="1" Tag="Name" DragDelta="ResizeThumb_DragDelta" Background="Transparent" Opacity="0.001" />
+                    <TextBlock Grid.Column="2" Text="ID" VerticalAlignment="Center" Margin="8,0" />
+                    <Thumb Grid.Column="3" Tag="Id" DragDelta="ResizeThumb_DragDelta" Background="Transparent" Opacity="0.001" />
+                    <TextBlock Grid.Column="4" Text="User State" VerticalAlignment="Center" Margin="8,0" />
+                    <Thumb Grid.Column="5" Tag="UserState" DragDelta="ResizeThumb_DragDelta" Background="Transparent" Opacity="0.001" />
+                    <TextBlock Grid.Column="6" Text="User Options" VerticalAlignment="Center" Margin="8,0" />
+                    <Thumb Grid.Column="7" Tag="UserOptions" DragDelta="ResizeThumb_DragDelta" Background="Transparent" Opacity="0.001" />
+                    <TextBlock Grid.Column="8" Text="Computer State" VerticalAlignment="Center" Margin="8,0" />
+                    <Thumb Grid.Column="9" Tag="ComputerState" DragDelta="ResizeThumb_DragDelta" Background="Transparent" Opacity="0.001" />
+                    <TextBlock Grid.Column="10" Text="Computer Options" VerticalAlignment="Center" Margin="8,0" />
+                </Grid>
+
+                <!-- Body: vertical scroll separated -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Hidden" MaxHeight="600">
+                    <muxc:ItemsRepeater ItemsSource="{x:Bind Rows, Mode=OneWay}">
+                        <muxc:ItemsRepeater.Layout>
+                            <muxc:StackLayout />
+                        </muxc:ItemsRepeater.Layout>
+                        <muxc:ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="vm:QuickEditRow">
+                                <Grid Height="46">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="{Binding Columns.Name, ElementName=RootControl}" MinWidth="240" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="{Binding Columns.Id, ElementName=RootControl}" MinWidth="220" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="{Binding Columns.UserState, ElementName=RootControl}" MinWidth="200" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="{Binding Columns.UserOptions, ElementName=RootControl}" MinWidth="430" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="{Binding Columns.ComputerState, ElementName=RootControl}" MinWidth="200" />
+                                        <ColumnDefinition Width="6" />
+                                        <ColumnDefinition Width="{Binding Columns.ComputerOptions, ElementName=RootControl}" MinWidth="440" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Name / ID are read-only text -->
+                                    <TextBlock Grid.Column="0" Text="{Binding Policy.DisplayName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Policy.UniqueID}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" />
+
+                                    <!-- User State -->
+                                    <ComboBox Grid.Column="4" Width="180" SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="Not Configured" />
+                                        <ComboBoxItem Content="Enabled" />
+                                        <ComboBoxItem Content="Disabled" />
+                                    </ComboBox>
+
+                                    <!-- User Options -->
+                                    <ScrollViewer Grid.Column="6" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                            <ComboBox Width="150" Visibility="{Binding HasEnumElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" SelectedIndex="{Binding UserEnumIndex, Mode=TwoWay}" ItemsSource="{Binding EnumChoices}"/>
+                                            <CheckBox Content="Bool" Visibility="{Binding HasBooleanElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" IsChecked="{Binding UserBool, Mode=TwoWay}"/>
+                                            <TextBox Width="180" Visibility="{Binding HasTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Text="{Binding UserText, Mode=TwoWay}"/>
+                                            <NumberBox Width="90" Visibility="{Binding HasDecimalElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Value="{Binding UserNumber, Mode=TwoWay}" SpinButtonPlacementMode="Inline"/>
+                                            <Button Width="115" Visibility="{Binding HasListElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Content="{Binding UserListSummary}" Click="UserList_Click" />
+                                            <Button Width="115" Visibility="{Binding HasMultiTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" Content="{Binding UserMultiTextSummary}" Click="UserMulti_Click" />
+                                        </StackPanel>
+                                    </ScrollViewer>
+
+                                    <!-- Computer State -->
+                                    <ComboBox Grid.Column="8" Width="180" SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}" VerticalAlignment="Center">
+                                        <ComboBoxItem Content="Not Configured" />
+                                        <ComboBoxItem Content="Enabled" />
+                                        <ComboBoxItem Content="Disabled" />
+                                    </ComboBox>
+
+                                    <!-- Computer Options -->
+                                    <ScrollViewer Grid.Column="10" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                            <ComboBox Width="150" Visibility="{Binding HasEnumElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" SelectedIndex="{Binding ComputerEnumIndex, Mode=TwoWay}" ItemsSource="{Binding EnumChoices}"/>
+                                            <CheckBox Content="Bool" Visibility="{Binding HasBooleanElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" IsChecked="{Binding ComputerBool, Mode=TwoWay}"/>
+                                            <TextBox Width="180" Visibility="{Binding HasTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Text="{Binding ComputerText, Mode=TwoWay}"/>
+                                            <NumberBox Width="90" Visibility="{Binding HasDecimalElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Value="{Binding ComputerNumber, Mode=TwoWay}" SpinButtonPlacementMode="Inline"/>
+                                            <Button Width="115" Visibility="{Binding HasListElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Content="{Binding ComputerListSummary}" Click="ComputerList_Click" />
+                                            <Button Width="115" Visibility="{Binding HasMultiTextElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" Content="{Binding ComputerMultiTextSummary}" Click="ComputerMulti_Click" />
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Grid>
+                            </DataTemplate>
+                        </muxc:ItemsRepeater.ItemTemplate>
+                    </muxc:ItemsRepeater>
+                </ScrollViewer>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>
