@@ -39,7 +39,9 @@ namespace PolicyPlus.WinUI3
     public sealed partial class MainWindow : Window
     {
         public event EventHandler? Saved;
-
+        // Raised whenever Local GPO policy sources are reloaded (after save/apply operations)
+        public static event EventHandler? PolicySourcesRefreshed;
+        
         private bool _hideEmptyCategories = true;
         private bool _showDetails = true;
         private GridLength? _savedDetailRowHeight;
@@ -1095,6 +1097,7 @@ namespace PolicyPlus.WinUI3
                 if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
             }
             catch { }
+           try { PolicySourcesRefreshed?.Invoke(this, EventArgs.Empty); } catch { }
         }
 
         private void RefreshList()

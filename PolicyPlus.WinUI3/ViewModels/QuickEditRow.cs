@@ -19,6 +19,32 @@ namespace PolicyPlus.WinUI3.ViewModels
         // Suppress queuing pending changes while constructing / loading from sources
         private bool _initializing;
 
+        // Adopt full state from another row (after saving / external refresh) without enqueuing changes
+        internal void AdoptState(QuickEditRow other)
+        {
+            if (other == null || !string.Equals(other.Policy.UniqueID, Policy.UniqueID, StringComparison.OrdinalIgnoreCase)) return;
+            _initializing = true; // suppress QueuePending during bulk copy
+            try
+            {
+                _userState = other._userState; OnChanged(nameof(UserState));
+                _computerState = other._computerState; OnChanged(nameof(ComputerState));
+                _userEnumIndex = other._userEnumIndex; OnChanged(nameof(UserEnumIndex));
+                _computerEnumIndex = other._computerEnumIndex; OnChanged(nameof(ComputerEnumIndex));
+                _userBool = other._userBool; OnChanged(nameof(UserBool));
+                _computerBool = other._computerBool; OnChanged(nameof(ComputerBool));
+                _userText = other._userText; OnChanged(nameof(UserText));
+                _computerText = other._computerText; OnChanged(nameof(ComputerText));
+                _userNumber = other._userNumber; OnChanged(nameof(UserNumber));
+                _computerNumber = other._computerNumber; OnChanged(nameof(ComputerNumber));
+                UserListItems = other.UserListItems.ToList();
+                ComputerListItems = other.ComputerListItems.ToList();
+                UserMultiTextItems = other.UserMultiTextItems.ToList();
+                ComputerMultiTextItems = other.ComputerMultiTextItems.ToList();
+                RefreshListSummaries();
+            }
+            finally { _initializing = false; }
+        }
+
         public PolicyPlusPolicy Policy { get; }
         public bool SupportsUser => Policy.RawPolicy.Section == AdmxPolicySection.User || Policy.RawPolicy.Section == AdmxPolicySection.Both;
         public bool SupportsComputer => Policy.RawPolicy.Section == AdmxPolicySection.Machine || Policy.RawPolicy.Section == AdmxPolicySection.Both;

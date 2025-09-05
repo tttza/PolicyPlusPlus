@@ -42,9 +42,12 @@ namespace PolicyPlus.WinUI3.Windows
             saveAccel.Invoked += async (a, b) => { if (_saveButton?.IsEnabled == true && !_isSaving) { await SaveAsync(); b.Handled = true; } };
             RootShell?.KeyboardAccelerators.Add(saveAccel);
             try { App.ScaleChanged += (_, __) => ScheduleSize(); } catch { }
+            // Subscribe to global source refresh so we stay in sync when other windows save/apply changes
+            try { MainWindow.PolicySourcesRefreshed += MainWindow_PolicySourcesRefreshed; } catch { }
             Closed += (s, e) =>
             {
                 try { PendingChangesService.Instance.Pending.CollectionChanged -= Pending_CollectionChanged; } catch { }
+                try { MainWindow.PolicySourcesRefreshed -= MainWindow_PolicySourcesRefreshed; } catch { }
                 // Close any edit windows opened from here
                 foreach (var win in _editWindows.Values.ToList())
                 {
@@ -52,6 +55,27 @@ namespace PolicyPlus.WinUI3.Windows
                 }
                 _editWindows.Clear();
             };
+        }
+
+        // When main window reloads policy sources, capture fresh references and rebuild row states
+        private void MainWindow_PolicySourcesRefreshed(object? sender, EventArgs e)
+        {
+            try
+            {
+                var main = App.Window as MainWindow;
+                if (main == null || _bundle == null || _grid == null) return;
+                // Pull fresh sources via reflection (keeps existing access pattern isolated here)
+                var compField = typeof(MainWindow).GetField("_compSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var userField = typeof(MainWindow).GetField("_userSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                _compSource = compField?.GetValue(main) as IPolicySource;
+                _userSource = userField?.GetValue(main) as IPolicySource;
+                // Refresh each row from the new sources (do not trigger pending queue)
+                foreach (var row in _grid.Rows)
+                {
+                    try { RefreshRowFromSources(row); } catch { }
+                }
+            }
+            catch { }
         }
 
         public void Initialize(AdmxBundle bundle, IPolicySource? comp, IPolicySource? user, IEnumerable<PolicyPlusPolicy> policies)
@@ -146,23 +170,9 @@ namespace PolicyPlus.WinUI3.Windows
             if (row == null || _compSource == null || _userSource == null) return;
             try
             {
-                // Recreate a temp row to read fresh state then copy over
+                // Recreate a temp row to read fresh state then adopt silently
                 var fresh = new QuickEditRow(row.Policy, _bundle!, _compSource, _userSource);
-                row.UserState = fresh.UserState;
-                row.ComputerState = fresh.ComputerState;
-                row.UserEnumIndex = fresh.UserEnumIndex;
-                row.ComputerEnumIndex = fresh.ComputerEnumIndex;
-                row.UserBool = fresh.UserBool;
-                row.ComputerBool = fresh.ComputerBool;
-                row.UserText = fresh.UserText;
-                row.ComputerText = fresh.ComputerText;
-                row.UserNumber = fresh.UserNumber;
-                row.ComputerNumber = fresh.ComputerNumber;
-                row.UserListItems = fresh.UserListItems;
-                row.ComputerListItems = fresh.ComputerListItems;
-                row.UserMultiTextItems = fresh.UserMultiTextItems;
-                row.ComputerMultiTextItems = fresh.ComputerMultiTextItems;
-                row.RefreshListSummaries();
+                row.AdoptState(fresh);
             }
             catch { }
         }
@@ -261,8 +271,8 @@ namespace PolicyPlus.WinUI3.Windows
                     PendingChangesService.Instance.Applied(relevant.ToArray());
                     try { SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList()); } catch { }
                     SetStatus(relevant.Count == 1 ? "Saved 1 change." : $"Saved {relevant.Count} changes.");
-                    // After successful save refresh all rows to reflect persisted state
-                    foreach (var row in _grid.Rows) { try { RefreshRowFromSources(row); } catch { } }
+                    // Force main window to reload sources which will raise PolicySourcesRefreshed and update our rows
+                    try { (App.Window as MainWindow)?.RefreshLocalSources(); } catch { }
                 }
                 else SetStatus(string.IsNullOrEmpty(error) ? "Save failed." : $"Save failed: {error}");
             }
