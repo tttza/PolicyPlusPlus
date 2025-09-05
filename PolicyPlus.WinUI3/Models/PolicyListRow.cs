@@ -51,6 +51,8 @@ namespace PolicyPlus.WinUI3.Models
         private string _userStateText = string.Empty; public string UserStateText { get => _userStateText; private set { if (_userStateText != value) { _userStateText = value; OnPropertyChanged(nameof(UserStateText)); } } }
         private string _computerStateText = string.Empty; public string ComputerStateText { get => _computerStateText; private set { if (_computerStateText != value) { _computerStateText = value; OnPropertyChanged(nameof(ComputerStateText)); } } }
 
+        private bool _isBookmarked; public bool IsBookmarked { get => _isBookmarked; private set { if (_isBookmarked != value) { _isBookmarked = value; OnPropertyChanged(nameof(IsBookmarked)); } } }
+
         public string ShortId
         {
             get
@@ -100,6 +102,15 @@ namespace PolicyPlus.WinUI3.Models
             CategoryFullPath = categoryFullPath;
             AppliesText = appliesText;
             SupportedText = supportedText;
+
+            IsBookmarked = policy != null && BookmarkService.Instance.IsBookmarked(policy.UniqueID);
+            BookmarkService.Instance.Changed += (_, __) =>
+            {
+                if (Policy != null)
+                {
+                    IsBookmarked = BookmarkService.Instance.IsBookmarked(Policy.UniqueID);
+                }
+            };
 
             RefreshStateFromSourcesAndPending(comp, user);
         }

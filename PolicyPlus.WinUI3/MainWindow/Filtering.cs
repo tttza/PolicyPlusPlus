@@ -33,6 +33,7 @@ namespace PolicyPlus.WinUI3
 
         private int _searchGeneration; // generation counter to avoid stale updates
         private System.Threading.CancellationTokenSource? _typingRebindCts = null; // explicit init suppress warning
+        private bool _bookmarksOnly; // new filter flag
 
         private void EnsureDescIndex()
         {
@@ -152,18 +153,19 @@ namespace PolicyPlus.WinUI3
             return union;
         }
 
-        private IEnumerable<PolicyPlusPolicy> BaseSequenceForFilters(bool includeSubcategories) => BaseSequenceForFilters(new FilterSnapshot(_appliesFilter, _selectedCategory, includeSubcategories, _configuredOnly, _compSource, _userSource));
+        private IEnumerable<PolicyPlusPolicy> BaseSequenceForFilters(bool includeSubcategories) => BaseSequenceForFilters(new FilterSnapshot(_appliesFilter, _selectedCategory, includeSubcategories, _configuredOnly, _compSource, _userSource, _bookmarksOnly));
 
         private readonly struct FilterSnapshot
         {
-            public FilterSnapshot(AdmxPolicySection applies, PolicyPlusCategory? category, bool includeSubcats, bool configuredOnly, IPolicySource? comp, IPolicySource? user)
-            { Applies = applies; Category = category; IncludeSubcategories = includeSubcats; ConfiguredOnly = configuredOnly; CompSource = comp; UserSource = user; }
+            public FilterSnapshot(AdmxPolicySection applies, PolicyPlusCategory? category, bool includeSubcats, bool configuredOnly, IPolicySource? comp, IPolicySource? user, bool bookmarksOnly)
+            { Applies = applies; Category = category; IncludeSubcategories = includeSubcats; ConfiguredOnly = configuredOnly; CompSource = comp; UserSource = user; BookmarksOnly = bookmarksOnly; }
             public AdmxPolicySection Applies { get; }
             public PolicyPlusCategory? Category { get; }
             public bool IncludeSubcategories { get; }
             public bool ConfiguredOnly { get; }
             public IPolicySource? CompSource { get; }
             public IPolicySource? UserSource { get; }
+            public bool BookmarksOnly { get; }
         }
 
         private IEnumerable<PolicyPlusPolicy> BaseSequenceForFilters(FilterSnapshot snap)
@@ -202,6 +204,12 @@ namespace PolicyPlus.WinUI3
                         catch { return false; }
                     });
                 }
+            }
+            if (snap.BookmarksOnly)
+            {
+                var active = BookmarkService.Instance.ActiveIds;
+                var set = new HashSet<string>(active, StringComparer.OrdinalIgnoreCase);
+                seq = seq.Where(p => set.Contains(p.UniqueID));
             }
             return seq;
         }
@@ -305,8 +313,7 @@ namespace PolicyPlus.WinUI3
             var rows = new List<object>();
             try
             {
-                // Insert subcategories of the selected category (navigation aid) when no active search query and not in Configured Only mode
-                if (_selectedCategory != null && string.IsNullOrWhiteSpace(SearchBox?.Text) && !_configuredOnly)
+                if (_selectedCategory != null && string.IsNullOrWhiteSpace(SearchBox?.Text) && !_configuredOnly && !_bookmarksOnly)
                 {
                     foreach (var child in _selectedCategory.Children.OrderBy(c => c.DisplayName))
                     {
@@ -321,7 +328,7 @@ namespace PolicyPlus.WinUI3
                 if (obj is PolicyListRow r && r.Policy != null)
                     _rowByPolicyId[r.Policy.UniqueID] = r;
             PolicyList.ItemsSource = rows;
-            PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
+            PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies" + (_bookmarksOnly ? " (bookmarks)" : string.Empty);
             TryRestoreSelectionAsync(rows);
             MaybePushCurrentState();
         }
@@ -366,12 +373,12 @@ namespace PolicyPlus.WinUI3
             _searchDebounceCts?.Cancel(); _searchDebounceCts = new System.Threading.CancellationTokenSource(); var token = _searchDebounceCts.Token; int gen = Interlocked.Increment(ref _searchGeneration);
             try { if (SearchSpinner != null) { SearchSpinner.Visibility = Visibility.Visible; SearchSpinner.IsActive = true; } } catch { }
             var applies = _appliesFilter; var category = _selectedCategory; var configuredOnly = _configuredOnly; if (configuredOnly) { try { EnsureLocalSources(); } catch { } }
-            var comp = _compSource; var user = _userSource;
+            var comp = _compSource; var user = _userSource; var bookmarksOnly = _bookmarksOnly;
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
                 try { await System.Threading.Tasks.Task.Delay(SearchInitialDelayMs, token); } catch { return; }
                 if (token.IsCancellationRequested) { FinishSpinner(); return; }
-                var snap = new FilterSnapshot(applies, category, true, configuredOnly, comp, user);
+                var snap = new FilterSnapshot(applies, category, true, configuredOnly, comp, user, bookmarksOnly);
                 List<PolicyPlusPolicy> matches; List<string> suggestions;
                 try
                 {
@@ -424,12 +431,12 @@ namespace PolicyPlus.WinUI3
             _searchDebounceCts?.Cancel(); _searchDebounceCts = new System.Threading.CancellationTokenSource(); var token = _searchDebounceCts.Token; try { PreserveScrollPosition(); } catch { }
             try { if (SearchSpinner != null) { SearchSpinner.Visibility = Visibility.Visible; SearchSpinner.IsActive = true; } } catch { }
             var applies = _appliesFilter; var category = _selectedCategory; var configuredOnly = _configuredOnly; if (configuredOnly) { try { EnsureLocalSources(); } catch { } }
-            var comp = _compSource; var user = _userSource;
+            var comp = _compSource; var user = _userSource; var bookmarksOnly = _bookmarksOnly;
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
                 try { await System.Threading.Tasks.Task.Delay(60, token); } catch { return; }
                 if (token.IsCancellationRequested) { Finish(); return; }
-                List<PolicyPlusPolicy> items; try { var snap = new FilterSnapshot(applies, category, true, configuredOnly, comp, user); items = BaseSequenceForFilters(snap).ToList(); } catch { items = new List<PolicyPlusPolicy>(); }
+                List<PolicyPlusPolicy> items; try { var snap = new FilterSnapshot(applies, category, true, configuredOnly, comp, user, bookmarksOnly); items = BaseSequenceForFilters(snap).ToList(); } catch { items = new List<PolicyPlusPolicy>(); }
                 if (token.IsCancellationRequested) { Finish(); return; }
                 DispatcherQueue.TryEnqueue(() =>
                 {

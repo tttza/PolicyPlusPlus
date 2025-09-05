@@ -33,6 +33,7 @@
                 <KeyboardAccelerator Key="I" Modifiers="Control,Shift" Invoked="ImportPolAccelerator_Invoked"/>
                 <KeyboardAccelerator Key="D" Modifiers="Control" Invoked="ToggleDetailsAccelerator_Invoked"/>
                 <KeyboardAccelerator Key="F5" Invoked="RefreshAccelerator_Invoked"/>
+                <KeyboardAccelerator Key="B" Modifiers="Control" Invoked="ToggleBookmarkAccelerator_Invoked"/>
             </Grid.KeyboardAccelerators>
             <Grid.Resources>
                 <converters:ScaleConverter x:Key="ScaleConverter"/>
@@ -92,9 +93,15 @@
                             <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Write to temp .pol" IsChecked="{Binding IsChecked, ElementName=ChkUseTempPol, Mode=TwoWay}" Click="ToggleTempPolMenu_Click" Visibility="Collapsed" />
                             <ToggleMenuFlyoutItem x:Name="ToggleHideEmptyMenu" Text="Hide empty categories" IsChecked="True" Click="ToggleHideEmptyMenu_Click" />
                             <ToggleMenuFlyoutItem x:Name="ToggleLimitUnfilteredMenu" Text="Limit unfiltered to 1000" IsChecked="True" Click="ToggleLimitUnfilteredMenu_Click" />
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutSubItem Text="Bookmarks">
+                                <MenuFlyoutItem Text="Show only bookmarks" Click="BookmarkFilterMenu_Click" />
+                                <MenuFlyoutItem Text="Manage lists..." Click="BookmarkManageMenu_Click" />
+                            </MenuFlyoutSubItem>
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Changes">
                             <MenuFlyoutItem Text="Pending/History..." Click="BtnPendingChanges_Click" />
+                            <MenuFlyoutItem Text="Quick Edit..." Click="BtnQuickEdit_Click" />
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="View">
                             <ToggleMenuFlyoutItem x:Name="ViewDetailsToggle" Text="Details pane" IsChecked="True" Click="ViewDetailsToggle_Click"/>
@@ -170,6 +177,8 @@
                         </ComboBox>
                         <TextBlock Text="|" VerticalAlignment="Center"/>
                         <CheckBox x:Name="ChkConfiguredOnly" Content="Configured only" Checked="ChkConfiguredOnly_Checked" Unchecked="ChkConfiguredOnly_Checked"/>
+                        <TextBlock Text="|" VerticalAlignment="Center"/>
+                        <CheckBox x:Name="ChkBookmarksOnly" Content="Bookmarks only" Checked="ChkBookmarksOnly_Checked" Unchecked="ChkBookmarksOnly_Checked"/>
                         <TextBlock Text="|" VerticalAlignment="Center"/>
                         <TextBlock x:Name="PolicyCount" VerticalAlignment="Center"/>
                         <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Visibility="Collapsed" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
@@ -260,6 +269,15 @@
                                           ScrollViewer.VerticalScrollBarVisibility="Auto"
                                           ScrollViewer.VerticalScrollMode="Auto">
                             <datagrid:DataGrid.Columns>
+                                <datagrid:DataGridTemplateColumn x:Name="ColBookmark" Header="★" Width="SizeToCells" CanUserSort="False">
+                                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Padding="0" Background="Transparent" Click="BookmarkToggle_Click" Tag="{Binding Policy}" ToolTipService.ToolTip="Toggle bookmark">
+                                                <FontIcon x:Name="BookmarkGlyph" Glyph="&#xE735;" Foreground="Gold" Opacity="{Binding IsBookmarked, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Opacity}"/>
+                                            </Button>
+                                        </DataTemplate>
+                                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                                </datagrid:DataGridTemplateColumn>
                                 <datagrid:DataGridTemplateColumn x:Name="ColCatIcon" Header="" Width="SizeToCells" CanUserSort="False">
                                     <datagrid:DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -324,11 +342,14 @@
                                                 <MenuFlyoutItem Text="Edit..." Tag="{Binding Policy}" Click="ContextEdit_Click" />
                                                 <MenuFlyoutItem Text="View formatted..." Tag="{Binding Policy}" Click="ContextViewFormatted_Click" />
                                                 <MenuFlyoutSeparator />
+                                                <MenuFlyoutItem Text="Toggle bookmark" Tag="{Binding Policy}" Click="ContextBookmarkToggle_Click" />
+                                                <MenuFlyoutSeparator />
                                                 <MenuFlyoutItem Text="Copy name" Tag="{Binding Policy}" Click="ContextCopyName_Click" />
                                                 <MenuFlyoutItem Text="Copy ID" Tag="{Binding Policy}" Click="ContextCopyId_Click" />
                                                 <MenuFlyoutItem Text="Copy path" Tag="{Binding Policy}" Click="ContextCopyPath_Click" />
                                                 <MenuFlyoutItem Text="Reveal in tree" Tag="{Binding Policy}" Click="ContextRevealInTree_Click" />
                                                 <MenuFlyoutItem Text="Copy .reg export" Tag="{Binding Policy}" Click="ContextCopyRegExport_Click" />
+                                                <MenuFlyoutItem Text="Quick edit..." Tag="{Binding Policy}" Click="ContextQuickEdit_Click" />
                                             </MenuFlyout>
                                         </Setter.Value>
                                     </Setter>
@@ -354,13 +375,7 @@
                                 <ScrollViewer Grid.Row="1" x:Name="DetailExplainScroll" VerticalScrollBarVisibility="Auto">
                                     <RichTextBlock x:Name="DetailExplain" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
                                 </ScrollViewer>
-
-                                <!-- Placeholder when no policy is selected -->
-                                <StackPanel x:Name="DetailPlaceholder"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Spacing="8"
-                                            Opacity="0.8">
+                                <StackPanel x:Name="DetailPlaceholder" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" Opacity="0.8">
                                     <FontIcon Glyph="&#xE946;" FontSize="32"/>
                                     <TextBlock Text="Select a policy to view details here" TextAlignment="Center"/>
                                     <TextBlock Text="Hint: double-click a row to edit the setting" Opacity="0.8" FontSize="12" TextAlignment="Center"/>

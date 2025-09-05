@@ -19,52 +19,28 @@ namespace PolicyPlus.WinUI3
     public sealed partial class MainWindow
     {
         private void SaveAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        {
-            BtnSave_Click(this, new RoutedEventArgs());
-            args.Handled = true;
-        }
+        { BtnSave_Click(this, new RoutedEventArgs()); args.Handled = true; }
 
         private void FindAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        {
-            try { SearchBox?.Focus(FocusState.Programmatic); } catch { }
-            args.Handled = true;
-        }
+        { try { SearchBox?.Focus(FocusState.Programmatic); } catch { } args.Handled = true; }
 
         private void OpenPendingAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        {
-            try { BtnPendingChanges_Click(this, new RoutedEventArgs()); } catch { }
-            args.Handled = true;
-        }
+        { try { BtnPendingChanges_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
 
         private void LoadAdmxAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        {
-            try { BtnLoadAdmxFolder_Click(this, new RoutedEventArgs()); } catch { }
-            args.Handled = true;
-        }
+        { try { BtnLoadAdmxFolder_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
 
         private void LoadLocalGpoAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        {
-            try { BtnLoadLocalGpo_Click(this, new RoutedEventArgs()); } catch { }
-            args.Handled = true;
-        }
+        { try { BtnLoadLocalGpo_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
 
         private void ExportRegAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        {
-            try { BtnExportReg_Click(this, new RoutedEventArgs()); } catch { }
-            args.Handled = true;
-        }
+        { try { BtnExportReg_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
 
         private void ImportRegAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        {
-            try { BtnImportReg_Click(this, new RoutedEventArgs()); } catch { }
-            args.Handled = true;
-        }
+        { try { BtnImportReg_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
 
         private void ImportPolAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        {
-            try { BtnImportPol_Click(this, new RoutedEventArgs()); } catch { }
-            args.Handled = true;
-        }
+        { try { BtnImportPol_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
 
         private void ToggleDetailsAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
         {
@@ -82,8 +58,16 @@ namespace PolicyPlus.WinUI3
         }
 
         private void RefreshAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        { try { RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } catch { } args.Handled = true; }
+
+        private void ToggleBookmarkAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
         {
-            try { RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } catch { }
+            try
+            {
+                if (PolicyList?.SelectedItem is Models.PolicyListRow row && row.Policy != null)
+                { BookmarkService.Instance.Toggle(row.Policy.UniqueID); RebindConsideringAsync(SearchBox?.Text ?? string.Empty); }
+            }
+            catch { }
             args.Handled = true;
         }
 
@@ -92,122 +76,115 @@ namespace PolicyPlus.WinUI3
             try
             {
                 var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy;
-                if (p != null)
-                    await OpenEditDialogForPolicyAsync(p, ensureFront: true);
+                if (p != null) await OpenEditDialogForPolicyAsync(p, ensureFront: true);
             }
             catch { }
         }
 
-        private void ContextViewFormatted_Click(object sender, RoutedEventArgs e)
-        { BtnViewFormatted_Click(sender, e); }
+        private void ContextViewFormatted_Click(object sender, RoutedEventArgs e) => BtnViewFormatted_Click(sender, e);
+
+        private void ContextBookmarkToggle_Click(object sender, RoutedEventArgs e)
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p == null) return; try { BookmarkService.Instance.Toggle(p.UniqueID); } catch { } RebindConsideringAsync(SearchBox?.Text ?? string.Empty); }
 
         private PolicyPlusPolicy? GetContextMenuPolicy(object sender)
         {
             if (sender is FrameworkElement fe)
-            {
-                if (fe.Tag is PolicyPlusPolicy p1) return p1;
-                if (fe.DataContext is Models.PolicyListRow row && row.Policy != null) return row.Policy;
-            }
+            { if (fe.Tag is PolicyPlusPolicy p1) return p1; if (fe.DataContext is Models.PolicyListRow row && row.Policy != null) return row.Policy; }
             return null;
         }
 
         private void ContextCopyName_Click(object sender, RoutedEventArgs e)
-        {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy;
-            if (p != null)
-            {
-                var text = EnglishTextService.GetCompositePolicyName(p);
-                var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-                dp.SetText(text);
-                Clipboard.SetContent(dp);
-            }
-        }
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p != null) { var text = EnglishTextService.GetCompositePolicyName(p); var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(text); Clipboard.SetContent(dp); } }
 
         private void ContextCopyId_Click(object sender, RoutedEventArgs e)
-        {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy;
-            if (p != null)
-            {
-                var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-                dp.SetText(p.UniqueID);
-                Clipboard.SetContent(dp);
-            }
-        }
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p != null) { var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(p.UniqueID); Clipboard.SetContent(dp); } }
 
         private void ContextCopyPath_Click(object sender, RoutedEventArgs e)
         {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy;
-            if (p == null) return;
-            var sb = new StringBuilder();
-            var c = p.Category;
-            var stack = new Stack<string>();
-            while (c != null) { stack.Push(EnglishTextService.GetCompositeCategoryName(c)); c = c.Parent; }
-            sb.AppendLine("Administrative Templates");
-            foreach (var name in stack) sb.AppendLine("+ " + name);
-            sb.AppendLine("+ " + EnglishTextService.GetCompositePolicyName(p));
-            var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-            dp.SetText(sb.ToString());
-            Clipboard.SetContent(dp);
+            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p == null) return; var sb = new StringBuilder(); var c = p.Category; var stack = new Stack<string>(); while (c != null) { stack.Push(EnglishTextService.GetCompositeCategoryName(c)); c = c.Parent; } sb.AppendLine("Administrative Templates"); foreach (var name in stack) sb.AppendLine("+ " + name); sb.AppendLine("+ " + EnglishTextService.GetCompositePolicyName(p)); var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(sb.ToString()); Clipboard.SetContent(dp);
         }
 
         private void ContextRevealInTree_Click(object sender, RoutedEventArgs e)
-        {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy;
-            if (p == null || CategoryTree == null) return;
-            _selectedCategory = p.Category;
-            SelectCategoryInTree(_selectedCategory);
-            UpdateSearchPlaceholder();
-            ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-        }
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p == null || CategoryTree == null) return; _selectedCategory = p.Category; SelectCategoryInTree(_selectedCategory); UpdateSearchPlaceholder(); ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); }
 
         private void ContextCopyRegExport_Click(object sender, RoutedEventArgs e)
         {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy;
-            if (p == null) return;
-            var section = p.RawPolicy.Section switch
-            {
-                AdmxPolicySection.User => AdmxPolicySection.User,
-                AdmxPolicySection.Machine => AdmxPolicySection.Machine,
-                _ => (_appliesFilter == AdmxPolicySection.User ? AdmxPolicySection.User : AdmxPolicySection.Machine)
-            };
-            var src = section == AdmxPolicySection.User ? _userSource : _compSource;
-            if (src == null)
-            {
-                var loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, section == AdmxPolicySection.User);
-                src = loader.OpenSource();
-            }
-            var text = RegistryViewFormatter.BuildRegExport(p, src, section) ?? string.Empty;
-            var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-            dp.SetText(text);
-            Clipboard.SetContent(dp);
-            ShowInfo("Copied .reg export to clipboard.");
+            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p == null) return; var section = p.RawPolicy.Section switch { AdmxPolicySection.User => AdmxPolicySection.User, AdmxPolicySection.Machine => AdmxPolicySection.Machine, _ => (_appliesFilter == AdmxPolicySection.User ? AdmxPolicySection.User : AdmxPolicySection.Machine) }; var src = section == AdmxPolicySection.User ? _userSource : _compSource; if (src == null) { var loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, section == AdmxPolicySection.User); src = loader.OpenSource(); } var text = RegistryViewFormatter.BuildRegExport(p, src, section) ?? string.Empty; var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(text); Clipboard.SetContent(dp); ShowInfo("Copied .reg export to clipboard.");
         }
 
         private void BtnPendingChanges_Click(object sender, RoutedEventArgs e)
-        {
-            var win = new PendingChangesWindow();
-            win.Activate();
-            try { WindowHelpers.BringToFront(win); } catch { }
-        }
+        { var win = new PendingChangesWindow(); win.Activate(); try { WindowHelpers.BringToFront(win); } catch { } }
 
         private void ToggleHideEmptyMenu_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is ToggleMenuFlyoutItem t)
-            {
-                _hideEmptyCategories = t.IsChecked;
-                try { SettingsService.Instance.UpdateHideEmptyCategories(_hideEmptyCategories); } catch { }
-                BuildCategoryTree();
-                ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-            }
-        }
+        { if (sender is ToggleMenuFlyoutItem t) { _hideEmptyCategories = t.IsChecked; try { SettingsService.Instance.UpdateHideEmptyCategories(_hideEmptyCategories); } catch { } BuildCategoryTree(); ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); } }
 
         private void ToggleTempPolMenu_Click(object sender, RoutedEventArgs e)
+        { if (sender is ToggleMenuFlyoutItem t) { ChkUseTempPol.IsChecked = t.IsChecked; ChkUseTempPol_Checked(ChkUseTempPol, new RoutedEventArgs()); } }
+
+        private void BookmarkToggle_Click(object sender, RoutedEventArgs e)
+        { if (sender is FrameworkElement fe && fe.Tag is PolicyPlusPolicy p) { try { BookmarkService.Instance.Toggle(p.UniqueID); } catch { } RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } }
+
+        private void ChkBookmarksOnly_Checked(object sender, RoutedEventArgs e)
+        { _bookmarksOnly = (sender as CheckBox)?.IsChecked == true; RebindConsideringAsync(SearchBox?.Text ?? string.Empty); }
+
+        // Menu: Show only bookmarks
+        private void BookmarkFilterMenu_Click(object sender, RoutedEventArgs e)
+        { _bookmarksOnly = !_bookmarksOnly; try { if (ChkBookmarksOnly != null) ChkBookmarksOnly.IsChecked = _bookmarksOnly; } catch { } RebindConsideringAsync(SearchBox?.Text ?? string.Empty); }
+
+        // Menu: Manage lists (placeholder)
+        private void BookmarkManageMenu_Click(object sender, RoutedEventArgs e)
+        { ShowInfo("Bookmark list management not implemented yet."); }
+
+        private void OpenQuickEditForSelection()
         {
-            if (sender is ToggleMenuFlyoutItem t)
+            try
             {
-                ChkUseTempPol.IsChecked = t.IsChecked;
-                ChkUseTempPol_Checked(ChkUseTempPol, new RoutedEventArgs());
+                if (_bundle == null) return;
+                var policies = new System.Collections.Generic.List<PolicyPlus.Core.Core.PolicyPlusPolicy>();
+                foreach (var it in PolicyList?.SelectedItems ?? new System.Collections.Generic.List<object>())
+                {
+                    if (it is Models.PolicyListRow row && row.Policy != null) policies.Add(row.Policy);
+                }
+                if (policies.Count == 0)
+                {
+                    // fallback: bookmarked policies
+                    var set = new System.Collections.Generic.HashSet<string>(BookmarkService.Instance.ActiveIds, System.StringComparer.OrdinalIgnoreCase);
+                    foreach (var p in _visiblePolicies)
+                        if (set.Contains(p.UniqueID)) policies.Add(p);
+                }
+                if (policies.Count == 0) return;
+                EnsureLocalSources();
+                var win = new Windows.QuickEditWindow();
+                win.Initialize(_bundle, _compSource, _userSource, policies);
+                win.Activate();
+                try { Utils.WindowHelpers.BringToFront(win); } catch { }
             }
+            catch { }
+        }
+
+        private void ContextQuickEdit_Click(object sender, RoutedEventArgs e)
+        {
+            OpenQuickEditForSelection();
+        }
+
+        private void BtnQuickEdit_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_bundle == null) return;
+                EnsureLocalSources();
+                var selectedPolicies = new List<PolicyPlusPolicy>();
+                foreach (var it in PolicyList?.SelectedItems ?? new List<object>())
+                    if (it is Models.PolicyListRow r && r.Policy != null) selectedPolicies.Add(r.Policy);
+                var bookmarkIds = BookmarkService.Instance.ActiveIds;
+                bool bookmarksOnly = _bookmarksOnly;
+                var sourcePolicies = Windows.QuickEditWindow.BuildSourcePolicies(_visiblePolicies, selectedPolicies, bookmarkIds, bookmarksOnly).ToList();
+                if (sourcePolicies.Count == 0) return;
+                var win = new Windows.QuickEditWindow();
+                win.Initialize(_bundle, _compSource, _userSource, sourcePolicies);
+                win.Activate();
+            }
+            catch { }
         }
     }
 }

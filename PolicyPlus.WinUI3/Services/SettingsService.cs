@@ -81,6 +81,38 @@ namespace PolicyPlus.WinUI3.Services
             }
         }
 
+        // Bookmark helpers (multi-list aware)
+        public Dictionary<string, List<string>> LoadBookmarkLists()
+        {
+            try
+            {
+                var s = LoadSettings();
+                return s.BookmarkLists ?? new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            }
+            catch { return new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase); }
+        }
+
+        public (Dictionary<string, List<string>> lists, string active) LoadBookmarkListsWithActive()
+        {
+            var lists = LoadBookmarkLists();
+            if (lists.Count == 0) lists["default"] = new List<string>();
+            var s = LoadSettings();
+            var active = string.IsNullOrEmpty(s.ActiveBookmarkList) || !lists.ContainsKey(s.ActiveBookmarkList!) ? "default" : s.ActiveBookmarkList!;
+            return (lists, active);
+        }
+
+        public void SaveBookmarkLists(Dictionary<string, List<string>> lists, string active)
+        {
+            try
+            {
+                var s = LoadSettings();
+                s.BookmarkLists = lists;
+                s.ActiveBookmarkList = active;
+                SaveSettings(s);
+            }
+            catch { }
+        }
+
         public void UpdateTheme(string theme)
         {
             var s = LoadSettings();
@@ -302,6 +334,10 @@ namespace PolicyPlus.WinUI3.Services
 
         // Limit unfiltered list size option
         public bool? LimitUnfilteredTo1000 { get; set; }
+
+        // Multi book-mark lists (key = list name, value = ids)
+        public Dictionary<string, List<string>>? BookmarkLists { get; set; }
+        public string? ActiveBookmarkList { get; set; }
     }
 
     public class ColumnsOptions
