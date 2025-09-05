@@ -107,6 +107,7 @@
                             <ToggleMenuFlyoutItem x:Name="ViewDetailsToggle" Text="Details pane" IsChecked="True" Click="ViewDetailsToggle_Click"/>
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Columns">
+                            <ToggleMenuFlyoutItem x:Name="ViewBookmarkToggle" Text="Bookmark" IsChecked="True" Click="ViewBookmarkToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewIdToggle" Text="ID" IsChecked="True" Tag="ColIdFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewCategoryToggle" Text="Parent Category" IsChecked="False" Tag="ColCategoryFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewTopCategoryToggle" Text="Top Category" IsChecked="False" Tag="ColTopCategoryFlag" Click="ColumnToggle_Click"/>
@@ -148,6 +149,7 @@
 
                 <!-- Hidden flags for column visibility -->
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Visibility="Collapsed">
+                    <CheckBox x:Name="ColBookmarkFlag" IsChecked="True" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
                     <CheckBox x:Name="ColIdFlag" IsChecked="True" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
                     <CheckBox x:Name="ColCategoryFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
                     <CheckBox x:Name="ColTopCategoryFlag" IsChecked="False" Checked="HiddenFlag_Checked" Unchecked="HiddenFlag_Checked"/>
@@ -269,12 +271,21 @@
                                           ScrollViewer.VerticalScrollBarVisibility="Auto"
                                           ScrollViewer.VerticalScrollMode="Auto">
                             <datagrid:DataGrid.Columns>
-                                <datagrid:DataGridTemplateColumn x:Name="ColBookmark" Header="★" Width="SizeToCells" CanUserSort="False">
+                                <datagrid:DataGridTemplateColumn x:Name="ColBookmark" Header="★" Width="SizeToCells" CanUserSort="False" Visibility="Visible">
+                                    <datagrid:DataGridTemplateColumn.CellStyle>
+                                        <Style TargetType="datagrid:DataGridCell">
+                                            <Setter Property="Padding" Value="0"/>
+                                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                        </Style>
+                                    </datagrid:DataGridTemplateColumn.CellStyle>
                                     <datagrid:DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Padding="0" Background="Transparent" Click="BookmarkToggle_Click" DoubleTapped="BookmarkToggle_DoubleTapped" Tag="{Binding Policy}" ToolTipService.ToolTip="Toggle bookmark">
-                                                <FontIcon x:Name="BookmarkGlyph" Glyph="&#xE735;" Foreground="Gold" Opacity="{Binding IsBookmarked, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Opacity}"/>
-                                            </Button>
+                                            <Grid HorizontalAlignment="Center">
+                                                <Button Padding="2" MinWidth="0" Background="Transparent" Click="BookmarkToggle_Click" DoubleTapped="BookmarkToggle_DoubleTapped" Tag="{Binding Policy}" ToolTipService.ToolTip="Toggle bookmark">
+                                                    <FontIcon x:Name="BookmarkGlyph" Glyph="&#xE735;" FontSize="14" Foreground="Gold"  MinWidth="0" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="{Binding IsBookmarked, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Opacity}"/>
+                                                </Button>
+                                            </Grid>
                                         </DataTemplate>
                                     </datagrid:DataGridTemplateColumn.CellTemplate>
                                 </datagrid:DataGridTemplateColumn>

@@ -351,6 +351,7 @@ namespace PolicyPlus.WinUI3.Services
         public bool ShowUserState { get; set; } = true;
         public bool ShowComputerState { get; set; } = true;
         public bool ShowEnglishName { get; set; } = true;
+        public bool ShowBookmark { get; set; } = true; // Added for bookmark column visibility
     }
 
     public class ColumnState

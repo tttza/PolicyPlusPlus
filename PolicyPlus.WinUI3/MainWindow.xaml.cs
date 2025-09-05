@@ -156,7 +156,6 @@ namespace PolicyPlus.WinUI3
             RootGrid.Loaded += (s, e) =>
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
-                try { (RootGrid?.FindName("TitleBarVersion") as TextBlock)!.Text = BuildInfo.Version; } catch { }
             };
         }
 

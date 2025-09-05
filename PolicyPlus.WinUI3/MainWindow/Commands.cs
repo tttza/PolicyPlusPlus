@@ -202,5 +202,18 @@ namespace PolicyPlus.WinUI3
             // Swallow double-tap so row edit doesn't open when user rapidly toggles bookmark.
             e.Handled = true;
         }
+
+        private void ViewBookmarkToggle_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (ColBookmark != null && sender is ToggleMenuFlyoutItem t)
+                {
+                    ColBookmark.Visibility = t.IsChecked ? Visibility.Visible : Visibility.Collapsed;
+                    var flag = RootGrid?.FindName("ColBookmarkFlag") as CheckBox; if (flag != null) flag.IsChecked = t.IsChecked;
+                }
+            }
+            catch { }
+        }
     }
 }

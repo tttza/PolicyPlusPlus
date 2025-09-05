@@ -86,29 +86,14 @@ namespace PolicyPlus.WinUI3
             {
                 var s = SettingsService.Instance.LoadSettings();
                 var cols = s.Columns ?? new ColumnsOptions();
-
-                // Reflect into View menu toggles first
                 if (ViewIdToggle != null) ViewIdToggle.IsChecked = cols.ShowId;
-                if (ViewCategoryToggle != null) ViewCategoryToggle.IsChecked = cols.ShowCategory; // parent
+                if (ViewCategoryToggle != null) ViewCategoryToggle.IsChecked = cols.ShowCategory;
                 if (ViewTopCategoryToggle != null) ViewTopCategoryToggle.IsChecked = cols.ShowTopCategory;
                 if (ViewCategoryPathToggle != null) ViewCategoryPathToggle.IsChecked = cols.ShowCategoryPath;
                 if (ViewAppliesToggle != null) ViewAppliesToggle.IsChecked = cols.ShowApplies;
                 if (ViewSupportedToggle != null) ViewSupportedToggle.IsChecked = cols.ShowSupported;
-
-                // Second language column is governed by language option
-                if (ViewSecondNameToggle != null)
-                {
-                    bool enabled = s.SecondLanguageEnabled ?? false;
-                    ViewSecondNameToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
-                    ViewSecondNameToggle.IsChecked = enabled && cols.ShowEnglishName;
-                }
-
+                if (RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt) vbt.IsChecked = cols.ShowBookmark;
                 ApplyColumnVisibilityFromToggles();
-
-                // Apply saved order and widths if present
-                ApplySavedColumnLayout();
-
-                HookColumnLayoutEvents();
             }
             catch { }
         }
@@ -262,33 +247,17 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
-                var s = SettingsService.Instance.LoadSettings();
-
-                bool showId = ViewIdToggle?.IsChecked == true;
-                bool showCategory = ViewCategoryToggle?.IsChecked == true; // parent
-                bool showTopCategory = ViewTopCategoryToggle?.IsChecked == true;
-                bool showCategoryPath = ViewCategoryPathToggle?.IsChecked == true;
-                bool showApplies = ViewAppliesToggle?.IsChecked == true;
-                bool showSupported = ViewSupportedToggle?.IsChecked == true;
-                bool showSecondName = ViewSecondNameToggle?.IsChecked == true;
-
                 var cols = new ColumnsOptions
                 {
-                    ShowId = showId,
-                    ShowCategory = showCategory,
-                    ShowTopCategory = showTopCategory,
-                    ShowCategoryPath = showCategoryPath,
-                    ShowApplies = showApplies,
-                    ShowSupported = showSupported,
-                    ShowEnglishName = showSecondName,
-                    ShowUserState = s.Columns?.ShowUserState ?? true,
-                    ShowComputerState = s.Columns?.ShowComputerState ?? true,
+                    ShowId = ViewIdToggle?.IsChecked == true,
+                    ShowCategory = ViewCategoryToggle?.IsChecked == true,
+                    ShowTopCategory = ViewTopCategoryToggle?.IsChecked == true,
+                    ShowCategoryPath = ViewCategoryPathToggle?.IsChecked == true,
+                    ShowApplies = ViewAppliesToggle?.IsChecked == true,
+                    ShowSupported = ViewSupportedToggle?.IsChecked == true,
+                    ShowBookmark = !(RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt) || vbt.IsChecked == true
                 };
-
                 SettingsService.Instance.UpdateColumns(cols);
-
-                // Save layout snapshot including order
-                SaveColumnLayout(includeOrder: true);
             }
             catch { }
         }
@@ -320,20 +289,18 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
-                if (ColId != null) ColId.Visibility = (ViewIdToggle?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
-                if (ColCategory != null) ColCategory.Visibility = (ViewCategoryToggle?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
-                if (ColTopCategory != null) ColTopCategory.Visibility = (ViewTopCategoryToggle?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
-                if (ColCategoryPath != null) ColCategoryPath.Visibility = (ViewCategoryPathToggle?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
-                if (ColApplies != null) ColApplies.Visibility = (ViewAppliesToggle?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
-                if (ColSupported != null) ColSupported.Visibility = (ViewSupportedToggle?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
-
-                var s = SettingsService.Instance.LoadSettings();
-                bool secondEnabled = s.SecondLanguageEnabled ?? false;
-                if (ColSecondName != null)
+                if (ColId != null) ColId.Visibility = ViewIdToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+                if (ColCategory != null) ColCategory.Visibility = ViewCategoryToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+                if (ColTopCategory != null) ColTopCategory.Visibility = ViewTopCategoryToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+                if (ColCategoryPath != null) ColCategoryPath.Visibility = ViewCategoryPathToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+                if (ColApplies != null) ColApplies.Visibility = ViewAppliesToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+                if (ColSupported != null) ColSupported.Visibility = ViewSupportedToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+                if (ColBookmark != null)
                 {
-                    ColSecondName.Visibility = (secondEnabled && (ViewSecondNameToggle?.IsChecked == true)) ? Visibility.Visible : Visibility.Collapsed;
+                    bool showBookmark = true;
+                    if (RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt && vbt.IsChecked == false) showBookmark = false;
+                    ColBookmark.Visibility = showBookmark ? Visibility.Visible : Visibility.Collapsed;
                 }
-                UpdateColumnMenuChecks();
             }
             catch { }
         }
