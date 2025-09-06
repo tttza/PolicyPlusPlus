@@ -392,7 +392,7 @@ namespace PolicyPlus.WinUI3.Windows
                         PolicyId = h.PolicyId,
                         PolicyName = h.PolicyName,
                         Scope = h.Scope,
-                        Action = "Reapply",
+                        Action = pending.Action,
                         Result = "Reapplied",
                         Details = h.Details,
                         DetailsFull = h.DetailsFull,
