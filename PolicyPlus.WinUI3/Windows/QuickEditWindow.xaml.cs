@@ -251,7 +251,8 @@ namespace PolicyPlus.WinUI3.Windows
                 var relevant = PendingChangesService.Instance.Pending.Where(p => ids.Contains(p.PolicyId)).ToList();
                 int count = relevant.Count;
                 _unsavedText.Text = count > 0 ? $"Unsaved changes ({count})" : "";
-                _saveButton.IsEnabled = count > 0 && _bundle != null && !_isSaving;
+                // Always allow Save (even if 0) as requested; it will no-op when there are no changes.
+                _saveButton.IsEnabled = _bundle != null && !_isSaving;
             }
             catch { }
         }
@@ -261,7 +262,7 @@ namespace PolicyPlus.WinUI3.Windows
             if (_bundle == null || _isSaving || _grid == null) return;
             var ids = _grid.Rows.Select(r => r.Policy.UniqueID).ToHashSet(System.StringComparer.OrdinalIgnoreCase);
             var relevant = PendingChangesService.Instance.Pending.Where(p => ids.Contains(p.PolicyId)).ToList();
-            if (relevant.Count == 0) return;
+            if (relevant.Count == 0) { SetStatus("No changes to save."); return; }
             _isSaving = true; SetStatus("Saving..."); SetSaving(true); if (_saveButton != null) _saveButton.IsEnabled = false;
             try
             {
