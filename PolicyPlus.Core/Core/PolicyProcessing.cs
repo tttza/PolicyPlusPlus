@@ -565,7 +565,11 @@ namespace PolicyPlus.Core.Core
                             {
                                 string elemKey = string.IsNullOrEmpty(elem.RegistryKey) ? rawpol.RegistryKey : elem.RegistryKey;
                                 if (Options == null || !Options.ContainsKey(elem.ID))
+                                {
+                                    // If no option supplied but presentation has default, attempt to apply for simple types.
+                                    // (Currently defaults are applied at UI layer; here we just skip to avoid overwriting existing values.)
                                     continue;
+                                }
                                 var optionData = Options[elem.ID];
                                 switch (elem.ElementType ?? "")
                                 {
@@ -625,13 +629,26 @@ namespace PolicyPlus.Core.Core
                                             var regType = listElem.RegExpandSz ? Microsoft.Win32.RegistryValueKind.ExpandString : Microsoft.Win32.RegistryValueKind.String;
                                             if (listElem.UserProvidesNames)
                                             {
-                                                Dictionary<string, string> items = ((List<KeyValuePair<string, string>>)optionData).ToDictionary(x => x.Key, x => x.Value);
-                                                foreach (var i in items)
-                                                    PolicySource.SetValue(elemKey, i.Key, i.Value, regType);
+                                                // Accept list of KVPs or dictionary
+                                                if (optionData is List<KeyValuePair<string, string>> kvps)
+                                                {
+                                                    foreach (var i in kvps)
+                                                        PolicySource.SetValue(elemKey, i.Key, i.Value, regType);
+                                                }
+                                                else if (optionData is IEnumerable<KeyValuePair<string, string>> kvpEnum)
+                                                {
+                                                    foreach (var i in kvpEnum)
+                                                        PolicySource.SetValue(elemKey, i.Key, i.Value, regType);
+                                                }
+                                                else if (optionData is Dictionary<string, string> dict)
+                                                {
+                                                    foreach (var i in dict)
+                                                        PolicySource.SetValue(elemKey, i.Key, i.Value, regType);
+                                                }
                                             }
                                             else
                                             {
-                                                List<string> items = (List<string>)optionData;
+                                                List<string> items = (optionData as IEnumerable<string>)?.ToList() ?? new List<string>();
                                                 int n = 1;
                                                 while (n <= items.Count)
                                                 {
@@ -647,10 +664,14 @@ namespace PolicyPlus.Core.Core
                                     case "enum":
                                         {
                                             EnumPolicyElement enumElem = (EnumPolicyElement)elem;
-                                            var selItem = enumElem.Items[Convert.ToInt32(optionData)];
-                                            setValue(elemKey, elem.RegistryValue, selItem.Value);
-                                            if (selItem.ValueList != null)
-                                                setSingleList(selItem.ValueList, elemKey);
+                                            int selIndex = Convert.ToInt32(optionData);
+                                            if (selIndex >= 0 && selIndex < enumElem.Items.Count)
+                                            {
+                                                var selItem = enumElem.Items[selIndex];
+                                                setValue(elemKey, elem.RegistryValue, selItem.Value);
+                                                if (selItem.ValueList != null)
+                                                    setSingleList(selItem.ValueList, elemKey);
+                                            }
                                             break;
                                         }
 

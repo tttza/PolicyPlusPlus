@@ -639,7 +639,7 @@ namespace PolicyPlus.WinUI3.Windows
                 {
                     switch (ctrl)
                     {
-                        case NumberBox nb when val is uint u: nb.Value = ClampDecimal(elem, u); continue;
+                        case NumberBox nb when val is uint u: nb.Value = u; continue;
                         case TextBox tb when val is string s: tb.Text = s; continue;
                         case ComboBox cb when val is int index: cb.SelectedIndex = index; continue;
                         case CheckBox ch when val is bool b: ch.IsChecked = b; continue;
@@ -662,6 +662,12 @@ namespace PolicyPlus.WinUI3.Windows
                         var defText = GetTextDefault(elem.ID);
                         if (defText != null) tb2.Text = defText;
                     }
+                }
+                else if (elem is BooleanPolicyElement && ctrl is CheckBox ch2)
+                {
+                    // BuildElements already applied the presentation default; nothing further if already set.
+                    // (We keep this branch for symmetry and potential future logic.)
+                    _ = ch2; // no-op
                 }
             }
 
@@ -910,12 +916,24 @@ namespace PolicyPlus.WinUI3.Windows
                     var existing = PolicyProcessing.GetPolicyOptionStates(src, _policy);
                     foreach (var elem in _policy.RawPolicy.Elements ?? new List<PolicyElement>())
                     {
-                        if (elem.ElementType != "decimal") continue;
                         if (existing.ContainsKey(elem.ID)) continue; // already had a value
-                        if (_elementControls.TryGetValue(elem.ID, out var ctrl) && ctrl is NumberBox nb)
+                        if (_elementControls.TryGetValue(elem.ID, out var ctrl))
                         {
-                            var def = GetDecimalDefault(elem.ID);
-                            nb.Value = ClampDecimal(elem, def);
+                            if (elem.ElementType == "decimal" && ctrl is NumberBox nb)
+                            {
+                                var def = GetDecimalDefault(elem.ID);
+                                nb.Value = ClampDecimal(elem, def);
+                            }
+                            else if (elem.ElementType == "enum")
+                            {
+                                // leave enum at presentation default selection already set
+                            }
+                            else if (elem.ElementType == "boolean" && ctrl is CheckBox ch)
+                            {
+                                // Do nothing: presentation default already applied during BuildElements
+                                _ = ch;
+                            }
+                            // text/combobox defaults already set in BuildElements
                         }
                     }
                 }
