@@ -7,26 +7,72 @@
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
             <SolidColorBrush x:Key="WindowBackground" Color="#FFFFFFFF" />
-            <!-- soften danger color -->
-            <SolidColorBrush x:Key="DangerBrush" Color="#FFB94A48" />
+            <!-- Destructive (danger) color - darkened for 4.5+:1 contrast with white text -->
+            <SolidColorBrush x:Key="DangerBrush" Color="#FF7A1E1C" />
             <SolidColorBrush x:Key="DangerForegroundBrush" Color="#FFFFFFFF" />
-            <!-- subtle apply color (green) -->
-            <SolidColorBrush x:Key="ApplyBrush" Color="#FF4CB07A" />
-            <SolidColorBrush x:Key="ApplyBrushHover" Color="#FF3FA56E" />
-            <SolidColorBrush x:Key="ApplyBrushPressed" Color="#FF369760" />
+            <!-- Apply (positive action) shifted towards teal (reduced red/green confusion) & dark enough for contrast -->
+            <SolidColorBrush x:Key="ApplyBrush" Color="#FF0E6244" />
+            <SolidColorBrush x:Key="ApplyBrushHover" Color="#FF0B563B" />
+            <SolidColorBrush x:Key="ApplyBrushPressed" Color="#FF094B33" />
             <SolidColorBrush x:Key="ApplyForegroundBrush" Color="#FFFFFFFF" />
+            <!-- Preview (informational) distinct blue -->
+            <SolidColorBrush x:Key="PreviewBrush" Color="#FF1F4F93" />
+            <SolidColorBrush x:Key="PreviewBrushHover" Color="#FF19457F" />
+            <SolidColorBrush x:Key="PreviewBrushPressed" Color="#FF153B6D" />
+            <SolidColorBrush x:Key="PreviewForegroundBrush" Color="#FFFFFFFF" />
+
+            <!-- QuickEdit state semantic brushes (avoid low-alpha red/green; provide distinct hues) -->
+            <SolidColorBrush x:Key="StateEnabledBrush" Color="#FF1F6F8B" />
+            <SolidColorBrush x:Key="StateDisabledBrush" Color="#FF8C3C1A" />
+            <SolidColorBrush x:Key="StateNotConfiguredBrush" Color="#FFE0E0E0" />
+            <SolidColorBrush x:Key="StateEnabledForegroundBrush" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="StateDisabledForegroundBrush" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="StateNotConfiguredForegroundBrush" Color="#FF111111" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
             <SolidColorBrush x:Key="WindowBackground" Color="#FF202020" />
-            <!-- soften danger color -->
-            <SolidColorBrush x:Key="DangerBrush" Color="#FF954544" />
+            <!-- Destructive (danger) color (dark variant) -->
+            <SolidColorBrush x:Key="DangerBrush" Color="#FF9A332F" />
             <SolidColorBrush x:Key="DangerForegroundBrush" Color="#FFFFFFFF" />
-            <!-- subtle apply color (green) -->
-            <SolidColorBrush x:Key="ApplyBrush" Color="#FF3FA76A" />
-            <SolidColorBrush x:Key="ApplyBrushHover" Color="#FF349E60" />
-            <SolidColorBrush x:Key="ApplyBrushPressed" Color="#FF2D8E56" />
+            <!-- Apply (positive action) dark teal variant -->
+            <SolidColorBrush x:Key="ApplyBrush" Color="#FF0F6D4C" />
+            <SolidColorBrush x:Key="ApplyBrushHover" Color="#FF0D6143" />
+            <SolidColorBrush x:Key="ApplyBrushPressed" Color="#FF0B553A" />
             <SolidColorBrush x:Key="ApplyForegroundBrush" Color="#FFFFFFFF" />
+            <!-- Preview (informational) blue variant -->
+            <SolidColorBrush x:Key="PreviewBrush" Color="#FF3169B8" />
+            <SolidColorBrush x:Key="PreviewBrushHover" Color="#FF2A5DA3" />
+            <SolidColorBrush x:Key="PreviewBrushPressed" Color="#FF23518E" />
+            <SolidColorBrush x:Key="PreviewForegroundBrush" Color="#FFFFFFFF" />
+
+            <!-- QuickEdit state semantic brushes -->
+            <SolidColorBrush x:Key="StateEnabledBrush" Color="#FF2FA8C8" />
+            <SolidColorBrush x:Key="StateDisabledBrush" Color="#FFB05B30" />
+            <SolidColorBrush x:Key="StateNotConfiguredBrush" Color="#FF3E3E3E" />
+            <SolidColorBrush x:Key="StateEnabledForegroundBrush" Color="#FF000000" />
+            <SolidColorBrush x:Key="StateDisabledForegroundBrush" Color="#FF000000" />
+            <SolidColorBrush x:Key="StateNotConfiguredForegroundBrush" Color="#FFFFFFFF" />
         </ResourceDictionary>
-        <ResourceDictionary x:Key="HighContrast" />
+        <!-- High contrast theme: map to system colors so user theme drives contrast -->
+        <ResourceDictionary x:Key="HighContrast">
+            <SolidColorBrush x:Key="WindowBackground" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="DangerBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="DangerForegroundBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
+            <SolidColorBrush x:Key="ApplyBrush" Color="{ThemeResource SystemColorHotlightColor}" />
+            <SolidColorBrush x:Key="ApplyBrushHover" Color="{ThemeResource SystemColorHotlightColor}" />
+            <SolidColorBrush x:Key="ApplyBrushPressed" Color="{ThemeResource SystemColorHotlightColor}" />
+            <SolidColorBrush x:Key="ApplyForegroundBrush" Color="{ThemeResource SystemColorButtonTextColor}" />
+            <SolidColorBrush x:Key="PreviewBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="PreviewBrushHover" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="PreviewBrushPressed" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="PreviewForegroundBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
+
+            <SolidColorBrush x:Key="StateEnabledBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="StateDisabledBrush" Color="{ThemeResource SystemColorHotlightColor}" />
+            <SolidColorBrush x:Key="StateNotConfiguredBrush" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="StateEnabledForegroundBrush" Color="{ThemeResource SystemColorHighlightTextColor}" />
+            <SolidColorBrush x:Key="StateDisabledForegroundBrush" Color="{ThemeResource SystemColorButtonTextColor}" />
+            <SolidColorBrush x:Key="StateNotConfiguredForegroundBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+        </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 </ResourceDictionary>

@@ -95,6 +95,59 @@
         </Setter>
     </Style>
 
+    <!-- Preview button: informational distinct blue -->
+    <Style x:Key="PreviewButtonStyle" TargetType="Button">
+        <Setter Property="Padding" Value="{StaticResource ButtonPadding}" />
+        <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
+        <Setter Property="Margin" Value="{StaticResource ToolbarButtonMargin}" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="MinWidth" Value="96" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Background" Value="{ThemeResource PreviewBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource PreviewForegroundBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource PreviewBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}">
+                            <ContentPresenter x:Name="ContentPresenter" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal"/>
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="Bd.Background" Value="{ThemeResource PreviewBrushHover}" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource PreviewForegroundBrush}" />
+                                        <Setter Target="Bd.BorderBrush" Value="{ThemeResource PreviewBrushHover}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="Bd.Background" Value="{ThemeResource PreviewBrushPressed}" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource PreviewForegroundBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource TextFillColorDisabledBrush}" />
+                                        <Setter Target="Bd.Background" Value="{ThemeResource ControlFillColorDisabledBrush}" />
+                                        <Setter Target="Bd.BorderBrush" Value="{ThemeResource ControlStrokeColorDefaultBrush}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Subtle outline style for icon/text buttons -->
     <Style x:Key="IconAccentButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />

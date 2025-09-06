@@ -1,3 +1,4 @@
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -10,12 +11,19 @@ namespace PolicyPlus.WinUI3.Converters
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             var state = value is QuickEditState qs ? qs : QuickEditState.NotConfigured;
-            return state switch
+            string key = state switch
             {
-                QuickEditState.Enabled => new SolidColorBrush(global::Windows.UI.Color.FromArgb(0x33, 0x28, 0xA7, 0x45)),
-                QuickEditState.Disabled => new SolidColorBrush(global::Windows.UI.Color.FromArgb(0x33, 0xD1, 0x37, 0x2A)),
-                _ => new SolidColorBrush(Microsoft.UI.Colors.Transparent)
+                QuickEditState.Enabled => "StateEnabledBrush",
+                QuickEditState.Disabled => "StateDisabledBrush",
+                _ => "StateNotConfiguredBrush"
             };
+            // Attempt to resolve from Application resources (handles theme dictionaries)
+            if (Application.Current.Resources.TryGetValue(key, out object brush) && brush is Brush b)
+            {
+                return b;
+            }
+            // Fallback neutral background if not found
+            return new SolidColorBrush(Microsoft.UI.Colors.LightGray);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotSupportedException();
