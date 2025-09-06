@@ -1,0 +1,109 @@
+<Window
+    x:Class="PolicyPlus.WinUI3.Windows.ManageBookmarksWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Manage Bookmark Lists">
+  <Window.SystemBackdrop>
+    <MicaBackdrop />
+  </Window.SystemBackdrop>
+  <Grid x:Name="ScaleHost">
+    <Grid x:Name="RootShell" Padding="12" Background="{ThemeResource WindowBackground}" MinWidth="460" MinHeight="420">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+
+      <!-- Header -->
+      <StackPanel Orientation="Horizontal" Spacing="12" Grid.Row="0" VerticalAlignment="Center" Margin="0,0,0,4">
+        <TextBlock Text="Bookmark Lists" FontSize="20" FontWeight="SemiBold" />
+        <TextBlock x:Name="ActiveLabel" VerticalAlignment="Center" Opacity="0.7" />
+      </StackPanel>
+
+      <!-- Body -->
+      <Grid Grid.Row="1" ColumnSpacing="12" RowSpacing="8">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ListView x:Name="ListNames" Grid.Row="0" SelectionMode="Single" IsItemClickEnabled="False" DoubleTapped="ListNames_DoubleTapped"
+                  HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,4">
+          <ListView.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <Grid Padding="4,2" ColumnSpacing="8" HorizontalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="20" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <!-- Active indicator -->
+                <FontIcon x:Name="ActiveIcon" Glyph="&#xE73E;" FontSize="14" Foreground="{ThemeResource AccentFillColorDefaultBrush}" Visibility="Collapsed" VerticalAlignment="Center" />
+                <!-- Name -->
+                <TextBlock Grid.Column="1" Text="{x:Bind}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                <!-- Row buttons (Activate / Delete) -->
+                <StackPanel x:Name="RowButtons" Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <Button Tag="{x:Bind}" Click="RowActivate_Click" ToolTipService.ToolTip="Activate" Style="{StaticResource DefaultButtonStyle}" x:Name="RowActivateBtn" Padding="6,4" MinWidth="32">
+                    <FontIcon Glyph="&#xE8FB;" />
+                  </Button>
+                  <Button Tag="{x:Bind}" Click="RowDelete_Click" ToolTipService.ToolTip="Delete" Style="{StaticResource DefaultButtonStyle}" x:Name="RowDeleteBtn" Padding="6,4" MinWidth="32">
+                    <FontIcon Glyph="&#xE74D;" />
+                  </Button>
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ListView.ItemTemplate>
+        </ListView>
+        <!-- Command row: Add / Rename only -->
+        <Grid Grid.Row="1" ColumnSpacing="8" VerticalAlignment="Center" Margin="0,0,0,2">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <TextBox x:Name="NameBox" Grid.Column="0" PlaceholderText="Type new list name or edit selected then Rename" MinWidth="2   /20" HorizontalAlignment="Stretch" />
+          <Button x:Name="AddBtn" Grid.Column="1" ToolTipService.ToolTip="Add new list" MinWidth="72">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <FontIcon Glyph="&#xE710;" />
+              <TextBlock Text="Add" />
+            </StackPanel>
+          </Button>
+          <Button x:Name="RenameBtn" Grid.Column="2" ToolTipService.ToolTip="Rename selected list" MinWidth="92">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <FontIcon Glyph="&#xE70F;" />
+              <TextBlock Text="Rename" />
+            </StackPanel>
+          </Button>
+        </Grid>
+      </Grid>
+
+      <!-- Footer -->
+      <Grid Grid.Row="2" Margin="0,6,0,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock x:Name="StatusText" VerticalAlignment="Center" Opacity="0.75" TextTrimming="CharacterEllipsis" />
+        <Button Grid.Column="1" x:Name="ExportBtn" Margin="0,0,8,0" ToolTipService.ToolTip="Copy bookmark lists JSON">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <FontIcon Glyph="&#xE74E;" />
+            <TextBlock Text="Export" />
+          </StackPanel>
+        </Button>
+        <Button Grid.Column="2" x:Name="ImportBtn" Margin="0,0,8,0" ToolTipService.ToolTip="Import bookmark lists JSON">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <FontIcon Glyph="&#xE896;" />
+            <TextBlock Text="Import" />
+          </StackPanel>
+        </Button>
+        <Button Grid.Column="3" x:Name="CloseBtn">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <FontIcon Glyph="&#xE711;" />
+              <TextBlock Text="Close" />
+            </StackPanel>
+        </Button>
+      </Grid>
+    </Grid>
+  </Grid>
+</Window>

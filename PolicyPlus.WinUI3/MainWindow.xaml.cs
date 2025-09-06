@@ -161,6 +161,26 @@ namespace PolicyPlus.WinUI3
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
             };
+            try { BookmarkService.Instance.ActiveListChanged += BookmarkService_ActiveListChanged; } catch { }
+            try { this.Closed += (s, e) => { try { BookmarkService.Instance.ActiveListChanged -= BookmarkService_ActiveListChanged; } catch { } }; } catch { }
+        }
+
+        private void BookmarkService_ActiveListChanged(object? sender, EventArgs e)
+        {
+            try
+            {
+                // If bookmark-only filter is enabled, active list switch changes the visible set.
+                if (_bookmarksOnly)
+                {
+                    DispatcherQueue.TryEnqueue(() => RebindConsideringAsync(SearchBox?.Text ?? string.Empty));
+                }
+                else
+                {
+                    // Otherwise just update bookmark icons/states for visible rows.
+                    DispatcherQueue.TryEnqueue(RefreshVisibleRows);
+                }
+            }
+            catch { }
         }
 
         private void TryInitCustomTitleBar()

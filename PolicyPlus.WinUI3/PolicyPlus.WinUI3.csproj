@@ -14,15 +14,14 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
 
-  <!-- When using Windows App SDK self-contained (app-local runtime), do not bootstrap -->
+  <!-- Removed explicit <Page Include="Windows\ManageBookmarksWindow.xaml" /> to avoid duplicate implicit item -->
+
   <PropertyGroup Condition="'$(WindowsAppSDKSelfContained)'=='true'">
     <WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
   </PropertyGroup>
-
   <ItemGroup>
     <EmbeddedResource Include="Assets\*.ico" />
   </ItemGroup>
-
   <Choose>
     <When Condition="Exists('Assets\\AppIcon.ico')">
       <PropertyGroup>
@@ -50,14 +49,6 @@
       </PropertyGroup>
     </When>
   </Choose>
-
-  <!-- Remove obsolete XAML pages (re-include needed ones later) -->
-  <ItemGroup>
-    <Page Remove="Dialogs\ManageBookmarksDialog.xaml" />
-    <Page Remove="Windows\QuickEditGridControl.xaml" />
-    <Page Remove="Windows\QuickEditWindow.xaml" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.250402" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
@@ -65,22 +56,12 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4948" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\PolicyPlus.Core\PolicyPlus.Core.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="Controls" />
   </ItemGroup>
-
-  <!-- Remove old None Update for QuickEditWindow (switch to Page include) -->
-  <ItemGroup>
-    <None Update="Windows\QuickEditGridControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-  </ItemGroup>
-
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <PublishReadyToRun>False</PublishReadyToRun>
     <PublishTrimmed>False</PublishTrimmed>
@@ -90,7 +71,6 @@
     <PublishTrimmed>False</PublishTrimmed>
     <PublishSingleFile>False</PublishSingleFile>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(PublishSingleFile)'=='true'">
     <PublishReadyToRun>false</PublishReadyToRun>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
@@ -114,7 +94,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
-
   <Target Name="RemoveFoldersWithMuiFiles" AfterTargets="Build">
     <ItemGroup>
       <RemovingFiles Include="$(OutDir)*\*.mui" Exclude="$(OutDir)en-us\*.mui" />
@@ -122,7 +101,6 @@
     </ItemGroup>
     <RemoveDir Directories="@(RemovingFolders)" />
   </Target>
-
   <Target Name="GenerateGitVersion" BeforeTargets="BeforeBuild">
     <PropertyGroup>
       <_GitVersionFile>$(IntermediateOutputPath)gitversion.txt</_GitVersionFile>
@@ -143,10 +121,4 @@
       </None>
     </ItemGroup>
   </Target>
-
-  <!-- Re-include pages -->
-  <ItemGroup>
-    <Page Include="Windows\QuickEditGridControl.xaml" />
-    <Page Include="Windows\QuickEditWindow.xaml" />
-  </ItemGroup>
 </Project>

@@ -143,7 +143,15 @@ namespace PolicyPlus.WinUI3
 
         // Menu: Manage lists (placeholder)
         private void BookmarkManageMenu_Click(object sender, RoutedEventArgs e)
-        { ShowInfo("Bookmark list management not implemented yet."); }
+        {
+            try
+            {
+                var win = new ManageBookmarksWindow();
+                win.Activate();
+                try { WindowHelpers.BringToFront(win); } catch { }
+            }
+            catch { ShowInfo("Could not open bookmark manager."); }
+        }
 
         // Always open Quick Edit using only bookmarked policies (ignore selection)
         private void OpenQuickEditBookmarks()

@@ -68,7 +68,6 @@ namespace PolicyPlus.WinUI3.Services
             lock (_gate)
             {
                 if (!_lists.TryGetValue(oldName, out var items)) return false;
-                if (string.Equals(oldName, "default", StringComparison.OrdinalIgnoreCase)) return false; // keep default name
                 if (_lists.ContainsKey(newName)) return false;
                 _lists.Remove(oldName);
                 _lists[newName] = items;
@@ -81,11 +80,14 @@ namespace PolicyPlus.WinUI3.Services
 
         public void RemoveList(string name)
         {
-            if (string.Equals(name, "default", StringComparison.OrdinalIgnoreCase)) return; // keep default
             lock (_gate)
             {
+                if (_lists.Count <= 1) return; // keep at least one list in existence
                 if (_lists.Remove(name) && string.Equals(_active, name, StringComparison.OrdinalIgnoreCase))
-                { _active = _lists.Keys.FirstOrDefault() ?? "default"; if (!_lists.ContainsKey(_active)) _lists[_active] = new List<string>(); }
+                {
+                    _active = _lists.Keys.FirstOrDefault() ?? "default";
+                    if (!_lists.ContainsKey(_active)) _lists[_active] = new List<string>();
+                }
                 Persist();
             }
             ActiveListChanged?.Invoke(this, EventArgs.Empty); RaiseChanged();
