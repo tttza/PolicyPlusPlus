@@ -106,15 +106,22 @@ namespace PolicyPlus.WinUI3.Windows
             {
                 if (FindParentRow(sender, out var row) && row != null && elem.IsList)
                 {
-                    var r = row!; // assert non-null after check
+                    var r = row!; // assert non-null
                     var key = BuildKey(r, elem, "UserList");
                     if (ListEditorWindow.TryActivateExisting(key)) return;
                     var win = new ListEditorWindow();
                     ListEditorWindow.Register(key, win);
-                    win.Initialize(r.Policy.DisplayName + " (User list)", userProvidesNames: false, elem.UserListItems.ToList());
-                    win.Finished += (s, ok) => { if (ok && win.Result is List<string> list) { elem.ReplaceList(true, list); } };
-                    ParentQuickEditWindow?.RegisterChild(win);
-                    win.Activate();
+                    object initial = elem.ProvidesNames ? elem.UserNamedListItems.ToList() : elem.UserListItems.ToList();
+                    win.Initialize(r.Policy.DisplayName + " (User list)", userProvidesNames: elem.ProvidesNames, initial);
+                    win.Finished += (s, ok) =>
+                    {
+                        if (!ok) return;
+                        if (elem.ProvidesNames && win.Result is List<KeyValuePair<string, string>> named)
+                            elem.ReplaceNamedList(true, named);
+                        else if (!elem.ProvidesNames && win.Result is List<string> simple)
+                            elem.ReplaceList(true, simple);
+                    };
+                    ParentQuickEditWindow?.RegisterChild(win); win.Activate();
                 }
             }
         }
@@ -129,10 +136,17 @@ namespace PolicyPlus.WinUI3.Windows
                     if (ListEditorWindow.TryActivateExisting(key)) return;
                     var win = new ListEditorWindow();
                     ListEditorWindow.Register(key, win);
-                    win.Initialize(r.Policy.DisplayName + " (Computer list)", userProvidesNames: false, elem.ComputerListItems.ToList());
-                    win.Finished += (s, ok) => { if (ok && win.Result is List<string> list) { elem.ReplaceList(false, list); } };
-                    ParentQuickEditWindow?.RegisterChild(win);
-                    win.Activate();
+                    object initial = elem.ProvidesNames ? elem.ComputerNamedListItems.ToList() : elem.ComputerListItems.ToList();
+                    win.Initialize(r.Policy.DisplayName + " (Computer list)", userProvidesNames: elem.ProvidesNames, initial);
+                    win.Finished += (s, ok) =>
+                    {
+                        if (!ok) return;
+                        if (elem.ProvidesNames && win.Result is List<KeyValuePair<string, string>> named)
+                            elem.ReplaceNamedList(false, named);
+                        else if (!elem.ProvidesNames && win.Result is List<string> simple)
+                            elem.ReplaceList(false, simple);
+                    };
+                    ParentQuickEditWindow?.RegisterChild(win); win.Activate();
                 }
             }
         }

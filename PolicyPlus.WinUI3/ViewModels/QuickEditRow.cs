@@ -161,8 +161,10 @@ namespace PolicyPlus.WinUI3.ViewModels
                             vm = new OptionElementVM(this, e, OptionElementType.Enum, display);
                             vm.InitializeEnumChoices(ee, (code, definedIn) => _bundle.ResolveString(code, definedIn), policy.RawPolicy.DefinedIn);
                         }
-                        else if (e is ListPolicyElement le && !le.UserProvidesNames)
-                        { vm = new OptionElementVM(this, e, OptionElementType.List, display); }
+                        else if (e is ListPolicyElement le)
+                        {
+                            vm = new OptionElementVM(this, e, OptionElementType.List, display, providesNames: le.UserProvidesNames);
+                        }
                         else if (e is BooleanPolicyElement)
                         {
                             // Look up defaultChecked from presentation if available

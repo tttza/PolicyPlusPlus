@@ -20,6 +20,9 @@ namespace PolicyPlus.WinUI3.ViewModels
         public string DisplayName { get; }
         public PolicyElement RawElement { get; }
 
+        // For list elements, indicates explicit name/value pairs (UserProvidesNames)
+        public bool ProvidesNames { get; }
+
         // Defaults captured from presentation (if any)
         private readonly bool? _defaultBool;
         private readonly string? _defaultText;
@@ -51,8 +54,10 @@ namespace PolicyPlus.WinUI3.ViewModels
 
         public List<string> UserListItems { get; private set; } = new();
         public List<string> ComputerListItems { get; private set; } = new();
-        public string UserListSummary => Type == OptionElementType.List ? $"Edit... ({UserListItems.Count})" : string.Empty;
-        public string ComputerListSummary => Type == OptionElementType.List ? $"Edit... ({ComputerListItems.Count})" : string.Empty;
+        public List<KeyValuePair<string,string>> UserNamedListItems { get; private set; } = new();
+        public List<KeyValuePair<string,string>> ComputerNamedListItems { get; private set; } = new();
+        public string UserListSummary => Type == OptionElementType.List ? (ProvidesNames ? $"Edit... ({UserNamedListItems.Count})" : $"Edit... ({UserListItems.Count})") : string.Empty;
+        public string ComputerListSummary => Type == OptionElementType.List ? (ProvidesNames ? $"Edit... ({ComputerNamedListItems.Count})" : $"Edit... ({ComputerListItems.Count})") : string.Empty;
 
         public List<string> UserMultiTextItems { get; private set; } = new();
         public List<string> ComputerMultiTextItems { get; private set; } = new();
@@ -68,9 +73,9 @@ namespace PolicyPlus.WinUI3.ViewModels
 
         internal OptionElementVM(QuickEditRow parent, PolicyElement element, OptionElementType type, string displayName,
             uint decMin = 0, uint decMax = 0, uint decDefault = 0, uint decIncrement = 1,
-            bool? defaultBool = null, string? defaultText = null, int textMaxLength = 0)
+            bool? defaultBool = null, string? defaultText = null, int textMaxLength = 0, bool providesNames = false)
         {
-            Parent = parent; RawElement = element; Type = type; Id = element.ID; DisplayName = displayName;
+            Parent = parent; RawElement = element; Type = type; Id = element.ID; DisplayName = displayName; ProvidesNames = providesNames;
             if (type == OptionElementType.Decimal)
             { DecimalMin = decMin; DecimalMax = decMax; DecimalDefault = decDefault; _defaultDecimal = decDefault; _decimalIncrement = decIncrement; }
             if (type == OptionElementType.Boolean) _defaultBool = defaultBool;
@@ -79,8 +84,16 @@ namespace PolicyPlus.WinUI3.ViewModels
 
         public void ReplaceList(bool isUser, List<string> items)
         {
-            if (Type != OptionElementType.List) return;
+            if (Type != OptionElementType.List || ProvidesNames) return;
             if (isUser) UserListItems = items; else ComputerListItems = items;
+            OnChanged(isUser ? nameof(UserListSummary) : nameof(ComputerListSummary));
+            if (isUser && Parent.UserState == QuickEditState.Enabled) Parent.QueuePending("User");
+            if (!isUser && Parent.ComputerState == QuickEditState.Enabled) Parent.QueuePending("Computer");
+        }
+        public void ReplaceNamedList(bool isUser, List<KeyValuePair<string,string>> items)
+        {
+            if (Type != OptionElementType.List || !ProvidesNames) return;
+            if (isUser) UserNamedListItems = items; else ComputerNamedListItems = items;
             OnChanged(isUser ? nameof(UserListSummary) : nameof(ComputerListSummary));
             if (isUser && Parent.UserState == QuickEditState.Enabled) Parent.QueuePending("User");
             if (!isUser && Parent.ComputerState == QuickEditState.Enabled) Parent.QueuePending("Computer");
@@ -102,7 +115,7 @@ namespace PolicyPlus.WinUI3.ViewModels
                 OptionElementType.Boolean => UserBool,
                 OptionElementType.Text => UserText,
                 OptionElementType.Decimal => UserNumber,
-                OptionElementType.List => UserListItems.ToList(),
+                OptionElementType.List => ProvidesNames ? UserNamedListItems.ToList() : UserListItems.ToList(),
                 OptionElementType.MultiText => UserMultiTextItems.ToList(),
                 _ => null
             };
@@ -115,7 +128,7 @@ namespace PolicyPlus.WinUI3.ViewModels
                 OptionElementType.Boolean => ComputerBool,
                 OptionElementType.Text => ComputerText,
                 OptionElementType.Decimal => ComputerNumber,
-                OptionElementType.List => ComputerListItems.ToList(),
+                OptionElementType.List => ProvidesNames ? ComputerNamedListItems.ToList() : ComputerListItems.ToList(),
                 OptionElementType.MultiText => ComputerMultiTextItems.ToList(),
                 _ => null
             };
@@ -146,10 +159,26 @@ namespace PolicyPlus.WinUI3.ViewModels
                         OnChanged(isUser ? nameof(UserNumber) : nameof(ComputerNumber));
                         break;
                     case OptionElementType.List:
-                        if (v is List<string> ll)
-                        { if (isUser) UserListItems = ll.ToList(); else ComputerListItems = ll.ToList(); OnChanged(isUser ? nameof(UserListSummary) : nameof(ComputerListSummary)); }
-                        else if (v is IEnumerable<string> en)
-                        { var list = en.ToList(); if (isUser) UserListItems = list; else ComputerListItems = list; OnChanged(isUser ? nameof(UserListSummary) : nameof(ComputerListSummary)); }
+                        if (ProvidesNames)
+                        {
+                            if (v is Dictionary<string,string> dict)
+                            {
+                                var list = dict.Select(k => new KeyValuePair<string,string>(k.Key, k.Value)).ToList();
+                                if (isUser) UserNamedListItems = list; else ComputerNamedListItems = list;
+                                OnChanged(isUser ? nameof(UserListSummary) : nameof(ComputerListSummary));
+                            }
+                            else if (v is IEnumerable<KeyValuePair<string,string>> kvp)
+                            {
+                                var list = kvp.ToList(); if (isUser) UserNamedListItems = list; else ComputerNamedListItems = list; OnChanged(isUser ? nameof(UserListSummary) : nameof(ComputerListSummary));
+                            }
+                        }
+                        else
+                        {
+                            if (v is List<string> ll)
+                            { if (isUser) UserListItems = ll.ToList(); else ComputerListItems = ll.ToList(); OnChanged(isUser ? nameof(UserListSummary) : nameof(ComputerListSummary)); }
+                            else if (v is IEnumerable<string> en)
+                            { var list = en.ToList(); if (isUser) UserListItems = list; else ComputerListItems = list; OnChanged(isUser ? nameof(UserListSummary) : nameof(ComputerListSummary)); }
+                        }
                         break;
                     case OptionElementType.MultiText:
                         if (v is List<string> ml)
@@ -194,7 +223,6 @@ namespace PolicyPlus.WinUI3.ViewModels
             {
                 if (_defaultBool.HasValue)
                 {
-                    // Only apply if not already set by load
                     if (!_userBool) { _userBool = _defaultBool.Value; OnChanged(nameof(UserBool)); }
                     if (!_computerBool) { _computerBool = _defaultBool.Value; OnChanged(nameof(ComputerBool)); }
                 }
