@@ -33,7 +33,8 @@ namespace PolicyPlus.WinUI3.ViewModels
                 _userState = other._userState; OnChanged(nameof(UserState));
                 _computerState = other._computerState; OnChanged(nameof(ComputerState));
                 // Adopt option values element-wise
-                foreach (var elem in OptionElements)
+                foreach (var elem in OptionElements
+                )
                 {
                     var otherElem = other.OptionElements.FirstOrDefault(e => e.Id == elem.Id);
                     if (otherElem == null) continue;
@@ -200,17 +201,23 @@ namespace PolicyPlus.WinUI3.ViewModels
                         }
                         else if (e is TextPolicyElement te)
                         {
-                            string? defText = null; int maxLen = te.MaxLength;
+                            string? defText = null; int maxLen = te.MaxLength; IEnumerable<string>? sugg = null;
                             try
                             {
                                 if (policy.Presentation != null)
                                 {
                                     var pe = policy.Presentation.Elements.FirstOrDefault(p => p.ElementType == "textBox" && string.Equals(p.ID, te.ID, StringComparison.OrdinalIgnoreCase)) as TextBoxPresentationElement;
                                     if (pe != null) defText = pe.DefaultValue;
+                                    var cbPres = policy.Presentation.Elements.FirstOrDefault(p => p.ElementType == "comboBox" && string.Equals(p.ID, te.ID, StringComparison.OrdinalIgnoreCase)) as ComboBoxPresentationElement;
+                                    if (cbPres != null)
+                                    {
+                                        defText = string.IsNullOrEmpty(defText) ? cbPres.DefaultText : defText;
+                                        sugg = cbPres.Suggestions;
+                                    }
                                 }
                             }
                             catch { }
-                            vm = new OptionElementVM(this, e, OptionElementType.Text, display, defaultText: defText, textMaxLength: maxLen);
+                            vm = new OptionElementVM(this, e, OptionElementType.Text, display, defaultText: defText, textMaxLength: maxLen, suggestions: sugg);
                         }
                         else if (e is MultiTextPolicyElement)
                         { vm = new OptionElementVM(this, e, OptionElementType.MultiText, display); }
@@ -274,9 +281,17 @@ namespace PolicyPlus.WinUI3.ViewModels
                     foreach (var vm in OptionElements)
                     {
                         var val = isUser ? vm.GetUserValue() : vm.GetComputerValue();
+                        if (vm.Type == OptionElementType.Text && vm.IsRequired)
+                        {
+                            var s = Convert.ToString(val) ?? string.Empty;
+                            if (string.IsNullOrWhiteSpace(s))
+                            {
+                                // Abort queuing pending change for this scope due to missing required input
+                                return;
+                            }
+                        }
                         if (val == null) continue;
                         options ??= new();
-                        // Decimal clamp
                         if (vm.Type == OptionElementType.Decimal && val is uint u)
                         { if (u < vm.DecimalMin) u = vm.DecimalMin; if (u > vm.DecimalMax) u = vm.DecimalMax; val = u; }
                         options[vm.Id] = val;

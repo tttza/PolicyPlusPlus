@@ -974,6 +974,12 @@ namespace PolicyPlus.WinUI3.Windows
 
         private void ApplyBtn_Click(object sender, RoutedEventArgs e)
         {
+            // Validate required text elements when enabling
+            if (OptEnabled.IsChecked == true && !ValidateRequiredElements())
+            {
+                try { if (App.Window is MainWindow mw) mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Required value missing.", InfoBarSeverity.Error }); } catch { }
+                return;
+            }
             try { SaveToSource(); } catch { }
             try
             {
@@ -987,6 +993,11 @@ namespace PolicyPlus.WinUI3.Windows
 
         private void OkBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (OptEnabled.IsChecked == true && !ValidateRequiredElements())
+            {
+                try { if (App.Window is MainWindow mw) mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Required value missing.", InfoBarSeverity.Error }); } catch { }
+                return;
+            }
             try { SaveToSource(); } catch { }
             Close();
             try
@@ -997,6 +1008,30 @@ namespace PolicyPlus.WinUI3.Windows
                 }
             }
             catch { }
+        }
+
+        private bool ValidateRequiredElements()
+        {
+            try
+            {
+                if (_policy?.RawPolicy?.Elements == null) return true;
+                foreach (var elem in _policy.RawPolicy.Elements)
+                {
+                    if (elem is TextPolicyElement t && t.Required)
+                    {
+                        if (_elementControls.TryGetValue(elem.ID, out var ctrl) && ctrl is TextBox tb)
+                        {
+                            if (string.IsNullOrWhiteSpace(tb.Text)) return false;
+                        }
+                        else if (_elementControls.TryGetValue(elem.ID, out var ctrl2) && ctrl2 is AutoSuggestBox asb)
+                        {
+                            if (string.IsNullOrWhiteSpace(asb.Text)) return false;
+                        }
+                    }
+                }
+            }
+            catch { }
+            return true;
         }
     }
 }

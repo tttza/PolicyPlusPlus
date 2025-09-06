@@ -71,6 +71,22 @@ namespace PolicyPlusModTests
             editSetting.EnableAndApply();
             PolAssert.HasMultiStringValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, new[] { "line1", "line2" });
         }
+
+        /// <summary>
+        /// After applying enum via UI, GetPolicyOptionStates should return numeric underlying value.
+        /// </summary>
+        [Fact(DisplayName = "UI Enum element option states return numeric value")]
+        public void EditSetting_Enum_GetPolicyOptionStates_ReturnsNumeric()
+        {
+            var polFile = new PolFile();
+            var policy = TestPolicyFactory.CreateEnumPolicy();
+            var editSetting = new EditSettingTestable();
+            editSetting.SetTestContext(policy, AdmxPolicySection.Machine, polFile);
+            ((ComboBox)editSetting.ElementControls["EnumElem"]).SelectedIndex = 1; // maps to numeric 2
+            editSetting.EnableAndApply();
+            var states = PolicyProcessing.GetPolicyOptionStates(polFile, policy);
+            Assert.Equal(2u, (uint)states["EnumElem"]);
+        }
     }
 
     public class EditSettingTestable : EditSetting

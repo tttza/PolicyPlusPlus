@@ -79,7 +79,7 @@ namespace PolicyPlusModTests
             var enumPolicy = TestPolicyFactory.CreateEnumPolicy();
             PolicyProcessing.SetPolicyState(polFile, enumPolicy, PolicyState.Enabled, new Dictionary<string, object> { { "EnumElem", 1 } });
             var enumStates = PolicyProcessing.GetPolicyOptionStates(polFile, enumPolicy);
-            Assert.Equal(1, enumStates["EnumElem"]);
+            Assert.Equal(2u, (uint)enumStates["EnumElem"]); // now returns underlying numeric value instead of index
 
             var multiTextPolicy = TestPolicyFactory.CreateMultiTextPolicy();
             var multiLines = new[] { "line1", "line2" };

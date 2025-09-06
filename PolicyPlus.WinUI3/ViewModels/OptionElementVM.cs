@@ -29,6 +29,11 @@ namespace PolicyPlus.WinUI3.ViewModels
         private readonly uint? _defaultDecimal;
         private readonly uint _decimalIncrement;
         private readonly int _textMaxLength;
+        public bool HasSuggestions => Suggestions.Count > 0;
+        public bool IsSuggestText => IsText && HasSuggestions; // for UI toggle
+        public bool IsPlainText => IsText && !HasSuggestions;
+        public List<string> Suggestions { get; } = new();
+        public bool IsRequired { get; }
 
         public List<string> Choices { get; } = new();
         private int _userEnumIndex = -1; public int UserEnumIndex { get => _userEnumIndex; set { if (_userEnumIndex != value) { _userEnumIndex = value; OnChanged(nameof(UserEnumIndex)); if (Parent.UserState == QuickEditState.Enabled) Parent.QueuePending("User"); } } }
@@ -73,13 +78,15 @@ namespace PolicyPlus.WinUI3.ViewModels
 
         internal OptionElementVM(QuickEditRow parent, PolicyElement element, OptionElementType type, string displayName,
             uint decMin = 0, uint decMax = 0, uint decDefault = 0, uint decIncrement = 1,
-            bool? defaultBool = null, string? defaultText = null, int textMaxLength = 0, bool providesNames = false)
+            bool? defaultBool = null, string? defaultText = null, int textMaxLength = 0, bool providesNames = false,
+            IEnumerable<string>? suggestions = null)
         {
             Parent = parent; RawElement = element; Type = type; Id = element.ID; DisplayName = displayName; ProvidesNames = providesNames;
             if (type == OptionElementType.Decimal)
             { DecimalMin = decMin; DecimalMax = decMax; DecimalDefault = decDefault; _defaultDecimal = decDefault; _decimalIncrement = decIncrement; }
             if (type == OptionElementType.Boolean) _defaultBool = defaultBool;
-            if (type == OptionElementType.Text) { _defaultText = defaultText; _textMaxLength = textMaxLength; }
+            if (type == OptionElementType.Text) { _defaultText = defaultText; _textMaxLength = textMaxLength; if (suggestions != null) Suggestions.AddRange(suggestions); }
+            if (element is TextPolicyElement tpe && tpe.Required) IsRequired = true;
         }
 
         public void ReplaceList(bool isUser, List<string> items)

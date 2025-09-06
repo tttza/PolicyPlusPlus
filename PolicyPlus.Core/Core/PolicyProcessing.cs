@@ -343,6 +343,7 @@ namespace PolicyPlus.Core.Core
                         {
                             EnumPolicyElement enumElem = (EnumPolicyElement)elem;
                             int selectedIndex = -1;
+                            uint? numericValue = null;
                             for (int n = 0, loopTo = enumElem.Items.Count - 1; n <= loopTo; n++)
                             {
                                 var enumItem = enumElem.Items[n];
@@ -351,12 +352,17 @@ namespace PolicyPlus.Core.Core
                                     if (enumItem.ValueList is null || ValueListPresent(enumItem.ValueList, PolicySource, elemKey, elem.RegistryValue))
                                     {
                                         selectedIndex = n;
+                                        if (enumItem.Value != null && enumItem.Value.RegistryType == PolicyRegistryValueType.Numeric)
+                                            numericValue = enumItem.Value.NumberValue;
                                         break;
                                     }
                                 }
                             }
-
-                            state.Add(elem.ID, selectedIndex);
+                            // Prefer returning numeric underlying value; fall back to index if not numeric
+                            if (numericValue.HasValue)
+                                state.Add(elem.ID, numericValue.Value);
+                            else
+                                state.Add(elem.ID, selectedIndex);
                             break;
                         }
 
@@ -556,7 +562,8 @@ namespace PolicyPlus.Core.Core
             {
                 case PolicyState.Enabled:
                     {
-                        if (rawpol.AffectedValues.OnValue is null & !string.IsNullOrEmpty(rawpol.RegistryValue))
+                        // Only write the implicit toggle DWORD (1) when the policy has NO element collection.
+                        if (rawpol.AffectedValues.OnValue is null & !string.IsNullOrEmpty(rawpol.RegistryValue) && (rawpol.Elements == null || rawpol.Elements.Count == 0))
                             PolicySource.SetValue(rawpol.RegistryKey, rawpol.RegistryValue, 1U, Microsoft.Win32.RegistryValueKind.DWord);
                         setList(rawpol.AffectedValues, rawpol.RegistryKey, rawpol.RegistryValue, true);
                         if (rawpol.Elements is object)
@@ -614,8 +621,16 @@ namespace PolicyPlus.Core.Core
                                     case "text":
                                         {
                                             TextPolicyElement textElem = (TextPolicyElement)elem;
+                                            string? rawText = Convert.ToString(optionData) ?? string.Empty;
+                                            // Treat whitespace-only as empty for required enforcement
+                                            if (string.IsNullOrWhiteSpace(rawText)) rawText = string.Empty;
+                                            // Enforce required: if required and empty => skip writing value entirely
+                                            if (textElem.Required && string.IsNullOrEmpty(rawText))
+                                                break; // do not write
+                                            if (rawText.Length > textElem.MaxLength && textElem.MaxLength > 0)
+                                                rawText = rawText.Substring(0, textElem.MaxLength);
                                             var regType = textElem.RegExpandSz ? Microsoft.Win32.RegistryValueKind.ExpandString : Microsoft.Win32.RegistryValueKind.String;
-                                            PolicySource.SetValue(elemKey, elem.RegistryValue, optionData, regType);
+                                            PolicySource.SetValue(elemKey, elem.RegistryValue, rawText, regType);
                                             break;
                                         }
 
@@ -664,14 +679,20 @@ namespace PolicyPlus.Core.Core
                                     case "enum":
                                         {
                                             EnumPolicyElement enumElem = (EnumPolicyElement)elem;
-                                            int selIndex = Convert.ToInt32(optionData);
-                                            if (selIndex >= 0 && selIndex < enumElem.Items.Count)
+                                            int selIndex = -1;
+                                            try { selIndex = Convert.ToInt32(optionData); } catch { selIndex = -1; }
+                                            if (selIndex < 0 || selIndex >= enumElem.Items.Count)
                                             {
-                                                var selItem = enumElem.Items[selIndex];
-                                                setValue(elemKey, elem.RegistryValue, selItem.Value);
-                                                if (selItem.ValueList != null)
-                                                    setSingleList(selItem.ValueList, elemKey);
+                                                // If required, fallback to first item; else skip
+                                                if (enumElem.Required && enumElem.Items.Count > 0)
+                                                    selIndex = 0;
+                                                else
+                                                    break;
                                             }
+                                            var selItem = enumElem.Items[selIndex];
+                                            setValue(elemKey, elem.RegistryValue, selItem.Value);
+                                            if (selItem.ValueList != null)
+                                                setSingleList(selItem.ValueList, elemKey);
                                             break;
                                         }
 

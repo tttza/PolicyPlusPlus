@@ -63,6 +63,8 @@ namespace PolicyPlusModTests
 
             // Assert (spec): DWORD 20 should be stored.
             PolAssert.HasDwordValue(polFile, raw.RegistryKey, raw.RegistryValue, 20u);
+            var optStates = PolicyProcessing.GetPolicyOptionStates(polFile, policy);
+            Assert.Equal(20u, (uint)optStates["EnumElem"]);
         }
 
         [Fact(DisplayName = "CheckBox defaultChecked=true is applied when enabling with no explicit option value")]
