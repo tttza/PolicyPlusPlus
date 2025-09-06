@@ -102,7 +102,6 @@ namespace PolicyPlus.WinUI3.Windows
                     {
                         SectionSelector.SelectedIndex = isUser ? 1 : 0; // 0=Computer,1=User
                     }
-                    // Ensure elements exist for this section
                     LoadStateFromSource();
                     StateRadio_Checked(this, new RoutedEventArgs());
                     var state = isUser ? row.UserState : row.ComputerState;
@@ -112,46 +111,52 @@ namespace PolicyPlus.WinUI3.Windows
                     StateRadio_Checked(this, new RoutedEventArgs());
                     if (state != QuickEditState.Enabled) return;
 
-                    // Map each element
-                    if (row.EnumElement != null && _elementControls.TryGetValue(row.EnumElement.ID, out var enumCtrl) && enumCtrl is ComboBox cb)
+                    // Map each option element dynamically (new multi-element model)
+                    foreach (var opt in row.OptionElements)
                     {
-                        cb.SelectedIndex = isUser ? row.UserEnumIndex : row.ComputerEnumIndex;
-                    }
-                    if (row.BooleanElement != null && _elementControls.TryGetValue(row.BooleanElement.ID, out var boolCtrl) && boolCtrl is CheckBox chk)
-                    {
-                        chk.IsChecked = isUser ? row.UserBool : row.ComputerBool;
-                    }
-                    if (row.TextElement != null && _elementControls.TryGetValue(row.TextElement.ID, out var textCtrl))
-                    {
-                        string txt = isUser ? row.UserText : row.ComputerText;
-                        if (textCtrl is TextBox tb) tb.Text = txt;
-                        else if (textCtrl is AutoSuggestBox asb) asb.Text = txt;
-                    }
-                    if (row.DecimalElement != null && _elementControls.TryGetValue(row.DecimalElement.ID, out var numCtrl))
-                    {
-                        uint? val = isUser ? row.UserNumber : row.ComputerNumber;
-                        if (numCtrl is NumberBox nb && val.HasValue) nb.Value = val.Value;
-                        else if (numCtrl is TextBox tb2 && val.HasValue) tb2.Text = val.Value.ToString();
-                    }
-                    if (row.ListElement != null && _elementControls.TryGetValue(row.ListElement.ID, out var listCtrl) && listCtrl is Button btn)
-                    {
-                        var items = isUser ? row.UserListItems : row.ComputerListItems;
-                        btn.Tag = items.ToList();
-                        btn.Content = $"Edit... ({items.Count})";
-                    }
-                    if (row.MultiTextElement != null && _elementControls.TryGetValue(row.MultiTextElement.ID, out var multiCtrl) && multiCtrl is TextBox mtb)
-                    {
-                        var lines = isUser ? row.UserMultiTextItems : row.ComputerMultiTextItems;
-                        mtb.Text = string.Join("\r\n", lines);
+                        if (!_elementControls.TryGetValue(opt.Id, out var ctrl) || ctrl == null) continue;
+                        switch (opt.Type)
+                        {
+                            case OptionElementType.Enum:
+                                if (ctrl is ComboBox cb)
+                                    cb.SelectedIndex = isUser ? opt.UserEnumIndex : opt.ComputerEnumIndex;
+                                break;
+                            case OptionElementType.Boolean:
+                                if (ctrl is CheckBox chk)
+                                    chk.IsChecked = isUser ? opt.UserBool : opt.ComputerBool;
+                                break;
+                            case OptionElementType.Text:
+                                string txt = isUser ? opt.UserText : opt.ComputerText;
+                                if (ctrl is TextBox tb) tb.Text = txt;
+                                else if (ctrl is AutoSuggestBox asb) asb.Text = txt;
+                                break;
+                            case OptionElementType.Decimal:
+                                var val = isUser ? opt.UserNumber : opt.ComputerNumber;
+                                if (val.HasValue && ctrl is NumberBox nb) nb.Value = val.Value;
+                                break;
+                            case OptionElementType.List:
+                                if (ctrl is Button btn)
+                                {
+                                    var items = isUser ? opt.UserListItems : opt.ComputerListItems;
+                                    btn.Tag = items.ToList();
+                                    btn.Content = $"Edit... ({items.Count})";
+                                }
+                                break;
+                            case OptionElementType.MultiText:
+                                if (ctrl is TextBox mtb)
+                                {
+                                    var lines = isUser ? opt.UserMultiTextItems : opt.ComputerMultiTextItems;
+                                    mtb.Text = string.Join("\r\n", lines);
+                                }
+                                break;
+                        }
                     }
                 }
 
-                // Apply both scopes that policy supports to reflect unsaved changes fully
                 if (_policy.RawPolicy.Section == AdmxPolicySection.Both)
                 {
-                    ApplyScope(false); // Computer
-                    ApplyScope(true);  // User
-                    // Restore previously selected section (keep computer first unless user was enabled and computer not)
+                    ApplyScope(false);
+                    ApplyScope(true);
                     var preferUser = row.UserState == QuickEditState.Enabled && row.ComputerState != QuickEditState.Enabled;
                     SectionSelector.SelectedIndex = preferUser ? 1 : 0;
                     _currentSection = SectionSelector.SelectedIndex == 1 ? AdmxPolicySection.User : AdmxPolicySection.Machine;

@@ -19,11 +19,8 @@ namespace PolicyPlus.WinUI3.Windows
 
         public ObservableCollection<QuickEditRow> Rows { get; } = new();
         internal QuickEditWindow? ParentQuickEditWindow { get; set; }
-
-        // Column width model (shared header/body)
         public QuickEditColumns Columns { get; } = new();
-        public QuickEditGridControl Root => this; // for x:Bind in item template
-
+        public QuickEditGridControl Root => this;
         private bool _measured;
 
         public QuickEditGridControl()
@@ -39,7 +36,6 @@ namespace PolicyPlus.WinUI3.Windows
             try { AdjustOptionColumnsToContent(); } catch { }
         }
 
-        // Double tap policy name opens EditSetting window via parent
         private void NameText_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             try
@@ -56,12 +52,8 @@ namespace PolicyPlus.WinUI3.Windows
         {
             if (fe == null) return 0;
             if (double.IsNaN(fe.Width) || fe.Width == 0)
-            {
-                fe.Measure(new global::Windows.Foundation.Size(double.PositiveInfinity, fe.ActualHeight > 0 ? fe.ActualHeight : double.PositiveInfinity));
-            }
-            double w = fe.ActualWidth;
-            if (w <= 1) w = fe.DesiredSize.Width;
-            return w;
+            { fe.Measure(new global::Windows.Foundation.Size(double.PositiveInfinity, fe.ActualHeight > 0 ? fe.ActualHeight : double.PositiveInfinity)); }
+            double w = fe.ActualWidth; if (w <= 1) w = fe.DesiredSize.Width; return w;
         }
 
         private void AdjustOptionColumnsToContent()
@@ -69,10 +61,8 @@ namespace PolicyPlus.WinUI3.Windows
             double userMax = 0; double compMax = 0;
             try
             {
-                var rootScroll = this.Content as FrameworkElement;
-                if (rootScroll == null) return;
-                var stack = new Stack<DependencyObject>();
-                stack.Push(rootScroll);
+                var root = this.Content as FrameworkElement; if (root == null) return;
+                var stack = new Stack<DependencyObject>(); stack.Push(root);
                 while (stack.Count > 0)
                 {
                     var cur = stack.Pop();
@@ -81,116 +71,140 @@ namespace PolicyPlus.WinUI3.Windows
                     {
                         var child = VisualTreeHelper.GetChild(cur, i);
                         stack.Push(child);
-                        if (child is ScrollViewer sv && sv.Content is StackPanel sp && sp.Orientation == Orientation.Horizontal)
+                        if (child is ItemsControl ic && ic.ItemsSource != null && ic.Parent is ScrollViewer sv && sv.Parent is Grid g)
                         {
-                            double width = MeasureChildWidth(sp);
-                            // Heuristic: user options column before computer options in grid; determine based on parent grid column
-                            if (sp.Parent is ScrollViewer sv2 && sv2.Parent is Grid g)
+                            var panel = ic.ItemsPanelRoot as FrameworkElement; if (panel != null)
                             {
-                                int col = Grid.GetColumn(sv2);
-                                if (col == 6) // user options column index in template grid
-                                    userMax = Math.Max(userMax, width);
-                                else if (col == 10) // computer options column index
-                                    compMax = Math.Max(compMax, width);
+                                double width = MeasureChildWidth(panel);
+                                int col = Grid.GetColumn(sv);
+                                if (col == 6) userMax = Math.Max(userMax, width);
+                                else if (col == 10) compMax = Math.Max(compMax, width);
                             }
                         }
                     }
                 }
             }
             catch { }
-            // Add minimal padding
             userMax += 16; compMax += 16;
-            // Clamp to visual MaxWidth (300) and enforce a modest minimum (260)
-            if (userMax < 260) userMax = 260; if (userMax > 300) userMax = 300;
-            if (compMax < 260) compMax = 260; if (compMax > 300) compMax = 300;
+            if (userMax < 260) userMax = 260; if (userMax > 600) userMax = 600;
+            if (compMax < 260) compMax = 260; if (compMax > 600) compMax = 600;
             Columns.UserOptions = new GridLength(userMax);
             Columns.ComputerOptions = new GridLength(compMax);
         }
 
-        private static string BuildKey(QuickEditRow row, string suffix) => $"{row.Policy.UniqueID}:{suffix}";
+        private static string BuildKey(QuickEditRow row, OptionElementVM elem, string suffix) => $"{row.Policy.UniqueID}:{elem.Id}:{suffix}";
 
-        private void UserList_Click(object sender, RoutedEventArgs e)
+        // Legacy single-element handlers kept (could be removed later)
+        private void UserList_Click(object sender, RoutedEventArgs e) { }
+        private void ComputerList_Click(object sender, RoutedEventArgs e) { }
+        private void UserMulti_Click(object sender, RoutedEventArgs e) { }
+        private void ComputerMulti_Click(object sender, RoutedEventArgs e) { }
+
+        private void UserListDynamic_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as FrameworkElement)?.DataContext is QuickEditRow row && row.HasListElement)
+            if ((sender as FrameworkElement)?.DataContext is OptionElementVM elem)
             {
-                var key = BuildKey(row, "UserList");
-                if (ListEditorWindow.TryActivateExisting(key)) return;
-                var win = new ListEditorWindow();
-                ListEditorWindow.Register(key, win);
-                win.Initialize(row.Policy.DisplayName + " (User list)", userProvidesNames: false, row.UserListItems.ToList());
-                win.Finished += (s, ok) => { if (ok && win.Result is List<string> list) { row.ReplaceList(true, list); } };
-                ParentQuickEditWindow?.RegisterChild(win);
-                win.Activate();
+                if (FindParentRow(sender, out var row) && row != null && elem.IsList)
+                {
+                    var r = row!; // assert non-null after check
+                    var key = BuildKey(r, elem, "UserList");
+                    if (ListEditorWindow.TryActivateExisting(key)) return;
+                    var win = new ListEditorWindow();
+                    ListEditorWindow.Register(key, win);
+                    win.Initialize(r.Policy.DisplayName + " (User list)", userProvidesNames: false, elem.UserListItems.ToList());
+                    win.Finished += (s, ok) => { if (ok && win.Result is List<string> list) { elem.ReplaceList(true, list); } };
+                    ParentQuickEditWindow?.RegisterChild(win);
+                    win.Activate();
+                }
             }
         }
-        private void ComputerList_Click(object sender, RoutedEventArgs e)
+        private void ComputerListDynamic_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as FrameworkElement)?.DataContext is QuickEditRow row && row.HasListElement)
+            if ((sender as FrameworkElement)?.DataContext is OptionElementVM elem)
             {
-                var key = BuildKey(row, "ComputerList");
-                if (ListEditorWindow.TryActivateExisting(key)) return;
-                var win = new ListEditorWindow();
-                ListEditorWindow.Register(key, win);
-                win.Initialize(row.Policy.DisplayName + " (Computer list)", userProvidesNames: false, row.ComputerListItems.ToList());
-                win.Finished += (s, ok) => { if (ok && win.Result is List<string> list) { row.ReplaceList(false, list); } };
-                ParentQuickEditWindow?.RegisterChild(win);
-                win.Activate();
+                if (FindParentRow(sender, out var row) && row != null && elem.IsList)
+                {
+                    var r = row!;
+                    var key = BuildKey(r, elem, "ComputerList");
+                    if (ListEditorWindow.TryActivateExisting(key)) return;
+                    var win = new ListEditorWindow();
+                    ListEditorWindow.Register(key, win);
+                    win.Initialize(r.Policy.DisplayName + " (Computer list)", userProvidesNames: false, elem.ComputerListItems.ToList());
+                    win.Finished += (s, ok) => { if (ok && win.Result is List<string> list) { elem.ReplaceList(false, list); } };
+                    ParentQuickEditWindow?.RegisterChild(win);
+                    win.Activate();
+                }
             }
         }
-        private void UserMulti_Click(object sender, RoutedEventArgs e)
+        private void UserMultiDynamic_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as FrameworkElement)?.DataContext is QuickEditRow row && row.HasMultiTextElement)
+            if ((sender as FrameworkElement)?.DataContext is OptionElementVM elem)
             {
-                var key = BuildKey(row, "UserMulti");
-                if (ListEditorWindow.TryActivateExisting(key)) return;
-                var win = new ListEditorWindow();
-                ListEditorWindow.Register(key, win);
-                win.Initialize(row.Policy.DisplayName + " (User multi-text)", userProvidesNames: false, row.UserMultiTextItems.ToList());
-                win.Finished += (s, ok) => { if (ok && win.Result is List<string> list) { row.ReplaceMultiText(true, list); } };
-                ParentQuickEditWindow?.RegisterChild(win);
-                win.Activate();
+                if (FindParentRow(sender, out var row) && row != null && elem.IsMultiText)
+                {
+                    var r = row; // remove null-forgiving operator; already checked
+                    var key = BuildKey(r, elem, "UserMulti");
+                    if (ListEditorWindow.TryActivateExisting(key)) return;
+                    var win = new ListEditorWindow();
+                    ListEditorWindow.Register(key, win);
+                    win.Initialize(r.Policy.DisplayName + " (User multi-text)", userProvidesNames: false, elem.UserMultiTextItems.ToList());
+                    win.Finished += (s, ok) => { if (ok && win.Result is List<string> list) { elem.ReplaceMultiText(true, list); } };
+                    ParentQuickEditWindow?.RegisterChild(win);
+                    win.Activate();
+                }
             }
         }
-        private void ComputerMulti_Click(object sender, RoutedEventArgs e)
+        private void ComputerMultiDynamic_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as FrameworkElement)?.DataContext is QuickEditRow row && row.HasMultiTextElement)
+            if ((sender as FrameworkElement)?.DataContext is OptionElementVM elem)
             {
-                var key = BuildKey(row, "ComputerMulti");
-                if (ListEditorWindow.TryActivateExisting(key)) return;
-                var win = new ListEditorWindow();
-                ListEditorWindow.Register(key, win);
-                win.Initialize(row.Policy.DisplayName + " (Computer multi-text)", userProvidesNames: false, row.ComputerMultiTextItems.ToList());
-                win.Finished += (s, ok) => { if (ok && win.Result is List<string> list) { row.ReplaceMultiText(false, list); } };
-                ParentQuickEditWindow?.RegisterChild(win);
-                win.Activate();
+                if (FindParentRow(sender, out var row) && row != null && elem.IsMultiText)
+                {
+                    var r = row!; // ensure non-null
+                    var key = BuildKey(r, elem, "ComputerMulti");
+                    if (ListEditorWindow.TryActivateExisting(key)) return;
+                    var win = new ListEditorWindow();
+                    ListEditorWindow.Register(key, win);
+                    win.Initialize(r.Policy.DisplayName + " (Computer multi-text)", userProvidesNames: false, elem.ComputerMultiTextItems.ToList());
+                    win.Finished += (s, ok) => { if (ok && win.Result is List<string> list) { elem.ReplaceMultiText(false, list); } };
+                    ParentQuickEditWindow?.RegisterChild(win);
+                    win.Activate();
+                }
             }
         }
 
-        // Resize handling
+        private bool FindParentRow(object? sender, out QuickEditRow? row)
+        {
+            row = null;
+            try
+            {
+                DependencyObject? cur = sender as DependencyObject;
+                while (cur != null)
+                {
+                    if (cur is FrameworkElement fe && fe.DataContext is QuickEditRow r) { row = r; return true; }
+                    cur = VisualTreeHelper.GetParent(cur);
+                }
+            }
+            catch { }
+            return false;
+        }
+
         private void ResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
         {
             if (sender is Thumb th && th.Tag is string id)
-            {
-                double delta = e.HorizontalChange;
-                if (delta == 0) return;
-                Columns.Adjust(id, delta);
-            }
+            { double delta = e.HorizontalChange; if (delta == 0) return; Columns.Adjust(id, delta); }
         }
     }
 
     public sealed class QuickEditColumns : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnChanged(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
-
-        // Updated initial widths (will be overridden for options after load)
+        public event PropertyChangedEventHandler? PropertyChanged; private void OnChanged(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
         private GridLength _name = new GridLength(340); public GridLength Name { get => _name; set { if (_name.Value != value.Value) { _name = value; OnChanged(nameof(Name)); } } }
         private GridLength _id = new GridLength(160); public GridLength Id { get => _id; set { if (_id.Value != value.Value) { _id = value; OnChanged(nameof(Id)); } } }
         private GridLength _userState = new GridLength(170); public GridLength UserState { get => _userState; set { if (_userState.Value != value.Value) { _userState = value; OnChanged(nameof(UserState)); } } }
-        private GridLength _userOptions = new GridLength(300); public GridLength UserOptions { get => _userOptions; set { double v = Math.Min(300, value.Value); if (_userOptions.Value != v) { _userOptions = new GridLength(v); OnChanged(nameof(UserOptions)); } } }
+        private GridLength _userOptions = new GridLength(420); public GridLength UserOptions { get => _userOptions; set { double v = Math.Min(600, value.Value); if (_userOptions.Value != v) { _userOptions = new GridLength(v); OnChanged(nameof(UserOptions)); } } }
         private GridLength _computerState = new GridLength(170); public GridLength ComputerState { get => _computerState; set { if (_computerState.Value != value.Value) { _computerState = value; OnChanged(nameof(ComputerState)); } } }
-        private GridLength _computerOptions = new GridLength(300); public GridLength ComputerOptions { get => _computerOptions; set { double v = Math.Min(300, value.Value); if (_computerOptions.Value != v) { _computerOptions = new GridLength(v); OnChanged(nameof(ComputerOptions)); } } }
-
+        private GridLength _computerOptions = new GridLength(420); public GridLength ComputerOptions { get => _computerOptions; set { double v = Math.Min(600, value.Value); if (_computerOptions.Value != v) { _computerOptions = new GridLength(v); OnChanged(nameof(ComputerOptions)); } } }
         public void Adjust(string id, double delta)
         {
             switch (id)
@@ -198,16 +212,11 @@ namespace PolicyPlus.WinUI3.Windows
                 case "Name": Name = New(Name, delta, 300); break;
                 case "Id": Id = New(Id, delta, 140); break;
                 case "UserState": UserState = New(UserState, delta, 160); break;
-                case "UserOptions": UserOptions = New(UserOptions, delta, 420); break;
+                case "UserOptions": UserOptions = New(UserOptions, delta, 300); break;
                 case "ComputerState": ComputerState = New(ComputerState, delta, 160); break;
-                case "ComputerOptions": ComputerOptions = New(ComputerOptions, delta, 420); break;
+                case "ComputerOptions": ComputerOptions = New(ComputerOptions, delta, 300); break;
             }
         }
-        private static GridLength New(GridLength g, double delta, double min)
-        {
-            double v = g.Value + delta;
-            if (v < min) v = min;
-            return new GridLength(v);
-        }
+        private static GridLength New(GridLength g, double delta, double min) { double v = g.Value + delta; if (v < min) v = min; return new GridLength(v); }
     }
 }
