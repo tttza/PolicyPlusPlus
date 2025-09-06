@@ -142,27 +142,30 @@ namespace PolicyPlus.WinUI3
             if (CategoryTree == null || _bundle == null) return;
 
             var bundleLocal = _bundle;
-            var allPoliciesLocal = _allPolicies;
-            var applies = _appliesFilter;
-            var configuredOnly = _configuredOnly;
-            var comp = _compSource;
-            var user = _userSource;
-            var hideEmpty = _hideEmptyCategories;
+            var hideEmpty = _hideEmptyCategories; // user preference
             var selectedId = _selectedCategory?.UniqueID;
+            // Intentionally NOT capturing _configuredOnly / _bookmarksOnly here so that the tree always shows the full taxonomy.
 
             _ = Task.Run(() =>
             {
                 List<CatNodeData> roots;
                 try
                 {
+                    bool IsTrulyEmpty(PolicyPlusCategory c)
+                    {
+                        if (c.Policies.Count > 0) return false;
+                        foreach (var ch in c.Children)
+                        {
+                            if (!IsTrulyEmpty(ch)) return false;
+                        }
+                        return true;
+                    }
+
                     bool Include(PolicyPlusCategory cat)
                     {
-                        if (!hideEmpty) return true;
-                        try
-                        {
-                            return ViewModels.CategoryVisibilityEvaluator.IsCategoryVisible(cat, allPoliciesLocal, applies, configuredOnly, comp, user);
-                        }
-                        catch { return true; }
+                        if (!hideEmpty) return true; // show everything when user disabled hiding
+                        // Hide only categories that have no policies anywhere in their subtree.
+                        return !IsTrulyEmpty(cat);
                     }
 
                     var rootCats = bundleLocal.Categories.Values.Where(c => c.Parent == null)
