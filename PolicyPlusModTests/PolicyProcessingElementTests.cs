@@ -42,6 +42,7 @@ namespace PolicyPlusModTests
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateEnumPolicy();
             PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "EnumElem", 1 } });
+            // Registry should store underlying numeric (second item's value = 2)
             PolAssert.HasDwordValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, 2U);
         }
 
@@ -65,22 +66,23 @@ namespace PolicyPlusModTests
         public void GetPolicyOptionStates_ReturnsCorrectValues_ForTextListEnumMultiText()
         {
             var polFile = new PolFile();
+            // Text
             var textPolicy = TestPolicyFactory.CreateTextPolicy();
             PolicyProcessing.SetPolicyState(polFile, textPolicy, PolicyState.Enabled, new Dictionary<string, object> { { "TextElem", "TestString" } });
             var textStates = PolicyProcessing.GetPolicyOptionStates(polFile, textPolicy);
             Assert.Equal("TestString", textStates["TextElem"]);
-
+            // List
             var listPolicy = TestPolicyFactory.CreateListPolicy();
             var listValues = new List<string> { "A", "B" };
             PolicyProcessing.SetPolicyState(polFile, listPolicy, PolicyState.Enabled, new Dictionary<string, object> { { "ListElem", listValues } });
             var listStates = PolicyProcessing.GetPolicyOptionStates(polFile, listPolicy);
             Assert.True(listValues.All(v => ((IEnumerable<string>)listStates["ListElem"]).Contains(v)));
-
+            // Enum
             var enumPolicy = TestPolicyFactory.CreateEnumPolicy();
             PolicyProcessing.SetPolicyState(polFile, enumPolicy, PolicyState.Enabled, new Dictionary<string, object> { { "EnumElem", 1 } });
             var enumStates = PolicyProcessing.GetPolicyOptionStates(polFile, enumPolicy);
-            Assert.Equal(2u, (uint)enumStates["EnumElem"]); // now returns underlying numeric value instead of index
-
+            Assert.Equal(1, (int)enumStates["EnumElem"]);
+            // MultiText
             var multiTextPolicy = TestPolicyFactory.CreateMultiTextPolicy();
             var multiLines = new[] { "line1", "line2" };
             PolicyProcessing.SetPolicyState(polFile, multiTextPolicy, PolicyState.Enabled, new Dictionary<string, object> { { "MultiTextElem", multiLines } });

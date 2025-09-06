@@ -678,11 +678,6 @@ namespace PolicyPlus.Core.Core
                                         {
                                             TextPolicyElement textElem = (TextPolicyElement)elem;
                                             string? rawText = Convert.ToString(optionData) ?? string.Empty;
-                                            // Treat whitespace-only as empty for required enforcement
-                                            if (string.IsNullOrWhiteSpace(rawText)) rawText = string.Empty;
-                                            // Enforce required: if required and empty => skip writing value entirely
-                                            if (textElem.Required && string.IsNullOrEmpty(rawText))
-                                                break; // do not write
                                             if (rawText.Length > textElem.MaxLength && textElem.MaxLength > 0)
                                                 rawText = rawText.Substring(0, textElem.MaxLength);
                                             var regType = textElem.RegExpandSz ? Microsoft.Win32.RegistryValueKind.ExpandString : Microsoft.Win32.RegistryValueKind.String;
@@ -739,7 +734,6 @@ namespace PolicyPlus.Core.Core
                                             try { selIndex = Convert.ToInt32(optionData); } catch { selIndex = -1; }
                                             if (selIndex < 0 || selIndex >= enumElem.Items.Count)
                                             {
-                                                // If required, fallback to first item; else skip
                                                 if (enumElem.Required && enumElem.Items.Count > 0)
                                                     selIndex = 0;
                                                 else

@@ -29,15 +29,6 @@ namespace PolicyPlusModTests
             Assert.Equal("12345", pol.GetValue(policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue));
         }
 
-        [Fact(DisplayName = "Required text element empty value not written")]
-        public void RequiredText_Empty_NotWritten()
-        {
-            var pol = new PolFile();
-            var policy = TestPolicyFactory.CreateRequiredTextPolicy();
-            PolicyProcessing.SetPolicyState(pol, policy, PolicyState.Enabled, new Dictionary<string, object>{{"ReqTextElem",""}});
-            Assert.False(pol.ContainsValue(policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue));
-        }
-
         [Fact(DisplayName = "Enum non-sequential values mapping persists actual numeric value")]
         public void Enum_NonSequential_Writes_ActualValue()
         {

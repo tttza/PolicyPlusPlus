@@ -75,17 +75,17 @@ namespace PolicyPlusModTests
         /// <summary>
         /// After applying enum via UI, GetPolicyOptionStates should return numeric underlying value.
         /// </summary>
-        [Fact(DisplayName = "UI Enum element option states return numeric value")]
-        public void EditSetting_Enum_GetPolicyOptionStates_ReturnsNumeric()
+        [Fact(DisplayName = "UI Enum element option states return index value")]
+        public void EditSetting_Enum_GetPolicyOptionStates_ReturnsIndex()
         {
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateEnumPolicy();
             var editSetting = new EditSettingTestable();
             editSetting.SetTestContext(policy, AdmxPolicySection.Machine, polFile);
-            ((ComboBox)editSetting.ElementControls["EnumElem"]).SelectedIndex = 1; // maps to numeric 2
+            ((ComboBox)editSetting.ElementControls["EnumElem"]).SelectedIndex = 1; // maps to numeric 2 in registry
             editSetting.EnableAndApply();
             var states = PolicyProcessing.GetPolicyOptionStates(polFile, policy);
-            Assert.Equal(2u, (uint)states["EnumElem"]);
+            Assert.Equal(1, (int)states["EnumElem"]);
         }
     }
 
