@@ -5,8 +5,8 @@
         <ResourceDictionary Source="ms-appx:///Resources/ThemeColors.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- Subtle mouse-first affordance -->
-    <x:Double x:Key="ControlCornerRadius">10</x:Double>
+    <!-- Global corner radius (was Double; must be CornerRadius to apply) -->
+    <CornerRadius x:Key="ControlCornerRadius">10</CornerRadius>
     <Thickness x:Key="ToolbarButtonMargin">0,0,6,0</Thickness>
     <Thickness x:Key="ButtonPadding">12,6,12,6</Thickness>
 

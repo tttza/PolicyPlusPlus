@@ -99,4 +99,7 @@
     <Compile Remove="Helpers\Privilege.cs" />
     <Compile Remove="Utils\SystemInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="UI\Utils\" />
+  </ItemGroup>
 </Project>
