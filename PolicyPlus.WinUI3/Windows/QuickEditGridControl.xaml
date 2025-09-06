@@ -10,6 +10,7 @@
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
         <conv:QuickEditStateToIndexConverter x:Key="StateIndex" />
         <conv:HeaderGlyphConverter x:Key="HeaderGlyph" />
+        <conv:QuickEditStateToBrushConverter x:Key="StateBrush" />
     </UserControl.Resources>
     <Grid>
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
@@ -70,9 +71,16 @@
                                     <TextBlock Grid.Column="0" Text="{Binding Policy.DisplayName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" DoubleTapped="NameText_DoubleTapped" />
                                     <TextBlock Grid.Column="2" Text="{Binding IdTail}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" />
 
-                                    <ComboBox Grid.Column="4" Width="140" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}" VerticalAlignment="Center" />
+                                    <!-- User State -->
+                                    <Border Grid.Column="4" Background="{Binding UserState, Converter={StaticResource StateBrush}}" CornerRadius="4" Padding="4,2" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <ComboBox Width="150" SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}">
+                                            <ComboBoxItem Content="Not Configured" />
+                                            <ComboBoxItem Content="Enabled" />
+                                            <ComboBoxItem Content="Disabled" />
+                                        </ComboBox>
+                                    </Border>
 
-                                    <!-- User Option Elements: removed inline labels, tooltip shows ID -->
+                                    <!-- User Option Elements -->
                                     <ScrollViewer Grid.Column="6" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" IsEnabled="{Binding UserEnabledForOptions}">
                                         <ItemsControl ItemsSource="{Binding OptionElements}">
                                             <ItemsControl.ItemsPanel>
@@ -83,7 +91,7 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="vm:OptionElementVM">
                                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="2" ToolTipService.ToolTip="{x:Bind Id}">
-                                                        <ComboBox Width="150" MinWidth="120" Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{x:Bind UserEnumIndex, Mode=TwoWay}" ItemsSource="{x:Bind Choices}" />
+                                                        <ComboBox Width="210" MinWidth="120" Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{x:Bind UserEnumIndex, Mode=TwoWay}" ItemsSource="{x:Bind Choices}" />
                                                         <CheckBox Visibility="{x:Bind IsBoolean, Converter={StaticResource BoolToVisibility}}" IsChecked="{x:Bind UserBool, Mode=TwoWay}" Padding="4,0" />
                                                         <TextBox MinWidth="150" Width="210" Visibility="{x:Bind IsText, Converter={StaticResource BoolToVisibility}}" Text="{x:Bind UserText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                         <NumberBox Width="110" Visibility="{x:Bind IsDecimal, Converter={StaticResource BoolToVisibility}}" Value="{x:Bind UserNumberDouble, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SpinButtonPlacementMode="Compact" Minimum="{x:Bind DecimalMinDouble}" Maximum="{x:Bind DecimalMaxDouble}"/>
@@ -95,7 +103,14 @@
                                         </ItemsControl>
                                     </ScrollViewer>
 
-                                    <ComboBox Grid.Column="8" Width="140" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}" VerticalAlignment="Center" />
+                                    <!-- Computer State -->
+                                    <Border Grid.Column="8" Background="{Binding ComputerState, Converter={StaticResource StateBrush}}" CornerRadius="4" Padding="4,2" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <ComboBox Width="150" SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}">
+                                            <ComboBoxItem Content="Not Configured" />
+                                            <ComboBoxItem Content="Enabled" />
+                                            <ComboBoxItem Content="Disabled" />
+                                        </ComboBox>
+                                    </Border>
 
                                     <!-- Computer Option Elements -->
                                     <ScrollViewer Grid.Column="10" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" IsEnabled="{Binding ComputerEnabledForOptions}">
@@ -108,12 +123,12 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="vm:OptionElementVM">
                                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="2" ToolTipService.ToolTip="{x:Bind Id}">
-                                                        <ComboBox Width="150" MinWidth="120" Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{x:Bind ComputerEnumIndex, Mode=TwoWay}" ItemsSource="{x:Bind Choices}" />
+                                                        <ComboBox Width="210" MinWidth="120" Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{x:Bind ComputerEnumIndex, Mode=TwoWay}" ItemsSource="{x:Bind Choices}" />
                                                         <CheckBox Visibility="{x:Bind IsBoolean, Converter={StaticResource BoolToVisibility}}" IsChecked="{x:Bind ComputerBool, Mode=TwoWay}" Padding="4,0" />
                                                         <TextBox MinWidth="150" Width="210" Visibility="{x:Bind IsText, Converter={StaticResource BoolToVisibility}}" Text="{x:Bind ComputerText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                         <NumberBox Width="110" Visibility="{x:Bind IsDecimal, Converter={StaticResource BoolToVisibility}}" Value="{x:Bind ComputerNumberDouble, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SpinButtonPlacementMode="Compact" Minimum="{x:Bind DecimalMinDouble}" Maximum="{x:Bind DecimalMaxDouble}"/>
                                                         <Button MinWidth="96" Width="110" Visibility="{x:Bind IsList, Converter={StaticResource BoolToVisibility}}" Content="{x:Bind ComputerListSummary}" Tag="ComputerList" Click="ComputerListDynamic_Click" />
-                                                        <Button MinWidth="96" Width="{Binding RelativePanel.Right}" Visibility="{x:Bind IsMultiText, Converter={StaticResource BoolToVisibility}}" Content="{x:Bind ComputerMultiTextSummary}" Tag="ComputerMulti" Click="ComputerMultiDynamic_Click" />
+                                                        <Button MinWidth="96" Width="110" Visibility="{x:Bind IsMultiText, Converter={StaticResource BoolToVisibility}}" Content="{x:Bind ComputerMultiTextSummary}" Tag="ComputerMulti" Click="ComputerMultiDynamic_Click" />
                                                     </StackPanel>
                                                 </DataTemplate>
                                         </ItemsControl.ItemTemplate>
