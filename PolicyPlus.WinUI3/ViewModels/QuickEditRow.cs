@@ -84,6 +84,11 @@ namespace PolicyPlus.WinUI3.ViewModels
         public DecimalPolicyElement? DecimalElement { get; }
         public MultiTextPolicyElement? MultiTextElement { get; }
 
+        // Decimal metadata for UI binding
+        public uint DecimalMin { get; }
+        public uint DecimalMax { get; }
+        public uint DecimalDefault { get; }
+
         public List<string> EnumChoices { get; } = new();
         private int _userEnumIndex = -1; public int UserEnumIndex { get => _userEnumIndex; set { if (_userEnumIndex != value) { _userEnumIndex = value; OnChanged(nameof(UserEnumIndex)); if (UserState == QuickEditState.Enabled) QueuePending("User"); } } }
         private int _computerEnumIndex = -1; public int ComputerEnumIndex { get => _computerEnumIndex; set { if (_computerEnumIndex != value) { _computerEnumIndex = value; OnChanged(nameof(ComputerEnumIndex)); if (ComputerState == QuickEditState.Enabled) QueuePending("Computer"); } } }
@@ -137,6 +142,36 @@ namespace PolicyPlus.WinUI3.ViewModels
                     EnumChoices.Add(string.IsNullOrWhiteSpace(text) ? it.DisplayCode : text);
                 }
             }
+
+            // Decimal bounds & default (presentation)
+            if (DecimalElement != null)
+            {
+                DecimalMin = DecimalElement.Minimum;
+                DecimalMax = DecimalElement.Maximum;
+                uint def = DecimalElement.Minimum; // fallback if no presentation element
+                try
+                {
+                    if (policy.Presentation != null)
+                    {
+                        foreach (var pe in policy.Presentation.Elements)
+                        {
+                            if (pe.ElementType == "decimalTextBox" && string.Equals(pe.ID, DecimalElement.ID, StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (pe is NumericBoxPresentationElement nbpe)
+                                {
+                                    def = nbpe.DefaultValue;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+                if (def < DecimalMin) def = DecimalMin;
+                if (def > DecimalMax) def = DecimalMax;
+                DecimalDefault = def;
+            }
+
             // Load existing states and option values
             LoadInitialStates();
             // After loading, if enum index still unset, select first item as default (do not queue pending while _initializing)
@@ -144,6 +179,12 @@ namespace PolicyPlus.WinUI3.ViewModels
             {
                 if (_userEnumIndex == -1 && EnumChoices.Count > 0) _userEnumIndex = 0;
                 if (_computerEnumIndex == -1 && EnumChoices.Count > 0) _computerEnumIndex = 0;
+            }
+            // Initialize decimal numbers with default if not set (NotConfigured display)
+            if (DecimalElement != null)
+            {
+                if (!_userNumber.HasValue) _userNumber = DecimalDefault; // show default even when not configured
+                if (!_computerNumber.HasValue) _computerNumber = DecimalDefault;
             }
             _initializing = false; // from now on, user modifications create pending changes
         }
@@ -239,7 +280,12 @@ namespace PolicyPlus.WinUI3.ViewModels
                     if (DecimalElement != null)
                     {
                         var num = isUser ? UserNumber : ComputerNumber;
-                        if (num.HasValue) { options ??= new(); options[DecimalElement.ID] = num.Value; }
+                        if (num.HasValue)
+                        {
+                            uint v = num.Value;
+                            if (v < DecimalMin) v = DecimalMin; if (v > DecimalMax) v = DecimalMax; // clamp
+                            options ??= new(); options[DecimalElement.ID] = v;
+                        }
                     }
                 }
                 var action = desired switch { PolicyState.Enabled => "Enable", PolicyState.Disabled => "Disable", _ => "Clear" };
@@ -382,7 +428,7 @@ namespace PolicyPlus.WinUI3.ViewModels
             if (TextElement != null)
             { if (isUser) _userText = string.Empty; else _computerText = string.Empty; OnChanged(isUser ? nameof(UserText) : nameof(ComputerText)); }
             if (DecimalElement != null)
-            { if (isUser) _userNumber = null; else _computerNumber = null; OnChanged(isUser ? nameof(UserNumber) : nameof(ComputerNumber)); }
+            { if (isUser) _userNumber = DecimalDefault; else _computerNumber = DecimalDefault; OnChanged(isUser ? nameof(UserNumber) : nameof(ComputerNumber)); }
             if (ListElement != null)
             { if (isUser) UserListItems = new(); else ComputerListItems = new(); }
             if (MultiTextElement != null)
@@ -403,6 +449,11 @@ namespace PolicyPlus.WinUI3.ViewModels
                 {
                     if (dv is uint du) { if (isUser) _userNumber = du; else _computerNumber = du; }
                     else if (dv is int di && di >= 0) { if (isUser) _userNumber = (uint)di; else _computerNumber = (uint)di; }
+                    // Clamp
+                    if (_userNumber.HasValue && _userNumber.Value < DecimalMin) _userNumber = DecimalMin;
+                    if (_userNumber.HasValue && _userNumber.Value > DecimalMax) _userNumber = DecimalMax;
+                    if (_computerNumber.HasValue && _computerNumber.Value < DecimalMin) _computerNumber = DecimalMin;
+                    if (_computerNumber.HasValue && _computerNumber.Value > DecimalMax) _computerNumber = DecimalMax;
                     OnChanged(isUser ? nameof(UserNumber) : nameof(ComputerNumber));
                 }
                 if (ListElement != null && opts.TryGetValue(ListElement.ID, out var lv))

@@ -46,6 +46,8 @@ namespace PolicyPlus.WinUI3.Windows
         private bool _useSecondLanguage = false;
         private ToggleButton? _secondLangToggle;
 
+        private PolicyState _lastLoadedState = PolicyState.Unknown; // track last loaded state to know when enabling fresh
+
         public EditSettingWindow()
         {
             InitializeComponent();
@@ -430,12 +432,32 @@ namespace PolicyPlus.WinUI3.Windows
 
             // Choose presentation (localized when available)
             Presentation presentationToUse = _policy.Presentation;
+            Presentation? originalPresentation = _policy.Presentation; // keep reference
             try
             {
                 if (useSecond)
                 {
                     var lp = LocalizedTextService.GetPresentationIn(_policy, lang);
-                    if (lp != null) presentationToUse = lp;
+                    if (lp != null)
+                    {
+                        // Merge missing numeric defaults: some localized ADMLs omit defaultValue so it becomes 0.
+                        try
+                        {
+                            foreach (var locElem in lp.Elements)
+                            {
+                                if (locElem.ElementType == "decimalTextBox" && locElem is NumericBoxPresentationElement nbLoc && nbLoc.DefaultValue == 0 && originalPresentation != null)
+                                {
+                                    var baseElem = originalPresentation.Elements.FirstOrDefault(e => e.ElementType == "decimalTextBox" && string.Equals(e.ID, locElem.ID, StringComparison.OrdinalIgnoreCase)) as NumericBoxPresentationElement;
+                                    if (baseElem != null && baseElem.DefaultValue > 0)
+                                    {
+                                        nbLoc.DefaultValue = baseElem.DefaultValue; // copy over intended default (e.g., 1400)
+                                    }
+                                }
+                            }
+                        }
+                        catch { }
+                        presentationToUse = lp;
+                    }
                 }
             }
             catch { }
@@ -468,16 +490,11 @@ namespace PolicyPlus.WinUI3.Windows
                         {
                             var p = (NumericBoxPresentationElement)pres;
                             var e = (DecimalPolicyElement)elemDict[pres.ID];
-                            if (p.HasSpinner)
-                            {
-                                var sp = new NumberBox { Minimum = e.Minimum, Maximum = e.Maximum, Value = p.DefaultValue, SmallChange = p.SpinnerIncrement };
-                                control = sp;
-                            }
-                            else
-                            {
-                                var tb = new TextBox { Text = p.DefaultValue.ToString() };
-                                control = tb;
-                            }
+                            // Always use NumberBox; show spin buttons so it is visually distinct from TextBox
+                            var nb = new NumberBox { Minimum = e.Minimum, Maximum = e.Maximum, Value = p.DefaultValue, SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline };
+                            if (p.HasSpinner) nb.SmallChange = p.SpinnerIncrement;
+                            else nb.SmallChange = 1; // sensible default
+                            control = nb;
                             label = ResolvePresString(pres, p.Label); break;
                         }
                     case "textBox":
@@ -598,23 +615,48 @@ namespace PolicyPlus.WinUI3.Windows
         {
             var (src, loader, comments) = GetCurrent();
             var state = PolicyProcessing.GetPolicyState(src, _policy);
+            _lastLoadedState = state;
             OptEnabled.IsChecked = state == PolicyState.Enabled;
             OptDisabled.IsChecked = state == PolicyState.Disabled;
             OptNotConfigured.IsChecked = state == PolicyState.NotConfigured || state == PolicyState.Unknown;
 
-            var optionStates = PolicyProcessing.GetPolicyOptionStates(src, _policy);
-            foreach (var kv in optionStates)
+            Dictionary<string, object> optionStates = new();
+            if (state == PolicyState.Enabled)
             {
-                if (!_elementControls.TryGetValue(kv.Key, out var ctrl)) continue;
-                switch (ctrl)
+                try { optionStates = PolicyProcessing.GetPolicyOptionStates(src, _policy); } catch { optionStates = new(); }
+            }
+
+            foreach (var elem in _policy.RawPolicy.Elements ?? new List<PolicyElement>())
+            {
+                if (!_elementControls.TryGetValue(elem.ID, out var ctrl)) continue;
+
+                if (state == PolicyState.Enabled && optionStates.TryGetValue(elem.ID, out var val))
                 {
-                    case NumberBox nb when kv.Value is uint u: nb.Value = u; break;
-                    case TextBox tb when kv.Value is string s: tb.Text = s; break;
-                    case ComboBox cb when kv.Value is int index: cb.SelectedIndex = index; break;
-                    case CheckBox ch when kv.Value is bool b: ch.IsChecked = b; break;
-                    case TextBox mtb when kv.Value is string[] arr: mtb.Text = string.Join("\r\n", arr); break;
-                    case Button btn when kv.Value is Dictionary<string, string> dict: btn.Tag = dict.ToList(); btn.Content = $"Edit... ({dict.Count})"; break;
-                    case Button btn2 when kv.Value is List<string> list: btn2.Tag = list; btn2.Content = $"Edit... ({list.Count})"; break;
+                    switch (ctrl)
+                    {
+                        case NumberBox nb when val is uint u: nb.Value = ClampDecimal(elem, u); continue;
+                        case TextBox tb when val is string s: tb.Text = s; continue;
+                        case ComboBox cb when val is int index: cb.SelectedIndex = index; continue;
+                        case CheckBox ch when val is bool b: ch.IsChecked = b; continue;
+                        case TextBox mtb when val is string[] arr: mtb.Text = string.Join("\r\n", arr); continue;
+                        case Button btn when val is Dictionary<string, string> dict: btn.Tag = dict.ToList(); btn.Content = $"Edit... ({dict.Count})"; continue;
+                        case Button btn2 when val is List<string> list: btn2.Tag = list; btn2.Content = $"Edit... ({list.Count})"; continue;
+                    }
+                }
+
+                // Not Enabled OR no stored value: presentation defaults
+                if (elem.ElementType == "decimal" && ctrl is NumberBox nb2)
+                {
+                    var def = GetDecimalDefault(elem.ID);
+                    nb2.Value = ClampDecimal(elem, def);
+                }
+                else if (elem is TextPolicyElement && ctrl is TextBox tb2)
+                {
+                    if (string.IsNullOrEmpty(tb2.Text))
+                    {
+                        var defText = GetTextDefault(elem.ID);
+                        if (defText != null) tb2.Text = defText;
+                    }
                 }
             }
 
@@ -628,6 +670,58 @@ namespace PolicyPlus.WinUI3.Windows
             }
         }
 
+        private string? GetTextDefault(string id)
+        {
+            try
+            {
+                if (_policy.Presentation != null)
+                {
+                    foreach (var pe in _policy.Presentation.Elements)
+                    {
+                        if (pe.ElementType == "textBox" && string.Equals(pe.ID, id, StringComparison.OrdinalIgnoreCase) && pe is TextBoxPresentationElement tpe)
+                            return tpe.DefaultValue;
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private uint GetDecimalDefault(string id)
+        {
+            try
+            {
+                if (_policy.Presentation != null)
+                {
+                    foreach (var pe in _policy.Presentation.Elements)
+                    {
+                        if (pe.ElementType == "decimalTextBox" && string.Equals(pe.ID, id, StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (pe is NumericBoxPresentationElement nbpe)
+                                return nbpe.DefaultValue;
+                        }
+                    }
+                }
+            }
+            catch { }
+            return 0;
+        }
+
+        private uint ClampDecimal(PolicyElement elem, double value)
+        {
+            try
+            {
+                if (elem is DecimalPolicyElement de)
+                {
+                    if (value < de.Minimum) value = de.Minimum;
+                    if (value > de.Maximum) value = de.Maximum; // fixed typo
+                    return (uint)Math.Round(value);
+                }
+            }
+            catch { }
+            return (uint)Math.Max(0, Math.Round(value));
+        }
+
         private Dictionary<string, object> CollectOptions()
         {
             var options = new Dictionary<string, object>();
@@ -638,8 +732,11 @@ namespace PolicyPlus.WinUI3.Windows
                 switch (elem.ElementType)
                 {
                     case "decimal":
-                        if (ctrl is NumberBox nb) options[elem.ID] = (uint)Math.Round(nb.Value);
-                        else if (ctrl is TextBox tb && uint.TryParse(tb.Text, out var u)) options[elem.ID] = u; else options[elem.ID] = 0u; break;
+                        if (ctrl is NumberBox nb)
+                        {
+                            options[elem.ID] = ClampDecimal(elem, nb.Value);
+                        }
+                        else if (ctrl is TextBox tbx && uint.TryParse(tbx.Text, out var u)) options[elem.ID] = ClampDecimal(elem, u); else options[elem.ID] = 0u; break;
                     case "text":
                         if (ctrl is AutoSuggestBox asb) options[elem.ID] = asb.Text; else if (ctrl is TextBox tbx) options[elem.ID] = tbx.Text; break;
                     case "boolean": options[elem.ID] = (ctrl as CheckBox)?.IsChecked == true; break;
@@ -798,6 +895,27 @@ namespace PolicyPlus.WinUI3.Windows
         {
             bool enableOptions = OptEnabled.IsChecked == true;
             ToggleChildrenEnabled(OptionsPanel, enableOptions);
+
+            // If user just switched to Enabled from a non-enabled state, populate default values for decimal boxes that have not been set yet.
+            if (enableOptions && _lastLoadedState != PolicyState.Enabled)
+            {
+                try
+                {
+                    var (src, _, _) = GetCurrent();
+                    var existing = PolicyProcessing.GetPolicyOptionStates(src, _policy);
+                    foreach (var elem in _policy.RawPolicy.Elements ?? new List<PolicyElement>())
+                    {
+                        if (elem.ElementType != "decimal") continue;
+                        if (existing.ContainsKey(elem.ID)) continue; // already had a value
+                        if (_elementControls.TryGetValue(elem.ID, out var ctrl) && ctrl is NumberBox nb)
+                        {
+                            var def = GetDecimalDefault(elem.ID);
+                            nb.Value = ClampDecimal(elem, def);
+                        }
+                    }
+                }
+                catch { }
+            }
         }
 
         private static void ToggleChildrenEnabled(Panel panel, bool enabled)
