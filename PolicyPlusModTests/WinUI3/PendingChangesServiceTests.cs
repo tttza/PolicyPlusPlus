@@ -46,7 +46,7 @@ namespace PolicyPlusModTests.WinUI3
         }
 
         [Fact]
-        public void Discard_MovesToHistory_And_RemovesFromPending()
+        public void Discard_RemovesFromPending_WithoutHistory()
         {
             var svc = PendingChangesService.Instance;
             svc.Pending.Clear(); svc.History.Clear();
@@ -58,10 +58,7 @@ namespace PolicyPlusModTests.WinUI3
             svc.Discard(c1);
 
             Assert.Single(svc.Pending);
-            // One history entry added for discarded item
-            var discarded = svc.History.Where(h => h.PolicyId == "ID1").ToList();
-            Assert.Single(discarded);
-            Assert.Equal("Discarded", discarded[0].Result);
+            Assert.Empty(svc.History); // no history entry now
         }
 
         [Fact]
@@ -82,7 +79,7 @@ namespace PolicyPlusModTests.WinUI3
         }
 
         [Fact]
-        public void DiscardAll_ClearsPending_And_AddsHistory()
+        public void DiscardAll_ClearsPending_WithoutHistory()
         {
             var svc = PendingChangesService.Instance;
             svc.Pending.Clear(); svc.History.Clear();
@@ -93,9 +90,7 @@ namespace PolicyPlusModTests.WinUI3
             svc.DiscardAll();
 
             Assert.Empty(svc.Pending);
-            var ids = svc.History.Select(h => h.PolicyId).OrderBy(x => x).ToArray();
-            Assert.Equal(new[] { "ID1", "ID2" }, ids);
-            Assert.All(svc.History, h => Assert.Equal("Discarded", h.Result));
+            Assert.Empty(svc.History); // no discarded history entries
         }
     }
 }

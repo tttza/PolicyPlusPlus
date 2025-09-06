@@ -26,6 +26,12 @@ namespace PolicyPlus.WinUI3.Services
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
+        private static readonly JsonSerializerOptions _historyJson = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
         private SettingsService() { }
 
         public void Initialize()
@@ -277,7 +283,7 @@ namespace PolicyPlus.WinUI3.Services
                     if (File.Exists(HistoryPath))
                     {
                         var txt = File.ReadAllText(HistoryPath);
-                        var list = JsonSerializer.Deserialize(txt, AppJsonContext.Default.ListHistoryRecord);
+                        var list = JsonSerializer.Deserialize<List<HistoryRecord>>(txt, _historyJson);
                         return list ?? new List<HistoryRecord>();
                     }
                 }
@@ -292,7 +298,7 @@ namespace PolicyPlus.WinUI3.Services
             {
                 try
                 {
-                    File.WriteAllText(HistoryPath, JsonSerializer.Serialize(records ?? new List<HistoryRecord>(), AppJsonContext.Default.ListHistoryRecord));
+                    File.WriteAllText(HistoryPath, JsonSerializer.Serialize(records ?? new List<HistoryRecord>(), _historyJson));
                 }
                 catch { }
             }
@@ -320,22 +326,12 @@ namespace PolicyPlus.WinUI3.Services
         public bool? ShowEnglishNames { get; set; }
         public bool? SecondLanguageEnabled { get; set; }
         public string? SecondLanguage { get; set; }
-
-        // New persisted UI layout settings
         public double? CategoryPaneWidth { get; set; }
         public double? DetailPaneHeightStar { get; set; }
-
-        // Grid sort persistence
-        public string? SortColumn { get; set; } // e.g., "DisplayName", "ShortId", etc.
-        public string? SortDirection { get; set; } // "Asc" or "Desc"
-
-        // DataGrid layout
+        public string? SortColumn { get; set; }
+        public string? SortDirection { get; set; }
         public List<ColumnState>? ColumnStates { get; set; }
-
-        // Limit unfiltered list size option
         public bool? LimitUnfilteredTo1000 { get; set; }
-
-        // Multi book-mark lists (key = list name, value = ids)
         public Dictionary<string, List<string>>? BookmarkLists { get; set; }
         public string? ActiveBookmarkList { get; set; }
     }
@@ -343,15 +339,15 @@ namespace PolicyPlus.WinUI3.Services
     public class ColumnsOptions
     {
         public bool ShowId { get; set; } = true;
-        public bool ShowCategory { get; set; } = false; // Parent Category
-        public bool ShowTopCategory { get; set; } = false; // Top Category
-        public bool ShowCategoryPath { get; set; } = false; // Full path
+        public bool ShowCategory { get; set; } = false;
+        public bool ShowTopCategory { get; set; } = false;
+        public bool ShowCategoryPath { get; set; } = false;
         public bool ShowApplies { get; set; } = false;
         public bool ShowSupported { get; set; } = false;
         public bool ShowUserState { get; set; } = true;
         public bool ShowComputerState { get; set; } = true;
         public bool ShowEnglishName { get; set; } = true;
-        public bool ShowBookmark { get; set; } = true; // Added for bookmark column visibility
+        public bool ShowBookmark { get; set; } = true;
     }
 
     public class ColumnState
