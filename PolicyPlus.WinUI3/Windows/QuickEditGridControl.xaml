@@ -71,15 +71,15 @@
                                     <TextBlock Grid.Column="0" Text="{Binding Policy.DisplayName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" DoubleTapped="NameText_DoubleTapped" />
                                     <TextBlock Grid.Column="2" Text="{Binding IdTail}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" />
 
-                                    <!-- User State -->
-                                    <ComboBox Grid.Column="4" Width="150" SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}" VerticalAlignment="Center">
+                                    <!-- User State (hidden if unsupported) -->
+                                    <ComboBox Grid.Column="4" Width="150" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}" VerticalAlignment="Center">
                                         <ComboBoxItem Content="Not Configured" />
                                         <ComboBoxItem Content="Enabled" />
                                         <ComboBoxItem Content="Disabled" />
                                     </ComboBox>
 
-                                    <!-- User Options -->
-                                    <ScrollViewer Grid.Column="6" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                    <!-- User Options (hidden if unsupported) -->
+                                    <ScrollViewer Grid.Column="6" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                                         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                             <ComboBox MinWidth="170" Width="280" Visibility="{Binding HasEnumElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" SelectedIndex="{Binding UserEnumIndex, Mode=TwoWay}" ItemsSource="{Binding EnumChoices}"/>
                                             <CheckBox Content="Bool" Visibility="{Binding HasBooleanElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}" IsChecked="{Binding UserBool, Mode=TwoWay}"/>
@@ -90,15 +90,15 @@
                                         </StackPanel>
                                     </ScrollViewer>
 
-                                    <!-- Computer State -->
-                                    <ComboBox Grid.Column="8" Width="150" SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}" VerticalAlignment="Center">
+                                    <!-- Computer State (hidden if unsupported) -->
+                                    <ComboBox Grid.Column="8" Width="150" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}" VerticalAlignment="Center">
                                         <ComboBoxItem Content="Not Configured" />
                                         <ComboBoxItem Content="Enabled" />
                                         <ComboBoxItem Content="Disabled" />
                                     </ComboBox>
 
-                                    <!-- Computer Options -->
-                                    <ScrollViewer Grid.Column="10" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                    <!-- Computer Options (hidden if unsupported) -->
+                                    <ScrollViewer Grid.Column="10" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                                         <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                             <ComboBox MinWidth="170" Width="280" Visibility="{Binding HasEnumElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" SelectedIndex="{Binding ComputerEnumIndex, Mode=TwoWay}" ItemsSource="{Binding EnumChoices}"/>
                                             <CheckBox Content="Bool" Visibility="{Binding HasBooleanElement, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}" IsChecked="{Binding ComputerBool, Mode=TwoWay}"/>
