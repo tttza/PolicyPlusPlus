@@ -18,6 +18,7 @@ namespace PolicyPlus.WinUI3.Services
         private string SettingsPath => Path.Combine(_baseDir, "settings.json");
         private string HistoryPath => Path.Combine(_baseDir, "history.json");
         private string SearchStatsPath => Path.Combine(_baseDir, "searchstats.json");
+        private string BookmarkPath => Path.Combine(_baseDir, "bookmarks.json");
         public string CacheDirectory => Path.Combine(_baseDir, "Cache");
 
         private JsonSerializerOptions _json = new JsonSerializerOptions
@@ -87,36 +88,45 @@ namespace PolicyPlus.WinUI3.Services
             }
         }
 
-        // Bookmark helpers (multi-list aware)
+        // Bookmarks (separate file, no legacy migration needed)
         public Dictionary<string, List<string>> LoadBookmarkLists()
         {
-            try
-            {
-                var s = LoadSettings();
-                return s.BookmarkLists ?? new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-            }
-            catch { return new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase); }
+            var (lists, _) = LoadBookmarkListsWithActive();
+            return lists;
         }
 
         public (Dictionary<string, List<string>> lists, string active) LoadBookmarkListsWithActive()
         {
-            var lists = LoadBookmarkLists();
-            if (lists.Count == 0) lists["default"] = new List<string>();
-            var s = LoadSettings();
-            var active = string.IsNullOrEmpty(s.ActiveBookmarkList) || !lists.ContainsKey(s.ActiveBookmarkList!) ? "default" : s.ActiveBookmarkList!;
-            return (lists, active);
+            lock (_gate)
+            {
+                try
+                {
+                    if (File.Exists(BookmarkPath))
+                    {
+                        var txt = File.ReadAllText(BookmarkPath);
+                        var data = JsonSerializer.Deserialize(txt, AppJsonContext.Default.BookmarkStore) ?? new BookmarkStore();
+                        var lists = data.Lists ?? new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                        if (lists.Count == 0) lists["default"] = new List<string>();
+                        var active = string.IsNullOrEmpty(data.Active) || !lists.ContainsKey(data.Active) ? "default" : data.Active;
+                        return (lists, active);
+                    }
+                }
+                catch { }
+                return (new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) { ["default"] = new List<string>() }, "default");
+            }
         }
 
         public void SaveBookmarkLists(Dictionary<string, List<string>> lists, string active)
         {
-            try
+            lock (_gate)
             {
-                var s = LoadSettings();
-                s.BookmarkLists = lists;
-                s.ActiveBookmarkList = active;
-                SaveSettings(s);
+                try
+                {
+                    var data = new BookmarkStore { Lists = lists, Active = active };
+                    File.WriteAllText(BookmarkPath, JsonSerializer.Serialize(data, AppJsonContext.Default.BookmarkStore));
+                }
+                catch { }
             }
-            catch { }
         }
 
         public void UpdateTheme(string theme)
@@ -239,7 +249,7 @@ namespace PolicyPlus.WinUI3.Services
         {
             var s = LoadSettings();
             s.SortColumn = column;
-            s.SortDirection = direction; // "Asc" or "Desc" or null
+            s.SortDirection = direction;
             SaveSettings(s);
         }
 
@@ -311,7 +321,6 @@ namespace PolicyPlus.WinUI3.Services
             SaveSettings(s);
         }
 
-        // NEW: Persist last used filter states
         public void UpdateConfiguredOnly(bool configuredOnly)
         {
             var s = LoadSettings();
@@ -347,9 +356,6 @@ namespace PolicyPlus.WinUI3.Services
         public string? SortDirection { get; set; }
         public List<ColumnState>? ColumnStates { get; set; }
         public bool? LimitUnfilteredTo1000 { get; set; }
-        public Dictionary<string, List<string>>? BookmarkLists { get; set; }
-        public string? ActiveBookmarkList { get; set; }
-        // NEW persisted filter flags
         public bool? ConfiguredOnly { get; set; }
         public bool? BookmarksOnly { get; set; }
     }
@@ -390,5 +396,11 @@ namespace PolicyPlus.WinUI3.Services
     {
         public Dictionary<string, int>? Counts { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, DateTime>? LastUsed { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    public class BookmarkStore
+    {
+        public Dictionary<string, List<string>>? Lists { get; set; }
+        public string? Active { get; set; }
     }
 }

@@ -48,7 +48,7 @@ namespace PolicyPlus.WinUI3.Serialization
     [JsonSerializable(typeof(HostRequestOpenRegedit))]
     [JsonSerializable(typeof(HostRequestShutdown))]
     [JsonSerializable(typeof(HostResponse))]
-    [JsonSerializable(typeof(Dictionary<string, List<string>>))] // bookmark lists
     [JsonSerializable(typeof(List<string>))]
+    [JsonSerializable(typeof(BookmarkStore))]
     internal partial class AppJsonContext : System.Text.Json.Serialization.JsonSerializerContext { }
 }
