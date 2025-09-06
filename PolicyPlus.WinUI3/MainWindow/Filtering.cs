@@ -246,6 +246,19 @@ namespace PolicyPlus.WinUI3
             return FilterDecisionEngine.Evaluate(hasCategory, hasSearch, _configuredOnly, _bookmarksOnly, _limitUnfilteredTo1000);
         }
 
+        private IEnumerable<PolicyPlusPolicy> ApplyBookmarkFilterIfNeeded(IEnumerable<PolicyPlusPolicy> seq)
+        {
+            if (!_bookmarksOnly) return seq;
+            try
+            {
+                var ids = BookmarkService.Instance.ActiveIds;
+                if (ids == null || ids.Count == 0) return Array.Empty<PolicyPlusPolicy>();
+                var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
+                return seq.Where(p => set.Contains(p.UniqueID));
+            }
+            catch { return seq; }
+        }
+
         private void ApplyFiltersAndBind(string query = "", PolicyPlusCategory? category = null)
         {
             if (PolicyList == null || PolicyCount == null) return;
@@ -254,6 +267,7 @@ namespace PolicyPlus.WinUI3
             UpdateSearchPlaceholder();
             var decision = EvaluateDecision(query);
             IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(includeSubcategories: decision.IncludeSubcategoryPolicies);
+            seq = ApplyBookmarkFilterIfNeeded(seq); // NEW: restrict by bookmarks
             if (!string.IsNullOrWhiteSpace(query)) { seq = MatchPolicies(query, seq, out _); }
             BindSequenceEnhanced(seq, decision);
             RestorePositionOrSelection();
@@ -386,6 +400,7 @@ namespace PolicyPlus.WinUI3
                 try
                 {
                     var baseSeq = BaseSequenceForFilters(snap);
+                    baseSeq = ApplyBookmarkFilterIfNeeded(baseSeq); // NEW: restrict by bookmarks
                     matches = MatchPolicies(q, baseSeq, out var allowedSet);
                     suggestions = BuildSuggestions(q, allowedSet);
                 }
@@ -439,7 +454,7 @@ namespace PolicyPlus.WinUI3
             {
                 try { await System.Threading.Tasks.Task.Delay(60, token); } catch { return; }
                 if (token.IsCancellationRequested) { Finish(); return; }
-                List<PolicyPlusPolicy> items; try { var snap = new FilterSnapshot(applies, category, decision.IncludeSubcategoryPolicies, configuredOnly, comp, user); items = BaseSequenceForFilters(snap).ToList(); } catch { items = new List<PolicyPlusPolicy>(); }
+                List<PolicyPlusPolicy> items; try { var snap = new FilterSnapshot(applies, category, decision.IncludeSubcategoryPolicies, configuredOnly, comp, user); items = ApplyBookmarkFilterIfNeeded(BaseSequenceForFilters(snap)).ToList(); } catch { items = new List<PolicyPlusPolicy>(); }
                 if (token.IsCancellationRequested) { Finish(); return; }
                 DispatcherQueue.TryEnqueue(() =>
                 {
@@ -452,6 +467,6 @@ namespace PolicyPlus.WinUI3
         }
 
         private void RunImmediateFilterAndBind()
-        { try { var decision = EvaluateDecision(); var seq = BaseSequenceForFilters(includeSubcategories: decision.IncludeSubcategoryPolicies); BindSequenceEnhanced(seq, decision); UpdateSearchClearButtonVisibility(); ShowBaselineSuggestions(); } catch { } }
+        { try { var decision = EvaluateDecision(); var seq = BaseSequenceForFilters(includeSubcategories: decision.IncludeSubcategoryPolicies); seq = ApplyBookmarkFilterIfNeeded(seq); BindSequenceEnhanced(seq, decision); UpdateSearchClearButtonVisibility(); ShowBaselineSuggestions(); } catch { } }
     }
 }
