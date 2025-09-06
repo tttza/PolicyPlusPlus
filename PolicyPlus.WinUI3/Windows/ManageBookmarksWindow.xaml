@@ -60,7 +60,7 @@
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
-          <TextBox x:Name="NameBox" Grid.Column="0" PlaceholderText="Type new list name or edit selected then Rename" MinWidth="2   /20" HorizontalAlignment="Stretch" />
+          <TextBox x:Name="NameBox" Grid.Column="0" PlaceholderText="List name" MinWidth="220" HorizontalAlignment="Stretch" />
           <Button x:Name="AddBtn" Grid.Column="1" ToolTipService.ToolTip="Add new list" MinWidth="72">
             <StackPanel Orientation="Horizontal" Spacing="4">
               <FontIcon Glyph="&#xE710;" />

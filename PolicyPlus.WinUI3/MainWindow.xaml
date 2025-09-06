@@ -282,7 +282,8 @@
                                     <datagrid:DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid HorizontalAlignment="Center">
-                                                <Button Padding="2" MinWidth="0" Background="Transparent" Click="BookmarkToggle_Click" DoubleTapped="BookmarkToggle_DoubleTapped" Tag="{Binding Policy}" ToolTipService.ToolTip="Toggle bookmark">
+                                                <!-- 枠を非表示にするため BorderThickness/BorderBrush 追加 -->
+                                                <Button Padding="2" MinWidth="0" Background="Transparent" BorderThickness="0" BorderBrush="Transparent" IsTabStop="False" Click="BookmarkToggle_Click" DoubleTapped="BookmarkToggle_DoubleTapped" Tag="{Binding Policy}" ToolTipService.ToolTip="Toggle bookmark">
                                                     <FontIcon x:Name="BookmarkGlyph" Glyph="&#xE735;" FontSize="14" Foreground="Gold"  MinWidth="0" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="{Binding IsBookmarked, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Opacity}"/>
                                                 </Button>
                                             </Grid>
