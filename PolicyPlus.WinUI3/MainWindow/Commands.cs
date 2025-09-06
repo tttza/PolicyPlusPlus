@@ -135,11 +135,11 @@ namespace PolicyPlus.WinUI3
         }
 
         private void ChkBookmarksOnly_Checked(object sender, RoutedEventArgs e)
-        { _bookmarksOnly = (sender as CheckBox)?.IsChecked == true; RebindConsideringAsync(SearchBox?.Text ?? string.Empty); }
+        { if (_suppressBookmarksOnlyChanged) return; _bookmarksOnly = (sender as CheckBox)?.IsChecked == true; try { SettingsService.Instance.UpdateBookmarksOnly(_bookmarksOnly); } catch { } RebindConsideringAsync(SearchBox?.Text ?? string.Empty); }
 
         // Menu: Show only bookmarks
         private void BookmarkFilterMenu_Click(object sender, RoutedEventArgs e)
-        { _bookmarksOnly = !_bookmarksOnly; try { if (ChkBookmarksOnly != null) ChkBookmarksOnly.IsChecked = _bookmarksOnly; } catch { } RebindConsideringAsync(SearchBox?.Text ?? string.Empty); }
+        { _bookmarksOnly = !_bookmarksOnly; try { if (ChkBookmarksOnly != null) { _suppressBookmarksOnlyChanged = true; ChkBookmarksOnly.IsChecked = _bookmarksOnly; _suppressBookmarksOnlyChanged = false; } SettingsService.Instance.UpdateBookmarksOnly(_bookmarksOnly); } catch { } RebindConsideringAsync(SearchBox?.Text ?? string.Empty); }
 
         // Menu: Manage lists (placeholder)
         private void BookmarkManageMenu_Click(object sender, RoutedEventArgs e)

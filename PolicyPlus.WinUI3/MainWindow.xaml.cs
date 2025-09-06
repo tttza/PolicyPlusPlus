@@ -59,6 +59,8 @@ namespace PolicyPlus.WinUI3
         private IPolicySource? _userSource;
         private bool _configuredOnly = false;
         private bool _limitUnfilteredTo1000 = true;
+        private bool _bookmarksOnly = false; // persisted flag (moved from Filtering.cs usage)
+        private bool _suppressBookmarksOnlyChanged; // suppress persistence during load
 
         // Map of visible policy id -> row for fast partial updates
         private readonly Dictionary<string, PolicyListRow> _rowByPolicyId = new(StringComparer.OrdinalIgnoreCase);
@@ -205,6 +207,16 @@ namespace PolicyPlus.WinUI3
 
                 _hideEmptyCategories = s.HideEmptyCategories ?? true;
                 try { ToggleHideEmptyMenu.IsChecked = _hideEmptyCategories; } catch { }
+
+                // Restore persisted filter flags
+                _configuredOnly = s.ConfiguredOnly ?? false;
+                _bookmarksOnly = s.BookmarksOnly ?? false;
+                try {
+                    if (ChkConfiguredOnly != null) { _suppressConfiguredOnlyChanged = true; ChkConfiguredOnly.IsChecked = _configuredOnly; _suppressConfiguredOnlyChanged = false; }
+                    if (ChkBookmarksOnly != null) { _suppressBookmarksOnlyChanged = true; ChkBookmarksOnly.IsChecked = _bookmarksOnly; _suppressBookmarksOnlyChanged = false; }
+                } catch { }
+
+                try { UpdateSearchPlaceholder(); } catch { }
 
                 // Apply persisted detail pane ratio before showing
                 ApplySavedDetailPaneRatioIfAny();
@@ -887,12 +899,19 @@ namespace PolicyPlus.WinUI3
         private void BtnClearAll_Click(object sender, RoutedEventArgs e)
         {
             _navTyping = false;
-            SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; if (ChkConfiguredOnly != null) { _suppressConfiguredOnlyChanged = true; ChkConfiguredOnly.IsChecked = false; _suppressConfiguredOnlyChanged = false; } UpdateSearchPlaceholder(); RunAsyncFilterAndBind();
+            SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; _bookmarksOnly = false; 
+            if (ChkConfiguredOnly != null) { _suppressConfiguredOnlyChanged = true; ChkConfiguredOnly.IsChecked = false; _suppressConfiguredOnlyChanged = false; }
+            if (ChkBookmarksOnly != null) { _suppressBookmarksOnlyChanged = true; ChkBookmarksOnly.IsChecked = false; _suppressBookmarksOnlyChanged = false; }
+            try { SettingsService.Instance.UpdateConfiguredOnly(false); } catch { }
+            try { SettingsService.Instance.UpdateBookmarksOnly(false); } catch { }
+            UpdateSearchPlaceholder(); RunAsyncFilterAndBind();
             UpdateNavButtons();
         }
 
         private void ChkConfiguredOnly_Checked(object sender, RoutedEventArgs e)
-        { if (_suppressConfiguredOnlyChanged) return; _configuredOnly = ChkConfiguredOnly?.IsChecked == true; _navTyping = false; RebindConsideringAsync(SearchBox?.Text ?? string.Empty); UpdateNavButtons(); }
+        {
+            if (_suppressConfiguredOnlyChanged) return; _configuredOnly = ChkConfiguredOnly?.IsChecked == true; try { SettingsService.Instance.UpdateConfiguredOnly(_configuredOnly); } catch { } _navTyping = false; RebindConsideringAsync(SearchBox?.Text ?? string.Empty); UpdateNavButtons();
+        }
 
         private void ChkUseTempPol_Checked(object sender, RoutedEventArgs e)
         {
@@ -1482,5 +1501,7 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
         }
+
+        // (ChkBookmarksOnly_Checked handled in Commands.cs partial class)
     }
 }

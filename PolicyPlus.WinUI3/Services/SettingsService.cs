@@ -310,6 +310,21 @@ namespace PolicyPlus.WinUI3.Services
             s.LimitUnfilteredTo1000 = enabled;
             SaveSettings(s);
         }
+
+        // NEW: Persist last used filter states
+        public void UpdateConfiguredOnly(bool configuredOnly)
+        {
+            var s = LoadSettings();
+            s.ConfiguredOnly = configuredOnly;
+            SaveSettings(s);
+        }
+
+        public void UpdateBookmarksOnly(bool bookmarksOnly)
+        {
+            var s = LoadSettings();
+            s.BookmarksOnly = bookmarksOnly;
+            SaveSettings(s);
+        }
     }
 
     public class AppSettings
@@ -334,6 +349,9 @@ namespace PolicyPlus.WinUI3.Services
         public bool? LimitUnfilteredTo1000 { get; set; }
         public Dictionary<string, List<string>>? BookmarkLists { get; set; }
         public string? ActiveBookmarkList { get; set; }
+        // NEW persisted filter flags
+        public bool? ConfiguredOnly { get; set; }
+        public bool? BookmarksOnly { get; set; }
     }
 
     public class ColumnsOptions
