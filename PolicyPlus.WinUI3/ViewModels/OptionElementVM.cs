@@ -20,6 +20,13 @@ namespace PolicyPlus.WinUI3.ViewModels
         public string DisplayName { get; }
         public PolicyElement RawElement { get; }
 
+        // Defaults captured from presentation (if any)
+        private readonly bool? _defaultBool;
+        private readonly string? _defaultText;
+        private readonly uint? _defaultDecimal;
+        private readonly uint _decimalIncrement;
+        private readonly int _textMaxLength;
+
         public List<string> Choices { get; } = new();
         private int _userEnumIndex = -1; public int UserEnumIndex { get => _userEnumIndex; set { if (_userEnumIndex != value) { _userEnumIndex = value; OnChanged(nameof(UserEnumIndex)); if (Parent.UserState == QuickEditState.Enabled) Parent.QueuePending("User"); } } }
         private int _computerEnumIndex = -1; public int ComputerEnumIndex { get => _computerEnumIndex; set { if (_computerEnumIndex != value) { _computerEnumIndex = value; OnChanged(nameof(ComputerEnumIndex)); if (Parent.ComputerState == QuickEditState.Enabled) Parent.QueuePending("Computer"); } } }
@@ -39,6 +46,8 @@ namespace PolicyPlus.WinUI3.ViewModels
         public double ComputerNumberDouble { get => _computerNumber.HasValue ? _computerNumber.Value : double.NaN; set { uint v = double.IsNaN(value) ? 0u : (uint)Math.Max(0, Math.Round(value)); if (_computerNumber != v) { _computerNumber = v; OnChanged(nameof(ComputerNumber)); OnChanged(nameof(ComputerNumberDouble)); if (Parent.ComputerState == QuickEditState.Enabled) Parent.QueuePending("Computer"); } } }
         public double DecimalMinDouble => DecimalMin;
         public double DecimalMaxDouble => DecimalMax;
+        public double DecimalIncrementDouble => _decimalIncrement == 0 ? 1 : _decimalIncrement; // for binding to NumberBox.SmallChange
+        public int TextMaxLength => _textMaxLength <= 0 ? int.MaxValue : _textMaxLength;
 
         public List<string> UserListItems { get; private set; } = new();
         public List<string> ComputerListItems { get; private set; } = new();
@@ -58,11 +67,14 @@ namespace PolicyPlus.WinUI3.ViewModels
         public bool IsMultiText => Type == OptionElementType.MultiText;
 
         internal OptionElementVM(QuickEditRow parent, PolicyElement element, OptionElementType type, string displayName,
-            uint decMin = 0, uint decMax = 0, uint decDefault = 0)
+            uint decMin = 0, uint decMax = 0, uint decDefault = 0, uint decIncrement = 1,
+            bool? defaultBool = null, string? defaultText = null, int textMaxLength = 0)
         {
             Parent = parent; RawElement = element; Type = type; Id = element.ID; DisplayName = displayName;
             if (type == OptionElementType.Decimal)
-            { DecimalMin = decMin; DecimalMax = decMax; DecimalDefault = decDefault; }
+            { DecimalMin = decMin; DecimalMax = decMax; DecimalDefault = decDefault; _defaultDecimal = decDefault; _decimalIncrement = decIncrement; }
+            if (type == OptionElementType.Boolean) _defaultBool = defaultBool;
+            if (type == OptionElementType.Text) { _defaultText = defaultText; _textMaxLength = textMaxLength; }
         }
 
         public void ReplaceList(bool isUser, List<string> items)
@@ -171,11 +183,29 @@ namespace PolicyPlus.WinUI3.ViewModels
             {
                 if (_userEnumIndex == -1 && Choices.Count > 0) _userEnumIndex = 0;
                 if (_computerEnumIndex == -1 && Choices.Count > 0) _computerEnumIndex = 0;
+                OnChanged(nameof(UserEnumIndex)); OnChanged(nameof(ComputerEnumIndex));
             }
             if (Type == OptionElementType.Decimal)
             {
-                if (!_userNumber.HasValue) _userNumber = DecimalDefault; OnChanged(nameof(UserNumber)); OnChanged(nameof(UserNumberDouble));
-                if (!_computerNumber.HasValue) _computerNumber = DecimalDefault; OnChanged(nameof(ComputerNumber)); OnChanged(nameof(ComputerNumberDouble));
+                if (!_userNumber.HasValue) _userNumber = _defaultDecimal ?? DecimalDefault; OnChanged(nameof(UserNumber)); OnChanged(nameof(UserNumberDouble));
+                if (!_computerNumber.HasValue) _computerNumber = _defaultDecimal ?? DecimalDefault; OnChanged(nameof(ComputerNumber)); OnChanged(nameof(ComputerNumberDouble));
+            }
+            if (Type == OptionElementType.Boolean)
+            {
+                if (_defaultBool.HasValue)
+                {
+                    // Only apply if not already set by load
+                    if (!_userBool) { _userBool = _defaultBool.Value; OnChanged(nameof(UserBool)); }
+                    if (!_computerBool) { _computerBool = _defaultBool.Value; OnChanged(nameof(ComputerBool)); }
+                }
+            }
+            if (Type == OptionElementType.Text)
+            {
+                if (!string.IsNullOrEmpty(_defaultText))
+                {
+                    if (string.IsNullOrEmpty(_userText)) { _userText = _defaultText; OnChanged(nameof(UserText)); }
+                    if (string.IsNullOrEmpty(_computerText)) { _computerText = _defaultText; OnChanged(nameof(ComputerText)); }
+                }
             }
         }
     }

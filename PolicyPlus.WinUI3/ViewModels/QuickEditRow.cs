@@ -164,10 +164,23 @@ namespace PolicyPlus.WinUI3.ViewModels
                         else if (e is ListPolicyElement le && !le.UserProvidesNames)
                         { vm = new OptionElementVM(this, e, OptionElementType.List, display); }
                         else if (e is BooleanPolicyElement)
-                        { vm = new OptionElementVM(this, e, OptionElementType.Boolean, display); }
+                        {
+                            // Look up defaultChecked from presentation if available
+                            bool? def = null;
+                            try
+                            {
+                                if (policy.Presentation != null)
+                                {
+                                    var pe = policy.Presentation.Elements.FirstOrDefault(p => p.ElementType == "checkBox" && string.Equals(p.ID, e.ID, StringComparison.OrdinalIgnoreCase)) as CheckBoxPresentationElement;
+                                    if (pe != null) def = pe.DefaultState;
+                                }
+                            }
+                            catch { }
+                            vm = new OptionElementVM(this, e, OptionElementType.Boolean, display, defaultBool: def);
+                        }
                         else if (e is DecimalPolicyElement de)
                         {
-                            uint min = de.Minimum; uint max = de.Maximum; uint def = de.Minimum;
+                            uint min = de.Minimum; uint max = de.Maximum; uint def = de.Minimum; uint inc = 1;
                             try
                             {
                                 if (policy.Presentation != null)
@@ -175,16 +188,28 @@ namespace PolicyPlus.WinUI3.ViewModels
                                     foreach (var pe in policy.Presentation.Elements)
                                     {
                                         if (pe.ElementType == "decimalTextBox" && string.Equals(pe.ID, de.ID, StringComparison.OrdinalIgnoreCase) && pe is NumericBoxPresentationElement nbpe)
-                                        { def = nbpe.DefaultValue; break; }
+                                        { def = nbpe.DefaultValue; inc = nbpe.SpinnerIncrement; break; }
                                     }
                                 }
                             }
                             catch { }
                             if (def < min) def = min; if (def > max) def = max;
-                            vm = new OptionElementVM(this, e, OptionElementType.Decimal, display, min, max, def);
+                            vm = new OptionElementVM(this, e, OptionElementType.Decimal, display, min, max, def, inc);
                         }
-                        else if (e is TextPolicyElement)
-                        { vm = new OptionElementVM(this, e, OptionElementType.Text, display); }
+                        else if (e is TextPolicyElement te)
+                        {
+                            string? defText = null; int maxLen = te.MaxLength;
+                            try
+                            {
+                                if (policy.Presentation != null)
+                                {
+                                    var pe = policy.Presentation.Elements.FirstOrDefault(p => p.ElementType == "textBox" && string.Equals(p.ID, te.ID, StringComparison.OrdinalIgnoreCase)) as TextBoxPresentationElement;
+                                    if (pe != null) defText = pe.DefaultValue;
+                                }
+                            }
+                            catch { }
+                            vm = new OptionElementVM(this, e, OptionElementType.Text, display, defaultText: defText, textMaxLength: maxLen);
+                        }
                         else if (e is MultiTextPolicyElement)
                         { vm = new OptionElementVM(this, e, OptionElementType.MultiText, display); }
                         if (vm != null) OptionElements.Add(vm);
