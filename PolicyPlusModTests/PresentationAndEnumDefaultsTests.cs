@@ -11,11 +11,8 @@ using PolicyPlusModTests.TestHelpers; // PolAssert
 namespace PolicyPlusModTests
 {
     /// <summary>
-    /// Tests to define desired behavior for upcoming improvements:
-    ///  - Enum: index -> underlying numeric value mapping (non-sequential)
-    ///  - Checkbox: defaultChecked applied when enabling if user made no change
-    ///  - Decimal/Text: presentation defaultValue applied on enable with no user input
-    /// These may FAIL initially; they are specification tests to drive implementation.
+    /// Tests for presentation-driven defaults and enum handling.
+    /// Updated: Enum option state now returns selected index (not underlying numeric value).
     /// </summary>
     public class PresentationAndEnumDefaultsTests
     {
@@ -31,10 +28,10 @@ namespace PolicyPlusModTests
             };
         }
 
-        [Fact(DisplayName = "Enum element with non-sequential values writes underlying numeric value (index->value mapping)")]
-        public void EnumElement_NonSequential_WritesUnderlyingValue()
+        [Fact(DisplayName = "Enum element stores underlying numeric value but reports index state")]
+        public void EnumElement_NonSequential_IndexReported_NumericStored()
         {
-            // Arrange: Enum with values 10,20,30; selecting index 1 should persist 20.
+            // Arrange: Enum with values 10,20,30; selecting index 1 should persist 20, state reports 1.
             var enumElem = new EnumPolicyElement
             {
                 ID = "EnumElem",
@@ -58,13 +55,14 @@ namespace PolicyPlusModTests
             var policy = BuildPolicy(raw, "EnumNonSeq", "Enum NonSeq");
             var polFile = new PolFile();
 
-            // Act: pass enum index (1) as option value (current UI behavior). Desired: underlying numeric 20 written.
+            // Act
             PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "EnumElem", 1 } });
 
-            // Assert (spec): DWORD 20 should be stored.
+            // Assert registry underlying numeric value stored
             PolAssert.HasDwordValue(polFile, raw.RegistryKey, raw.RegistryValue, 20u);
+            // Assert option state reports index
             var optStates = PolicyProcessing.GetPolicyOptionStates(polFile, policy);
-            Assert.Equal(20u, (uint)optStates["EnumElem"]);
+            Assert.Equal(1, (int)optStates["EnumElem"]);
         }
 
         [Fact(DisplayName = "CheckBox defaultChecked=true is applied when enabling with no explicit option value")]
@@ -104,14 +102,10 @@ namespace PolicyPlusModTests
             var polFile = new PolFile();
             var edit = new EditSettingTestable();
             edit.SetTestContext(policy, AdmxPolicySection.Machine, polFile);
-            // Reset to Not Configured (SetTestContext forces Enabled) then re-enable to simulate user action
-            edit.NotConfiguredOption.Checked = true;
-            edit.InvokeStateRadiosChanged();
-            edit.EnabledOption.Checked = true;
-            edit.InvokeStateRadiosChanged();
+            edit.NotConfiguredOption.Checked = true; edit.InvokeStateRadiosChanged();
+            edit.EnabledOption.Checked = true; edit.InvokeStateRadiosChanged();
             edit.ApplyToPolicySource_PublicForTest();
 
-            // Expect registry value representing TRUE (DWORD 1 typically)
             Assert.True(polFile.ContainsValue(raw.RegistryKey, raw.RegistryValue));
             var stored = polFile.GetValue(raw.RegistryKey, raw.RegistryValue);
             Assert.True(object.Equals(stored, 1u) || object.Equals(stored, "1"), $"Unexpected stored bool value: {stored}");

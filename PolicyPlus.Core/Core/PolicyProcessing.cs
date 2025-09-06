@@ -184,7 +184,7 @@ namespace PolicyPlus.Core.Core
             }
         }
 
-    private static bool ValuePresent(PolicyRegistryValue? Value, IPolicySource Source, string Key, string ValueName)
+        private static bool ValuePresent(PolicyRegistryValue? Value, IPolicySource Source, string Key, string ValueName)
         {
             if (Value == null)
                 return false;
@@ -230,7 +230,7 @@ namespace PolicyPlus.Core.Core
             }
         }
 
-    private static bool ValueListPresent(PolicyRegistrySingleList ValueList, IPolicySource Source, string Key, string ValueName)
+        private static bool ValueListPresent(PolicyRegistrySingleList ValueList, IPolicySource Source, string Key, string ValueName)
         {
             string sublistKey = string.IsNullOrEmpty(ValueList.DefaultRegistryKey) ? Key : ValueList.DefaultRegistryKey;
             return ValueList.AffectedValues.All(e =>
@@ -343,7 +343,6 @@ namespace PolicyPlus.Core.Core
                         {
                             EnumPolicyElement enumElem = (EnumPolicyElement)elem;
                             int selectedIndex = -1;
-                            uint? numericValue = null;
                             for (int n = 0, loopTo = enumElem.Items.Count - 1; n <= loopTo; n++)
                             {
                                 var enumItem = enumElem.Items[n];
@@ -352,17 +351,11 @@ namespace PolicyPlus.Core.Core
                                     if (enumItem.ValueList is null || ValueListPresent(enumItem.ValueList, PolicySource, elemKey, elem.RegistryValue))
                                     {
                                         selectedIndex = n;
-                                        if (enumItem.Value != null && enumItem.Value.RegistryType == PolicyRegistryValueType.Numeric)
-                                            numericValue = enumItem.Value.NumberValue;
                                         break;
                                     }
                                 }
                             }
-                            // Prefer returning numeric underlying value; fall back to index if not numeric
-                            if (numericValue.HasValue)
-                                state.Add(elem.ID, numericValue.Value);
-                            else
-                                state.Add(elem.ID, selectedIndex);
+                            state.Add(elem.ID, selectedIndex);
                             break;
                         }
 
@@ -420,7 +413,7 @@ namespace PolicyPlus.Core.Core
             WalkPolicyRegistry(PolicySource, Policy, true);
         }
 
-    private static List<RegistryKeyValuePair> WalkPolicyRegistry(IPolicySource PolicySource, PolicyPlusPolicy Policy, bool Forget)
+        private static List<RegistryKeyValuePair> WalkPolicyRegistry(IPolicySource PolicySource, PolicyPlusPolicy Policy, bool Forget)
         {
             var entries = new List<RegistryKeyValuePair>();
             void addReg(string Key, string Value)
@@ -562,8 +555,7 @@ namespace PolicyPlus.Core.Core
             {
                 case PolicyState.Enabled:
                     {
-                        // Only write the implicit toggle DWORD (1) when the policy has NO element collection.
-                        if (rawpol.AffectedValues.OnValue is null & !string.IsNullOrEmpty(rawpol.RegistryValue) && (rawpol.Elements == null || rawpol.Elements.Count == 0))
+                        if (rawpol.AffectedValues.OnValue is null && !string.IsNullOrEmpty(rawpol.RegistryValue))
                             PolicySource.SetValue(rawpol.RegistryKey, rawpol.RegistryValue, 1U, Microsoft.Win32.RegistryValueKind.DWord);
                         setList(rawpol.AffectedValues, rawpol.RegistryKey, rawpol.RegistryValue, true);
                         if (rawpol.Elements is object)
@@ -573,8 +565,6 @@ namespace PolicyPlus.Core.Core
                                 string elemKey = string.IsNullOrEmpty(elem.RegistryKey) ? rawpol.RegistryKey : elem.RegistryKey;
                                 if (Options == null || !Options.ContainsKey(elem.ID))
                                 {
-                                    // If no option supplied but presentation has default, attempt to apply for simple types.
-                                    // (Currently defaults are applied at UI layer; here we just skip to avoid overwriting existing values.)
                                     continue;
                                 }
                                 var optionData = Options[elem.ID];
@@ -857,6 +847,6 @@ namespace PolicyPlus.Core.Core
 
     public class Registry : RegistryKeyValuePair
     {
-    public string Type = string.Empty;
+        public string Type = string.Empty;
     }
 }
