@@ -11,10 +11,76 @@ namespace PolicyPlus.Core.Core
     {
         public static PolicyState GetPolicyState(IPolicySource PolicySource, PolicyPlusPolicy Policy)
         {
+            // New explicit On/Off priority: If explicit registry patterns (OnValue/OffValue or their lists) clearly indicate one side, decide early.
+            // This avoids heuristic noise from presence/absence of unrelated element values.
+            var rawpol = Policy.RawPolicy;
+            if (rawpol.AffectedValues == null)
+                rawpol.AffectedValues = new PolicyRegistryList();
+
+            int explicitPos = 0;
+            int explicitNeg = 0;
+            // Helper local functions use existing private static methods
+            bool rootOnMatched = false;
+            bool rootOffMatched = false;
+            if (!string.IsNullOrEmpty(rawpol.RegistryKey) && !string.IsNullOrEmpty(rawpol.RegistryValue))
+            {
+                if (rawpol.AffectedValues.OnValue is object && ValuePresent(rawpol.AffectedValues.OnValue, PolicySource, rawpol.RegistryKey, rawpol.RegistryValue))
+                    rootOnMatched = true;
+                else if (rawpol.AffectedValues.OnValueList is object && ValueListPresent(rawpol.AffectedValues.OnValueList, PolicySource, rawpol.RegistryKey, rawpol.RegistryValue))
+                    rootOnMatched = true;
+                if (rawpol.AffectedValues.OffValue is object && ValuePresent(rawpol.AffectedValues.OffValue, PolicySource, rawpol.RegistryKey, rawpol.RegistryValue))
+                    rootOffMatched = true;
+                else if (rawpol.AffectedValues.OffValueList is object && ValueListPresent(rawpol.AffectedValues.OffValueList, PolicySource, rawpol.RegistryKey, rawpol.RegistryValue))
+                    rootOffMatched = true;
+            }
+            if (rootOnMatched) explicitPos++;
+            if (rootOffMatched) explicitNeg++;
+
+            if (rawpol.Elements is object)
+            {
+                foreach (var elem in rawpol.Elements)
+                {
+                    if (elem.ElementType == "boolean")
+                    {
+                        string elemKey = string.IsNullOrEmpty(elem.RegistryKey) ? rawpol.RegistryKey : elem.RegistryKey;
+                        var be = (BooleanPolicyElement)elem;
+                        bool onMatch = false; bool offMatch = false;
+                        if (be.AffectedRegistry.OnValue is object && ValuePresent(be.AffectedRegistry.OnValue, PolicySource, elemKey, elem.RegistryValue)) onMatch = true;
+                        else if (be.AffectedRegistry.OnValueList is object && ValueListPresent(be.AffectedRegistry.OnValueList, PolicySource, elemKey, elem.RegistryValue)) onMatch = true;
+                        if (be.AffectedRegistry.OffValue is object && ValuePresent(be.AffectedRegistry.OffValue, PolicySource, elemKey, elem.RegistryValue)) offMatch = true;
+                        else if (be.AffectedRegistry.OffValueList is object && ValueListPresent(be.AffectedRegistry.OffValueList, PolicySource, elemKey, elem.RegistryValue)) offMatch = true;
+                        if (onMatch) explicitPos++;
+                        if (offMatch) explicitNeg++;
+                    }
+                    else if (elem.ElementType == "enum")
+                    {
+                        // Enum: if any item value matches treat as positive evidence; negative is inferred only if no value matches AND an Off explicit root exists (already counted) so skip explicitNeg here.
+                        string elemKey = string.IsNullOrEmpty(elem.RegistryKey) ? rawpol.RegistryKey : elem.RegistryKey;
+                        var ee = (EnumPolicyElement)elem;
+                        foreach (var item in ee.Items)
+                        {
+                            if (ValuePresent(item.Value, PolicySource, elemKey, elem.RegistryValue))
+                            {
+                                if (item.ValueList is null || ValueListPresent(item.ValueList, PolicySource, elemKey, elem.RegistryValue))
+                                {
+                                    explicitPos++;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (explicitPos > 0 && explicitNeg == 0)
+                return PolicyState.Enabled;
+            if (explicitNeg > 0 && explicitPos == 0)
+                return PolicyState.Disabled;
+            // Fall through to legacy heuristic scoring if ambiguous or no explicit matches.
+
             decimal enabledEvidence = 0m;
             decimal disabledEvidence = 0m;
             bool hasRegistryValue = false;
-            var rawpol = Policy.RawPolicy;
+            // Re-fetch rawpol reference (already have) but continue with original code below.
             if (rawpol.AffectedValues == null)
                 rawpol.AffectedValues = new PolicyRegistryList();
             void checkOneVal(PolicyRegistryValue? Value, string Key, string ValueName, ref decimal EvidenceVar)
