@@ -25,7 +25,7 @@ namespace PolicyPlus.WinUI3.Services
         public string PolicyName { get; set; } = string.Empty;
         public string Scope { get; set; } = string.Empty;
         public string Action { get; set; } = string.Empty;
-        public string Result { get; set; } = string.Empty; // Applied / Reapplied (legacy Discarded entries may still exist)
+        public string Result { get; set; } = string.Empty; // Applied / Reapplied
         public string Details { get; set; } = string.Empty;
         public string DetailsFull { get; set; } = string.Empty;
         public DateTime AppliedAt { get; set; } = DateTime.Now;
@@ -39,6 +39,8 @@ namespace PolicyPlus.WinUI3.Services
 
         public ObservableCollection<PendingChange> Pending { get; } = new();
         public ObservableCollection<HistoryRecord> History { get; } = new();
+
+        private const int MaxHistoryEntries = 100; // cap
 
         private PendingChangesService() { }
 
@@ -90,7 +92,7 @@ namespace PolicyPlus.WinUI3.Services
             }
         }
 
-        // Discard: just remove pending entries (do NOT record in history anymore)
+        // Discard: just remove pending entries
         public void Discard(params PendingChange[] changes)
         {
             if (changes == null || changes.Length == 0) return;
@@ -101,14 +103,32 @@ namespace PolicyPlus.WinUI3.Services
             }
         }
 
+        private void TrimHistoryIfNeeded()
+        {
+            // Remove oldest (by AppliedAt) until within cap
+            while (History.Count > MaxHistoryEntries)
+            {
+                var oldest = History.OrderBy(h => h.AppliedAt).FirstOrDefault();
+                if (oldest == null) break;
+                History.Remove(oldest);
+            }
+        }
+
+        public void AddHistory(HistoryRecord record)
+        {
+            if (record == null) return;
+            History.Add(record);
+            TrimHistoryIfNeeded();
+            try { SettingsService.Instance.SaveHistory(History.ToList()); } catch { }
+        }
+
         public void Applied(params PendingChange[] changes)
         {
             if (changes == null || changes.Length == 0) return;
-            bool any = false;
             foreach (var c in changes)
             {
                 if (c == null) continue;
-                History.Add(new HistoryRecord
+                var rec = new HistoryRecord
                 {
                     PolicyId = c.PolicyId,
                     PolicyName = c.PolicyName,
@@ -120,13 +140,9 @@ namespace PolicyPlus.WinUI3.Services
                     AppliedAt = DateTime.Now,
                     DesiredState = c.DesiredState,
                     Options = CloneOptions(c.Options)
-                });
+                };
+                AddHistory(rec);
                 Pending.Remove(c);
-                any = true;
-            }
-            if (any)
-            {
-                try { SettingsService.Instance.SaveHistory(History.ToList()); } catch { }
             }
         }
 

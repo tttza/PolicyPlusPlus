@@ -92,5 +92,33 @@ namespace PolicyPlusModTests.WinUI3
             Assert.Empty(svc.Pending);
             Assert.Empty(svc.History); // no discarded history entries
         }
+
+        [Fact]
+        public void History_IsTrimmed_To100()
+        {
+            var svc = PendingChangesService.Instance;
+            svc.Pending.Clear(); svc.History.Clear();
+
+            // Add 120 applied entries; expect only 100 newest remain
+            for (int i = 0; i < 120; i++)
+            {
+                var change = new PendingChange
+                {
+                    PolicyId = "ID" + i,
+                    PolicyName = "Name" + i,
+                    Scope = "User",
+                    Action = "Enable",
+                    DesiredState = PolicyState.Enabled,
+                    Details = "d" + i
+                };
+                svc.Add(change);
+                svc.Applied(change);
+            }
+
+            Assert.Equal(100, svc.History.Count);
+            // The oldest kept should be ID20 (since ID0-19 removed)
+            Assert.DoesNotContain(svc.History, h => h.PolicyId == "ID0");
+            Assert.Contains(svc.History, h => h.PolicyId == "ID119");
+        }
     }
 }
