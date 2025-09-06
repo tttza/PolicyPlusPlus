@@ -13,6 +13,7 @@ using PolicyPlus.Core.Utilities;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core; // SearchText
 using System.Threading;
+using PolicyPlus.WinUI3.Filtering; // FilterDecisionEngine
 
 namespace PolicyPlus.WinUI3
 {
@@ -246,15 +247,23 @@ namespace PolicyPlus.WinUI3
             return matched;
         }
 
+        private FilterDecisionResult EvaluateDecision(string? prospectiveSearch = null)
+        {
+            bool hasCategory = _selectedCategory != null;
+            bool hasSearch = !string.IsNullOrWhiteSpace(prospectiveSearch ?? SearchBox?.Text);
+            return FilterDecisionEngine.Evaluate(hasCategory, hasSearch, _configuredOnly, _bookmarksOnly, _limitUnfilteredTo1000);
+        }
+
         private void ApplyFiltersAndBind(string query = "", PolicyPlusCategory? category = null)
         {
             if (PolicyList == null || PolicyCount == null) return;
             if (category != null) _selectedCategory = category;
             PreserveScrollPosition();
             UpdateSearchPlaceholder();
-            IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(includeSubcategories: true);
+            var decision = EvaluateDecision(query);
+            IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(includeSubcategories: decision.IncludeSubcategoryPolicies);
             if (!string.IsNullOrWhiteSpace(query)) { seq = MatchPolicies(query, seq, out _); }
-            BindSequenceEnhanced(seq, flat: true);
+            BindSequenceEnhanced(seq, decision);
             RestorePositionOrSelection();
             if (ViewNavigationService.Instance.Current == null) MaybePushCurrentState();
         }
@@ -281,7 +290,7 @@ namespace PolicyPlus.WinUI3
             return false;
         }
 
-        private void BindSequenceEnhanced(IEnumerable<PolicyPlusPolicy> seq, bool flat)
+        private void BindSequenceEnhanced(IEnumerable<PolicyPlusPolicy> seq, FilterDecisionResult decision)
         {
             List<PolicyPlusPolicy> ordered;
             Func<PolicyPlusPolicy, object>? primary = null;
@@ -303,7 +312,7 @@ namespace PolicyPlus.WinUI3
             ordered = primary != null
                 ? (descSort ? seq.OrderByDescending(primary).ThenBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList() : seq.OrderBy(primary).ThenBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList())
                 : seq.OrderBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList();
-            if (_selectedCategory == null && _limitUnfilteredTo1000 && ordered.Count > 1000) ordered = ordered.Take(1000).ToList();
+            if (decision.Limit.HasValue && ordered.Count > decision.Limit.Value) ordered = ordered.Take(decision.Limit.Value).ToList();
             _visiblePolicies = ordered.ToList();
             bool computeStatesNow = !_navTyping || _visiblePolicies.Count <= LargeResultThreshold;
             if (computeStatesNow) { try { EnsureLocalSources(); } catch { } }
@@ -313,7 +322,7 @@ namespace PolicyPlus.WinUI3
             var rows = new List<object>();
             try
             {
-                if (_selectedCategory != null && string.IsNullOrWhiteSpace(SearchBox?.Text) && !_configuredOnly && !_bookmarksOnly)
+                if (decision.ShowSubcategoryHeaders && _selectedCategory != null)
                 {
                     foreach (var child in _selectedCategory.Children.OrderBy(c => c.DisplayName))
                     {
@@ -323,12 +332,13 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
 
+            // FlattenHierarchy currently not changing structure beyond presence of headers; future hierarchical view could be added.
             rows.AddRange(ordered.Select(p => (object)PolicyListRow.FromPolicy(p, compSrc, userSrc)));
             foreach (var obj in rows)
                 if (obj is PolicyListRow r && r.Policy != null)
                     _rowByPolicyId[r.Policy.UniqueID] = r;
             PolicyList.ItemsSource = rows;
-            PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies" + (_bookmarksOnly ? " (bookmarks)" : string.Empty);
+            PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
             TryRestoreSelectionAsync(rows);
             MaybePushCurrentState();
         }
@@ -374,11 +384,12 @@ namespace PolicyPlus.WinUI3
             try { if (SearchSpinner != null) { SearchSpinner.Visibility = Visibility.Visible; SearchSpinner.IsActive = true; } } catch { }
             var applies = _appliesFilter; var category = _selectedCategory; var configuredOnly = _configuredOnly; if (configuredOnly) { try { EnsureLocalSources(); } catch { } }
             var comp = _compSource; var user = _userSource; var bookmarksOnly = _bookmarksOnly;
+            var decision = EvaluateDecision(q);
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
                 try { await System.Threading.Tasks.Task.Delay(SearchInitialDelayMs, token); } catch { return; }
                 if (token.IsCancellationRequested) { FinishSpinner(); return; }
-                var snap = new FilterSnapshot(applies, category, true, configuredOnly, comp, user, bookmarksOnly);
+                var snap = new FilterSnapshot(applies, category, decision.IncludeSubcategoryPolicies, configuredOnly, comp, user, bookmarksOnly);
                 List<PolicyPlusPolicy> matches; List<string> suggestions;
                 try
                 {
@@ -393,14 +404,14 @@ namespace PolicyPlus.WinUI3
                     if (token.IsCancellationRequested || gen != _searchGeneration) { FinishSpinner(); return; }
                     try
                     {
-                        SearchBox.ItemsSource = suggestions; bool flat = true;
+                        SearchBox.ItemsSource = suggestions;
                         if (_navTyping && matches.Count > LargeResultThreshold)
                         {
                             var partial = matches.Take(LargeResultThreshold).ToList();
-                            BindSequenceEnhanced(partial, flat); UpdateNavButtons();
-                            ScheduleFullResultBind(gen, q, matches, flat);
+                            BindSequenceEnhanced(partial, decision); UpdateNavButtons();
+                            ScheduleFullResultBind(gen, q, matches, decision);
                         }
-                        else { BindSequenceEnhanced(matches, flat); UpdateNavButtons(); }
+                        else { BindSequenceEnhanced(matches, decision); UpdateNavButtons(); }
                     }
                     finally { FinishSpinner(); }
                 });
@@ -408,7 +419,7 @@ namespace PolicyPlus.WinUI3
             void FinishSpinner() { DispatcherQueue.TryEnqueue(() => { try { if (SearchSpinner != null) { SearchSpinner.IsActive = false; SearchSpinner.Visibility = Visibility.Collapsed; } } catch { } }); }
         }
 
-        private void ScheduleFullResultBind(int gen, string q, List<PolicyPlusPolicy> fullMatches, bool flat)
+        private void ScheduleFullResultBind(int gen, string q, List<PolicyPlusPolicy> fullMatches, FilterDecisionResult decision)
         {
             try
             {
@@ -419,11 +430,11 @@ namespace PolicyPlus.WinUI3
                     if (gen != _searchGeneration) return;
                     var current = (SearchBox?.Text ?? string.Empty).Trim();
                     if (!string.Equals(current, q, StringComparison.Ordinal)) return;
-                    try { BindSequenceEnhanced(fullMatches, flat); UpdateNavButtons(); } catch { }
+                    try { BindSequenceEnhanced(fullMatches, decision); UpdateNavButtons(); } catch { }
                 };
                 timer.Start();
             }
-            catch { try { BindSequenceEnhanced(fullMatches, flat); UpdateNavButtons(); } catch { } }
+            catch { try { BindSequenceEnhanced(fullMatches, decision); UpdateNavButtons(); } catch { } }
         }
 
         private void RunAsyncFilterAndBind()
@@ -431,17 +442,17 @@ namespace PolicyPlus.WinUI3
             _searchDebounceCts?.Cancel(); _searchDebounceCts = new System.Threading.CancellationTokenSource(); var token = _searchDebounceCts.Token; try { PreserveScrollPosition(); } catch { }
             try { if (SearchSpinner != null) { SearchSpinner.Visibility = Visibility.Visible; SearchSpinner.IsActive = true; } } catch { }
             var applies = _appliesFilter; var category = _selectedCategory; var configuredOnly = _configuredOnly; if (configuredOnly) { try { EnsureLocalSources(); } catch { } }
-            var comp = _compSource; var user = _userSource; var bookmarksOnly = _bookmarksOnly;
+            var comp = _compSource; var user = _userSource; var bookmarksOnly = _bookmarksOnly; var decision = EvaluateDecision();
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
                 try { await System.Threading.Tasks.Task.Delay(60, token); } catch { return; }
                 if (token.IsCancellationRequested) { Finish(); return; }
-                List<PolicyPlusPolicy> items; try { var snap = new FilterSnapshot(applies, category, true, configuredOnly, comp, user, bookmarksOnly); items = BaseSequenceForFilters(snap).ToList(); } catch { items = new List<PolicyPlusPolicy>(); }
+                List<PolicyPlusPolicy> items; try { var snap = new FilterSnapshot(applies, category, decision.IncludeSubcategoryPolicies, configuredOnly, comp, user, bookmarksOnly); items = BaseSequenceForFilters(snap).ToList(); } catch { items = new List<PolicyPlusPolicy>(); }
                 if (token.IsCancellationRequested) { Finish(); return; }
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     if (token.IsCancellationRequested) { Finish(); return; }
-                    try { BindSequenceEnhanced(items, flat: true); RestorePositionOrSelection(); UpdateNavButtons(); if (string.IsNullOrWhiteSpace(SearchBox?.Text)) { ShowBaselineSuggestions(); } }
+                    try { BindSequenceEnhanced(items, decision); RestorePositionOrSelection(); UpdateNavButtons(); if (string.IsNullOrWhiteSpace(SearchBox?.Text)) { ShowBaselineSuggestions(); } }
                     finally { Finish(); }
                 });
             });
@@ -449,6 +460,6 @@ namespace PolicyPlus.WinUI3
         }
 
         private void RunImmediateFilterAndBind()
-        { try { var seq = BaseSequenceForFilters(includeSubcategories: true); BindSequenceEnhanced(seq, flat: true); UpdateSearchClearButtonVisibility(); ShowBaselineSuggestions(); } catch { } }
+        { try { var decision = EvaluateDecision(); var seq = BaseSequenceForFilters(includeSubcategories: decision.IncludeSubcategoryPolicies); BindSequenceEnhanced(seq, decision); UpdateSearchClearButtonVisibility(); ShowBaselineSuggestions(); } catch { } }
     }
 }
