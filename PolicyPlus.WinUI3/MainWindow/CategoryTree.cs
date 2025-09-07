@@ -13,6 +13,15 @@ namespace PolicyPlus.WinUI3
 {
     public sealed partial class MainWindow
     {
+        // Added fields moved from main partial during refactor
+        private string? _recentDoubleTapCategoryId;
+        private DateTime _recentDoubleTapAt;
+        private string? _lastInvokedCatId;
+        private DateTime _lastInvokedAt;
+        private bool _lastTapWasExpanded;
+        private string? _lastTapCatId;
+        private DateTime _lastTapAt;
+
         private void CategoryTree_ItemInvoked(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewItemInvokedEventArgs args)
         {
             var cat = args.InvokedItem as PolicyPlusCategory;

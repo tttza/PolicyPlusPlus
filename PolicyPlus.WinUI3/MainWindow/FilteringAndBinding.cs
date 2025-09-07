@@ -31,9 +31,7 @@ namespace PolicyPlus.WinUI3
         private bool _nameIndexBuilt;
         private bool _enIndexBuilt;
         private bool _idIndexBuilt;
-
-        private int _searchGeneration; // generation counter to avoid stale updates
-        private System.Threading.CancellationTokenSource? _typingRebindCts = null; // explicit init suppress warning
+        private int _searchGeneration;
 
         private void EnsureDescIndex()
         {
@@ -240,24 +238,10 @@ namespace PolicyPlus.WinUI3
         }
 
         private FilterDecisionResult EvaluateDecision(string? prospectiveSearch = null)
-        {
-            bool hasCategory = _selectedCategory != null;
-            bool hasSearch = !string.IsNullOrWhiteSpace(prospectiveSearch ?? SearchBox?.Text);
-            return FilterDecisionEngine.Evaluate(hasCategory, hasSearch, _configuredOnly, _bookmarksOnly, _limitUnfilteredTo1000);
-        }
+        { bool hasCategory = _selectedCategory != null; bool hasSearch = !string.IsNullOrWhiteSpace(prospectiveSearch ?? SearchBox?.Text); return FilterDecisionEngine.Evaluate(hasCategory, hasSearch, _configuredOnly, _bookmarksOnly, _limitUnfilteredTo1000); }
 
         private IEnumerable<PolicyPlusPolicy> ApplyBookmarkFilterIfNeeded(IEnumerable<PolicyPlusPolicy> seq)
-        {
-            if (!_bookmarksOnly) return seq;
-            try
-            {
-                var ids = BookmarkService.Instance.ActiveIds;
-                if (ids == null || ids.Count == 0) return Array.Empty<PolicyPlusPolicy>();
-                var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
-                return seq.Where(p => set.Contains(p.UniqueID));
-            }
-            catch { return seq; }
-        }
+        { if (!_bookmarksOnly) return seq; try { var ids = BookmarkService.Instance.ActiveIds; if (ids == null || ids.Count == 0) return Array.Empty<PolicyPlusPolicy>(); var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase); return seq.Where(p => set.Contains(p.UniqueID)); } catch { return seq; } }
 
         private void ApplyFiltersAndBind(string query = "", PolicyPlusCategory? category = null)
         {
@@ -267,7 +251,7 @@ namespace PolicyPlus.WinUI3
             UpdateSearchPlaceholder();
             var decision = EvaluateDecision(query);
             IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(includeSubcategories: decision.IncludeSubcategoryPolicies);
-            seq = ApplyBookmarkFilterIfNeeded(seq); // NEW: restrict by bookmarks
+            seq = ApplyBookmarkFilterIfNeeded(seq);
             if (!string.IsNullOrWhiteSpace(query)) { seq = MatchPolicies(query, seq, out _); }
             BindSequenceEnhanced(seq, decision);
             RestorePositionOrSelection();
@@ -315,42 +299,24 @@ namespace PolicyPlus.WinUI3
                     _ => null
                 };
             }
-            ordered = primary != null
-                ? (descSort ? seq.OrderByDescending(primary).ThenBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList() : seq.OrderBy(primary).ThenBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList())
-                : seq.OrderBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList();
+            ordered = primary != null ? (descSort ? seq.OrderByDescending(primary).ThenBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList() : seq.OrderBy(primary).ThenBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList()) : seq.OrderBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList();
             if (decision.Limit.HasValue && ordered.Count > decision.Limit.Value) ordered = ordered.Take(decision.Limit.Value).ToList();
             _visiblePolicies = ordered.ToList();
             bool computeStatesNow = !_navTyping || _visiblePolicies.Count <= LargeResultThreshold;
             if (computeStatesNow) { try { EnsureLocalSources(); } catch { } }
             _rowByPolicyId.Clear();
             var compSrc = computeStatesNow ? _compSource : null; var userSrc = computeStatesNow ? _userSource : null;
-
             var rows = new List<object>();
             try
             {
                 if (decision.ShowSubcategoryHeaders && _selectedCategory != null)
-                {
-                    foreach (var child in _selectedCategory.Children.OrderBy(c => c.DisplayName))
-                    {
-                        rows.Add(PolicyListRow.FromCategory(child));
-                    }
-                }
+                    foreach (var child in _selectedCategory.Children.OrderBy(c => c.DisplayName)) rows.Add(PolicyListRow.FromCategory(child));
             }
             catch { }
-
-            // FlattenHierarchy currently not changing structure beyond presence of headers; future hierarchical view could be added.
             rows.AddRange(ordered.Select(p => (object)PolicyListRow.FromPolicy(p, compSrc, userSrc)));
-            foreach (var obj in rows)
-                if (obj is PolicyListRow r && r.Policy != null)
-                    _rowByPolicyId[r.Policy.UniqueID] = r;
-            PolicyList.ItemsSource = rows;
-            PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
-            TryRestoreSelectionAsync(rows);
-            MaybePushCurrentState();
+            foreach (var obj in rows) if (obj is PolicyListRow r && r.Policy != null) _rowByPolicyId[r.Policy.UniqueID] = r;
+            PolicyList.ItemsSource = rows; PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies"; TryRestoreSelectionAsync(rows); MaybePushCurrentState();
         }
-
-        private PolicyPlusPolicy PickRepresentative(IGrouping<string, PolicyPlusPolicy> g)
-        { var list = g.ToList(); return list.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Both) ?? list.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Machine) ?? list[0]; }
 
         private void CollectPoliciesRecursive(PolicyPlusCategory cat, HashSet<string> sink)
         { foreach (var p in cat.Policies) sink.Add(p.UniqueID); foreach (var child in cat.Children) CollectPoliciesRecursive(child, sink); }
@@ -389,21 +355,14 @@ namespace PolicyPlus.WinUI3
             _searchDebounceCts?.Cancel(); _searchDebounceCts = new System.Threading.CancellationTokenSource(); var token = _searchDebounceCts.Token; int gen = Interlocked.Increment(ref _searchGeneration);
             try { if (SearchSpinner != null) { SearchSpinner.Visibility = Visibility.Visible; SearchSpinner.IsActive = true; } } catch { }
             var applies = _appliesFilter; var category = _selectedCategory; var configuredOnly = _configuredOnly; if (configuredOnly) { try { EnsureLocalSources(); } catch { } }
-            var comp = _compSource; var user = _userSource;
-            var decision = EvaluateDecision(q);
+            var comp = _compSource; var user = _userSource; var decision = EvaluateDecision(q);
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
                 try { await System.Threading.Tasks.Task.Delay(SearchInitialDelayMs, token); } catch { return; }
                 if (token.IsCancellationRequested) { FinishSpinner(); return; }
                 var snap = new FilterSnapshot(applies, category, decision.IncludeSubcategoryPolicies, configuredOnly, comp, user);
                 List<PolicyPlusPolicy> matches; List<string> suggestions;
-                try
-                {
-                    var baseSeq = BaseSequenceForFilters(snap);
-                    baseSeq = ApplyBookmarkFilterIfNeeded(baseSeq); // NEW: restrict by bookmarks
-                    matches = MatchPolicies(q, baseSeq, out var allowedSet);
-                    suggestions = BuildSuggestions(q, allowedSet);
-                }
+                try { var baseSeq = BaseSequenceForFilters(snap); baseSeq = ApplyBookmarkFilterIfNeeded(baseSeq); matches = MatchPolicies(q, baseSeq, out var allowedSet); suggestions = BuildSuggestions(q, allowedSet); }
                 catch { suggestions = new List<string>(); matches = new List<PolicyPlusPolicy>(); }
                 if (token.IsCancellationRequested) { FinishSpinner(); return; }
                 DispatcherQueue.TryEnqueue(() =>
@@ -413,11 +372,7 @@ namespace PolicyPlus.WinUI3
                     {
                         SearchBox.ItemsSource = suggestions;
                         if (_navTyping && matches.Count > LargeResultThreshold)
-                        {
-                            var partial = matches.Take(LargeResultThreshold).ToList();
-                            BindSequenceEnhanced(partial, decision); UpdateNavButtons();
-                            ScheduleFullResultBind(gen, q, matches, decision);
-                        }
+                        { var partial = matches.Take(LargeResultThreshold).ToList(); BindSequenceEnhanced(partial, decision); UpdateNavButtons(); ScheduleFullResultBind(gen, q, matches, decision); }
                         else { BindSequenceEnhanced(matches, decision); UpdateNavButtons(); }
                     }
                     finally { FinishSpinner(); }
@@ -429,18 +384,7 @@ namespace PolicyPlus.WinUI3
         private void ScheduleFullResultBind(int gen, string q, List<PolicyPlusPolicy> fullMatches, FilterDecisionResult decision)
         {
             try
-            {
-                var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(PartialExpandDelayMs) };
-                timer.Tick += (s, e) =>
-                {
-                    timer.Stop();
-                    if (gen != _searchGeneration) return;
-                    var current = (SearchBox?.Text ?? string.Empty).Trim();
-                    if (!string.Equals(current, q, StringComparison.Ordinal)) return;
-                    try { BindSequenceEnhanced(fullMatches, decision); UpdateNavButtons(); } catch { }
-                };
-                timer.Start();
-            }
+            { var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(PartialExpandDelayMs) }; timer.Tick += (s, e) => { timer.Stop(); if (gen != _searchGeneration) return; var current = (SearchBox?.Text ?? string.Empty).Trim(); if (!string.Equals(current, q, StringComparison.Ordinal)) return; try { BindSequenceEnhanced(fullMatches, decision); UpdateNavButtons(); } catch { } }; timer.Start(); }
             catch { try { BindSequenceEnhanced(fullMatches, decision); UpdateNavButtons(); } catch { } }
         }
 

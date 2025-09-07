@@ -24,12 +24,12 @@ using PolicyPlus.WinUI3.Models;
 using System.IO;
 using CommunityToolkit.WinUI.UI.Controls;
 using Windows.Foundation;
-using PolicyPlus.WinUI3.Dialogs; // FindByRegistryWinUI
+using PolicyPlus.WinUI3.Dialogs;
 using PolicyPlus.WinUI3.ViewModels;
 using PolicyPlus.Core.Utilities;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
-using PolicyPlus.Core.Admx; // RegistryViewFormatter
+using PolicyPlus.Core.Admx;
 using System.Collections.Specialized;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
@@ -77,71 +77,8 @@ namespace PolicyPlus.WinUI3
         private bool _suppressAppliesToSelectionChanged;
         private bool _suppressConfiguredOnlyChanged;
 
-        // Suppress Search options change handlers while syncing UI
-        private bool _suppressSearchOptionEvents;
-
-        // Auto-close InfoBar cancellation
-        private CancellationTokenSource? _infoBarCloseCts;
-
-        private double? _savedVerticalOffset;
-        private string? _savedSelectedPolicyId;
-
-        // Track scroll viewer and last-known user offset to survive rapid refreshes
-        private ScrollViewer? _policyListScroll;
-        private double? _lastKnownVerticalOffset;
-
-        // Debounce refresh caused by pending changes traffic
-        private CancellationTokenSource? _refreshDebounceCts;
-
-        // Preserve the selected row's viewport Y so it can be put back to the same on-screen position
-        private double? _savedAnchorViewportY;
-        private double? _savedAnchorRatio;
-
-        // Persisted column prefs keys
-        private const string ColIdKey = "Columns.ShowId";
-        private const string ColCategoryKey = "Columns.ShowCategory";
-        private const string ColAppliesKey = "Columns.ShowApplies";
-        private const string ColSupportedKey = "Columns.ShowSupported";
-        private const string ColUserStateKey = "Columns.ShowComputerState";
-        private const string ColCompStateKey = "Columns.ShowUserState";
-
-        private const string ScaleKey = "UIScale"; // e.g. "100%"
-        private const string ShowDetailsKey = "View.ShowDetails";
-
-        // One-time hook to ensure double-tap is captured even if handled by child controls
-        private bool _doubleTapHooked;
-
-        // Recent input tracking to reconcile ItemInvoked vs DoubleTapped
-        private string? _recentDoubleTapCategoryId;
-        private DateTime _recentDoubleTapAt;
-        private string? _lastInvokedCatId;
-        private DateTime _lastInvokedAt;
-        private string? _lastTapCatId;
-        private bool _lastTapWasExpanded;
-        private DateTime _lastTapAt;
-
         // Typing suppression flag for navigation pushes
         private bool _navTyping;
-
-        // Lightweight search index for faster case-insensitive substring matching (include English name)
-        private List<(PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)> _searchIndex = new();
-        private Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)> _searchIndexById = new(StringComparer.OrdinalIgnoreCase);
-        private CancellationTokenSource? _searchDebounceCts;
-
-        // Debounce for search option changes
-        private CancellationTokenSource? _searchOptionsDebounceCts;
-
-        // Search options
-        private bool _searchInName = true;
-        private bool _searchInId = true;
-        private bool _searchInRegistryKey = true;   // interprets as path by default
-        private bool _searchInRegistryValue = true; // interprets as key name
-        private bool _searchInDescription = false;
-        private bool _searchInComments = false;
-
-        // Comments storage (in-memory)
-        private readonly Dictionary<string, string> _compComments = new(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, string> _userComments = new(StringComparer.OrdinalIgnoreCase);
 
         // Sorting state
         private string? _sortColumn;
@@ -151,9 +88,20 @@ namespace PolicyPlus.WinUI3
         private string? _currentAdmxPath;
         private string? _currentLanguage;
 
+        // Cross-partial fields (were previously lost during refactor)
+        private CancellationTokenSource? _infoBarCloseCts;
+        private double? _savedVerticalOffset;
+        private string? _savedSelectedPolicyId;
+        private ScrollViewer? _policyListScroll;
+        private double? _lastKnownVerticalOffset;
+        private CancellationTokenSource? _refreshDebounceCts;
+        private double? _savedAnchorViewportY;
+        private double? _savedAnchorRatio;
+        private bool _doubleTapHooked; // used by HookDoubleTapHandlers
+
         public MainWindow()
         {
-            _suppressSearchOptionEvents = true;
+            _suppressSearchOptionEvents = true; // defined in Search partial
             this.InitializeComponent();
             HookPendingQueue();
             TryInitCustomTitleBar();
@@ -162,7 +110,7 @@ namespace PolicyPlus.WinUI3
                 try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
             };
             try { BookmarkService.Instance.ActiveListChanged += BookmarkService_ActiveListChanged; } catch { }
-            try { this.Closed += (s, e) => { try { BookmarkService.Instance.ActiveListChanged -= BookmarkService_ActiveListChanged; } catch { } }; } catch { }
+            try { Closed += (s, e) => { try { BookmarkService.Instance.ActiveListChanged -= BookmarkService_ActiveListChanged; } catch { } }; } catch { }
         }
 
         private void BookmarkService_ActiveListChanged(object? sender, EventArgs e)
@@ -279,17 +227,6 @@ namespace PolicyPlus.WinUI3
                     foreach (var h in hist) PendingChangesService.Instance.History.Add(h);
                 }
                 catch { }
-
-                var so = s.Search;
-                if (so != null)
-                {
-                    _searchInName = so.InName;
-                    _searchInId = so.InId;
-                    _searchInRegistryKey = so.InRegistryKey;
-                    _searchInRegistryValue = so.InRegistryValue;
-                    _searchInDescription = so.InDescription;
-                    _searchInComments = so.InComments;
-                }
 
                 // Sync initial UI state for search options (after reading settings)
                 var so2 = s.Search;
@@ -500,40 +437,6 @@ namespace PolicyPlus.WinUI3
             BusyOverlay.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        // preference helper implementations are defined in MainWindow.Preferences.cs
-
-        private void StartPrebuildDescIndex()
-        {
-            try
-            {
-                var path = _currentAdmxPath;
-                var lang = _currentLanguage;
-                var fp = (!string.IsNullOrEmpty(path) && !string.IsNullOrEmpty(lang)) ? CacheService.ComputeAdmxFingerprint(path!, lang!) : string.Empty;
-                var policies = _allPolicies.ToList();
-                _ = Task.Run(() =>
-                {
-                    try
-                    {
-                        var idx = new NGramTextIndex(2);
-                        var items = policies.Select(p => (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayExplanation)));
-                        idx.Build(items);
-                        var snap = idx.GetSnapshot();
-                        if (!string.IsNullOrEmpty(path) && !string.IsNullOrEmpty(lang))
-                        {
-                            if (!string.IsNullOrEmpty(fp))
-                                CacheService.SaveNGramSnapshot(path!, lang!, fp, snap);
-                            else
-                                CacheService.SaveNGramSnapshot(path!, lang!, snap);
-                        }
-                        _descIndex.LoadSnapshot(snap);
-                        _descIndexBuilt = true;
-                    }
-                    catch { }
-                });
-            }
-            catch { }
-        }
-
         private async void LoadAdmxFolderAsync(string path)
         {
             SetBusy(true, "Loading...");
@@ -588,19 +491,11 @@ namespace PolicyPlus.WinUI3
                 RegistryReferenceCache.Clear();
                 _descIndexBuilt = false; // force rebuild or load from cache for description index
 
-                // Adopt prebuilt search index
                 if (searchIndexLocal != null && searchIndexByIdLocal != null)
-                {
-                    _searchIndex = searchIndexLocal;
-                    _searchIndexById = searchIndexByIdLocal;
-                }
-                else
-                {
-                    RebuildSearchIndex();
-                }
+                { _searchIndex = searchIndexLocal; _searchIndexById = searchIndexByIdLocal; }
+                else { RebuildSearchIndex(); } // implemented in Search.cs
 
-                // Prebuild description index and cache in the background
-                StartPrebuildDescIndex();
+                StartPrebuildDescIndex(); // implemented in Search.cs
 
                 BuildCategoryTreeAsync();
 
@@ -613,225 +508,6 @@ namespace PolicyPlus.WinUI3
             }
             finally { SetBusy(false); }
             await Task.CompletedTask;
-        }
-
-        private void RebuildSearchIndex()
-        {
-            try
-            {
-                _searchIndex = _allPolicies.Select(p => (
-                    Policy: p,
-                    NameLower: SearchText.Normalize(p.DisplayName),
-                    EnglishLower: SearchText.Normalize(EnglishTextService.GetEnglishPolicyName(p)),
-                    IdLower: SearchText.Normalize(p.UniqueID),
-                    DescLower: SearchText.Normalize(p.DisplayExplanation)
-                )).ToList();
-                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
-                foreach (var e in _searchIndex)
-                {
-                    _searchIndexById[e.Policy.UniqueID] = e;
-                }
-            }
-            catch
-            {
-                _searchIndex = new List<(PolicyPlusPolicy, string, string, string, string)>();
-                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy, string, string, string, string)>(StringComparer.OrdinalIgnoreCase);
-            }
-        }
-
-        private static int MatchScoreFor(string textLower, string qLower)
-        {
-            if (string.IsNullOrEmpty(qLower)) return 0;
-            if (string.Equals(textLower, qLower, StringComparison.Ordinal)) return 100;
-            if (textLower.StartsWith(qLower, StringComparison.Ordinal)) return 60;
-            int idx = textLower.IndexOf(qLower, StringComparison.Ordinal);
-            if (idx > 0)
-            {
-                char prev = textLower[idx - 1];
-                if (!char.IsLetterOrDigit(prev)) return 40;
-                return 20;
-            }
-            return -1000; // no match
-        }
-
-        private List<string> BuildSuggestions(string q, HashSet<string> allowed)
-        {
-            var qLower = SearchText.Normalize(q);
-            var bestByName = new Dictionary<string, (int score, string name)>(StringComparer.OrdinalIgnoreCase);
-            bool smallSubset = allowed.Count > 0 && allowed.Count < (_allPolicies.Count / 2);
-
-            void Consider((PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower) e)
-            {
-                if (!allowed.Contains(e.Policy.UniqueID)) return;
-                int score = 0;
-                if (!string.IsNullOrEmpty(qLower))
-                {
-                    int nameScore = MatchScoreFor(e.NameLower, qLower);
-                    int enScore = string.IsNullOrEmpty(e.EnglishLower) ? -1000 : MatchScoreFor(e.EnglishLower, qLower);
-                    int idScore = MatchScoreFor(e.IdLower, qLower);
-                    int descScore = _searchInDescription ? MatchScoreFor(e.DescLower, qLower) : -1000;
-                    if (nameScore <= -1000 && enScore <= -1000 && idScore <= -1000 && descScore <= -1000) return;
-                    score += Math.Max(0, Math.Max(nameScore, enScore)) * 3;
-                    score += Math.Max(0, idScore) * 2;
-                    score += Math.Max(0, descScore);
-                }
-                score += SearchRankingService.GetBoost(e.Policy.UniqueID);
-
-                var name = e.Policy.DisplayName ?? string.Empty;
-                if (string.IsNullOrEmpty(name)) name = e.Policy.UniqueID;
-                if (bestByName.TryGetValue(name, out var cur))
-                {
-                    if (score > cur.score) bestByName[name] = (score, name);
-                }
-                else
-                {
-                    bestByName[name] = (score, name);
-                }
-            }
-
-            if (smallSubset)
-            {
-                foreach (var id in allowed)
-                {
-                    if (_searchIndexById.TryGetValue(id, out var entry))
-                        Consider(entry);
-                }
-            }
-            else
-            {
-                foreach (var e in _searchIndex)
-                    Consider(e);
-            }
-
-            if (bestByName.Count == 0 && string.IsNullOrEmpty(qLower))
-            {
-                foreach (var id in allowed)
-                {
-                    if (_searchIndexById.TryGetValue(id, out var e))
-                    {
-                        int score = SearchRankingService.GetBoost(id);
-                        var name = e.Policy.DisplayName ?? string.Empty;
-                        if (bestByName.TryGetValue(name, out var cur))
-                        { if (score > cur.score) bestByName[name] = (score, name); }
-                        else bestByName[name] = (score, name);
-                    }
-                }
-            }
-
-            var ordered = bestByName.Values
-                .OrderByDescending(v => v.score)
-                .ThenBy(v => v.name, StringComparer.InvariantCultureIgnoreCase)
-                .Take(10)
-                .Select(v => v.name)
-                .ToList();
-            return ordered;
-        }
-
-        private void SearchClearBtn_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            try
-            {
-                _navTyping = false;
-                if (SearchBox != null)
-                {
-                    SearchBox.Text = string.Empty;
-                }
-                UpdateSearchClearButtonVisibility();
-                RunAsyncFilterAndBind();
-                UpdateNavButtons();
-                e.Handled = true;
-            }
-            catch { }
-        }
-
-        private void UpdateSearchClearButtonVisibility()
-        {
-            try
-            {
-                var btn = RootGrid?.FindName("SearchClearBtn") as UIElement;
-                if (btn != null)
-                {
-                    var hasText = !string.IsNullOrEmpty(SearchBox?.Text);
-                    btn.Visibility = hasText ? Visibility.Visible : Visibility.Collapsed;
-                }
-            }
-            catch { }
-        }
-
-        private void SearchBox_Loaded(object sender, RoutedEventArgs e)
-        {
-            try { HideBuiltInSearchClearButton(); } catch { }
-            try { UpdateSearchClearButtonVisibility(); } catch { }
-        }
-
-        private void HideBuiltInSearchClearButton()
-        {
-            try
-            {
-                if (SearchBox == null) return;
-                var deleteBtn = FindDescendantByName(SearchBox, "DeleteButton") as UIElement;
-                if (deleteBtn != null)
-                {
-                    deleteBtn.Visibility = Visibility.Collapsed;
-                    deleteBtn.IsHitTestVisible = false;
-                    if (deleteBtn is Control c)
-                    {
-                        c.IsEnabled = false;
-                        c.Opacity = 0;
-                    }
-                }
-            }
-            catch { }
-        }
-
-        private static DependencyObject? FindDescendantByName(DependencyObject? root, string name)
-        {
-            if (root == null) return null;
-            int count = VisualTreeHelper.GetChildrenCount(root);
-            for (int i = 0; i < count; i++)
-            {
-                var child = VisualTreeHelper.GetChild(root, i);
-                if (child is FrameworkElement fe && string.Equals(fe.Name, name, StringComparison.Ordinal)) return child;
-                var result = FindDescendantByName(child, name);
-                if (result != null) return result;
-            }
-            return null;
-        }
-
-        private void SearchBox_TextChanged(object sender, AutoSuggestBoxTextChangedEventArgs e)
-        {
-            // Keep clear button visibility synced for any text change
-            UpdateSearchClearButtonVisibility();
-
-            if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
-            {
-                var q = (SearchBox.Text ?? string.Empty).Trim();
-                if (string.IsNullOrEmpty(q))
-                {
-                    // User cleared input: cancel any pending search tasks and immediately show baseline
-                    try { _navTyping = false; } catch { }
-                    try { _searchDebounceCts?.Cancel(); } catch { }
-                    try { _typingRebindCts?.Cancel(); } catch { }
-                    try { RunImmediateFilterAndBind(); } catch { }
-                    try { ShowBaselineSuggestions(); } catch { }
-                    UpdateNavButtons();
-                    return;
-                }
-                _navTyping = true;
-                RunAsyncSearchAndBind(q);
-            }
-        }
-
-        private void ShowBaselineSuggestions()
-        {
-            try
-            {
-                if (SearchBox == null) return;
-                var allowed = new HashSet<string>(_allPolicies.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase);
-                var list = BuildSuggestions(string.Empty, allowed);
-                SearchBox.ItemsSource = list;
-            }
-            catch { }
         }
 
         private void AppliesToSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1302,10 +978,7 @@ namespace PolicyPlus.WinUI3
         private void UpdateSearchPlaceholder()
         {
             if (SearchBox == null) return;
-            if (_selectedCategory != null)
-                SearchBox.PlaceholderText = $"Search policies in {_selectedCategory.DisplayName}";
-            else
-                SearchBox.PlaceholderText = "Search policies";
+            SearchBox.PlaceholderText = _selectedCategory != null ? $"Search policies in {_selectedCategory.DisplayName}" : "Search policies";
             UpdateClearCategoryFilterButtonState();
         }
 
@@ -1359,142 +1032,15 @@ namespace PolicyPlus.WinUI3
             LoadAdmxFolderAsync(folder.Path);
         }
 
-        private void SearchOption_Toggle_Click(object sender, RoutedEventArgs e)
-        {
-            if (_suppressSearchOptionEvents) return;
-            try
-            {
-                _searchInName = SearchOptName?.IsChecked == true;
-                _searchInId = SearchOptId?.IsChecked == true;
-                _searchInDescription = SearchOptDesc?.IsChecked == true;
-                _searchInComments = SearchOptComments?.IsChecked == true;
-                _searchInRegistryKey = SearchOptRegKey?.IsChecked == true;
-                _searchInRegistryValue = SearchOptRegValue?.IsChecked == true;
-            }
-            catch { }
-            // Persist
-            try
-            {
-                SettingsService.Instance.UpdateSearchOptions(new SearchOptions
-                {
-                    InName = _searchInName,
-                    InId = _searchInId,
-                    InRegistryKey = _searchInRegistryKey,
-                    InRegistryValue = _searchInRegistryValue,
-                    InDescription = _searchInDescription,
-                    InComments = _searchInComments
-                });
-            }
-            catch { }
-
-            // Optimization: if no query text, do not reload the list
-            var q = (SearchBox?.Text ?? string.Empty).Trim();
-            if (string.IsNullOrEmpty(q))
-            {
-                return;
-            }
-
-            // Debounce rebind when toggling multiple options rapidly
-            _searchOptionsDebounceCts?.Cancel();
-            _searchOptionsDebounceCts = new CancellationTokenSource();
-            var token = _searchOptionsDebounceCts.Token;
-            _ = Task.Run(async () =>
-            {
-                try { await Task.Delay(250, token); } catch { return; }
-                if (token.IsCancellationRequested) return;
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (token.IsCancellationRequested) return;
-                    RunAsyncSearchAndBind(q);
-                });
-            });
-        }
-
         private void ToggleLimitUnfilteredMenu_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (sender is ToggleMenuFlyoutItem t)
-                {
-                    _limitUnfilteredTo1000 = t.IsChecked;
-                    SettingsService.Instance.UpdateLimitUnfilteredTo1000(_limitUnfilteredTo1000);
-                    RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
-                }
-            }
-            catch { }
-        }
+        { try { if (sender is ToggleMenuFlyoutItem t) { _limitUnfilteredTo1000 = t.IsChecked; SettingsService.Instance.UpdateLimitUnfilteredTo1000(_limitUnfilteredTo1000); RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } } catch { } }
 
         private void SearchOptionsFlyout_Opened(object sender, object e)
-        {
-            try
-            {
-                var so = SettingsService.Instance.LoadSettings().Search ?? new SearchOptions();
-                _suppressSearchOptionEvents = true;
-                if (SearchOptName != null) SearchOptName.IsChecked = so.InName;
-                if (SearchOptId != null) SearchOptId.IsChecked = so.InId;
-                if (SearchOptDesc != null) SearchOptDesc.IsChecked = so.InDescription;
-                if (SearchOptComments != null) SearchOptComments.IsChecked = so.InComments;
-                if (SearchOptRegKey != null) SearchOptRegKey.IsChecked = so.InRegistryKey;
-                if (SearchOptRegValue != null) SearchOptRegValue.IsChecked = so.InRegistryValue;
-            }
-            finally { _suppressSearchOptionEvents = false; }
-        }
+        { try { var so = SettingsService.Instance.LoadSettings().Search ?? new SearchOptions(); _suppressSearchOptionEvents = true; if (SearchOptName != null) SearchOptName.IsChecked = so.InName; if (SearchOptId != null) SearchOptId.IsChecked = so.InId; if (SearchOptDesc != null) SearchOptDesc.IsChecked = so.InDescription; if (SearchOptComments != null) SearchOptComments.IsChecked = so.InComments; if (SearchOptRegKey != null) SearchOptRegKey.IsChecked = so.InRegistryKey; if (SearchOptRegValue != null) SearchOptRegValue.IsChecked = so.InRegistryValue; } finally { _suppressSearchOptionEvents = false; } }
 
         private void RebindConsideringAsync(string q)
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(q))
-                {
-                    RunAsyncFilterAndBind();
-                }
-                else
-                {
-                    RunAsyncSearchAndBind(q);
-                }
-            }
-            catch { }
-        }
-
-        private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
-        {
-            try
-            {
-                _navTyping = false;
-                var q = args?.QueryText ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(q))
-                {
-                    RunImmediateFilterAndBind();
-                    ShowBaselineSuggestions();
-                }
-                else
-                {
-                    RunAsyncSearchAndBind(q.Trim());
-                }
-                UpdateNavButtons();
-            }
-            catch { }
-        }
-
-        private void SearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
-        {
-            try
-            {
-                _navTyping = false;
-                var chosen = args?.SelectedItem?.ToString() ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(chosen))
-                {
-                    RunImmediateFilterAndBind();
-                    ShowBaselineSuggestions();
-                }
-                else
-                {
-                    RunAsyncSearchAndBind(chosen.Trim());
-                }
-                UpdateNavButtons();
-            }
-            catch { }
-        }
+            try { if (string.IsNullOrWhiteSpace(q)) RunAsyncFilterAndBind(); else RunAsyncSearchAndBind(q); } catch { } }
 
         private void UnsavedIndicator_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -1506,22 +1052,5 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
         }
-
-        // Proxy methods call into real implementations (defined in Filtering.cs)
-        partial void Filtering_RunAsyncFilterAndBindProxy();
-        partial void Filtering_RunImmediateFilterAndBindProxy();
-
-        private async void BtnAbout_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var dlg = new Dialogs.AboutDialog();
-                if (Content is FrameworkElement root) dlg.XamlRoot = root.XamlRoot;
-                await dlg.ShowAsync();
-            }
-            catch { }
-        }
-
-        // (ChkBookmarksOnly_Checked handled in Commands.cs partial class)
     }
 }
