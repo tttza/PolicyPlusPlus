@@ -174,7 +174,12 @@ namespace PolicyPlus.WinUI3
             {
                 if (_bundle == null) return;
                 var bookmarkIds = BookmarkService.Instance.ActiveIds;
-                if (bookmarkIds == null || !bookmarkIds.Any()) return;
+                if (bookmarkIds == null || !bookmarkIds.Any())
+                {
+                    // Inform user that Quick Edit requires at least one bookmark.
+                    ShowInfo("Add at least one bookmark to use Quick Edit.");
+                    return;
+                }
                 var set = new HashSet<string>(bookmarkIds, System.StringComparer.OrdinalIgnoreCase);
                 var policies = _allPolicies.Where(p => set.Contains(p.UniqueID)).ToList();
                 if (policies.Count == 0) return;
