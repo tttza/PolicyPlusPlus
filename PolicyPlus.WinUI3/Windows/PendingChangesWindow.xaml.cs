@@ -499,19 +499,28 @@ namespace PolicyPlus.WinUI3.Windows
                 {
                     v = ConvertJsonElement(je) ?? string.Empty;
                 }
-                if (v is IEnumerable<object> en && v is not string && en.Any() && en.First() is JsonElement)
+                else if (v is IEnumerable<object> en && v is not string)
                 {
-                    var list = new List<string>();
+                    // Already materialized collection but elements might still be JsonElement
+                    var list = new List<object>();
                     foreach (var item in en)
                     {
-                        if (item is JsonElement je2) list.Add(Convert.ToString(ConvertJsonElement(je2)) ?? string.Empty);
-                        else list.Add(Convert.ToString(item) ?? string.Empty);
+                        if (item is JsonElement je2) list.Add(ConvertJsonElement(je2) ?? string.Empty);
+                        else list.Add(item ?? string.Empty);
                     }
-                    v = list.ToArray();
+                    v = PostProcessCollection(list);
                 }
                 result[kv.Key] = v;
             }
             return result;
+        }
+
+        private static object PostProcessCollection(List<object> items)
+        {
+            if (items.Count == 0) return Array.Empty<string>();
+            if (items.All(i => i is string)) return items.Cast<string>().ToArray();
+            if (items.All(i => i is KeyValuePair<string, string>)) return items.Cast<KeyValuePair<string, string>>().ToList();
+            return items.Select(i => Convert.ToString(i) ?? string.Empty).ToArray();
         }
 
         private static object? ConvertJsonElement(JsonElement je)
@@ -520,29 +529,56 @@ namespace PolicyPlus.WinUI3.Windows
             {
                 case JsonValueKind.String: return je.GetString();
                 case JsonValueKind.Number:
-                    if (je.TryGetInt64(out var l)) return l;
+                    if (je.TryGetInt64(out var l))
+                    {
+                        // Prefer int where possible (enum index expectation)
+                        if (l <= int.MaxValue && l >= int.MinValue) return (int)l;
+                        return l;
+                    }
                     if (je.TryGetDouble(out var d)) return d;
                     return je.ToString();
                 case JsonValueKind.True: return true;
                 case JsonValueKind.False: return false;
                 case JsonValueKind.Array:
-                    var items = new List<object>();
-                    foreach (var elem in je.EnumerateArray())
                     {
-                        if (elem.ValueKind == JsonValueKind.Object && elem.TryGetProperty("Key", out var keyProp) && elem.TryGetProperty("Value", out var valProp))
+                        var items = new List<object>();
+                        foreach (var elem in je.EnumerateArray())
                         {
-                            items.Add(new KeyValuePair<string, string>(keyProp.GetString() ?? string.Empty, valProp.GetString() ?? string.Empty));
+                            if (elem.ValueKind == JsonValueKind.Object && elem.TryGetProperty("Key", out var keyProp) && elem.TryGetProperty("Value", out var valProp))
+                            {
+                                items.Add(new KeyValuePair<string, string>(keyProp.GetString() ?? string.Empty, valProp.GetString() ?? string.Empty));
+                            }
+                            else
+                            {
+                                items.Add(ConvertJsonElement(elem) ?? string.Empty);
+                            }
                         }
-                        else
-                        {
-                            items.Add(ConvertJsonElement(elem) ?? string.Empty);
-                        }
+                        return PostProcessCollection(items);
                     }
-                    if (items.All(i => i is KeyValuePair<string, string>))
-                        return items.Cast<KeyValuePair<string, string>>().ToList();
-                    return items.Select(i => Convert.ToString(i) ?? string.Empty).ToArray();
                 case JsonValueKind.Object:
-                    return je.ToString();
+                    {
+                        // Attempt to materialize as dictionary (named list case)
+                        var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                        bool allSimple = true;
+                        foreach (var prop in je.EnumerateObject())
+                        {
+                            switch (prop.Value.ValueKind)
+                            {
+                                case JsonValueKind.String:
+                                    dict[prop.Name] = prop.Value.GetString() ?? string.Empty; break;
+                                case JsonValueKind.Number:
+                                    if (prop.Value.TryGetInt64(out var ln)) dict[prop.Name] = ln.ToString(); else if (prop.Value.TryGetDouble(out var dn)) dict[prop.Name] = dn.ToString(); else dict[prop.Name] = prop.Value.ToString();
+                                    break;
+                                case JsonValueKind.True: dict[prop.Name] = "true"; break;
+                                case JsonValueKind.False: dict[prop.Name] = "false"; break;
+                                default:
+                                    allSimple = false; break;
+                            }
+                            if (!allSimple) break;
+                        }
+                        if (allSimple) return dict;
+                        return je.ToString();
+                    }
                 default:
                     return null;
             }
