@@ -78,15 +78,10 @@ namespace PolicyPlus.WinUI3.Windows
 
         private void MainTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            bool pendingActive = (MainTabs.SelectedItem as TabViewItem) == PendingTab;
-            BtnApplySelected.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
-            BtnDiscardSelected.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
-            BtnApplyAll.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
-            BtnDiscardAll.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
-            BtnReapplySelected.Visibility = pendingActive ? Visibility.Collapsed : Visibility.Visible;
+            UpdateTabButtonsVisibility();
         }
 
-        private void ApplyTabSelectionUi()
+        private void UpdateTabButtonsVisibility()
         {
             bool pendingActive = (MainTabs.SelectedItem as TabViewItem) == PendingTab;
             BtnApplySelected.Visibility = pendingActive ? Visibility.Visible : Visibility.Collapsed;
@@ -127,7 +122,7 @@ namespace PolicyPlus.WinUI3.Windows
         // Call once on loaded too
         private void PendingChangesWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            ApplyTabSelectionUi();
+            UpdateTabButtonsVisibility();
         }
 
         private async void ShowLocalInfo(string message)

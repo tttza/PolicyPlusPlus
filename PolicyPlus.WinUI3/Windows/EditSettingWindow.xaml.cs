@@ -170,7 +170,6 @@ namespace PolicyPlus.WinUI3.Windows
             catch { }
         }
 
-        private void SecondLangButton_Click(object sender, RoutedEventArgs e) { }
         private void SecondLangToggle_Checked(object sender, RoutedEventArgs e)
         {
             var t = sender as ToggleButton;

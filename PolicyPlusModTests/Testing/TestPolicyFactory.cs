@@ -188,6 +188,49 @@ namespace PolicyPlusModTests.TestHelpers
             };
         }
 
+        public static PolicyPlusPolicy CreateDecimalPolicy(string uniqueId = "MACHINE:DecimalPolicy")
+        {
+            var decElem = new DecimalPolicyElement
+            {
+                ID = "DecimalElem",
+                ElementType = "decimal",
+                RegistryKey = "Software\\PolicyPlusTest",
+                RegistryValue = "DecimalValue",
+                Minimum = 0,
+                Maximum = 500
+            };
+            var rawPolicy = new AdmxPolicy
+            {
+                RegistryKey = "Software\\PolicyPlusTest",
+                RegistryValue = "DecimalValue",
+                Section = AdmxPolicySection.Machine,
+                Elements = new List<PolicyElement> { decElem },
+                AffectedValues = new PolicyRegistryList(),
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+            };
+            return new PolicyPlusPolicy
+            {
+                RawPolicy = rawPolicy,
+                UniqueID = uniqueId,
+                DisplayName = "Decimal Policy",
+                Presentation = new Presentation
+                {
+                    Elements = new List<PresentationElement>
+                    {
+                        new NumericBoxPresentationElement
+                        {
+                            ID = "DecimalElem",
+                            ElementType = "decimalTextBox",
+                            Label = "Decimal Label",
+                            DefaultValue = 100,
+                            HasSpinner = true,
+                            SpinnerIncrement = 10
+                        }
+                    }
+                }
+            };
+        }
+
         public static PolicyPlusPolicy CreateBinaryPolicy(string uniqueId = "MACHINE:BinaryPolicy")
         {
             var rawPolicy = new AdmxPolicy

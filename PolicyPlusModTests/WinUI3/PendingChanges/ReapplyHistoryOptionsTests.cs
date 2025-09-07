@@ -41,9 +41,10 @@ namespace PolicyPlusModTests.WinUI3
 
         private static (PolicyPlusPolicy policy, Dictionary<string, object> opts) BuildDecimalCase()
         {
-            // Reuse enum policy structure? Need a decimal element factory (not present). We skip if factory does not exist.
-            // For now this returns enum case placeholder.
-            return BuildEnumCase();
+            var pol = TestPolicyFactory.CreateDecimalPolicy("MACHINE:ReapplyDecimal");
+            // choose a mid-range value within min/max (factory sets min=0 max=500 default=100)
+            var opts = new Dictionary<string, object> { { "DecimalElem", 250u } };
+            return (pol, opts);
         }
 
         private static void ApplyAndRecord(PolicyPlusPolicy policy, Dictionary<string, object> opts)
@@ -71,6 +72,7 @@ namespace PolicyPlusModTests.WinUI3
         [InlineData("Enum")]
         [InlineData("List")]
         [InlineData("MultiText")]
+        [InlineData("Decimal")]
         public void History_StoresOptions_Intact(string kind)
         {
             PolicyPlusPolicy pol; Dictionary<string, object> opts;
@@ -80,6 +82,7 @@ namespace PolicyPlusModTests.WinUI3
                 case "Enum": (pol, opts) = BuildEnumCase(); break;
                 case "List": (pol, opts) = BuildListCase(); break;
                 case "MultiText": (pol, opts) = BuildMultiTextCase(); break;
+                case "Decimal": (pol, opts) = BuildDecimalCase(); break;
                 default: throw new InvalidOperationException();
             }
             ApplyAndRecord(pol, opts);
@@ -89,7 +92,6 @@ namespace PolicyPlusModTests.WinUI3
             foreach(var kv in opts)
             {
                 Assert.True(h.Options!.ContainsKey(kv.Key));
-                // compare shapes
                 if (kv.Value is List<string> list)
                 {
                     var stored = h.Options[kv.Key];
@@ -104,6 +106,10 @@ namespace PolicyPlusModTests.WinUI3
                 else if (kv.Value is int i)
                 {
                     Assert.Equal(i, (int)h.Options[kv.Key]);
+                }
+                else if (kv.Value is uint u)
+                {
+                    Assert.Equal(u, (uint)h.Options[kv.Key]);
                 }
             }
         }
