@@ -12,7 +12,8 @@ namespace PolicyPlus.WinUI3
 {
     public sealed partial class MainWindow
     {
-        private readonly string[] _columnKeys = new[] { "CatIcon", "UserIcon", "ComputerIcon", "Name", "SecondName", "Id", "Category", "TopCategory", "CategoryPath", "Applies", "Supported" };
+
+        private static readonly string[] DefaultColumnOrder = new[] { "Bookmark", "CatIcon", "UserIcon", "ComputerIcon", "Name", "SecondName", "Id", "Category", "TopCategory", "CategoryPath", "Applies", "Supported" };
 
         private void ApplyDetailsPaneVisibility()
         {
@@ -93,6 +94,7 @@ namespace PolicyPlus.WinUI3
                 if (ViewAppliesToggle != null) ViewAppliesToggle.IsChecked = cols.ShowApplies;
                 if (ViewSupportedToggle != null) ViewSupportedToggle.IsChecked = cols.ShowSupported;
                 if (RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt) vbt.IsChecked = cols.ShowBookmark;
+                if (ViewSecondNameToggle != null) ViewSecondNameToggle.IsChecked = cols.ShowSecondName && (s.SecondLanguageEnabled ?? false);
                 ApplyColumnVisibilityFromToggles();
             }
             catch { }
@@ -113,7 +115,6 @@ namespace PolicyPlus.WinUI3
 
         private void PolicyList_LayoutUpdated(object? sender, object e)
         {
-            // Save widths opportunistically after layout settles
             SaveColumnLayout(includeOrder: false);
         }
 
@@ -127,33 +128,26 @@ namespace PolicyPlus.WinUI3
             try
             {
                 if (PolicyList == null) return;
-
                 var existing = SettingsService.Instance.LoadColumnLayout().ToDictionary(x => x.Key, StringComparer.OrdinalIgnoreCase);
                 var list = new List<ColumnState>();
                 foreach (var col in PolicyList.Columns)
                 {
                     string key = GetKeyForColumn(col);
                     if (string.IsNullOrEmpty(key)) continue;
-
+                    if (col.ActualWidth <= 1) continue; // skip not fully measured
                     int index = col.DisplayIndex;
                     if (!includeOrder && existing.TryGetValue(key, out var prev)) index = prev.Index;
-
-                    var state = new ColumnState
-                    {
-                        Key = key,
-                        Index = index,
-                        Width = col.ActualWidth,
-                        Visible = col.Visibility == Visibility.Visible
-                    };
-                    list.Add(state);
+                    list.Add(new ColumnState { Key = key, Index = index, Width = col.ActualWidth, Visible = col.Visibility == Visibility.Visible });
                 }
-                SettingsService.Instance.UpdateColumnLayout(list);
+                if (list.Count > 0)
+                    SettingsService.Instance.UpdateColumnLayout(list);
             }
             catch { }
         }
 
         private string GetKeyForColumn(DataGridColumn col)
         {
+            if (col == ColBookmark) return "Bookmark";
             if (col == ColCatIcon) return "CatIcon";
             if (col == ColUserIcon) return "UserIcon";
             if (col == ColComputerIcon) return "ComputerIcon";
@@ -172,6 +166,7 @@ namespace PolicyPlus.WinUI3
         {
             return key switch
             {
+                "Bookmark" => ColBookmark,
                 "CatIcon" => ColCatIcon,
                 "UserIcon" => ColUserIcon,
                 "ComputerIcon" => ColComputerIcon,
@@ -192,17 +187,29 @@ namespace PolicyPlus.WinUI3
             try
             {
                 var states = SettingsService.Instance.LoadColumnLayout();
-                if (states == null || states.Count == 0 || PolicyList == null) return;
+                if (PolicyList == null) return;
 
-                // Apply visibility first (user-toggleable columns)
+                // No persisted layout -> apply default order (Bookmark first) and exit
+                if (states == null || states.Count == 0)
+                {
+                    int defIndex = 0;
+                    foreach (var key in DefaultColumnOrder)
+                    {
+                        var col = GetColumnByKey(key);
+                        if (col == null) continue;
+                        try { col.DisplayIndex = defIndex++; } catch { }
+                    }
+                    UpdateColumnMenuChecks();
+                    return;
+                }
+
+                // Apply visibility for toggleable columns (skip Bookmark which has its own toggle)
                 foreach (var st in states)
                 {
                     var col = GetColumnByKey(st.Key);
                     if (col == null) continue;
                     if (col == ColId || col == ColCategory || col == ColTopCategory || col == ColCategoryPath || col == ColApplies || col == ColSupported || col == ColSecondName)
-                    {
                         col.Visibility = st.Visible ? Visibility.Visible : Visibility.Collapsed;
-                    }
                 }
 
                 // Apply widths
@@ -216,18 +223,16 @@ namespace PolicyPlus.WinUI3
                     }
                 }
 
-                // Reorder all columns by saved Index (including 0)
-                var orderedKeys = states
-                    .Where(s => !string.IsNullOrEmpty(s.Key))
-                    .OrderBy(s => s.Index)
-                    .Select(s => s.Key)
-                    .ToList();
+                // Start with saved order
+                var orderedKeys = states.Where(s => !string.IsNullOrEmpty(s.Key))
+                                        .OrderBy(s => s.Index)
+                                        .Select(s => s.Key)
+                                        .ToList();
 
-                // Append any columns not present in saved states in current order
-                var currentOrder = PolicyList.Columns.Select(GetKeyForColumn).Where(k => !string.IsNullOrEmpty(k)).ToList();
-                foreach (var k in currentOrder)
+                // Append any missing columns using default order (predictable) instead of current visual order
+                foreach (var key in DefaultColumnOrder)
                 {
-                    if (!orderedKeys.Contains(k)) orderedKeys.Add(k);
+                    if (!orderedKeys.Contains(key)) orderedKeys.Add(key);
                 }
 
                 int i = 0;
@@ -255,7 +260,8 @@ namespace PolicyPlus.WinUI3
                     ShowCategoryPath = ViewCategoryPathToggle?.IsChecked == true,
                     ShowApplies = ViewAppliesToggle?.IsChecked == true,
                     ShowSupported = ViewSupportedToggle?.IsChecked == true,
-                    ShowBookmark = !(RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt) || vbt.IsChecked == true
+                    ShowBookmark = !(RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt) || vbt.IsChecked == true,
+                    ShowSecondName = ViewSecondNameToggle?.IsChecked == true
                 };
                 SettingsService.Instance.UpdateColumns(cols);
             }
@@ -300,6 +306,12 @@ namespace PolicyPlus.WinUI3
                     bool showBookmark = true;
                     if (RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt && vbt.IsChecked == false) showBookmark = false;
                     ColBookmark.Visibility = showBookmark ? Visibility.Visible : Visibility.Collapsed;
+                }
+                if (ColSecondName != null)
+                {
+                    var s = SettingsService.Instance.LoadSettings();
+                    bool secondEnabled = s.SecondLanguageEnabled ?? false;
+                    ColSecondName.Visibility = (secondEnabled && (ViewSecondNameToggle?.IsChecked == true)) ? Visibility.Visible : Visibility.Collapsed;
                 }
             }
             catch { }
@@ -415,8 +427,9 @@ namespace PolicyPlus.WinUI3
         {
             SaveColumnPrefs();
             ApplyColumnVisibilityFromToggles();
+            SaveColumnLayout(includeOrder: false);
         }
-
+        
         private void CategorySplitter_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
             try

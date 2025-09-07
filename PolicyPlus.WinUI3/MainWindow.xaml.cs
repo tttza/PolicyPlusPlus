@@ -206,6 +206,14 @@ namespace PolicyPlus.WinUI3
                 // Column visibility from settings via menu toggles
                 LoadColumnPrefs();
 
+                // Ensure column events (Loaded / reorder / layout) are hooked so saved order & widths restore correctly
+                try { HookColumnLayoutEvents(); } catch { }
+
+                // Apply saved per-column layout (order, widths, visibility) AFTER initial toggle state
+                try { ApplySavedColumnLayout(); } catch { }
+                // Update 2nd language column header/visibility immediately
+                try { ApplySecondLanguageVisibilityToViewMenu(); } catch { }
+
                 // Apply saved layout (widths, sort)
                 try { ApplyPersistedLayout(); } catch { }
 

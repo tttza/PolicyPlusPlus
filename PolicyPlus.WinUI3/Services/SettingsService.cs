@@ -370,8 +370,8 @@ namespace PolicyPlus.WinUI3.Services
         public bool ShowSupported { get; set; } = false;
         public bool ShowUserState { get; set; } = true;
         public bool ShowComputerState { get; set; } = true;
-        public bool ShowEnglishName { get; set; } = true;
         public bool ShowBookmark { get; set; } = true;
+        public bool ShowSecondName { get; set; } = false;
     }
 
     public class ColumnState
