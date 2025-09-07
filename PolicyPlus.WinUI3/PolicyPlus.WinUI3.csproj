@@ -76,7 +76,7 @@
     <PublishTrimmed>False</PublishTrimmed>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' != 'Debug'">
-    <PublishReadyToRun>True</PublishReadyToRun>
+    <PublishReadyToRun>False</PublishReadyToRun>
     <PublishTrimmed>False</PublishTrimmed>
     <PublishSingleFile>False</PublishSingleFile>
   </PropertyGroup>
