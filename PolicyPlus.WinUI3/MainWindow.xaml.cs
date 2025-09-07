@@ -610,7 +610,25 @@ namespace PolicyPlus.WinUI3
             if (LoaderInfo != null) LoaderInfo.Text = "Temp POL (Comp/User)";
         }
 
-        private void PolicyList_RightTapped(object sender, RightTappedRoutedEventArgs e) { }
+        private void PolicyList_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            try
+            {
+                if (PolicyList == null) return;
+                DependencyObject? dep = e.OriginalSource as DependencyObject;
+                DataGridRow? row = null;
+                while (dep != null && row == null)
+                {
+                    if (dep is DataGridRow dgRow) row = dgRow; else dep = VisualTreeHelper.GetParent(dep);
+                }
+                if (row != null && row.DataContext != null)
+                {
+                    // Update selection so context actions operate on the intended item.
+                    PolicyList.SelectedItem = row.DataContext;
+                }
+            }
+            catch { }
+        }
 
         private async System.Threading.Tasks.Task OpenEditDialogForPolicyInternalAsync(PolicyPlusPolicy representative, bool ensureFront)
         {

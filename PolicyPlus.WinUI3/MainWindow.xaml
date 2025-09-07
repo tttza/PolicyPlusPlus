@@ -364,7 +364,6 @@
                                                 <MenuFlyoutItem Text="Copy path" Tag="{Binding Policy}" Click="ContextCopyPath_Click" />
                                                 <MenuFlyoutItem Text="Reveal in tree" Tag="{Binding Policy}" Click="ContextRevealInTree_Click" />
                                                 <MenuFlyoutItem Text="Copy .reg export" Tag="{Binding Policy}" Click="ContextCopyRegExport_Click" />
-                                                <MenuFlyoutItem Text="Quick edit..." Tag="{Binding Policy}" Click="ContextQuickEdit_Click" />
                                             </MenuFlyout>
                                         </Setter.Value>
                                     </Setter>
