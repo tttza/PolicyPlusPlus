@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <Grid x:Name="ScaleHost">
-    <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="12" MinWidth="480" MinHeight="360">
+    <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="12" MinWidth="480" MinHeight="360" KeyboardAcceleratorPlacementMode="Hidden">
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="*"/>

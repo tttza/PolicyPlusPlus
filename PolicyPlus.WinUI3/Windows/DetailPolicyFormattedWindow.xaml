@@ -10,7 +10,7 @@
     </Window.SystemBackdrop>
 
     <Grid x:Name="ScaleHost">
-        <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="10" RowSpacing="6" ColumnSpacing="8">
+        <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="10" RowSpacing="6" ColumnSpacing="8" KeyboardAcceleratorPlacementMode="Hidden">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>

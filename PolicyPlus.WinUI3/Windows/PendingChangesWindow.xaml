@@ -17,7 +17,7 @@
 
     <!-- Scale host for DPI-independent scaling -->
     <Grid x:Name="ScaleHost">
-        <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="12" MinWidth="720" MinHeight="480">
+        <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="12" MinWidth="720" MinHeight="480" KeyboardAcceleratorPlacementMode="Hidden">
             <Grid.Resources>
                 <conv:BoolToVisibilityConverter x:Key="BoolToVisibility"/>
                 <conv:BoolToAngleConverter x:Key="BoolToAngle"/>
