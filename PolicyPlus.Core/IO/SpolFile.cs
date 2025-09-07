@@ -1,8 +1,8 @@
-
 // VB dependency removed: replaced Strings/Constants/Conversions with .NET APIs
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 
 using PolicyPlus.Core.Admx;
 using PolicyPlus.Core.Core;
@@ -22,9 +22,13 @@ namespace PolicyPlus.Core.IO
                 spol.LoadFromText(Text);
                 return spol;
             }
-            catch (Exception ex)
+            catch (FormatException ex)
             {
-                throw new Exception(ex.Message + " (Error found on line " + spol.ParserLine + ".)");
+                throw new FormatException(ex.Message + " (Error on line " + spol.ParserLine + ".)", ex);
+            }
+            catch (InvalidDataException ex)
+            {
+                throw new InvalidDataException(ex.Message + " (Error on line " + spol.ParserLine + ".)", ex);
             }
         }
 
@@ -81,12 +85,14 @@ namespace PolicyPlus.Core.IO
                 return list;
             };
             if (nextLine() != "Policy Plus Semantic Policy")
-                throw new Exception("Incorrect signature.");
+                throw new InvalidDataException("Incorrect signature");
             while (!atEnd())
             {
                 if (string.IsNullOrEmpty(nextLine().Trim()))
                     continue;
                 var policyHeaderParts = line.Split(new[] { ' ' }, 2, StringSplitOptions.None); // Section and policy ID
+                if (policyHeaderParts.Length < 2)
+                    throw new FormatException("Malformed policy header");
                 var singlePolicy = new SpolPolicyState() { UniqueID = policyHeaderParts[1] };
                 singlePolicy.Section = policyHeaderParts[0] == "U" ? AdmxPolicySection.User : AdmxPolicySection.Machine;
                 const string commentPrefix = "comment: ";
@@ -99,7 +105,7 @@ namespace PolicyPlus.Core.IO
                         if (escapedCommentText[n] == '\\')
                         {
                             if (n == escapedCommentText.Length - 1)
-                                throw new Exception("Escape sequence started at end of comment.");
+                                throw new FormatException("Escape sequence started at end of comment");
                             switch (escapedCommentText[n + 1])
                             {
                                 case '\\':
@@ -116,7 +122,7 @@ namespace PolicyPlus.Core.IO
 
                                 default:
                                     {
-                                        throw new Exception(@"Unknown comment escape sequence \" + escapedCommentText[n + 1] + ".");
+                                        throw new FormatException(@"Unknown comment escape sequence \\" + escapedCommentText[n + 1] + ".");
                                     }
                             }
 
@@ -153,7 +159,7 @@ namespace PolicyPlus.Core.IO
 
                     default:
                         {
-                            throw new Exception("Unknown policy state.");
+                            throw new FormatException("Unknown policy state");
                         }
                 }
 
@@ -162,13 +168,17 @@ namespace PolicyPlus.Core.IO
                     while (!atEnd() && !string.IsNullOrEmpty(peekLine().Trim()))
                     {
                         var optionParts = nextLine().Trim().Split(new[] { ": " }, 2, StringSplitOptions.None); // Name and value
+                        if (optionParts.Length != 2)
+                            throw new FormatException("Malformed option line");
                         string valueText = optionParts[1];
                         object newObj;
                         uint uintVal;
                         bool boolVal;
                         if (valueText.StartsWith("#"))
                         {
-                            newObj = int.Parse(valueText.Substring(1));
+                            if (!int.TryParse(valueText.Substring(1), out var parsedInt))
+                                throw new FormatException("Invalid integer literal");
+                            newObj = parsedInt;
                         }
                         else if (uint.TryParse(valueText, out uintVal))
                         {
@@ -178,11 +188,11 @@ namespace PolicyPlus.Core.IO
                         {
                             newObj = boolVal;
                         }
-                        else if (valueText.StartsWith("'") & valueText.EndsWith("'"))
+                        else if (valueText.StartsWith("'") && valueText.EndsWith("'"))
                         {
                             newObj = valueText.Substring(1, valueText.Length - 2);
                         }
-                        else if (valueText.StartsWith("\"") & valueText.EndsWith("\""))
+                        else if (valueText.StartsWith("\"") && valueText.EndsWith("\""))
                         {
                             newObj = getAllStrings(valueText, '"').ToArray();
                         }
@@ -211,7 +221,7 @@ namespace PolicyPlus.Core.IO
                         }
                         else
                         {
-                            throw new Exception("Unknown option data format.");
+                            throw new FormatException("Unknown option data format");
                         }
 
                         singlePolicy.ExtraOptions.Add(optionParts[0], newObj);
@@ -230,10 +240,9 @@ namespace PolicyPlus.Core.IO
             sb.AppendLine(State.UniqueID);
             if (!string.IsNullOrEmpty(State.Comment))
             {
-                // Escape newlines and backslashes in the comment so it can fit on one SPOL line
-                sb.AppendLine(" Comment: " + State.Comment.Replace(@"\", @"\\").Replace(Environment.NewLine, @"\n"));
+                // Writer must match parser expectation: line begins with 'comment: ' (lowercase, no leading spaces)
+                sb.AppendLine("comment: " + State.Comment.Replace("\\", "\\\\").Replace(Environment.NewLine, "\\n"));
             }
-
             switch (State.BasicState)
             {
                 case PolicyState.NotConfigured:
@@ -254,12 +263,10 @@ namespace PolicyPlus.Core.IO
                         break;
                     }
             }
-
             string doubleQuoteString(string Text)
             {
                 return "\"" + Text.Replace("\"", "\"\"") + "\"";
             }
-
             if (State.BasicState == PolicyState.Enabled && State.ExtraOptions != null)
             {
                 foreach (var kv in State.ExtraOptions)
@@ -275,53 +282,44 @@ namespace PolicyPlus.Core.IO
                     }
                     switch (val.GetType())
                     {
-                        case var @case when @case == typeof(int):
+                        case var t when t == typeof(int):
                             {
                                 sb.Append("#");
-                                var v = (int)val;
-                                sb.AppendLine(v.ToString());
+                                sb.AppendLine(((int)val).ToString());
                                 break;
                             }
-
-                        case var case1 when case1 == typeof(uint):
+                        case var t when t == typeof(uint):
                             {
-                                var v = (uint)val;
-                                sb.AppendLine(v.ToString());
+                                sb.AppendLine(((uint)val).ToString());
                                 break;
                             }
-
-                        case var case2 when case2 == typeof(bool):
+                        case var t when t == typeof(bool):
                             {
-                                var v = (bool)val;
-                                sb.AppendLine(v.ToString());
+                                sb.AppendLine(((bool)val).ToString());
                                 break;
                             }
-
-                        case var case3 when case3 == typeof(string):
+                        case var t when t == typeof(string):
                             {
                                 sb.Append("'");
-                                var v = (string)val;
-                                sb.Append(v);
+                                sb.Append((string)val);
                                 sb.AppendLine("'");
                                 break;
                             }
-
-                        case var case4 when case4 == typeof(string[]):
+                        case var t when t == typeof(string[]):
                             {
                                 var stringArray = (string[])val;
                                 if (stringArray.Length == 0)
                                     sb.AppendLine("None");
                                 else
-                                    sb.AppendLine(string.Join(", ", stringArray.Select(doubleQuoteString))); // List(Of String) or Dictionary(Of String, String)
+                                    sb.AppendLine(string.Join(", ", stringArray.Select(doubleQuoteString)));
                                 break;
                             }
-
                         default:
                             {
                                 sb.AppendLine("[");
-                                if (val is List<string>)
+                                if (val is List<string> list)
                                 {
-                                    foreach (var listEntry in (List<string>)val)
+                                    foreach (var listEntry in list)
                                     {
                                         sb.Append("   ");
                                         sb.AppendLine(doubleQuoteString(listEntry));
@@ -337,14 +335,12 @@ namespace PolicyPlus.Core.IO
                                         sb.AppendLine(doubleQuoteString(listKv.Value));
                                     }
                                 }
-
                                 sb.AppendLine("  ]");
                                 break;
                             }
                     }
                 }
             }
-
             return sb.ToString();
         }
 
@@ -367,7 +363,7 @@ namespace PolicyPlus.Core.IO
                 }
                 catch (Exception)
                 {
-                    failures += 1;
+                    failures += 1; // Intentionally swallow details; caller only needs count.
                 }
             }
 

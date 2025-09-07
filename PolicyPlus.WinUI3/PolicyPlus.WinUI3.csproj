@@ -13,9 +13,9 @@
     <WindowsAppSDKBootstrapInitialize>true</WindowsAppSDKBootstrapInitialize>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+	<PublishProfile>Properties\PublishProfiles\win10-$(Platform).pubxml</PublishProfile>
   </PropertyGroup>
 
-  <!-- Removed explicit <Page Include="Windows\ManageBookmarksWindow.xaml" /> to avoid duplicate implicit item -->
 
   <PropertyGroup Condition="'$(WindowsAppSDKSelfContained)'=='true'">
     <WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>

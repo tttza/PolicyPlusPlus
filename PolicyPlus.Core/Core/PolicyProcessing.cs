@@ -298,7 +298,7 @@ namespace PolicyPlus.Core.Core
                         if (!Source.ContainsValue(Key, ValueName))
                             return false;
                         var sourceVal = Source.GetValue(Key, ValueName);
-                        if (!(sourceVal is uint) & !(sourceVal is int))
+                        if (!(sourceVal is uint) && !(sourceVal is int))
                             return false;
                         try
                         {
@@ -692,12 +692,12 @@ namespace PolicyPlus.Core.Core
                                         {
                                             BooleanPolicyElement booleanElem = (BooleanPolicyElement)elem;
                                             bool checkState = Convert.ToBoolean(optionData);
-                                            if (booleanElem.AffectedRegistry.OnValue is null & checkState)
+                                            if (booleanElem.AffectedRegistry.OnValue is null && checkState)
                                             {
                                                 PolicySource.SetValue(elemKey, elem.RegistryValue, 1U, Microsoft.Win32.RegistryValueKind.DWord);
                                             }
 
-                                            if (booleanElem.AffectedRegistry.OffValue is null & !checkState)
+                                            if (booleanElem.AffectedRegistry.OffValue is null && !checkState)
                                             {
                                                 PolicySource.DeleteValue(elemKey, elem.RegistryValue);
                                             }
@@ -797,7 +797,7 @@ namespace PolicyPlus.Core.Core
 
                 case PolicyState.Disabled:
                     {
-                        if (rawpol.AffectedValues.OffValue is null & !string.IsNullOrEmpty(rawpol.RegistryValue))
+                        if (rawpol.AffectedValues.OffValue is null && !string.IsNullOrEmpty(rawpol.RegistryValue))
                             PolicySource.DeleteValue(rawpol.RegistryKey, rawpol.RegistryValue);
                         setList(rawpol.AffectedValues, rawpol.RegistryKey, rawpol.RegistryValue, false);
                         if (rawpol.Elements is object)
@@ -812,7 +812,7 @@ namespace PolicyPlus.Core.Core
                                 else if (elem.ElementType == "boolean")
                                 {
                                     BooleanPolicyElement booleanElem = (BooleanPolicyElement)elem;
-                                    if (booleanElem.AffectedRegistry.OffValue is object | booleanElem.AffectedRegistry.OffValueList is object)
+                                    if (booleanElem.AffectedRegistry.OffValue is object || booleanElem.AffectedRegistry.OffValueList is object)
                                     {
                                         setList(booleanElem.AffectedRegistry, elemKey, elem.RegistryValue, false);
                                     }
@@ -841,7 +841,7 @@ namespace PolicyPlus.Core.Core
             {
                 if (SupportEntry.Product is null)
                     return ApproveLiterals;
-                if (Products.Contains(SupportEntry.Product) & !SupportEntry.RawSupportEntry.IsRange)
+                if (Products.Contains(SupportEntry.Product) && !SupportEntry.RawSupportEntry.IsRange)
                     return true;
                 if (SupportEntry.Product.Children is null || SupportEntry.Product.Children.Count == 0)
                     return false;
@@ -916,7 +916,7 @@ namespace PolicyPlus.Core.Core
         bool IEquatable<RegistryKeyValuePair?>.Equals(RegistryKeyValuePair? other)
         {
             if (other is null) return false;
-            return other.Key.Equals(Key, StringComparison.InvariantCultureIgnoreCase) & other.Value.Equals(Value, StringComparison.InvariantCultureIgnoreCase);
+            return other.Key.Equals(Key, StringComparison.InvariantCultureIgnoreCase) && other.Value.Equals(Value, StringComparison.InvariantCultureIgnoreCase);
         }
 
         public bool EqualsRKVP(RegistryKeyValuePair? other)
