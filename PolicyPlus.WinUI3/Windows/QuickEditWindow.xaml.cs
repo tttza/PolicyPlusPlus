@@ -17,6 +17,7 @@ using Windows.Foundation;
 using Windows.Graphics;
 using System.ComponentModel;
 using System;
+using PolicyPlus.WinUI3.Logging; // logging
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -165,6 +166,20 @@ namespace PolicyPlus.WinUI3.Windows
             try { WindowHelpers.BringToFront(win); } catch { }
         }
 
+        private void Columns_PropertyChanged(object? s, PropertyChangedEventArgs e) => ScheduleSize();
+        private void Pending_CollectionChanged(object? s, NotifyCollectionChangedEventArgs e) { try { DispatcherQueue.TryEnqueue(UpdateUnsavedIndicator); } catch (Exception ex) { Log.Warn("QuickEdit", "Dispatcher enqueue failed (Pending_CollectionChanged)", ex); } }
+
+        private void ScheduleSize()
+        {
+            if (!_initialized || _pendingSize) return; _pendingSize = true;
+            try
+            {
+                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                { _pendingSize = false; try { ApplyAutoSize(); } catch (Exception ex) { Log.Warn("QuickEdit", "ApplyAutoSize failed (enqueued)", ex); } });
+            }
+            catch (Exception ex) { _pendingSize = false; Log.Warn("QuickEdit", "ScheduleSize enqueue failed", ex); }
+        }
+
         private void RefreshRowFromSources(QuickEditRow? row)
         {
             if (row == null || _compSource == null || _userSource == null) return;
@@ -174,21 +189,7 @@ namespace PolicyPlus.WinUI3.Windows
                 var fresh = new QuickEditRow(row.Policy, _bundle!, _compSource, _userSource);
                 row.AdoptState(fresh);
             }
-            catch { }
-        }
-
-        private void Columns_PropertyChanged(object? s, PropertyChangedEventArgs e) => ScheduleSize();
-        private void Pending_CollectionChanged(object? s, NotifyCollectionChangedEventArgs e) { try { DispatcherQueue.TryEnqueue(UpdateUnsavedIndicator); } catch { } }
-
-        private void ScheduleSize()
-        {
-            if (!_initialized || _pendingSize) return; _pendingSize = true;
-            try
-            {
-                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
-                { _pendingSize = false; try { ApplyAutoSize(); } catch { } });
-            }
-            catch { _pendingSize = false; }
+            catch (Exception ex) { Log.Warn("QuickEdit", "RefreshRowFromSources failed", ex); }
         }
 
         private void ApplyAutoSize()

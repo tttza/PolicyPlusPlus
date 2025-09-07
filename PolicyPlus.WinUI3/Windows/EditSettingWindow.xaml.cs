@@ -18,6 +18,7 @@ using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx;
 using PolicyPlus.WinUI3.ViewModels; // added for QuickEditRow
+using PolicyPlus.WinUI3.Logging; // logging
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -977,10 +978,10 @@ namespace PolicyPlus.WinUI3.Windows
             // Validate required text elements when enabling
             if (OptEnabled.IsChecked == true && !ValidateRequiredElements())
             {
-                try { if (App.Window is MainWindow mw) mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Required value missing.", InfoBarSeverity.Error }); } catch { }
+                try { if (App.Window is MainWindow mw) mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Required value missing.", InfoBarSeverity.Error }); } catch (Exception ex) { Log.Warn("EditSetting", "ShowInfo failed (Apply validation)", ex); }
                 return;
             }
-            try { SaveToSource(); } catch { }
+            try { SaveToSource(); } catch (Exception ex) { Log.Error("EditSetting", "SaveToSource failed in Apply", ex); }
             try
             {
                 if (App.Window is MainWindow mw)
@@ -988,17 +989,17 @@ namespace PolicyPlus.WinUI3.Windows
                     mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Queued.", InfoBarSeverity.Informational });
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Warn("EditSetting", "ShowInfo failed (Apply queued)", ex); }
         }
 
         private void OkBtn_Click(object sender, RoutedEventArgs e)
         {
             if (OptEnabled.IsChecked == true && !ValidateRequiredElements())
             {
-                try { if (App.Window is MainWindow mw) mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Required value missing.", InfoBarSeverity.Error }); } catch { }
+                try { if (App.Window is MainWindow mw) mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Required value missing.", InfoBarSeverity.Error }); } catch (Exception ex) { Log.Warn("EditSetting", "ShowInfo failed (OK validation)", ex); }
                 return;
             }
-            try { SaveToSource(); } catch { }
+            try { SaveToSource(); } catch (Exception ex) { Log.Error("EditSetting", "SaveToSource failed in OK", ex); }
             Close();
             try
             {
@@ -1007,7 +1008,7 @@ namespace PolicyPlus.WinUI3.Windows
                     mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Queued.", InfoBarSeverity.Informational });
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Warn("EditSetting", "ShowInfo failed (OK queued)", ex); }
         }
 
         private bool ValidateRequiredElements()
@@ -1030,7 +1031,7 @@ namespace PolicyPlus.WinUI3.Windows
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Warn("EditSetting", "ValidateRequiredElements failed", ex); }
             return true;
         }
     }

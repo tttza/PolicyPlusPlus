@@ -7,6 +7,7 @@ using System;
 using System.Text;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
+using PolicyPlus.WinUI3.Logging; // logging
 
 namespace PolicyPlus.WinUI3.Dialogs
 {
@@ -47,6 +48,7 @@ namespace PolicyPlus.WinUI3.Dialogs
             }
             catch (Exception ex)
             {
+                Log.Warn("ImportPol", $"Preview failed for path '{PolPath?.Text}'", ex);
                 PreviewBox.Text = "Failed to load: " + ex.Message;
                 Pol = null;
             }
