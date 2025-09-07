@@ -458,8 +458,8 @@ namespace PolicyPlus.WinUI3
                 int failureCount = 0;
                 List<PolicyPlusPolicy>? allLocal = null;
                 int totalGroupsLocal = 0;
-                List<(PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)>? searchIndexLocal = null;
-                Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)>? searchIndexByIdLocal = null;
+                List<(PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)>? searchIndexLocal = null;
+                Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)>? searchIndexByIdLocal = null;
 
                 await Task.Run(() =>
                 {
@@ -476,11 +476,11 @@ namespace PolicyPlus.WinUI3
                         searchIndexLocal = allLocal.Select(p => (
                             Policy: p,
                             NameLower: SearchText.Normalize(p.DisplayName),
-                            EnglishLower: SearchText.Normalize(EnglishTextService.GetEnglishPolicyName(p)),
+                            SecondLower: string.Empty,
                             IdLower: SearchText.Normalize(p.UniqueID),
                             DescLower: SearchText.Normalize(p.DisplayExplanation)
                         )).ToList();
-                        searchIndexByIdLocal = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
+                        searchIndexByIdLocal = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
                         foreach (var e in searchIndexLocal)
                         {
                             searchIndexByIdLocal[e.Policy.UniqueID] = e;

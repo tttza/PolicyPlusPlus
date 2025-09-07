@@ -19,8 +19,8 @@ namespace PolicyPlus.WinUI3
     public sealed partial class MainWindow
     {
         private bool _suppressSearchOptionEvents; // master flag shared (now used in handlers)
-        private List<(PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)> _searchIndex = new();
-        private Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)> _searchIndexById = new(StringComparer.OrdinalIgnoreCase);
+        private List<(PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)> _searchIndex = new();
+        private Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)> _searchIndexById = new(StringComparer.OrdinalIgnoreCase);
         private CancellationTokenSource? _searchDebounceCts;
         private CancellationTokenSource? _searchOptionsDebounceCts; // used to debounce option toggles
         private bool _searchInName = true;
@@ -72,11 +72,11 @@ namespace PolicyPlus.WinUI3
                 _searchIndex = _allPolicies.Select(p => (
                     Policy: p,
                     NameLower: SearchText.Normalize(p.DisplayName),
-                    EnglishLower: SearchText.Normalize(EnglishTextService.GetEnglishPolicyName(p)),
+                    SecondLower: string.Empty,
                     IdLower: SearchText.Normalize(p.UniqueID),
                     DescLower: SearchText.Normalize(p.DisplayExplanation)
                 )).ToList();
-                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
+                _searchIndexById = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
                 foreach (var e in _searchIndex) _searchIndexById[e.Policy.UniqueID] = e;
             }
             catch (Exception ex) { Log.Error("MainSearch", "RebuildSearchIndex failed", ex); _searchIndex = new(); _searchIndexById = new(StringComparer.OrdinalIgnoreCase); }
@@ -98,18 +98,17 @@ namespace PolicyPlus.WinUI3
             var qLower = SearchText.Normalize(q);
             var bestByName = new Dictionary<string, (int score, string name)>(StringComparer.OrdinalIgnoreCase);
             bool smallSubset = allowed.Count > 0 && allowed.Count < (_allPolicies.Count / 2);
-            void Consider((PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower) e)
+            void Consider((PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower) e)
             {
                 if (!allowed.Contains(e.Policy.UniqueID)) return;
                 int score = 0;
                 if (!string.IsNullOrEmpty(qLower))
                 {
                     int nameScore = ScoreMatch(e.NameLower, qLower);
-                    int enScore = string.IsNullOrEmpty(e.EnglishLower) ? -1000 : ScoreMatch(e.EnglishLower, qLower);
                     int idScore = ScoreMatch(e.IdLower, qLower);
                     int descScore = _searchInDescription ? ScoreMatch(e.DescLower, qLower) : -1000;
-                    if (nameScore <= -1000 && enScore <= -1000 && idScore <= -1000 && descScore <= -1000) return;
-                    score += Math.Max(0, Math.Max(nameScore, enScore)) * 3;
+                    if (nameScore <= -1000 && idScore <= -1000 && descScore <= -1000) return;
+                    score += Math.Max(0, nameScore) * 3;
                     score += Math.Max(0, idScore) * 2;
                     score += Math.Max(0, descScore);
                 }

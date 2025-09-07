@@ -239,13 +239,6 @@ namespace PolicyPlus.WinUI3.Services
             SaveSettings(s);
         }
 
-        public void UpdateShowEnglishNames(bool show)
-        {
-            var s = LoadSettings();
-            s.ShowEnglishNames = show;
-            SaveSettings(s);
-        }
-
         public void UpdateCategoryPaneWidth(double width)
         {
             var s = LoadSettings();
@@ -362,7 +355,6 @@ namespace PolicyPlus.WinUI3.Services
         public ColumnsOptions? Columns { get; set; }
         public SearchOptions? Search { get; set; }
         public string? PathJoinSymbol { get; set; }
-        public bool? ShowEnglishNames { get; set; }
         public bool? SecondLanguageEnabled { get; set; }
         public string? SecondLanguage { get; set; }
         public double? CategoryPaneWidth { get; set; }

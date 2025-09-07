@@ -94,14 +94,14 @@ namespace PolicyPlus.WinUI3
         }
 
         private void ContextCopyName_Click(object sender, RoutedEventArgs e)
-        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p != null) { var text = EnglishTextService.GetCompositePolicyName(p); var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(text); Clipboard.SetContent(dp); } }
+        { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p != null) { var text = p.DisplayName ?? string.Empty; var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(text); Clipboard.SetContent(dp); } }
 
         private void ContextCopyId_Click(object sender, RoutedEventArgs e)
         { var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p != null) { var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(p.UniqueID); Clipboard.SetContent(dp); } }
 
         private void ContextCopyPath_Click(object sender, RoutedEventArgs e)
         {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p == null) return; var sb = new StringBuilder(); var c = p.Category; var stack = new Stack<string>(); while (c != null) { stack.Push(EnglishTextService.GetCompositeCategoryName(c)); c = c.Parent; } sb.AppendLine("Administrative Templates"); foreach (var name in stack) sb.AppendLine("+ " + name); sb.AppendLine("+ " + EnglishTextService.GetCompositePolicyName(p)); var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(sb.ToString()); Clipboard.SetContent(dp);
+            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p == null) return; var sb = new StringBuilder(); var c = p.Category; var stack = new Stack<string>(); while (c != null) { stack.Push(c.DisplayName ?? string.Empty); c = c.Parent; } sb.AppendLine("Administrative Templates"); foreach (var name in stack) sb.AppendLine("+ " + name); sb.AppendLine("+ " + (p.DisplayName ?? string.Empty)); var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(sb.ToString()); Clipboard.SetContent(dp);
         }
 
         private void ContextRevealInTree_Click(object sender, RoutedEventArgs e)
@@ -126,7 +126,6 @@ namespace PolicyPlus.WinUI3
             if (sender is FrameworkElement fe && fe.Tag is PolicyPlusPolicy p)
             {
                 try { BookmarkService.Instance.Toggle(p.UniqueID); } catch { }
-                // Only rebind when the active view is restricted to bookmarks; otherwise just update icon via event.
                 if (_bookmarksOnly)
                 {
                     RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
@@ -137,11 +136,9 @@ namespace PolicyPlus.WinUI3
         private void ChkBookmarksOnly_Checked(object sender, RoutedEventArgs e)
         { if (_suppressBookmarksOnlyChanged) return; _bookmarksOnly = (sender as CheckBox)?.IsChecked == true; try { SettingsService.Instance.UpdateBookmarksOnly(_bookmarksOnly); } catch { } RebindConsideringAsync(SearchBox?.Text ?? string.Empty); }
 
-        // Menu: Show only bookmarks
         private void BookmarkFilterMenu_Click(object sender, RoutedEventArgs e)
         { _bookmarksOnly = !_bookmarksOnly; try { if (ChkBookmarksOnly != null) { _suppressBookmarksOnlyChanged = true; ChkBookmarksOnly.IsChecked = _bookmarksOnly; _suppressBookmarksOnlyChanged = false; } SettingsService.Instance.UpdateBookmarksOnly(_bookmarksOnly); } catch { } RebindConsideringAsync(SearchBox?.Text ?? string.Empty); }
 
-        // Menu: Manage lists (placeholder)
         private void BookmarkManageMenu_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -153,7 +150,6 @@ namespace PolicyPlus.WinUI3
             catch { ShowInfo("Could not open bookmark manager."); }
         }
 
-        // Always open Quick Edit using only bookmarked policies (ignore selection)
         private void OpenQuickEditBookmarks()
         {
             try
@@ -180,10 +176,7 @@ namespace PolicyPlus.WinUI3
         { OpenQuickEditBookmarks(); }
 
         private void BookmarkToggle_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
-        {
-            // Swallow double-tap so row edit doesn't open when user rapidly toggles bookmark.
-            e.Handled = true;
-        }
+        { e.Handled = true; }
 
         private void ViewBookmarkToggle_Click(object sender, RoutedEventArgs e)
         {
