@@ -40,7 +40,6 @@ namespace PolicyPlus.WinUI3.Services
 
         public static void OpenAtKey(string hive, string subKey)
         {
-            // Fire-and-forget best-effort
             TryOpenAtKey(hive, subKey);
         }
 
@@ -51,15 +50,13 @@ namespace PolicyPlus.WinUI3.Services
             var hiveName = NormalizeHive(hive);
             var normalizedSub = NormalizeKey(subKey);
 
-            // Prefer elevated host first, so HKLM paths work without access denied, then fallback to non-elevated
             try
             {
-                var (ok, _) = await ElevationService.Instance.OpenRegeditAtAsync(hiveName, normalizedSub).ConfigureAwait(false);
-                if (ok) return;
+                var res = await ElevationService.Instance.OpenRegeditAtAsync(hiveName, normalizedSub).ConfigureAwait(false);
+                if (res.Ok) return;
             }
             catch { }
 
-            // Fallback to non-elevated attempt (works for standard users and HKCU)
             TryOpenAtKey(hiveName, normalizedSub);
         }
 

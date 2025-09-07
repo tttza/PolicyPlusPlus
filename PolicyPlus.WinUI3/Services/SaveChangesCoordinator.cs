@@ -59,11 +59,11 @@ namespace PolicyPlus.WinUI3.Services
                         return (false, "elevation timeout", compBase64, userBase64);
                     }
                     var res = await callTask.ConfigureAwait(false);
-                    if (!res.ok)
-                        Log.Error("Save", $"{corr} elevation error: {res.error}");
+                    if (!res.Ok)
+                        Log.Error("Save", $"{corr} elevation error: {res.Error} code={res.Code}");
                     else
                         Log.Info("Save", $"{corr} success count={changeList.Count}");
-                    return (res.ok, res.error, compBase64, userBase64);
+                    return (res.Ok, res.Error, compBase64, userBase64);
                 }
                 catch (Exception ex)
                 {

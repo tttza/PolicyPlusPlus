@@ -849,8 +849,8 @@ namespace PolicyPlus.WinUI3
                                 userPol.Save(bwU); msU.Position = 0; userB64 = Convert.ToBase64String(msU.ToArray());
                             }
                             var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(machineB64, userB64, triggerRefresh: true);
-                            if (!res.ok)
-                            { ShowInfo(".reg import failed: " + (res.error ?? "elevation error"), InfoBarSeverity.Error); return; }
+                            if (!res.Ok)
+                            { ShowInfo(".reg import failed: " + (res.Error ?? "elevation error"), InfoBarSeverity.Error); return; }
                             RefreshLocalSources();
                             ShowInfo(".reg imported to Local GPO.");
                         }
