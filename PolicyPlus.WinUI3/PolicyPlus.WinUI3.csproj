@@ -6,15 +6,25 @@
     <RootNamespace>PolicyPlus.WinUI3</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x86;x64;ARM64</Platforms>
-    <WindowsPackageType>None</WindowsPackageType>
     <UseWinUI>true</UseWinUI>
-    <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
     <WindowsAppSDKBootstrapInitialize>true</WindowsAppSDKBootstrapInitialize>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
-	<PublishProfile>Properties\PublishProfiles\win10-$(Platform).pubxml</PublishProfile>
+	<PublishProfile>Properties\PublishProfiles\win-$(Platform).pubxml</PublishProfile>
+	<Configurations>Debug;Release;Debug-Unpackaged;Release-Unpackaged</Configurations>
+      <Packaged>true</Packaged>
+	  <Packaged Condition="'$(Configuration)' == 'Debug-Unpackaged' Or '$(Configuration)' == 'Release-Unpackaged'">false</Packaged>
   </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Packaged)' != 'true'">
+	    <EnableMsixTooling>false</EnableMsixTooling>
+	    <WindowsPackageType>None</WindowsPackageType>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Packaged)' == 'true'">
+	    <EnableMsixTooling>true</EnableMsixTooling>
+    </PropertyGroup>
 
 
   <PropertyGroup Condition="'$(WindowsAppSDKSelfContained)'=='true'">
@@ -51,6 +61,60 @@
     </When>
   </Choose>
   <ItemGroup>
+    <Content Remove="Assets\LargeTile.scale-100.png" />
+    <Content Remove="Assets\LargeTile.scale-125.png" />
+    <Content Remove="Assets\LargeTile.scale-150.png" />
+    <Content Remove="Assets\LargeTile.scale-200.png" />
+    <Content Remove="Assets\LargeTile.scale-400.png" />
+    <Content Remove="Assets\SmallTile.scale-100.png" />
+    <Content Remove="Assets\SmallTile.scale-125.png" />
+    <Content Remove="Assets\SmallTile.scale-150.png" />
+    <Content Remove="Assets\SmallTile.scale-200.png" />
+    <Content Remove="Assets\SmallTile.scale-400.png" />
+    <Content Remove="Assets\SplashScreen.scale-100.png" />
+    <Content Remove="Assets\SplashScreen.scale-125.png" />
+    <Content Remove="Assets\SplashScreen.scale-150.png" />
+    <Content Remove="Assets\SplashScreen.scale-200.png" />
+    <Content Remove="Assets\Square150x150Logo.scale-100.png" />
+    <Content Remove="Assets\Square150x150Logo.scale-125.png" />
+    <Content Remove="Assets\Square150x150Logo.scale-150.png" />
+    <Content Remove="Assets\Square150x150Logo.scale-200.png" />
+    <Content Remove="Assets\Square150x150Logo.scale-400.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-lightunplated_targetsize-16.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-lightunplated_targetsize-24.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-lightunplated_targetsize-256.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-lightunplated_targetsize-32.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-lightunplated_targetsize-48.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-unplated_targetsize-16.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-unplated_targetsize-24.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-unplated_targetsize-256.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-unplated_targetsize-32.png" />
+    <Content Remove="Assets\Square44x44Logo.altform-unplated_targetsize-48.png" />
+    <Content Remove="Assets\Square44x44Logo.scale-100.png" />
+    <Content Remove="Assets\Square44x44Logo.scale-125.png" />
+    <Content Remove="Assets\Square44x44Logo.scale-150.png" />
+    <Content Remove="Assets\Square44x44Logo.scale-200.png" />
+    <Content Remove="Assets\Square44x44Logo.scale-400.png" />
+    <Content Remove="Assets\Square44x44Logo.targetsize-16.png" />
+    <Content Remove="Assets\Square44x44Logo.targetsize-24.png" />
+    <Content Remove="Assets\Square44x44Logo.targetsize-256.png" />
+    <Content Remove="Assets\Square44x44Logo.targetsize-32.png" />
+    <Content Remove="Assets\Square44x44Logo.targetsize-48.png" />
+    <Content Remove="Assets\StoreLogo.scale-100.png" />
+    <Content Remove="Assets\StoreLogo.scale-125.png" />
+    <Content Remove="Assets\StoreLogo.scale-150.png" />
+    <Content Remove="Assets\StoreLogo.scale-200.png" />
+    <Content Remove="Assets\StoreLogo.scale-400.png" />
+    <Content Remove="Assets\Wide310x150Logo.scale-100.png" />
+    <Content Remove="Assets\Wide310x150Logo.scale-125.png" />
+    <Content Remove="Assets\Wide310x150Logo.scale-150.png" />
+    <Content Remove="Assets\Wide310x150Logo.scale-200.png" />
+    <Content Remove="Assets\Wide310x150Logo.scale-400.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Assets\SplashScreen.scale-400.png" />
+  </ItemGroup>
+  <ItemGroup>
     <Page Remove="Windows\LogViewerWindow.xaml" />
   </ItemGroup>
   <ItemGroup>
@@ -75,6 +139,10 @@
     <PublishReadyToRun>False</PublishReadyToRun>
     <PublishTrimmed>False</PublishTrimmed>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug-Unpackaged'">
+    <PublishReadyToRun>False</PublishReadyToRun>
+    <PublishTrimmed>False</PublishTrimmed>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' != 'Debug'">
     <PublishReadyToRun>False</PublishReadyToRun>
     <PublishTrimmed>False</PublishTrimmed>
@@ -88,19 +156,37 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Unpackaged|x86'">
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Unpackaged|x64'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Unpackaged|ARM64'">
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-Unpackaged|x86'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-Unpackaged|x64'">
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-Unpackaged|ARM64'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
   <Target Name="RemoveFoldersWithMuiFiles" AfterTargets="Build">
