@@ -12,6 +12,7 @@
     <Nullable>enable</Nullable>
     <WindowsAppSDKBootstrapInitialize>true</WindowsAppSDKBootstrapInitialize>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <!-- Removed explicit <Page Include="Windows\ManageBookmarksWindow.xaml" /> to avoid duplicate implicit item -->
