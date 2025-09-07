@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using PolicyPlus.Core.Core;
+using PolicyPlus.WinUI3.Logging; // logging
 
 namespace PolicyPlus.WinUI3
 {
@@ -11,16 +12,18 @@ namespace PolicyPlus.WinUI3
     {
         private async Task<(bool ok, string? error)> SavePendingAsync(PendingChange[] items)
         {
-            if (items == null || items.Length == 0) return (true, null);
-            if (_bundle == null) return (false, "No ADMX bundle loaded");
+            if (items == null || items.Length == 0) { Log.Debug("MainSave", "No pending items"); return (true, null); }
+            if (_bundle == null) { Log.Error("MainSave", "Bundle not loaded"); return (false, "No ADMX bundle loaded"); }
 
-            // Use the same coordinator and timeout as PendingChangesWindow to avoid UI hangs
+            var corr = Log.NewCorrelationId();
+            Log.Info("MainSave", $"{corr} start count={items.Length}");
             var (ok, error, _, _) = await Services.SaveChangesCoordinator.SaveAsync(
                 _bundle,
                 items,
                 new ElevationServiceAdapter(),
                 TimeSpan.FromSeconds(8),
                 triggerRefresh: true);
+            if (ok) Log.Info("MainSave", $"{corr} success"); else Log.Error("MainSave", $"{corr} failed error={error}");
             return (ok, error);
         }
 
@@ -41,7 +44,7 @@ namespace PolicyPlus.WinUI3
                         UpdateUnsavedIndicator();
                         ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
                         ShowInfo("Saved.", Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success);
-                        try { Saved?.Invoke(this, EventArgs.Empty); } catch { }
+                        try { Saved?.Invoke(this, EventArgs.Empty); } catch (Exception ex) { Log.Warn("MainSave", "Saved event failed", ex); }
                     }
                     else
                     {
@@ -51,7 +54,7 @@ namespace PolicyPlus.WinUI3
             }
             finally
             {
-                try { SetBusy(false); } catch { }
+                try { SetBusy(false); } catch (Exception ex) { Log.Warn("MainSave", "SetBusy(false) failed", ex); }
             }
         }
     }

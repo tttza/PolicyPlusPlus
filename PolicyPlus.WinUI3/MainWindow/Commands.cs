@@ -197,5 +197,16 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
         }
+
+        private void BtnViewLogs_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var win = new LogViewerWindow();
+                win.Activate();
+                WindowHelpers.BringToFront(win);
+            }
+            catch { }
+        }
     }
 }

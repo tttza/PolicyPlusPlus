@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="PolicyPlus.WinUI3.Windows.LogViewerWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Logs">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid x:Name="ScaleHost">
+        <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="8" RowSpacing="6">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Toolbar -->
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBlock Text="Level:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="LevelCombo" Width="120" SelectionChanged="LevelCombo_SelectionChanged">
+                    <ComboBoxItem Content="Trace"/>
+                    <ComboBoxItem Content="Debug"/>
+                    <ComboBoxItem Content="Info" IsSelected="True"/>
+                    <ComboBoxItem Content="Warn"/>
+                    <ComboBoxItem Content="Error"/>
+                </ComboBox>
+                <Button x:Name="ClearBtn" Content="Clear" Click="ClearBtn_Click"/>
+                <Button x:Name="CopyBtn" Content="Copy All" Click="CopyBtn_Click"/>
+                <Button x:Name="PauseBtn" Content="Pause" Click="PauseBtn_Click"/>
+                <TextBlock x:Name="StatusText" Margin="12,0,0,0" VerticalAlignment="Center" Opacity="0.7"/>
+            </StackPanel>
+
+            <!-- Log content -->
+            <TextBox Grid.Row="1"
+                     x:Name="LogBox"
+                     FontFamily="Consolas"
+                     FontSize="12"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     TextWrapping="NoWrap"/>
+
+            <ProgressBar Grid.Row="2" x:Name="LiveIndicator" IsIndeterminate="True" Height="4"/>
+        </Grid>
+    </Grid>
+</Window>

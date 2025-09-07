@@ -4,13 +4,30 @@ using System.Linq;
 using System.Globalization;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Admx;
+using System.Diagnostics; // for Debug logging (lightweight)
 
 namespace PolicyPlus.Core.Core
 {
     public class PolicyProcessing
     {
+        // Internal helper to emit lightweight debug info without introducing dependency on WinUI logging layer.
+        private static void LogDebug(string area, string message)
+        {
+#if DEBUG
+            try { Debug.WriteLine($"[Core:{area}] {message}"); } catch { }
+#endif
+        }
+        private static void LogError(string area, string message, Exception ex)
+        {
+#if DEBUG
+            try { Debug.WriteLine($"[Core:{area}] ERROR {message} :: {ex.GetType().Name} {ex.Message}"); } catch { }
+#endif
+        }
+
         public static PolicyState GetPolicyState(IPolicySource PolicySource, PolicyPlusPolicy Policy)
         {
+            if (Policy == null) return PolicyState.NotConfigured; // defensive
+            LogDebug("PolicyProcessing", $"GetPolicyState policyId={Policy.UniqueID}");
             // New explicit On/Off priority: If explicit registry patterns (OnValue/OffValue or their lists) clearly indicate one side, decide early.
             // This avoids heuristic noise from presence/absence of unrelated element values.
             var rawpol = Policy.RawPolicy;
@@ -19,19 +36,22 @@ namespace PolicyPlus.Core.Core
 
             int explicitPos = 0;
             int explicitNeg = 0;
-            // Helper local functions use existing private static methods
             bool rootOnMatched = false;
             bool rootOffMatched = false;
             if (!string.IsNullOrEmpty(rawpol.RegistryKey) && !string.IsNullOrEmpty(rawpol.RegistryValue))
             {
-                if (rawpol.AffectedValues.OnValue is object && ValuePresent(rawpol.AffectedValues.OnValue, PolicySource, rawpol.RegistryKey, rawpol.RegistryValue))
-                    rootOnMatched = true;
-                else if (rawpol.AffectedValues.OnValueList is object && ValueListPresent(rawpol.AffectedValues.OnValueList, PolicySource, rawpol.RegistryKey, rawpol.RegistryValue))
-                    rootOnMatched = true;
-                if (rawpol.AffectedValues.OffValue is object && ValuePresent(rawpol.AffectedValues.OffValue, PolicySource, rawpol.RegistryKey, rawpol.RegistryValue))
-                    rootOffMatched = true;
-                else if (rawpol.AffectedValues.OffValueList is object && ValueListPresent(rawpol.AffectedValues.OffValueList, PolicySource, rawpol.RegistryKey, rawpol.RegistryValue))
-                    rootOffMatched = true;
+                try
+                {
+                    if (rawpol.AffectedValues.OnValue is object && ValuePresent(rawpol.AffectedValues.OnValue, PolicySource, rawpol.RegistryKey, rawpol.RegistryValue))
+                        rootOnMatched = true;
+                    else if (rawpol.AffectedValues.OnValueList is object && ValueListPresent(rawpol.AffectedValues.OnValueList, PolicySource, rawpol.RegistryKey, rawpol.RegistryValue))
+                        rootOnMatched = true;
+                    if (rawpol.AffectedValues.OffValue is object && ValuePresent(rawpol.AffectedValues.OffValue, PolicySource, rawpol.RegistryKey, rawpol.RegistryValue))
+                        rootOffMatched = true;
+                    else if (rawpol.AffectedValues.OffValueList is object && ValueListPresent(rawpol.AffectedValues.OffValueList, PolicySource, rawpol.RegistryKey, rawpol.RegistryValue))
+                        rootOffMatched = true;
+                }
+                catch (Exception ex) { LogError("PolicyProcessing", "explicit root match eval failed", ex); }
             }
             if (rootOnMatched) explicitPos++;
             if (rootOffMatched) explicitNeg++;
@@ -40,66 +60,74 @@ namespace PolicyPlus.Core.Core
             {
                 foreach (var elem in rawpol.Elements)
                 {
-                    if (elem.ElementType == "boolean")
+                    try
                     {
-                        string elemKey = string.IsNullOrEmpty(elem.RegistryKey) ? rawpol.RegistryKey : elem.RegistryKey;
-                        var be = (BooleanPolicyElement)elem;
-                        bool onMatch = false; bool offMatch = false;
-                        if (be.AffectedRegistry.OnValue is object && ValuePresent(be.AffectedRegistry.OnValue, PolicySource, elemKey, elem.RegistryValue)) onMatch = true;
-                        else if (be.AffectedRegistry.OnValueList is object && ValueListPresent(be.AffectedRegistry.OnValueList, PolicySource, elemKey, elem.RegistryValue)) onMatch = true;
-                        if (be.AffectedRegistry.OffValue is object && ValuePresent(be.AffectedRegistry.OffValue, PolicySource, elemKey, elem.RegistryValue)) offMatch = true;
-                        else if (be.AffectedRegistry.OffValueList is object && ValueListPresent(be.AffectedRegistry.OffValueList, PolicySource, elemKey, elem.RegistryValue)) offMatch = true;
-                        if (onMatch) explicitPos++;
-                        if (offMatch) explicitNeg++;
-                    }
-                    else if (elem.ElementType == "enum")
-                    {
-                        // Enum: if any item value matches treat as positive evidence; negative is inferred only if no value matches AND an Off explicit root exists (already counted) so skip explicitNeg here.
-                        string elemKey = string.IsNullOrEmpty(elem.RegistryKey) ? rawpol.RegistryKey : elem.RegistryKey;
-                        var ee = (EnumPolicyElement)elem;
-                        foreach (var item in ee.Items)
+                        if (elem.ElementType == "boolean")
                         {
-                            if (ValuePresent(item.Value, PolicySource, elemKey, elem.RegistryValue))
+                            string elemKey = string.IsNullOrEmpty(elem.RegistryKey) ? rawpol.RegistryKey : elem.RegistryKey;
+                            var be = (BooleanPolicyElement)elem;
+                            bool onMatch = false; bool offMatch = false;
+                            if (be.AffectedRegistry.OnValue is object && ValuePresent(be.AffectedRegistry.OnValue, PolicySource, elemKey, elem.RegistryValue)) onMatch = true;
+                            else if (be.AffectedRegistry.OnValueList is object && ValueListPresent(be.AffectedRegistry.OnValueList, PolicySource, elemKey, elem.RegistryValue)) onMatch = true;
+                            if (be.AffectedRegistry.OffValue is object && ValuePresent(be.AffectedRegistry.OffValue, PolicySource, elemKey, elem.RegistryValue)) offMatch = true;
+                            else if (be.AffectedRegistry.OffValueList is object && ValueListPresent(be.AffectedRegistry.OffValueList, PolicySource, elemKey, elem.RegistryValue)) offMatch = true;
+                            if (onMatch) explicitPos++;
+                            if (offMatch) explicitNeg++;
+                        }
+                        else if (elem.ElementType == "enum")
+                        {
+                            string elemKey = string.IsNullOrEmpty(elem.RegistryKey) ? rawpol.RegistryKey : elem.RegistryKey;
+                            var ee = (EnumPolicyElement)elem;
+                            foreach (var item in ee.Items)
                             {
-                                if (item.ValueList is null || ValueListPresent(item.ValueList, PolicySource, elemKey, elem.RegistryValue))
+                                if (ValuePresent(item.Value, PolicySource, elemKey, elem.RegistryValue))
                                 {
-                                    explicitPos++;
-                                    break;
+                                    if (item.ValueList is null || ValueListPresent(item.ValueList, PolicySource, elemKey, elem.RegistryValue))
+                                    {
+                                        explicitPos++;
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
+                    catch (Exception ex) { LogError("PolicyProcessing", $"element explicit eval failed elemId={elem.ID}", ex); }
                 }
             }
             if (explicitPos > 0 && explicitNeg == 0)
                 return PolicyState.Enabled;
             if (explicitNeg > 0 && explicitPos == 0)
                 return PolicyState.Disabled;
-            // Fall through to legacy heuristic scoring if ambiguous or no explicit matches.
 
             decimal enabledEvidence = 0m;
             decimal disabledEvidence = 0m;
             bool hasRegistryValue = false;
-            // Re-fetch rawpol reference (already have) but continue with original code below.
             if (rawpol.AffectedValues == null)
                 rawpol.AffectedValues = new PolicyRegistryList();
             void checkOneVal(PolicyRegistryValue? Value, string Key, string ValueName, ref decimal EvidenceVar)
             {
                 if (Value is null)
                     return;
-                if (ValuePresent(Value, PolicySource, Key, ValueName))
-                    EvidenceVar += 1m;
+                try
+                {
+                    if (ValuePresent(Value, PolicySource, Key, ValueName))
+                        EvidenceVar += 1m;
+                }
+                catch (Exception ex) { LogError("PolicyProcessing", $"checkOneVal failed key={Key} val={ValueName}", ex); }
             };
             void checkValList(PolicyRegistrySingleList? ValList, string DefaultKey, ref decimal EvidenceVar)
             {
-                if (ValList is null)
-                    return;
-                string listKey = string.IsNullOrEmpty(ValList.DefaultRegistryKey) ? DefaultKey : ValList.DefaultRegistryKey;
-                foreach (var regVal in ValList.AffectedValues)
+                if (ValList is null) return;
+                try
                 {
-                    string entryKey = string.IsNullOrEmpty(regVal.RegistryKey) ? listKey : regVal.RegistryKey;
-                    checkOneVal(regVal.Value, entryKey, regVal.RegistryValue, ref EvidenceVar);
+                    string listKey = string.IsNullOrEmpty(ValList.DefaultRegistryKey) ? DefaultKey : ValList.DefaultRegistryKey;
+                    foreach (var regVal in ValList.AffectedValues)
+                    {
+                        string entryKey = string.IsNullOrEmpty(regVal.RegistryKey) ? listKey : regVal.RegistryKey;
+                        checkOneVal(regVal.Value, entryKey, regVal.RegistryValue, ref EvidenceVar);
+                    }
                 }
+                catch (Exception ex) { LogError("PolicyProcessing", "checkValList failed", ex); }
             };
             if (!string.IsNullOrEmpty(rawpol.RegistryValue))
             {
@@ -133,52 +161,56 @@ namespace PolicyPlus.Core.Core
                 foreach (var elem in rawpol.Elements)
                 {
                     string elemKey = string.IsNullOrEmpty(elem.RegistryKey) ? rawpol.RegistryKey : elem.RegistryKey;
-                    if (elem.ElementType == "list")
+                    try
                     {
-                        int neededValues = 0;
-                        if (PolicySource.WillDeleteValue(elemKey, ""))
+                        if (elem.ElementType == "list")
                         {
-                            deletedElements += 1m;
-                            neededValues = 1;
-                        }
+                            int neededValues = 0;
+                            if (PolicySource.WillDeleteValue(elemKey, ""))
+                            {
+                                deletedElements += 1m;
+                                neededValues = 1;
+                            }
 
-                        if (PolicySource.GetValueNames(elemKey).Count > 0)
+                            if (PolicySource.GetValueNames(elemKey).Count > 0)
+                            {
+                                deletedElements -= neededValues;
+                                presentElements += 1m;
+                            }
+                        }
+                        else if (elem.ElementType == "boolean")
                         {
-                            deletedElements -= neededValues;
-                            presentElements += 1m;
+                            BooleanPolicyElement booleanElem = (BooleanPolicyElement)elem;
+                            if (PolicySource.WillDeleteValue(elemKey, elem.RegistryValue))
+                            {
+                                deletedElements += 1m;
+                            }
+                            else
+                            {
+                                decimal checkboxDisabled = 0m;
+                                checkOneVal(booleanElem.AffectedRegistry.OffValue, elemKey, elem.RegistryValue, ref checkboxDisabled);
+                                checkValList(booleanElem.AffectedRegistry.OffValueList, elemKey, ref checkboxDisabled);
+                                deletedElements += checkboxDisabled * 0.1m;
+                                checkOneVal(booleanElem.AffectedRegistry.OnValue, elemKey, elem.RegistryValue, ref presentElements);
+                                checkValList(booleanElem.AffectedRegistry.OnValueList, elemKey, ref presentElements);
+                            }
+                        }
+                        else if (PolicySource.WillDeleteValue(elemKey, elem.RegistryValue))
+                        {
+                            if (!hasRegistryValue)
+                            {
+                                deletedElements += 1m;
+                            }
+                        }
+                        else if (PolicySource.ContainsValue(elemKey, elem.RegistryValue))
+                        {
+                            if (!hasRegistryValue)
+                            {
+                                presentElements += 1m;
+                            }
                         }
                     }
-                    else if (elem.ElementType == "boolean")
-                    {
-                        BooleanPolicyElement booleanElem = (BooleanPolicyElement)elem;
-                        if (PolicySource.WillDeleteValue(elemKey, elem.RegistryValue))
-                        {
-                            deletedElements += 1m;
-                        }
-                        else
-                        {
-                            decimal checkboxDisabled = 0m;
-                            checkOneVal(booleanElem.AffectedRegistry.OffValue, elemKey, elem.RegistryValue, ref checkboxDisabled);
-                            checkValList(booleanElem.AffectedRegistry.OffValueList, elemKey, ref checkboxDisabled);
-                            deletedElements += checkboxDisabled * 0.1m;
-                            checkOneVal(booleanElem.AffectedRegistry.OnValue, elemKey, elem.RegistryValue, ref presentElements);
-                            checkValList(booleanElem.AffectedRegistry.OnValueList, elemKey, ref presentElements);
-                        }
-                    }
-                    else if (PolicySource.WillDeleteValue(elemKey, elem.RegistryValue))
-                    {
-                        if (!hasRegistryValue)
-                        {
-                            deletedElements += 1m;
-                        }
-                    }
-                    else if (PolicySource.ContainsValue(elemKey, elem.RegistryValue))
-                    {
-                        if (!hasRegistryValue)
-                        {
-                            presentElements += 1m;
-                        }
-                    }
+                    catch (Exception ex) { LogError("PolicyProcessing", $"element evidence eval failed elemId={elem.ID}", ex); }
                 }
 
                 if (presentElements > 0m)

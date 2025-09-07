@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Collections.Generic;
 using PolicyPlus.Core.Core;
+using PolicyPlus.WinUI3.Logging; // logging
 
 namespace PolicyPlus.WinUI3.Services
 {
@@ -84,11 +85,13 @@ namespace PolicyPlus.WinUI3.Services
                     Pending.RemoveAt(idx);
                     Pending.Insert(idx, existing);
                 }
+                Log.Info("PendingChanges", $"Updated pending policy id={pid} scope={scope} action={existing.Action}");
             }
             else
             {
                 change.Options = CloneOptions(change.Options);
                 Pending.Add(change);
+                Log.Info("PendingChanges", $"Added pending policy id={pid} scope={scope} action={change.Action}");
             }
         }
 
@@ -100,6 +103,7 @@ namespace PolicyPlus.WinUI3.Services
             {
                 if (c == null) continue;
                 Pending.Remove(c);
+                Log.Info("PendingChanges", $"Discarded policy id={c.PolicyId} scope={c.Scope}");
             }
         }
 
@@ -111,6 +115,7 @@ namespace PolicyPlus.WinUI3.Services
                 var oldest = History.OrderBy(h => h.AppliedAt).FirstOrDefault();
                 if (oldest == null) break;
                 History.Remove(oldest);
+                Log.Debug("PendingChanges", $"Trimmed oldest history id={oldest.PolicyId}");
             }
         }
 
@@ -118,8 +123,9 @@ namespace PolicyPlus.WinUI3.Services
         {
             if (record == null) return;
             History.Add(record);
+            Log.Info("PendingChanges", $"History add policy id={record.PolicyId} scope={record.Scope} action={record.Action} result={record.Result}");
             TrimHistoryIfNeeded();
-            try { SettingsService.Instance.SaveHistory(History.ToList()); } catch { }
+            try { SettingsService.Instance.SaveHistory(History.ToList()); } catch (Exception ex) { Log.Warn("PendingChanges", "SaveHistory failed", ex); }
         }
 
         public void Applied(params PendingChange[] changes)
@@ -143,9 +149,17 @@ namespace PolicyPlus.WinUI3.Services
                 };
                 AddHistory(rec);
                 Pending.Remove(c);
+                Log.Info("PendingChanges", $"Applied policy id={c.PolicyId} scope={c.Scope} action={c.Action} state={c.DesiredState}");
             }
         }
 
-        public void DiscardAll() => Discard(Pending.ToArray());
+        public void DiscardAll()
+        {
+            var count = Pending.Count;
+            if (count == 0) return;
+            var all = Pending.ToArray();
+            foreach (var c in all) Pending.Remove(c);
+            Log.Info("PendingChanges", $"DiscardAll removed={count}");
+        }
     }
 }

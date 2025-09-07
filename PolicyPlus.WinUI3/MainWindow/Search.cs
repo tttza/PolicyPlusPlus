@@ -11,6 +11,7 @@ using PolicyPlus.WinUI3.Services;
 using PolicyPlus.Core.Core;
 using PolicyPlus.WinUI3.Dialogs;
 using PolicyPlus.Core.Utilities;
+using PolicyPlus.WinUI3.Logging; // logging
 
 namespace PolicyPlus.WinUI3
 {
@@ -58,10 +59,10 @@ namespace PolicyPlus.WinUI3
                         _descIndex.LoadSnapshot(snap);
                         _descIndexBuilt = true;
                     }
-                    catch { }
+                    catch (Exception ex) { Log.Warn("MainSearch", "Background desc index build failed", ex); }
                 });
             }
-            catch { }
+            catch (Exception ex) { Log.Warn("MainSearch", "StartPrebuildDescIndex setup failed", ex); }
         }
 
         private void RebuildSearchIndex()
@@ -78,7 +79,7 @@ namespace PolicyPlus.WinUI3
                 _searchIndexById = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string EnglishLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
                 foreach (var e in _searchIndex) _searchIndexById[e.Policy.UniqueID] = e;
             }
-            catch { _searchIndex = new(); _searchIndexById = new(StringComparer.OrdinalIgnoreCase); }
+            catch (Exception ex) { Log.Error("MainSearch", "RebuildSearchIndex failed", ex); _searchIndex = new(); _searchIndexById = new(StringComparer.OrdinalIgnoreCase); }
         }
 
         private static int ScoreMatch(string textLower, string qLower)
@@ -124,15 +125,15 @@ namespace PolicyPlus.WinUI3
         }
 
         private void SearchClearBtn_Tapped(object sender, TappedRoutedEventArgs e)
-        { try { _navTyping = false; if (SearchBox != null) SearchBox.Text = string.Empty; UpdateSearchClearButtonVisibility(); RunAsyncFilterAndBind(); UpdateNavButtons(); e.Handled = true; } catch { } }
+        { try { _navTyping = false; if (SearchBox != null) SearchBox.Text = string.Empty; UpdateSearchClearButtonVisibility(); RunAsyncFilterAndBind(); UpdateNavButtons(); e.Handled = true; } catch (Exception ex) { Log.Warn("MainSearch", "SearchClearBtn_Tapped failed", ex); } }
 
         private void UpdateSearchClearButtonVisibility()
-        { try { var btn = RootGrid?.FindName("SearchClearBtn") as UIElement; if (btn != null) btn.Visibility = !string.IsNullOrEmpty(SearchBox?.Text) ? Visibility.Visible : Visibility.Collapsed; } catch { } }
+        { try { var btn = RootGrid?.FindName("SearchClearBtn") as UIElement; if (btn != null) btn.Visibility = !string.IsNullOrEmpty(SearchBox?.Text) ? Visibility.Visible : Visibility.Collapsed; } catch (Exception ex) { Log.Warn("MainSearch", "UpdateSearchClearButtonVisibility failed", ex); } }
 
         private void SearchBox_Loaded(object sender, RoutedEventArgs e)
-        { try { HideBuiltInSearchClearButton(); } catch { } try { UpdateSearchClearButtonVisibility(); } catch { } }
+        { try { HideBuiltInSearchClearButton(); } catch (Exception ex) { Log.Warn("MainSearch", "HideBuiltInSearchClearButton failed (Loaded)", ex); } try { UpdateSearchClearButtonVisibility(); } catch (Exception ex2) { Log.Warn("MainSearch", "UpdateSearchClearButtonVisibility failed (Loaded)", ex2); } }
         private void HideBuiltInSearchClearButton()
-        { try { if (SearchBox == null) return; var deleteBtn = FindDescendantByName(SearchBox, "DeleteButton") as UIElement; if (deleteBtn != null) { deleteBtn.Visibility = Visibility.Collapsed; deleteBtn.IsHitTestVisible = false; if (deleteBtn is Control c) { c.IsEnabled = false; c.Opacity = 0; } } } catch { } }
+        { try { if (SearchBox == null) return; var deleteBtn = FindDescendantByName(SearchBox, "DeleteButton") as UIElement; if (deleteBtn != null) { deleteBtn.Visibility = Visibility.Collapsed; deleteBtn.IsHitTestVisible = false; if (deleteBtn is Control c) { c.IsEnabled = false; c.Opacity = 0; } } } catch (Exception ex) { Log.Warn("MainSearch", "HideBuiltInSearchClearButton core failed", ex); } }
         private static DependencyObject? FindDescendantByName(DependencyObject? root, string name)
         { if (root == null) return null; int count = VisualTreeHelper.GetChildrenCount(root); for (int i = 0; i < count; i++) { var child = VisualTreeHelper.GetChild(root, i); if (child is FrameworkElement fe && string.Equals(fe.Name, name, StringComparison.Ordinal)) return child; var result = FindDescendantByName(child, name); if (result != null) return result; } return null; }
 
@@ -142,16 +143,14 @@ namespace PolicyPlus.WinUI3
             if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
                 var q = (SearchBox.Text ?? string.Empty).Trim();
-                if (string.IsNullOrEmpty(q)) { try { _navTyping = false; } catch { } try { _searchDebounceCts?.Cancel(); } catch { } try { RunImmediateFilterAndBind(); } catch { } try { ShowBaselineSuggestions(); } catch { } UpdateNavButtons(); return; }
+                if (string.IsNullOrEmpty(q)) { try { _navTyping = false; } catch (Exception ex) { Log.Warn("MainSearch", "Reset _navTyping failed", ex); } try { _searchDebounceCts?.Cancel(); } catch (Exception ex2) { Log.Warn("MainSearch", "Cancel debounce failed", ex2); } try { RunImmediateFilterAndBind(); } catch (Exception ex3) { Log.Warn("MainSearch", "RunImmediateFilterAndBind failed", ex3); } try { ShowBaselineSuggestions(); } catch (Exception ex4) { Log.Warn("MainSearch", "ShowBaselineSuggestions failed", ex4); } UpdateNavButtons(); return; }
                 _navTyping = true; RunAsyncSearchAndBind(q);
             }
         }
 
         private void ShowBaselineSuggestions()
-        { try { if (SearchBox == null) return; var allowed = new HashSet<string>(_allPolicies.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase); var list = BuildSuggestions(string.Empty, allowed); SearchBox.ItemsSource = list; } catch { } }
+        { try { if (SearchBox == null) return; var allowed = new HashSet<string>(_allPolicies.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase); var list = BuildSuggestions(string.Empty, allowed); SearchBox.ItemsSource = list; } catch (Exception ex) { Log.Warn("MainSearch", "ShowBaselineSuggestions failed", ex); } }
 
-        private void SearchOption_Checked(object sender, RoutedEventArgs e) => HandleSearchOptionChanged();
-        private void SearchOption_Unchecked(object sender, RoutedEventArgs e) => HandleSearchOptionChanged();
         private void HandleSearchOptionChanged()
         {
             if (_suppressSearchOptionEvents) return;
@@ -172,7 +171,6 @@ namespace PolicyPlus.WinUI3
                         _searchInComments = SearchOptComments?.IsChecked == true;
                         _searchInRegistryKey = SearchOptRegKey?.IsChecked == true;
                         _searchInRegistryValue = SearchOptRegValue?.IsChecked == true;
-                        // Persist
                         SettingsService.Instance.UpdateSearchOptions(new SearchOptions
                         {
                             InName = _searchInName,
@@ -182,11 +180,10 @@ namespace PolicyPlus.WinUI3
                             InRegistryKey = _searchInRegistryKey,
                             InRegistryValue = _searchInRegistryValue
                         });
-                        // Re-run current query
                         var q = SearchBox?.Text ?? string.Empty;
                         if (string.IsNullOrWhiteSpace(q)) RunAsyncFilterAndBind(); else RunAsyncSearchAndBind(q);
                     }
-                    catch { }
+                    catch (Exception ex) { Log.Error("MainSearch", "HandleSearchOptionChanged apply failed", ex); }
                 });
             });
         }
@@ -202,12 +199,12 @@ namespace PolicyPlus.WinUI3
                 var q = (args.QueryText ?? string.Empty).Trim();
                 if (!string.IsNullOrEmpty(q))
                 {
-                    _navTyping = false; // finalize typing state for navigation history
+                    _navTyping = false;
                     RunAsyncSearchAndBind(q);
                     MaybePushCurrentState();
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Warn("MainSearch", "QuerySubmitted failed", ex); }
         }
 
         private void SearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
@@ -223,12 +220,10 @@ namespace PolicyPlus.WinUI3
                     MaybePushCurrentState();
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Warn("MainSearch", "SuggestionChosen failed", ex); }
         }
 
         private void BtnAbout_Click(object sender, RoutedEventArgs e)
-        {
-            try { ShowInfo("Policy Plus Mod (WinUI3 preview)"); } catch { }
-        }
+        { try { ShowInfo("Policy Plus Mod (WinUI3 preview)"); } catch (Exception ex) { Log.Warn("MainSearch", "BtnAbout_Click failed", ex); } }
     }
 }

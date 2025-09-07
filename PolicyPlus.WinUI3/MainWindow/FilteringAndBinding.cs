@@ -14,6 +14,7 @@ using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core; // SearchText
 using System.Threading;
 using PolicyPlus.WinUI3.Filtering; // FilterDecisionEngine
+using PolicyPlus.WinUI3.Logging; // logging
 
 namespace PolicyPlus.WinUI3
 {
@@ -45,7 +46,7 @@ namespace PolicyPlus.WinUI3
                     { _descIndex.LoadSnapshot(snap); _descIndexBuilt = true; return; }
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Warn("MainFilter", "EnsureDescIndex cache load failed", ex); }
             try
             {
                 var items = _allPolicies.Select(p => (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayExplanation)));
@@ -55,10 +56,10 @@ namespace PolicyPlus.WinUI3
                     if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
                     { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "desc", _descIndex.GetSnapshot()); }
                 }
-                catch { }
+                catch (Exception ex) { Log.Warn("MainFilter", "EnsureDescIndex snapshot save failed", ex); }
                 _descIndexBuilt = true;
             }
-            catch { }
+            catch (Exception ex) { Log.Error("MainFilter", "EnsureDescIndex build failed", ex); }
         }
 
         private void EnsureNameIdEnIndexes()
@@ -70,7 +71,7 @@ namespace PolicyPlus.WinUI3
                     if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
                     { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _nameIndex.N, "name", out var snap) && snap != null) { _nameIndex.LoadSnapshot(snap); _nameIndexBuilt = true; } }
                 }
-                catch { }
+                catch (Exception ex) { Log.Warn("MainFilter", "Name index cache load failed", ex); }
                 if (!_nameIndexBuilt)
                 {
                     try
@@ -81,7 +82,7 @@ namespace PolicyPlus.WinUI3
                         { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "name", _nameIndex.GetSnapshot()); }
                         _nameIndexBuilt = true;
                     }
-                    catch { }
+                    catch (Exception ex) { Log.Error("MainFilter", "Name index build failed", ex); }
                 }
             }
             if (!_enIndexBuilt)
@@ -91,7 +92,7 @@ namespace PolicyPlus.WinUI3
                     if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
                     { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _enIndex.N, "en", out var snap) && snap != null) { _enIndex.LoadSnapshot(snap); _enIndexBuilt = true; } }
                 }
-                catch { }
+                catch (Exception ex) { Log.Warn("MainFilter", "EN index cache load failed", ex); }
                 if (!_enIndexBuilt)
                 {
                     try
@@ -102,7 +103,7 @@ namespace PolicyPlus.WinUI3
                         { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "en", _enIndex.GetSnapshot()); }
                         _enIndexBuilt = true;
                     }
-                    catch { }
+                    catch (Exception ex) { Log.Error("MainFilter", "EN index build failed", ex); }
                 }
             }
             if (!_idIndexBuilt)
@@ -112,7 +113,7 @@ namespace PolicyPlus.WinUI3
                     if (!string.IsNullOrEmpty(_currentAdmxPath) && !string.IsNullOrEmpty(_currentLanguage))
                     { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, _idIndex.N, "id", out var snap) && snap != null) { _idIndex.LoadSnapshot(snap); _idIndexBuilt = true; } }
                 }
-                catch { }
+                catch (Exception ex) { Log.Warn("MainFilter", "ID index cache load failed", ex); }
                 if (!_idIndexBuilt)
                 {
                     try
@@ -123,7 +124,7 @@ namespace PolicyPlus.WinUI3
                         { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, _currentLanguage); CacheService.SaveNGramSnapshot(_currentAdmxPath, _currentLanguage, fp, "id", _idIndex.GetSnapshot()); }
                         _idIndexBuilt = true;
                     }
-                    catch { }
+                    catch (Exception ex) { Log.Error("MainFilter", "ID index build failed", ex); }
                 }
             }
         }
@@ -147,7 +148,7 @@ namespace PolicyPlus.WinUI3
                     if (idSet != null) { union ??= new HashSet<string>(idSet, StringComparer.OrdinalIgnoreCase); if (!ReferenceEquals(union, idSet)) union.UnionWith(idSet); }
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Warn("MainFilter", "GetTextCandidates failed", ex); }
             return union;
         }
 
@@ -241,7 +242,7 @@ namespace PolicyPlus.WinUI3
         { bool hasCategory = _selectedCategory != null; bool hasSearch = !string.IsNullOrWhiteSpace(prospectiveSearch ?? SearchBox?.Text); return FilterDecisionEngine.Evaluate(hasCategory, hasSearch, _configuredOnly, _bookmarksOnly, _limitUnfilteredTo1000); }
 
         private IEnumerable<PolicyPlusPolicy> ApplyBookmarkFilterIfNeeded(IEnumerable<PolicyPlusPolicy> seq)
-        { if (!_bookmarksOnly) return seq; try { var ids = BookmarkService.Instance.ActiveIds; if (ids == null || ids.Count == 0) return Array.Empty<PolicyPlusPolicy>(); var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase); return seq.Where(p => set.Contains(p.UniqueID)); } catch { return seq; } }
+        { if (!_bookmarksOnly) return seq; try { var ids = BookmarkService.Instance.ActiveIds; if (ids == null || ids.Count == 0) return Array.Empty<PolicyPlusPolicy>(); var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase); return seq.Where(p => set.Contains(p.UniqueID)); } catch (Exception ex) { Log.Warn("MainFilter", "Bookmark filter failed", ex); return seq; } }
 
         private void ApplyFiltersAndBind(string query = "", PolicyPlusCategory? category = null)
         {
@@ -312,7 +313,7 @@ namespace PolicyPlus.WinUI3
                 if (decision.ShowSubcategoryHeaders && _selectedCategory != null)
                     foreach (var child in _selectedCategory.Children.OrderBy(c => c.DisplayName)) rows.Add(PolicyListRow.FromCategory(child));
             }
-            catch { }
+            catch (Exception ex) { Log.Warn("MainFilter", "Subcategory header bind failed", ex); }
             rows.AddRange(ordered.Select(p => (object)PolicyListRow.FromPolicy(p, compSrc, userSrc)));
             foreach (var obj in rows) if (obj is PolicyListRow r && r.Policy != null) _rowByPolicyId[r.Policy.UniqueID] = r;
             PolicyList.ItemsSource = rows; PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies"; TryRestoreSelectionAsync(rows); MaybePushCurrentState();
@@ -353,8 +354,8 @@ namespace PolicyPlus.WinUI3
         private void RunAsyncSearchAndBind(string q)
         {
             _searchDebounceCts?.Cancel(); _searchDebounceCts = new System.Threading.CancellationTokenSource(); var token = _searchDebounceCts.Token; int gen = Interlocked.Increment(ref _searchGeneration);
-            try { if (SearchSpinner != null) { SearchSpinner.Visibility = Visibility.Visible; SearchSpinner.IsActive = true; } } catch { }
-            var applies = _appliesFilter; var category = _selectedCategory; var configuredOnly = _configuredOnly; if (configuredOnly) { try { EnsureLocalSources(); } catch { } }
+            try { if (SearchSpinner != null) { SearchSpinner.Visibility = Visibility.Visible; SearchSpinner.IsActive = true; } } catch (Exception ex) { Log.Warn("MainFilter", "Spinner show failed (search)", ex); }
+            var applies = _appliesFilter; var category = _selectedCategory; var configuredOnly = _configuredOnly; if (configuredOnly) { try { EnsureLocalSources(); } catch (Exception ex) { Log.Warn("MainFilter", "EnsureLocalSources failed (search)", ex); } }
             var comp = _compSource; var user = _userSource; var decision = EvaluateDecision(q);
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
@@ -363,7 +364,7 @@ namespace PolicyPlus.WinUI3
                 var snap = new FilterSnapshot(applies, category, decision.IncludeSubcategoryPolicies, configuredOnly, comp, user);
                 List<PolicyPlusPolicy> matches; List<string> suggestions;
                 try { var baseSeq = BaseSequenceForFilters(snap); baseSeq = ApplyBookmarkFilterIfNeeded(baseSeq); matches = MatchPolicies(q, baseSeq, out var allowedSet); suggestions = BuildSuggestions(q, allowedSet); }
-                catch { suggestions = new List<string>(); matches = new List<PolicyPlusPolicy>(); }
+                catch (Exception ex) { Log.Warn("MainFilter", "Search task match failed", ex); suggestions = new List<string>(); matches = new List<PolicyPlusPolicy>(); }
                 if (token.IsCancellationRequested) { FinishSpinner(); return; }
                 DispatcherQueue.TryEnqueue(() =>
                 {
@@ -375,42 +376,44 @@ namespace PolicyPlus.WinUI3
                         { var partial = matches.Take(LargeResultThreshold).ToList(); BindSequenceEnhanced(partial, decision); UpdateNavButtons(); ScheduleFullResultBind(gen, q, matches, decision); }
                         else { BindSequenceEnhanced(matches, decision); UpdateNavButtons(); }
                     }
+                    catch (Exception ex) { Log.Error("MainFilter", "UI bind failed (search)", ex); }
                     finally { FinishSpinner(); }
                 });
             });
-            void FinishSpinner() { DispatcherQueue.TryEnqueue(() => { try { if (SearchSpinner != null) { SearchSpinner.IsActive = false; SearchSpinner.Visibility = Visibility.Collapsed; } } catch { } }); }
+            void FinishSpinner() { DispatcherQueue.TryEnqueue(() => { try { if (SearchSpinner != null) { SearchSpinner.IsActive = false; SearchSpinner.Visibility = Visibility.Collapsed; } } catch (Exception ex) { Log.Warn("MainFilter", "Spinner hide failed (search)", ex); } }); }
         }
 
         private void ScheduleFullResultBind(int gen, string q, List<PolicyPlusPolicy> fullMatches, FilterDecisionResult decision)
         {
             try
-            { var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(PartialExpandDelayMs) }; timer.Tick += (s, e) => { timer.Stop(); if (gen != _searchGeneration) return; var current = (SearchBox?.Text ?? string.Empty).Trim(); if (!string.Equals(current, q, StringComparison.Ordinal)) return; try { BindSequenceEnhanced(fullMatches, decision); UpdateNavButtons(); } catch { } }; timer.Start(); }
-            catch { try { BindSequenceEnhanced(fullMatches, decision); UpdateNavButtons(); } catch { } }
+            { var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(PartialExpandDelayMs) }; timer.Tick += (s, e) => { timer.Stop(); if (gen != _searchGeneration) return; var current = (SearchBox?.Text ?? string.Empty).Trim(); if (!string.Equals(current, q, StringComparison.Ordinal)) return; try { BindSequenceEnhanced(fullMatches, decision); UpdateNavButtons(); } catch (Exception ex) { Log.Warn("MainFilter", "Full result bind failed", ex); } }; timer.Start(); }
+            catch (Exception ex) { Log.Warn("MainFilter", "ScheduleFullResultBind timer failed; falling back", ex); try { BindSequenceEnhanced(fullMatches, decision); UpdateNavButtons(); } catch (Exception ex2) { Log.Error("MainFilter", "Immediate full result bind also failed", ex2); } }
         }
 
         private void RunAsyncFilterAndBind()
         {
-            _searchDebounceCts?.Cancel(); _searchDebounceCts = new System.Threading.CancellationTokenSource(); var token = _searchDebounceCts.Token; try { PreserveScrollPosition(); } catch { }
-            try { if (SearchSpinner != null) { SearchSpinner.Visibility = Visibility.Visible; SearchSpinner.IsActive = true; } } catch { }
-            var applies = _appliesFilter; var category = _selectedCategory; var configuredOnly = _configuredOnly; if (configuredOnly) { try { EnsureLocalSources(); } catch { } }
+            _searchDebounceCts?.Cancel(); _searchDebounceCts = new System.Threading.CancellationTokenSource(); var token = _searchDebounceCts.Token; try { PreserveScrollPosition(); } catch (Exception ex) { Log.Warn("MainFilter", "PreserveScrollPosition failed", ex); }
+            try { if (SearchSpinner != null) { SearchSpinner.Visibility = Visibility.Visible; SearchSpinner.IsActive = true; } } catch (Exception ex) { Log.Warn("MainFilter", "Spinner show failed (filter)", ex); }
+            var applies = _appliesFilter; var category = _selectedCategory; var configuredOnly = _configuredOnly; if (configuredOnly) { try { EnsureLocalSources(); } catch (Exception ex) { Log.Warn("MainFilter", "EnsureLocalSources failed (filter)", ex); } }
             var comp = _compSource; var user = _userSource; var decision = EvaluateDecision();
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
                 try { await System.Threading.Tasks.Task.Delay(60, token); } catch { return; }
                 if (token.IsCancellationRequested) { Finish(); return; }
-                List<PolicyPlusPolicy> items; try { var snap = new FilterSnapshot(applies, category, decision.IncludeSubcategoryPolicies, configuredOnly, comp, user); items = ApplyBookmarkFilterIfNeeded(BaseSequenceForFilters(snap)).ToList(); } catch { items = new List<PolicyPlusPolicy>(); }
+                List<PolicyPlusPolicy> items; try { var snap = new FilterSnapshot(applies, category, decision.IncludeSubcategoryPolicies, configuredOnly, comp, user); items = ApplyBookmarkFilterIfNeeded(BaseSequenceForFilters(snap)).ToList(); } catch (Exception ex) { Log.Warn("MainFilter", "Filter task sequence build failed", ex); items = new List<PolicyPlusPolicy>(); }
                 if (token.IsCancellationRequested) { Finish(); return; }
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     if (token.IsCancellationRequested) { Finish(); return; }
                     try { BindSequenceEnhanced(items, decision); RestorePositionOrSelection(); UpdateNavButtons(); if (string.IsNullOrWhiteSpace(SearchBox?.Text)) { ShowBaselineSuggestions(); } }
+                    catch (Exception ex) { Log.Error("MainFilter", "UI bind failed (filter)", ex); }
                     finally { Finish(); }
                 });
             });
-            void Finish() { DispatcherQueue.TryEnqueue(() => { try { if (SearchSpinner != null) { SearchSpinner.IsActive = false; SearchSpinner.Visibility = Visibility.Collapsed; } } catch { } }); }
+            void Finish() { DispatcherQueue.TryEnqueue(() => { try { if (SearchSpinner != null) { SearchSpinner.IsActive = false; SearchSpinner.Visibility = Visibility.Collapsed; } } catch (Exception ex) { Log.Warn("MainFilter", "Spinner hide failed (filter)", ex); } }); }
         }
 
         private void RunImmediateFilterAndBind()
-        { try { var decision = EvaluateDecision(); var seq = BaseSequenceForFilters(includeSubcategories: decision.IncludeSubcategoryPolicies); seq = ApplyBookmarkFilterIfNeeded(seq); BindSequenceEnhanced(seq, decision); UpdateSearchClearButtonVisibility(); ShowBaselineSuggestions(); } catch { } }
+        { try { var decision = EvaluateDecision(); var seq = BaseSequenceForFilters(includeSubcategories: decision.IncludeSubcategoryPolicies); seq = ApplyBookmarkFilterIfNeeded(seq); BindSequenceEnhanced(seq, decision); UpdateSearchClearButtonVisibility(); ShowBaselineSuggestions(); } catch (Exception ex) { Log.Error("MainFilter", "RunImmediateFilterAndBind failed", ex); } }
     }
 }
