@@ -115,6 +115,24 @@ namespace PolicyPlus.WinUI3
         private void BtnPendingChanges_Click(object sender, RoutedEventArgs e)
         { var win = new PendingChangesWindow(); win.Activate(); try { WindowHelpers.BringToFront(win); } catch { } }
 
+        private void BtnHistoryChanges_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var win = new PendingChangesWindow();
+                win.Activate();
+                try { WindowHelpers.BringToFront(win); } catch { }
+                // Switch to history tab if method exists
+                try
+                {
+                    var method = typeof(PendingChangesWindow).GetMethod("SelectHistoryTab", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                    method?.Invoke(win, null);
+                }
+                catch { }
+            }
+            catch { }
+        }
+
         private void ToggleHideEmptyMenu_Click(object sender, RoutedEventArgs e)
         { if (sender is ToggleMenuFlyoutItem t) { _hideEmptyCategories = t.IsChecked; try { SettingsService.Instance.UpdateHideEmptyCategories(_hideEmptyCategories); } catch { } BuildCategoryTree(); ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); } }
 

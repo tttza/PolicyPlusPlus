@@ -93,18 +93,15 @@
                             <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Write to temp .pol" IsChecked="{Binding IsChecked, ElementName=ChkUseTempPol, Mode=TwoWay}" Click="ToggleTempPolMenu_Click" Visibility="Collapsed" />
                             <ToggleMenuFlyoutItem x:Name="ToggleHideEmptyMenu" Text="Hide empty categories" IsChecked="True" Click="ToggleHideEmptyMenu_Click" />
                             <ToggleMenuFlyoutItem x:Name="ToggleLimitUnfilteredMenu" Text="Limit unfiltered to 1000" IsChecked="True" Click="ToggleLimitUnfilteredMenu_Click" />
-                            <MenuFlyoutSeparator/>
-                            <MenuFlyoutSubItem Text="Bookmarks">
-                                <MenuFlyoutItem Text="Show only bookmarks" Click="BookmarkFilterMenu_Click" />
-                                <MenuFlyoutItem Text="Manage lists..." Click="BookmarkManageMenu_Click" />
-                            </MenuFlyoutSubItem>
                         </controls:MenuBarItem>
-                        <controls:MenuBarItem Title="Changes">
-                            <MenuFlyoutItem Text="Pending/History..." Click="BtnPendingChanges_Click" />
+                        <controls:MenuBarItem Title="Bookmarks">
+                            <MenuFlyoutItem Text="Show only bookmarks" Click="BookmarkFilterMenu_Click" />
+                            <MenuFlyoutItem Text="Manage lists..." Click="BookmarkManageMenu_Click" />
                             <MenuFlyoutItem Text="Quick Edit..." Click="BtnQuickEdit_Click" />
                         </controls:MenuBarItem>
-                        <controls:MenuBarItem Title="View">
-                            <ToggleMenuFlyoutItem x:Name="ViewDetailsToggle" Text="Details pane" IsChecked="True" Click="ViewDetailsToggle_Click"/>
+                        <controls:MenuBarItem Title="Changes">
+                            <MenuFlyoutItem Text="Pending..." Click="BtnPendingChanges_Click" />
+                            <MenuFlyoutItem Text="History..." Click="BtnHistoryChanges_Click" />
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Columns">
                             <ToggleMenuFlyoutItem x:Name="ViewBookmarkToggle" Text="Bookmark" IsChecked="True" Click="ViewBookmarkToggle_Click"/>
@@ -137,6 +134,8 @@
                                 <ToggleMenuFlyoutItem x:Name="Scale175Menu" Text="175%" Click="ScaleMenu_Click" />
                                 <ToggleMenuFlyoutItem x:Name="Scale200Menu" Text="200%" Click="ScaleMenu_Click" />
                             </MenuFlyoutSubItem>
+                            <MenuFlyoutSeparator />
+                            <ToggleMenuFlyoutItem x:Name="ViewDetailsToggle" Text="Details pane" IsChecked="True" Click="ViewDetailsToggle_Click"/>
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Help">
                             <MenuFlyoutItem Text="About..." Click="BtnAbout_Click" />

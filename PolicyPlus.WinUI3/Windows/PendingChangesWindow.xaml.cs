@@ -59,6 +59,11 @@ namespace PolicyPlus.WinUI3.Windows
             try { SubscribeCollectionChanges(); } catch { }
         }
 
+        public void SelectHistoryTab()
+        {
+            try { if (MainTabs != null && HistoryTab != null) MainTabs.SelectedItem = HistoryTab; } catch { }
+        }
+
         private void Accel_SaveAll(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
         { BtnSaveAll_Click(this, new RoutedEventArgs()); args.Handled = true; }
         private void Accel_SaveSelected(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
