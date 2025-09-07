@@ -166,19 +166,32 @@ namespace PolicyPlus.WinUI3.Windows
             }
         }
 
-        private void BtnSaveAll_Click(object sender, RoutedEventArgs e)
+        private async void BtnSaveAll_Click(object sender, RoutedEventArgs e)
         {
-            // Save all pending changes
-            ApplySelected(PendingChangesService.Instance.Pending.ToArray());
+            try
+            {
+                await ApplySelectedAsync(PendingChangesService.Instance.Pending.ToArray());
+            }
+            catch (Exception ex)
+            {
+                ShowLocalInfo("Save failed: " + ex.Message);
+            }
         }
 
-        private void BtnApplySelected_Click(object sender, RoutedEventArgs e)
+        private async void BtnApplySelected_Click(object sender, RoutedEventArgs e)
         {
             var items = PendingList.SelectedItems;
             if (items == null || items.Count == 0) return;
             var arr = new PendingChange[items.Count];
             for (int i = 0; i < items.Count; i++) arr[i] = (PendingChange)items[i]!;
-            ApplySelected(arr);
+            try
+            {
+                await ApplySelectedAsync(arr);
+            }
+            catch (Exception ex)
+            {
+                ShowLocalInfo("Save failed: " + ex.Message);
+            }
         }
 
         private void BtnDiscardSelected_Click(object sender, RoutedEventArgs e)
@@ -202,11 +215,18 @@ namespace PolicyPlus.WinUI3.Windows
             NotifyDiscarded(count);
         }
 
-        private void Pending_ContextApply_Click(object sender, RoutedEventArgs e)
+        private async void Pending_ContextApply_Click(object sender, RoutedEventArgs e)
         {
             if ((sender as FrameworkElement)?.DataContext is PendingChange c)
             {
-                ApplySelected(new[] { c });
+                try
+                {
+                    await ApplySelectedAsync(new[] { c });
+                }
+                catch (Exception ex)
+                {
+                    ShowLocalInfo("Save failed: " + ex.Message);
+                }
             }
         }
 
@@ -296,38 +316,43 @@ namespace PolicyPlus.WinUI3.Windows
             try { if (SavingOverlay != null) SavingOverlay.Visibility = saving ? Visibility.Visible : Visibility.Collapsed; } catch { }
         }
 
-        private async void ApplySelected(IEnumerable<PendingChange> items)
+        private async Task ApplySelectedAsync(IEnumerable<PendingChange> items)
         {
             if (items == null) return;
             SetSaving(true);
-            var main = App.Window as MainWindow;
-            var bundleField = typeof(MainWindow).GetField("_bundle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var bundle = (AdmxBundle?)bundleField?.GetValue(main);
-            if (bundle == null) { SetSaving(false); return; }
-
-            var appliedList = items.ToList();
-
-            var (ok, error, _, _) = await SaveChangesCoordinator.SaveAsync(bundle, appliedList, _elevation, TimeSpan.FromSeconds(8), triggerRefresh: true);
-
-            if (ok)
+            try
             {
-                PendingChangesService.Instance.Applied(appliedList.ToArray());
-                try
+                var main = App.Window as MainWindow;
+                var bundleField = typeof(MainWindow).GetField("_bundle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var bundle = (AdmxBundle?)bundleField?.GetValue(main);
+                if (bundle == null) { return; }
+
+                var appliedList = items.ToList();
+
+                var (ok, error, _, _) = await SaveChangesCoordinator.SaveAsync(bundle, appliedList, _elevation, TimeSpan.FromSeconds(8), triggerRefresh: true);
+
+                if (ok)
                 {
-                    SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList());
+                    PendingChangesService.Instance.Applied(appliedList.ToArray());
+                    try
+                    {
+                        SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList());
+                    }
+                    catch { }
+                    try { main?.RefreshLocalSources(); } catch { }
+                    RefreshViews();
+                    ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
+                    NotifyApplied(appliedList.Count);
                 }
-                catch { }
-                try { main?.RefreshLocalSources(); } catch { }
-                RefreshViews();
-                ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
-                NotifyApplied(appliedList.Count);
+                else
+                {
+                    if (!string.IsNullOrEmpty(error)) ShowLocalInfo("Save failed: " + error);
+                }
             }
-            else
+            finally
             {
-                if (!string.IsNullOrEmpty(error)) ShowLocalInfo("Save failed: " + error);
+                SetSaving(false);
             }
-
-            SetSaving(false);
         }
 
         private void NotifyApplied(int count)
