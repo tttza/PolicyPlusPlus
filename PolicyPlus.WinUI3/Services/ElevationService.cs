@@ -61,6 +61,7 @@ namespace PolicyPlus.WinUI3.Services
 
         private async Task<(bool ok, ElevationErrorCode code, Exception? error)> EnsureHostAsync()
         {
+            Debug.Assert(_ioLock.CurrentCount == 0, "EnsureHostAsync requires caller to hold _ioLock to avoid races during connection initialization.");
             if (_connected && _client != null && _client.IsConnected) return (true, ElevationErrorCode.None, null);
 
             _pipeName = ("PolicyPlusElevate-" + Guid.NewGuid().ToString("N"));
