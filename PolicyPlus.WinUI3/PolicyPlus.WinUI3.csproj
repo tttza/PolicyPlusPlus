@@ -12,6 +12,7 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
 	<PublishProfile>Properties\PublishProfiles\win-$(Platform).pubxml</PublishProfile>
+	<AssemblyName>PolicyPlusPlus</AssemblyName>
 	<Configurations>Debug;Release;Debug-Unpackaged;Release-Unpackaged</Configurations>
       <Packaged>true</Packaged>
 	  <Packaged Condition="'$(Configuration)' == 'Debug-Unpackaged' Or '$(Configuration)' == 'Release-Unpackaged'">false</Packaged>
