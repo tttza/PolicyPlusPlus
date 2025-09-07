@@ -13,7 +13,7 @@
   <Identity
     Name="tttza.dev.Policy"
     Publisher="CN=3D02BC88-A81D-4C95-BD4D-20E3E5A0676A"
-    Version="1.0.0.0" />
+    Version="0.0.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="b5ca47ea-440d-4200-90e5-54ffd6a86b67" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 

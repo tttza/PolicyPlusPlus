@@ -6,8 +6,8 @@
     <ImplicitUsings>false</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+	<Platforms>x86;x64;ARM64</Platforms>
     <IsTestProject>true</IsTestProject>
-    <PlatformTarget>x64</PlatformTarget>
     <Configurations>Debug;Release;Debug-Unpackaged;Release-Unpackaged</Configurations>
   </PropertyGroup>
 
