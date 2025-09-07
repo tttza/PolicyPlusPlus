@@ -5,6 +5,7 @@ using PolicyPlus.Core.Utils;
 
 using System;
 using System.Linq;
+using System.Security.Principal; // elevation check
 
 namespace PolicyPlus.Core.IO
 {
@@ -161,17 +162,34 @@ namespace PolicyPlus.Core.IO
                     {
                         if (File.Exists(MainSourcePath))
                         {
-                            // Open a POL file
-                            try
+                            // For LocalGpo / SidGpo when not elevated, skip write probe to avoid UnauthorizedAccessException spam.
+                            bool skipWriteProbe = (SourceType == PolicyLoaderSource.LocalGpo || SourceType == PolicyLoaderSource.SidGpo) && !IsProcessElevated();
+                            if (!skipWriteProbe)
                             {
-                                using (var fPol = new FileStream(MainSourcePath, FileMode.Open, FileAccess.ReadWrite))
+                                try
                                 {
-                                    Writable = true;
+                                    using (var fPol = new FileStream(MainSourcePath, FileMode.Open, FileAccess.ReadWrite))
+                                    {
+                                        Writable = true;
+                                    }
+                                }
+                                catch (Exception)
+                                {
+                                    Writable = false;
                                 }
                             }
-                            catch (Exception)
+                            else
                             {
-                                Writable = false;
+                                Writable = false; // explicitly mark non-writable when not elevated
+                                try
+                                {
+                                    // Open read-only once to ensure file is at least accessible
+                                    using var _ = new FileStream(MainSourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                }
+                                catch (Exception)
+                                {
+                                    // If read also fails fall back to empty PolFile below.
+                                }
                             }
 
                             SourceObject = PolFile.Load(MainSourcePath);
@@ -418,6 +436,20 @@ namespace PolicyPlus.Core.IO
                 return name + " (" + OriginalArgument + ")";
             else
                 return name;
+        }
+
+        private static bool IsProcessElevated()
+        {
+            try
+            {
+                using var id = WindowsIdentity.GetCurrent();
+                var pr = new WindowsPrincipal(id);
+                return pr.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 
