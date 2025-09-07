@@ -58,6 +58,21 @@ namespace PolicyPlus.WinUI3.Services
             catch { }
         }
 
+        // TEST HOOK: allow tests to isolate settings I/O without touching real user data.
+        internal void InitializeForTests(string baseDirectory)
+        {
+            lock (_gate)
+            {
+                try
+                {
+                    _baseDir = baseDirectory;
+                    Directory.CreateDirectory(_baseDir);
+                    try { Directory.CreateDirectory(CacheDirectory); } catch { }
+                }
+                catch { }
+            }
+        }
+
         public AppSettings LoadSettings()
         {
             lock (_gate)

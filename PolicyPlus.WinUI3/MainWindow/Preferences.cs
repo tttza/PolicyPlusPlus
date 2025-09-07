@@ -93,6 +93,8 @@ namespace PolicyPlus.WinUI3
                 if (ViewCategoryPathToggle != null) ViewCategoryPathToggle.IsChecked = cols.ShowCategoryPath;
                 if (ViewAppliesToggle != null) ViewAppliesToggle.IsChecked = cols.ShowApplies;
                 if (ViewSupportedToggle != null) ViewSupportedToggle.IsChecked = cols.ShowSupported;
+                if (ViewUserStateToggle != null) ViewUserStateToggle.IsChecked = cols.ShowUserState;
+                if (ViewComputerStateToggle != null) ViewComputerStateToggle.IsChecked = cols.ShowComputerState;
                 if (RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt) vbt.IsChecked = cols.ShowBookmark;
                 if (ViewSecondNameToggle != null) ViewSecondNameToggle.IsChecked = cols.ShowSecondName && (s.SecondLanguageEnabled ?? false);
                 ApplyColumnVisibilityFromToggles();
@@ -260,6 +262,8 @@ namespace PolicyPlus.WinUI3
                     ShowCategoryPath = ViewCategoryPathToggle?.IsChecked == true,
                     ShowApplies = ViewAppliesToggle?.IsChecked == true,
                     ShowSupported = ViewSupportedToggle?.IsChecked == true,
+                    ShowUserState = ViewUserStateToggle?.IsChecked == true,
+                    ShowComputerState = ViewComputerStateToggle?.IsChecked == true,
                     ShowBookmark = !(RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt) || vbt.IsChecked == true,
                     ShowSecondName = ViewSecondNameToggle?.IsChecked == true
                 };
@@ -279,6 +283,8 @@ namespace PolicyPlus.WinUI3
                 if (ViewCategoryPathToggle != null) ViewCategoryPathToggle.IsChecked = ColCategoryPath?.Visibility == Visibility.Visible;
                 if (ViewAppliesToggle != null) ViewAppliesToggle.IsChecked = ColApplies?.Visibility == Visibility.Visible;
                 if (ViewSupportedToggle != null) ViewSupportedToggle.IsChecked = ColSupported?.Visibility == Visibility.Visible;
+                if (ViewUserStateToggle != null) ViewUserStateToggle.IsChecked = ColUserIcon?.Visibility == Visibility.Visible;
+                if (ViewComputerStateToggle != null) ViewComputerStateToggle.IsChecked = ColComputerIcon?.Visibility == Visibility.Visible;
 
                 var s = SettingsService.Instance.LoadSettings();
                 bool enabled = s.SecondLanguageEnabled ?? false;
@@ -301,6 +307,8 @@ namespace PolicyPlus.WinUI3
                 if (ColCategoryPath != null) ColCategoryPath.Visibility = ViewCategoryPathToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
                 if (ColApplies != null) ColApplies.Visibility = ViewAppliesToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
                 if (ColSupported != null) ColSupported.Visibility = ViewSupportedToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+                if (ColUserIcon != null) ColUserIcon.Visibility = ViewUserStateToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+                if (ColComputerIcon != null) ColComputerIcon.Visibility = ViewComputerStateToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
                 if (ColBookmark != null)
                 {
                     bool showBookmark = true;

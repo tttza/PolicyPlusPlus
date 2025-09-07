@@ -85,7 +85,7 @@
                         <controls:MenuBarItem Title="Import/Export">
                             <MenuFlyoutItem Text="Export .reg..." Click="BtnExportReg_Click" />
                             <MenuFlyoutSeparator/>
-                            <MenuFlyoutItem Text="Import .pol..." Click="BtnImportPol_Click" />
+                            <MenuFlyoutItem Text="Import .pol..." Click="BtnImportPol_Click" Visibility="Collapsed"/>
                             <MenuFlyoutItem Text="Import .reg..." Click="BtnImportReg_Click" />
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Options">
@@ -108,6 +108,8 @@
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Columns">
                             <ToggleMenuFlyoutItem x:Name="ViewBookmarkToggle" Text="Bookmark" IsChecked="True" Click="ViewBookmarkToggle_Click"/>
+                            <ToggleMenuFlyoutItem x:Name="ViewUserStateToggle" Text="User State Icon" IsChecked="True" Click="ColumnToggle_Click" Visibility="Collapsed"/>
+                            <ToggleMenuFlyoutItem x:Name="ViewComputerStateToggle" Text="Computer State Icon" IsChecked="True" Click="ColumnToggle_Click" Visibility="Collapsed"/>
                             <ToggleMenuFlyoutItem x:Name="ViewIdToggle" Text="ID" IsChecked="True" Tag="ColIdFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewCategoryPathToggle" Text="Category Path" IsChecked="False" Tag="ColCategoryPathFlag" Click="ColumnToggle_Click"/>
                             <ToggleMenuFlyoutItem x:Name="ViewTopCategoryToggle" Text="Top Category" IsChecked="False" Tag="ColTopCategoryFlag" Click="ColumnToggle_Click"/>
