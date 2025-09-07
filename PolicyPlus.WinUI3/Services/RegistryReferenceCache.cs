@@ -48,9 +48,7 @@ namespace PolicyPlus.WinUI3.Services
             }
             catch (Exception ex)
             {
-#if DEBUG
                 Log.Debug("RegRefCache", $"build failed policyId={(policy?.UniqueID ?? "(null)")}: {ex.GetType().Name} {ex.Message}");
-#endif
                 return new Cached();
             }
         }
