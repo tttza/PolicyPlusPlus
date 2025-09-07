@@ -62,6 +62,11 @@ namespace PolicyPlus.WinUI3
         private bool _bookmarksOnly = false; // persisted flag (moved from Filtering.cs usage)
         private bool _suppressBookmarksOnlyChanged; // suppress persistence during load
 
+        // Exposed for internal consumers instead of reflection (read-only to preserve invariants)
+        internal AdmxBundle? Bundle => _bundle;
+        internal IPolicySource? CompSource => _compSource;
+        internal IPolicySource? UserSource => _userSource;
+
         // Map of visible policy id -> row for fast partial updates
         private readonly Dictionary<string, PolicyListRow> _rowByPolicyId = new(StringComparer.OrdinalIgnoreCase);
 

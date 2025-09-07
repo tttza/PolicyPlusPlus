@@ -249,13 +249,10 @@ namespace PolicyPlus.WinUI3.Windows
                 if (c == null) return;
             }
 
-            var main = App.Window as MainWindow;
-            var bundleField = typeof(MainWindow).GetField("_bundle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var compField = typeof(MainWindow).GetField("_compSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var userField = typeof(MainWindow).GetField("_userSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var bundle = (AdmxBundle?)bundleField?.GetValue(main);
-            var compSrc = (IPolicySource?)compField?.GetValue(main);
-            var userSrc = (IPolicySource?)userField?.GetValue(main);
+            if (App.Window is not MainWindow main) return;
+            var bundle = main.Bundle;
+            var compSrc = main.CompSource;
+            var userSrc = main.UserSource;
             if (bundle == null || !bundle.Policies.TryGetValue(c.PolicyId, out var pol)) return;
             var section = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? AdmxPolicySection.User : AdmxPolicySection.Machine;
             var dlg = new DetailPolicyFormattedWindow();
@@ -322,9 +319,8 @@ namespace PolicyPlus.WinUI3.Windows
             SetSaving(true);
             try
             {
-                var main = App.Window as MainWindow;
-                var bundleField = typeof(MainWindow).GetField("_bundle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                var bundle = (AdmxBundle?)bundleField?.GetValue(main);
+                if (App.Window is not MainWindow main) return;
+                var bundle = main.Bundle;
                 if (bundle == null) { return; }
 
                 var appliedList = items.ToList();
@@ -378,9 +374,8 @@ namespace PolicyPlus.WinUI3.Windows
         private async Task ExecuteReapplyAsync(HistoryRecord h)
         {
             if (h == null || string.IsNullOrEmpty(h.PolicyId)) return;
-            var main = App.Window as MainWindow;
-            var bundleField = typeof(MainWindow).GetField("_bundle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var bundle = (AdmxBundle?)bundleField?.GetValue(main);
+            if (App.Window is not MainWindow main) return;
+            var bundle = main.Bundle;
             if (bundle == null || !bundle.Policies.TryGetValue(h.PolicyId, out var pol)) return;
 
             // Normalize option value types (they may be JsonElement after JSON round-trip)
