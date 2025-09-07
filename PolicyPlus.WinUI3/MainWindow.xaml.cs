@@ -450,7 +450,12 @@ namespace PolicyPlus.WinUI3
             SetBusy(true, "Loading...");
             try
             {
-                var langPref = SettingsService.Instance.LoadSettings().Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
+                var settings = SettingsService.Instance.LoadSettings();
+                var langPref = settings.Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
+                var secondEnabled = settings.SecondLanguageEnabled ?? false;
+                var secondLang = secondEnabled ? (settings.SecondLanguage ?? "en-US") : string.Empty;
+                bool useSecond = secondEnabled && !string.IsNullOrEmpty(secondLang) && !string.Equals(secondLang, langPref, StringComparison.OrdinalIgnoreCase);
+
                 _currentAdmxPath = path; // for cache keys
                 _currentLanguage = langPref; // for cache keys
 
@@ -470,13 +475,12 @@ namespace PolicyPlus.WinUI3
                     allLocal = b.Policies.Values.ToList();
                     totalGroupsLocal = allLocal.GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).Count();
 
-                    // Build search index off the UI thread
                     try
                     {
                         searchIndexLocal = allLocal.Select(p => (
                             Policy: p,
                             NameLower: SearchText.Normalize(p.DisplayName),
-                            SecondLower: string.Empty,
+                            SecondLower: useSecond ? SearchText.Normalize(LocalizedTextService.GetPolicyNameIn(p, secondLang)) : string.Empty,
                             IdLower: SearchText.Normalize(p.UniqueID),
                             DescLower: SearchText.Normalize(p.DisplayExplanation)
                         )).ToList();
@@ -501,9 +505,32 @@ namespace PolicyPlus.WinUI3
 
                 if (searchIndexLocal != null && searchIndexByIdLocal != null)
                 { _searchIndex = searchIndexLocal; _searchIndexById = searchIndexByIdLocal; }
-                else { RebuildSearchIndex(); } // implemented in Search.cs
+                else { RebuildSearchIndex(); }
 
-                StartPrebuildDescIndex(); // implemented in Search.cs
+                // Attempt to prime second-language NGram from cache; do not force rebuild if available.
+                if (useSecond)
+                {
+                    try
+                    {
+                        var fp2 = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, secondLang);
+                        if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, secondLang, fp2, _secondIndex.N, "sec-" + secondLang, out var snap2) && snap2 != null)
+                        {
+                            _secondIndex.LoadSnapshot(snap2);
+                            _secondIndexBuilt = true;
+                        }
+                        else
+                        {
+                            _secondIndexBuilt = false; // lazy build on demand
+                        }
+                    }
+                    catch { _secondIndexBuilt = false; }
+                }
+                else
+                {
+                    _secondIndexBuilt = true; // nothing to build
+                }
+
+                StartPrebuildDescIndex();
 
                 BuildCategoryTreeAsync();
 
@@ -663,23 +690,46 @@ namespace PolicyPlus.WinUI3
                     if (langChanged)
                     {
                         try { SettingsService.Instance.UpdateLanguage(chosen!); } catch { }
-                        LoadAdmxFolderAsync(admxPath);
+                        LoadAdmxFolderAsync(admxPath); // this will handle second language priming
                     }
                     // 2nd language
-                    bool beforeEnabled = SettingsService.Instance.LoadSettings().SecondLanguageEnabled ?? false;
-                    string beforeSecond = SettingsService.Instance.LoadSettings().SecondLanguage ?? "en-US";
+                    var before = SettingsService.Instance.LoadSettings();
+                    bool beforeEnabled = before.SecondLanguageEnabled ?? false;
+                    string beforeSecond = before.SecondLanguage ?? "en-US";
                     bool afterEnabled = dlg.SecondLanguageEnabled;
                     string afterSecond = dlg.SelectedSecondLanguage ?? beforeSecond;
+                    bool secondChanged = (beforeEnabled != afterEnabled) || !string.Equals(beforeSecond, afterSecond, StringComparison.OrdinalIgnoreCase);
                     try { SettingsService.Instance.UpdateSecondLanguageEnabled(afterEnabled); } catch { }
                     if (afterEnabled && !string.IsNullOrEmpty(afterSecond))
                     {
                         try { SettingsService.Instance.UpdateSecondLanguage(afterSecond); } catch { }
                     }
 
-                    // Apply UI changes immediately without restart
+                    if (secondChanged && !langChanged)
+                    {
+                        // Rebuild in-memory search tuples to include new 2nd language names
+                        RebuildSearchIndex();
+                        // Try to load existing second-language NGram snapshot; fall back to lazy build
+                        try
+                        {
+                            if (afterEnabled && !string.IsNullOrEmpty(afterSecond) && !string.Equals(afterSecond, currentLang, StringComparison.OrdinalIgnoreCase))
+                            {
+                                var fp2 = CacheService.ComputeAdmxFingerprint(_currentAdmxPath ?? admxPath, afterSecond);
+                                if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath ?? admxPath, afterSecond, fp2, _secondIndex.N, "sec-" + afterSecond, out var snap2) && snap2 != null)
+                                { _secondIndex.LoadSnapshot(snap2); _secondIndexBuilt = true; }
+                                else { _secondIndexBuilt = false; }
+                            }
+                            else
+                            {
+                                _secondIndexBuilt = true; // nothing needed
+                            }
+                        }
+                        catch { _secondIndexBuilt = false; }
+                    }
+
                     ApplySecondLanguageVisibilityToViewMenu();
                     UpdateColumnVisibilityFromFlags();
-                    RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                    if (!langChanged) RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
                 }
             }
             catch

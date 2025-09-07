@@ -69,15 +69,23 @@ namespace PolicyPlus.WinUI3
         {
             try
             {
+                var s = SettingsService.Instance.LoadSettings();
+                bool secondEnabled = s.SecondLanguageEnabled ?? false;
+                string secondLang = (secondEnabled ? (s.SecondLanguage ?? "en-US") : string.Empty) ?? string.Empty;
+                string currentLang = s.Language ?? _currentLanguage ?? string.Empty;
+                bool useSecond = secondEnabled && !string.IsNullOrEmpty(secondLang) && !string.Equals(secondLang, currentLang, StringComparison.OrdinalIgnoreCase);
+
                 _searchIndex = _allPolicies.Select(p => (
                     Policy: p,
                     NameLower: SearchText.Normalize(p.DisplayName),
-                    SecondLower: string.Empty,
+                    SecondLower: useSecond ? SearchText.Normalize(LocalizedTextService.GetPolicyNameIn(p, secondLang)) : string.Empty,
                     IdLower: SearchText.Normalize(p.UniqueID),
                     DescLower: SearchText.Normalize(p.DisplayExplanation)
                 )).ToList();
                 _searchIndexById = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
                 foreach (var e in _searchIndex) _searchIndexById[e.Policy.UniqueID] = e;
+                // Invalidate second index so it can rebuild with new language if needed
+                _secondIndexBuilt = false;
             }
             catch (Exception ex) { Log.Error("MainSearch", "RebuildSearchIndex failed", ex); _searchIndex = new(); _searchIndexById = new(StringComparer.OrdinalIgnoreCase); }
         }
@@ -105,10 +113,11 @@ namespace PolicyPlus.WinUI3
                 if (!string.IsNullOrEmpty(qLower))
                 {
                     int nameScore = ScoreMatch(e.NameLower, qLower);
+                    int secondScore = string.IsNullOrEmpty(e.SecondLower) ? -1000 : ScoreMatch(e.SecondLower, qLower);
                     int idScore = ScoreMatch(e.IdLower, qLower);
                     int descScore = _searchInDescription ? ScoreMatch(e.DescLower, qLower) : -1000;
-                    if (nameScore <= -1000 && idScore <= -1000 && descScore <= -1000) return;
-                    score += Math.Max(0, nameScore) * 3;
+                    if (nameScore <= -1000 && secondScore <= -1000 && idScore <= -1000 && descScore <= -1000) return;
+                    score += Math.Max(0, Math.Max(nameScore, secondScore)) * 3;
                     score += Math.Max(0, idScore) * 2;
                     score += Math.Max(0, descScore);
                 }

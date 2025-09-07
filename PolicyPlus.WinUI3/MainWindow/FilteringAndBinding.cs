@@ -26,9 +26,11 @@ namespace PolicyPlus.WinUI3
 
         private readonly NGramTextIndex _descIndex = new(2);
         private readonly NGramTextIndex _nameIndex = new(2);
+        private readonly NGramTextIndex _secondIndex = new(2); // second language names
         private readonly NGramTextIndex _idIndex = new(2);
         private bool _descIndexBuilt;
         private bool _nameIndexBuilt;
+        private bool _secondIndexBuilt;
         private bool _idIndexBuilt;
         private int _searchGeneration;
 
@@ -60,7 +62,7 @@ namespace PolicyPlus.WinUI3
             catch (Exception ex) { Log.Error("MainFilter", "EnsureDescIndex build failed", ex); }
         }
 
-        private void EnsureNameIdIndexes()
+        private void EnsureNameSecondIdIndexes()
         {
             if (!_nameIndexBuilt)
             {
@@ -82,6 +84,42 @@ namespace PolicyPlus.WinUI3
                     }
                     catch (Exception ex) { Log.Error("MainFilter", "Name index build failed", ex); }
                 }
+            }
+            // second language index
+            if (!_secondIndexBuilt)
+            {
+                try
+                {
+                    var set = SettingsService.Instance.LoadSettings();
+                    bool enabled = set.SecondLanguageEnabled ?? false;
+                    string? secondLang = enabled ? (set.SecondLanguage ?? "en-US") : null;
+                    if (enabled && !string.IsNullOrEmpty(secondLang) && !string.Equals(secondLang, _currentLanguage, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!string.IsNullOrEmpty(_currentAdmxPath))
+                        {
+                            var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, secondLang);
+                            if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, secondLang, fp, _secondIndex.N, "sec-" + secondLang, out var snap) && snap != null)
+                            { _secondIndex.LoadSnapshot(snap); _secondIndexBuilt = true; }
+                        }
+                        if (!_secondIndexBuilt)
+                        {
+                            try
+                            {
+                                var items = _allPolicies.Select(p => (id: p.UniqueID, normalizedText: SearchText.Normalize(LocalizedTextService.GetPolicyNameIn(p, secondLang))));
+                                _secondIndex.Build(items);
+                                if (!string.IsNullOrEmpty(_currentAdmxPath))
+                                { var fp = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, secondLang); CacheService.SaveNGramSnapshot(_currentAdmxPath, secondLang, fp, "sec-" + secondLang, _secondIndex.GetSnapshot()); }
+                                _secondIndexBuilt = true;
+                            }
+                            catch (Exception ex) { Log.Error("MainFilter", "Second language index build failed", ex); }
+                        }
+                    }
+                    else
+                    {
+                        _secondIndexBuilt = true; // no second language active
+                    }
+                }
+                catch (Exception ex) { Log.Warn("MainFilter", "Second language index setup failed", ex); _secondIndexBuilt = true; }
             }
             if (!_idIndexBuilt)
             {
@@ -111,11 +149,13 @@ namespace PolicyPlus.WinUI3
             HashSet<string>? union = null;
             try
             {
-                if (_searchInName || _searchInId) EnsureNameIdIndexes();
+                if (_searchInName || _searchInId) EnsureNameSecondIdIndexes();
                 if (_searchInName)
                 {
                     var nameSet = _nameIndex.TryQuery(qLower);
                     if (nameSet != null) { union ??= new HashSet<string>(nameSet, StringComparer.OrdinalIgnoreCase); if (!ReferenceEquals(union, nameSet)) union.UnionWith(nameSet); }
+                    var secondSet = _secondIndexBuilt ? _secondIndex.TryQuery(qLower) : null;
+                    if (secondSet != null) { union ??= new HashSet<string>(secondSet, StringComparer.OrdinalIgnoreCase); if (!ReferenceEquals(union, secondSet)) union.UnionWith(secondSet); }
                 }
                 if (_searchInId)
                 {
@@ -236,7 +276,7 @@ namespace PolicyPlus.WinUI3
 
         private bool PolicyMatchesQuery((PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower) e, string query, string qLower, HashSet<string>? descCandidates)
         {
-            if (_searchInName && e.NameLower.Contains(qLower)) return true;
+            if (_searchInName && (e.NameLower.Contains(qLower) || (!string.IsNullOrEmpty(e.SecondLower) && e.SecondLower.Contains(qLower)))) return true;
             if (_searchInId && e.IdLower.Contains(qLower)) return true;
             if (_searchInDescription)
             {
