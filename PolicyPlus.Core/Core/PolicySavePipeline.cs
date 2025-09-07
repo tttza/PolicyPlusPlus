@@ -4,6 +4,7 @@ using PolicyPlus.Core.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Diagnostics; // debug logging only
 
 namespace PolicyPlus.Core.Core
 {
@@ -29,6 +30,20 @@ namespace PolicyPlus.Core.Core
 
     public static class PolicySavePipeline
     {
+#if DEBUG
+        private static void LogDebug(string msg)
+        {
+            try { Debug.WriteLine("[PolicySavePipeline] " + msg); } catch { }
+        }
+        private static void LogError(string msg, Exception ex)
+        {
+            try { Debug.WriteLine($"[PolicySavePipeline] ERROR {msg} :: {ex.GetType().Name} {ex.Message}"); } catch { }
+        }
+#else
+        private static void LogDebug(string msg) { }
+        private static void LogError(string msg, Exception ex) { }
+#endif
+
         private static PolFile LoadExistingOrNew(bool isUser)
         {
             try
@@ -41,7 +56,10 @@ namespace PolicyPlus.Core.Core
                     return PolFile.Load(path);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                LogError($"LoadExistingOrNew failed isUser={isUser}", ex);
+            }
             return new PolFile();
         }
 
@@ -58,13 +76,19 @@ namespace PolicyPlus.Core.Core
                 var compSrc = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource();
                 compPol = compSrc as PolFile;
             }
-            catch { compPol = null; }
+            catch (Exception ex)
+            {
+                compPol = null; LogError("OpenSource machine failed", ex);
+            }
             try
             {
                 var userSrc = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
                 userPol = userSrc as PolFile;
             }
-            catch { userPol = null; }
+            catch (Exception ex)
+            {
+                userPol = null; LogError("OpenSource user failed", ex);
+            }
 
             if (compPol == null) compPol = LoadExistingOrNew(isUser: false);
             if (userPol == null) userPol = LoadExistingOrNew(isUser: true);
@@ -86,7 +110,7 @@ namespace PolicyPlus.Core.Core
                 }
                 else
                 {
-                    // Not configured => just ForgetPolicy already cleared state
+                    // Not configured => ForgetPolicy already cleared state
                 }
             }
 
@@ -94,15 +118,29 @@ namespace PolicyPlus.Core.Core
             byte[]? userBytes = null;
             if (compPol != null)
             {
-                using var ms = new MemoryStream();
-                using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true)) { compPol.Save(bw); }
-                compBytes = ms.ToArray();
+                try
+                {
+                    using var ms = new MemoryStream();
+                    using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true)) { compPol.Save(bw); }
+                    compBytes = ms.ToArray();
+                }
+                catch (Exception ex)
+                {
+                    LogError("Serialize machine POL failed", ex);
+                }
             }
             if (userPol != null)
             {
-                using var ms = new MemoryStream();
-                using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true)) { userPol.Save(bw); }
-                userBytes = ms.ToArray();
+                try
+                {
+                    using var ms = new MemoryStream();
+                    using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true)) { userPol.Save(bw); }
+                    userBytes = ms.ToArray();
+                }
+                catch (Exception ex)
+                {
+                    LogError("Serialize user POL failed", ex);
+                }
             }
 
             return new PolicySaveBuffers { MachinePolBytes = compBytes, UserPolBytes = userBytes };

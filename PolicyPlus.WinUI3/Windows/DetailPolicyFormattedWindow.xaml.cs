@@ -14,6 +14,7 @@ using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx;
 using PolicyPlus.WinUI3.Services;
+using PolicyPlus.WinUI3.Logging; // logging
 
 namespace PolicyPlus.WinUI3.Windows
 {
@@ -55,7 +56,7 @@ namespace PolicyPlus.WinUI3.Windows
                     _langToggle.Unchecked += LangToggle_Checked;
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Debug("DetailPolicyFmt", $"lang toggle init failed: {ex.Message}"); }
 
             // Load persisted join symbol
             try
@@ -65,17 +66,17 @@ namespace PolicyPlus.WinUI3.Windows
                     _joinSymbol = s.PathJoinSymbol!.Substring(0, Math.Min(1, s.PathJoinSymbol!.Length));
                 PathSymbolBtn.Content = _joinSymbol;
             }
-            catch { }
+            catch (Exception ex) { Log.Debug("DetailPolicyFmt", $"load join symbol failed: {ex.Message}"); }
         }
 
         private void Accel_ToggleView(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { ToggleViewBtn_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+        { try { ToggleViewBtn_Click(this, new RoutedEventArgs()); } catch (Exception ex) { Log.Debug("DetailPolicyFmt", $"accel toggle failed: {ex.Message}"); } args.Handled = true; }
         private void Accel_CopyPath(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { CopyToClipboard(PathBox.Text); } catch { } args.Handled = true; }
+        { try { CopyToClipboard(PathBox.Text); } catch (Exception ex) { Log.Debug("DetailPolicyFmt", $"accel copy path failed: {ex.Message}"); } args.Handled = true; }
         private void Accel_CopyReg(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { CopyToClipboard(RegBox.Text); } catch { } args.Handled = true; }
+        { try { CopyToClipboard(RegBox.Text); } catch (Exception ex) { Log.Debug("DetailPolicyFmt", $"accel copy reg failed: {ex.Message}"); } args.Handled = true; }
         private void Accel_Close(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { this.Close(); } catch { } args.Handled = true; }
+        { try { this.Close(); } catch (Exception ex) { Log.Debug("DetailPolicyFmt", $"accel close failed: {ex.Message}"); } args.Handled = true; }
 
         private void ApplyThemeResources()
         {
@@ -89,7 +90,7 @@ namespace PolicyPlus.WinUI3.Windows
                 PathBox.Background = inputBg; PathBox.BorderBrush = inputStroke; PathBox.Foreground = inputFg;
                 RegBox.Background = inputBg; RegBox.BorderBrush = inputStroke; RegBox.Foreground = inputFg;
             }
-            catch { }
+            catch (Exception ex) { Log.Debug("DetailPolicyFmt", $"apply theme failed: {ex.Message}"); }
         }
 
         private void ToggleViewBtn_Click(object sender, RoutedEventArgs e)
@@ -109,7 +110,7 @@ namespace PolicyPlus.WinUI3.Windows
                 var hive = _currentSection == AdmxPolicySection.User ? "HKEY_CURRENT_USER" : "HKEY_LOCAL_MACHINE";
                 await RegeditNavigationService.OpenAtKeyAsync(hive, kv.Key);
             }
-            catch { }
+            catch (Exception ex) { Log.Debug("DetailPolicyFmt", $"open regedit exception: {ex.Message}"); }
         }
 
         private void CopyToClipboard(string text)
@@ -120,7 +121,7 @@ namespace PolicyPlus.WinUI3.Windows
                 dp.SetText(text ?? string.Empty);
                 Clipboard.SetContent(dp);
             }
-            catch { }
+            catch (Exception ex) { Log.Debug("DetailPolicyFmt", $"clipboard copy failed: {ex.Message}"); }
         }
 
         public void Initialize(PolicyPlusPolicy policy, AdmxBundle bundle, IPolicySource compSource, IPolicySource userSource, AdmxPolicySection section)
@@ -152,10 +153,10 @@ namespace PolicyPlus.WinUI3.Windows
                     _joinSymbol = sym.Substring(0, Math.Min(1, sym.Length));
                     PathSymbolBtn.Content = _joinSymbol;
                     PathBox.Text = DetailPathFormatter.BuildPathText(_policy, _joinSymbol);
-                    try { SettingsService.Instance.UpdatePathJoinSymbol(_joinSymbol); } catch { }
+                    try { SettingsService.Instance.UpdatePathJoinSymbol(_joinSymbol); } catch (Exception ex2) { Log.Debug("DetailPolicyFmt", $"persist join symbol failed: {ex2.Message}"); }
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Debug("DetailPolicyFmt", $"join symbol change failed: {ex.Message}"); }
         }
 
         private void LangToggle_Click(object sender, RoutedEventArgs e)

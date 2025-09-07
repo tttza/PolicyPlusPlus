@@ -4,6 +4,7 @@ using System.Linq;
 
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Utilities;
+using PolicyPlus.WinUI3.Logging; // logging
 
 namespace PolicyPlus.WinUI3.Services
 {
@@ -45,8 +46,11 @@ namespace PolicyPlus.WinUI3.Services
                     ValueNamesLower = valsNorm,
                 };
             }
-            catch
+            catch (Exception ex)
             {
+#if DEBUG
+                Log.Debug("RegRefCache", $"build failed policyId={(policy?.UniqueID ?? "(null)")}: {ex.GetType().Name} {ex.Message}");
+#endif
                 return new Cached();
             }
         }

@@ -19,6 +19,7 @@ using PolicyPlus.WinUI3.Windows;
 using PolicyPlus.WinUI3.Services;
 using PolicyPlus.WinUI3.Utils;
 using Microsoft.UI.Windowing;
+using PolicyPlus.WinUI3.Logging; // logging
 
 namespace PolicyPlus.WinUI3
 {
@@ -40,7 +41,7 @@ namespace PolicyPlus.WinUI3
                         if (!string.IsNullOrEmpty(txt)) { _cached = txt; return _cached; }
                     }
                 }
-                catch { }
+                catch (Exception ex) { Log.Debug("App", $"version file read failed: {ex.GetType().Name} {ex.Message}"); }
                 _cached = "dev";
                 return _cached;
             }
@@ -67,9 +68,9 @@ namespace PolicyPlus.WinUI3
             this.UnhandledException += (s, e) => { try { e.Handled = true; } catch { } };
             try
             {
-                AppDomain.CurrentDomain.ProcessExit += (s, e) => { try { ElevationService.Instance.ShutdownAsync().GetAwaiter().GetResult(); } catch { } };
+                AppDomain.CurrentDomain.ProcessExit += (s, e) => { try { ElevationService.Instance.ShutdownAsync().GetAwaiter().GetResult(); } catch (Exception ex) { Log.Debug("App", $"elevation shutdown exit hook failed: {ex.GetType().Name} {ex.Message}"); } };
             }
-            catch { }
+            catch (Exception ex) { Log.Debug("App", $"attach ProcessExit failed: {ex.GetType().Name} {ex.Message}"); }
         }
 
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
@@ -91,32 +92,28 @@ namespace PolicyPlus.WinUI3
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Debug("App", $"launch arg parse failed: {ex.Message}"); }
 
             // Initialize settings storage and load persisted values before creating main window
             try
             {
                 SettingsService.Instance.Initialize();
                 var appSettings = SettingsService.Instance.LoadSettings();
-                // Theme
                 if (!string.IsNullOrEmpty(appSettings.Theme))
                     SetGlobalTheme(appSettings.Theme switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
-                // Scale
                 if (!string.IsNullOrEmpty(appSettings.UIScale))
                 {
                     if (double.TryParse(appSettings.UIScale.TrimEnd('%'), out var pct))
                         SetGlobalScale(Math.Max(0.5, pct / 100.0));
                 }
-                // Search usage stats bootstrap
                 var (counts, lastUsed) = SettingsService.Instance.LoadSearchStats();
                 SearchRankingService.Initialize(counts, lastUsed);
             }
-            catch { }
+            catch (Exception ex) { Log.Warn("App", $"settings init failed", ex); }
 
             Window = new MainWindow();
             try { Window.Title = "PolicyPlusMod"; } catch { }
             ApplyThemeTo(Window);
-
             TryApplyIconTo(Window);
 
             Window.Closed += async (s, e) =>
@@ -126,8 +123,8 @@ namespace PolicyPlus.WinUI3
                     var snap = SearchRankingService.GetSnapshot();
                     SettingsService.Instance.SaveSearchStats(snap.counts, snap.lastUsed);
                 }
-                catch { }
-                try { await ElevationService.Instance.ShutdownAsync(); } catch { }
+                catch (Exception ex) { Log.Debug("App", $"save search stats failed: {ex.Message}"); }
+                try { await ElevationService.Instance.ShutdownAsync(); } catch (Exception ex) { Log.Debug("App", $"elevation shutdown (Closed) failed: {ex.Message}"); }
                 CloseAllSecondaryWindows();
             };
             Window.Activate();
@@ -135,7 +132,6 @@ namespace PolicyPlus.WinUI3
 
         private static void TryApplyIconTo(Window w)
         {
-            // Prefer cached path
             try
             {
                 if (!string.IsNullOrEmpty(_iconPathCache))
@@ -144,9 +140,8 @@ namespace PolicyPlus.WinUI3
                     return;
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Debug("App", $"set icon cached failed: {ex.Message}"); }
 
-            // Try embedded resource first (embedded via <EmbeddedResource Include="Assets\\*.ico" />)
             try
             {
                 var asm = Assembly.GetExecutingAssembly();
@@ -168,9 +163,8 @@ namespace PolicyPlus.WinUI3
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Debug("App", $"embedded icon apply failed: {ex.Message}"); }
 
-            // Fallback: look for a .ico file next to the app (useful during development)
             try
             {
                 string baseDir = AppContext.BaseDirectory;
@@ -182,10 +176,10 @@ namespace PolicyPlus.WinUI3
                     {
                         _iconPathCache = path;
                         w.AppWindow?.SetIcon(path);
-                      }
+                    }
                 }
             }
-            catch { }
+            catch (Exception ex) { Log.Debug("App", $"fallback icon apply failed: {ex.Message}"); }
         }
 
         public static void SetGlobalTheme(ElementTheme theme)

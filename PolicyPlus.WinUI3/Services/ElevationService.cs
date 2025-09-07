@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Security.Principal;
 using System.Security.Cryptography;
 using PolicyPlus.WinUI3.Serialization;
+using PolicyPlus.WinUI3.Logging; // logging
 
 namespace PolicyPlus.WinUI3.Services
 {
@@ -167,12 +168,28 @@ namespace PolicyPlus.WinUI3.Services
         {
             string? machineBytes = null;
             string? userBytes = null;
-            try { if (!string.IsNullOrEmpty(machinePolTempPath) && File.Exists(machinePolTempPath)) machineBytes = Convert.ToBase64String(await File.ReadAllBytesAsync(machinePolTempPath).ConfigureAwait(false)); } catch { }
-            try { if (!string.IsNullOrEmpty(userPolTempPath) && File.Exists(userPolTempPath)) userBytes = Convert.ToBase64String(await File.ReadAllBytesAsync(userPolTempPath).ConfigureAwait(false)); } catch { }
+            try
+            {
+                if (!string.IsNullOrEmpty(machinePolTempPath) && File.Exists(machinePolTempPath))
+                    machineBytes = Convert.ToBase64String(await File.ReadAllBytesAsync(machinePolTempPath).ConfigureAwait(false));
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("Elevation", $"read temp machine POL failed path={machinePolTempPath}", ex);
+            }
+            try
+            {
+                if (!string.IsNullOrEmpty(userPolTempPath) && File.Exists(userPolTempPath))
+                    userBytes = Convert.ToBase64String(await File.ReadAllBytesAsync(userPolTempPath).ConfigureAwait(false));
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("Elevation", $"read temp user POL failed path={userPolTempPath}", ex);
+            }
             return await WriteLocalGpoBytesAsync(machineBytes, userBytes, triggerRefresh).ConfigureAwait(false);
         }
 
-        // New: ask elevated host to open regedit at a key (avoids repeated UAC prompts)
+        // Ask elevated host to open regedit at a key (avoids repeated UAC prompts)
         public async Task<(bool ok, string? error)> OpenRegeditAtAsync(string hive, string subKey)
         {
             await _ioLock.WaitAsync().ConfigureAwait(false);
@@ -219,16 +236,16 @@ namespace PolicyPlus.WinUI3.Services
                 {
                     var req = new HostRequestShutdown { Auth = _authToken };
                     var json = JsonSerializer.Serialize(req, AppJsonContext.Default.HostRequestShutdown);
-                    try { await _writer.WriteLineAsync(json).ConfigureAwait(false); } catch { }
-                    try { await _writer.FlushAsync().ConfigureAwait(false); } catch { }
-                    try { await Task.Delay(200).ConfigureAwait(false); } catch { }
+                    try { await _writer.WriteLineAsync(json).ConfigureAwait(false); } catch (Exception ex) { Log.Warn("Elevation", "shutdown write failed", ex); }
+                    try { await _writer.FlushAsync().ConfigureAwait(false); } catch (Exception ex) { Log.Warn("Elevation", "shutdown flush failed", ex); }
+                    try { await Task.Delay(200).ConfigureAwait(false); } catch (Exception ex) { Log.Warn("Elevation", "shutdown delay failed", ex); }
                 }
             }
             finally
             {
-                try { _reader?.Dispose(); } catch { }
-                try { _writer?.Dispose(); } catch { }
-                try { _client?.Dispose(); } catch { }
+                try { _reader?.Dispose(); } catch (Exception ex) { Log.Warn("Elevation", "reader dispose failed", ex); }
+                try { _writer?.Dispose(); } catch (Exception ex) { Log.Warn("Elevation", "writer dispose failed", ex); }
+                try { _client?.Dispose(); } catch (Exception ex) { Log.Warn("Elevation", "client dispose failed", ex); }
                 _reader = null; _writer = null; _client = null; _connected = false;
                 _ioLock.Release();
                 try
@@ -238,7 +255,10 @@ namespace PolicyPlus.WinUI3.Services
                         _hostProc.Kill(true);
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Warn("Elevation", "kill host failed", ex);
+                }
                 _hostProc = null;
             }
         }
