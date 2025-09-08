@@ -24,11 +24,11 @@
                         <ColumnDefinition Width="4" />
                         <ColumnDefinition Width="{Binding Columns.UserState, ElementName=RootControl}" MinWidth="150" />
                         <ColumnDefinition Width="4" />
-                        <ColumnDefinition Width="{Binding Columns.UserOptions, ElementName=RootControl}" MinWidth="240" MaxWidth="600"/>
+                        <ColumnDefinition Width="300"/>
                         <ColumnDefinition Width="4" />
                         <ColumnDefinition Width="{Binding Columns.ComputerState, ElementName=RootControl}" MinWidth="150" />
                         <ColumnDefinition Width="4" />
-                        <ColumnDefinition Width="{Binding Columns.ComputerOptions, ElementName=RootControl}" MinWidth="240" MaxWidth="600" />
+                        <ColumnDefinition Width="300"/>
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0" Text="Name" VerticalAlignment="Center" Margin="6,0" />
@@ -61,11 +61,11 @@
                                         <ColumnDefinition Width="4" />
                                         <ColumnDefinition Width="{Binding Columns.UserState, ElementName=RootControl}" MinWidth="150" />
                                         <ColumnDefinition Width="4" />
-                                        <ColumnDefinition Width="{Binding Columns.UserOptions, ElementName=RootControl}" MinWidth="240" MaxWidth="600" />
+                                        <ColumnDefinition Width="300"/>
                                         <ColumnDefinition Width="4" />
                                         <ColumnDefinition Width="{Binding Columns.ComputerState, ElementName=RootControl}" MinWidth="150" />
                                         <ColumnDefinition Width="4" />
-                                        <ColumnDefinition Width="{Binding Columns.ComputerOptions, ElementName=RootControl}" MinWidth="240" MaxWidth="600" />
+                                        <ColumnDefinition Width="300"/>
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Grid.Column="0" Text="{Binding Policy.DisplayName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" DoubleTapped="NameText_DoubleTapped" />
@@ -81,7 +81,7 @@
                                     </Border>
 
                                     <!-- User Option Elements -->
-                                    <ScrollViewer Grid.Column="6" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" IsEnabled="{Binding UserEnabledForOptions}">
+                                    <ScrollViewer Grid.Column="6" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" IsEnabled="{Binding UserEnabledForOptions}" MaxWidth="300">
                                         <ItemsControl ItemsSource="{Binding OptionElements}">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -114,7 +114,7 @@
                                     </Border>
 
                                     <!-- Computer Option Elements -->
-                                    <ScrollViewer Grid.Column="10" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" IsEnabled="{Binding ComputerEnabledForOptions}">
+                                    <ScrollViewer Grid.Column="10" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" IsEnabled="{Binding ComputerEnabledForOptions}"  MaxWidth="300">
                                         <ItemsControl ItemsSource="{Binding OptionElements}">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>

@@ -35,7 +35,7 @@ namespace PolicyPlus.WinUI3.Windows
         {
             InitializeComponent();
             try { SystemBackdrop = new MicaBackdrop(); } catch { }
-            ChildWindowCommon.Initialize(this, 680, 520, ApplyCurrentTheme);
+            ChildWindowCommon.Initialize(this, 800, 520, ApplyCurrentTheme);
             if (_grid != null) _grid.ParentQuickEditWindow = this;
             if (_saveButton != null) _saveButton.Click += async (_, __) => await SaveAsync();
             if (_closeButton != null) _closeButton.Click += (_, __) => Close();
