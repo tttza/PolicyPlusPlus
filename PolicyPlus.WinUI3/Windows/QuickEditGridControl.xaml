@@ -24,11 +24,11 @@
                         <ColumnDefinition Width="4" />
                         <ColumnDefinition Width="{Binding Columns.UserState, ElementName=RootControl}" MinWidth="150" />
                         <ColumnDefinition Width="4" />
-                        <ColumnDefinition Width="300"/>
+                        <ColumnDefinition Width="260"/>
                         <ColumnDefinition Width="4" />
                         <ColumnDefinition Width="{Binding Columns.ComputerState, ElementName=RootControl}" MinWidth="150" />
                         <ColumnDefinition Width="4" />
-                        <ColumnDefinition Width="300"/>
+                        <ColumnDefinition Width="260"/>
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0" Text="Name" VerticalAlignment="Center" Margin="6,0" />
@@ -61,11 +61,11 @@
                                         <ColumnDefinition Width="4" />
                                         <ColumnDefinition Width="{Binding Columns.UserState, ElementName=RootControl}" MinWidth="150" />
                                         <ColumnDefinition Width="4" />
-                                        <ColumnDefinition Width="300"/>
+                                        <ColumnDefinition Width="260"/>
                                         <ColumnDefinition Width="4" />
                                         <ColumnDefinition Width="{Binding Columns.ComputerState, ElementName=RootControl}" MinWidth="150" />
                                         <ColumnDefinition Width="4" />
-                                        <ColumnDefinition Width="300"/>
+                                        <ColumnDefinition Width="260"/>
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Grid.Column="0" Text="{Binding Policy.DisplayName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" DoubleTapped="NameText_DoubleTapped" />
@@ -81,7 +81,7 @@
                                     </Border>
 
                                     <!-- User Option Elements -->
-                                    <ScrollViewer Grid.Column="6" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" IsEnabled="{Binding UserEnabledForOptions}" MaxWidth="300">
+                                    <ScrollViewer Grid.Column="6" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" IsEnabled="{Binding UserEnabledForOptions}" MaxWidth="260">
                                         <ItemsControl ItemsSource="{Binding OptionElements}">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -114,7 +114,7 @@
                                     </Border>
 
                                     <!-- Computer Option Elements -->
-                                    <ScrollViewer Grid.Column="10" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" IsEnabled="{Binding ComputerEnabledForOptions}"  MaxWidth="300">
+                                    <ScrollViewer Grid.Column="10" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" IsEnabled="{Binding ComputerEnabledForOptions}"  MaxWidth="260">
                                         <ItemsControl ItemsSource="{Binding OptionElements}">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -123,7 +123,7 @@
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="vm:OptionElementVM">
-                                                    <StackPanel Orientation="Vertical" Spacing="2" ToolTipService.ToolTip="{x:Bind Id}">
+                                                    <StackPanel Orientation="Vertical" Spacing="2" ToolTipService.ToolTip="{x:Bind Id}" HorizontalAlignment="Left">
                                                         <ComboBox Width="210" MinWidth="120" Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{x:Bind ComputerEnumIndex, Mode=TwoWay}" ItemsSource="{x:Bind Choices}" />
                                                         <CheckBox Visibility="{x:Bind IsBoolean, Converter={StaticResource BoolToVisibility}}" IsChecked="{x:Bind ComputerBool, Mode=TwoWay}" Padding="4,0" />
                                                         <TextBox x:Name="ComputerPlainText" MinWidth="150" Width="210" Visibility="{x:Bind IsPlainText, Converter={StaticResource BoolToVisibility}}" Text="{x:Bind ComputerText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="{x:Bind TextMaxLength}" />
