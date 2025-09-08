@@ -31,7 +31,7 @@
     <Product>Policy Plus</Product>
     <Copyright>Copyright © Ben Nordick 2016-2021, modified by tttza 2022</Copyright>
     <Configurations>Debug;Release;Debug-Unpackaged;Release-Unpackaged</Configurations>
-    <Platforms>AnyCPU;ARM64;x64</Platforms>
+    <Platforms>AnyCPU;ARM64;x64;x86</Platforms>
   </PropertyGroup>
   <!-- Map Platform to proper RID to avoid mismatch errors -->
   <PropertyGroup Condition="'$(Platform)'=='x64'">
