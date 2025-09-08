@@ -6,7 +6,7 @@
     Title="Quick Edit">
     <!-- Consistent scaling structure: ScaleHost (host) -> RootShell (scaled content) -->
     <Grid x:Name="ScaleHost" Tag="AllowAutoSize">
-        <Grid x:Name="RootShell" Padding="12" VerticalAlignment="Top">
+        <Grid x:Name="RootShell" Padding="12" VerticalAlignment="Top" KeyboardAcceleratorPlacementMode="Hidden">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />

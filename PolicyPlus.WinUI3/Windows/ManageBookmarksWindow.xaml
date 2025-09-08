@@ -7,7 +7,7 @@
     <MicaBackdrop />
   </Window.SystemBackdrop>
   <Grid x:Name="ScaleHost">
-    <Grid x:Name="RootShell" Padding="12" Background="{ThemeResource WindowBackground}" MinWidth="460" MinHeight="420">
+      <Grid x:Name="RootShell" Padding="12" Background="{ThemeResource WindowBackground}" MinWidth="460" MinHeight="420"  KeyboardAcceleratorPlacementMode="Hidden">
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
         <RowDefinition Height="*" />
