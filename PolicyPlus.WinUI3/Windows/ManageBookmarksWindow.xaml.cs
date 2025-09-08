@@ -18,7 +18,7 @@ namespace PolicyPlus.WinUI3.Windows
             InitializeComponent();
             Title = "Manage Bookmark Lists";
             try { SystemBackdrop = new MicaBackdrop(); } catch { }
-            ChildWindowCommon.Initialize(this, 440, 420, ApplyTheme);
+            ChildWindowCommon.Initialize(this, 460, 420, ApplyTheme);
             try { if (RootShell != null) RootShell.Loaded += OnLoaded; else DispatcherQueue.TryEnqueue(() => OnLoaded(this, new RoutedEventArgs())); } catch { }
             Closed += (_, __) =>
             {

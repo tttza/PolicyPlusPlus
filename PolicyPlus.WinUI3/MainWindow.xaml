@@ -95,9 +95,10 @@
                             <ToggleMenuFlyoutItem x:Name="ToggleLimitUnfilteredMenu" Text="Limit unfiltered to 1000" IsChecked="True" Click="ToggleLimitUnfilteredMenu_Click" />
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Bookmarks">
-                            <MenuFlyoutItem Text="Show only bookmarks" Click="BookmarkFilterMenu_Click" />
-                            <MenuFlyoutItem Text="Manage lists..." Click="BookmarkManageMenu_Click" />
                             <MenuFlyoutItem Text="Quick Edit..." Click="BtnQuickEdit_Click" />
+                            <MenuFlyoutItem Text="Manage lists..." Click="BookmarkManageMenu_Click" />
+                            <MenuFlyoutItem Text="Show only bookmarks" Click="BookmarkFilterMenu_Click" />
+
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Changes">
                             <MenuFlyoutItem Text="Pending..." Click="BtnPendingChanges_Click" />

@@ -7,13 +7,16 @@
     <MicaBackdrop />
   </Window.SystemBackdrop>
   <Grid x:Name="ScaleHost">
-      <Grid x:Name="RootShell" Padding="12" Background="{ThemeResource WindowBackground}" MinWidth="460" MinHeight="420"  KeyboardAcceleratorPlacementMode="Hidden">
-      <Grid.RowDefinitions>
-        <RowDefinition Height="Auto" />
-        <RowDefinition Height="*" />
-        <RowDefinition Height="Auto" />
-      </Grid.RowDefinitions>
-
+    <Grid x:Name="RootShell" Padding="12" Background="{ThemeResource WindowBackground}" KeyboardAcceleratorPlacementMode="Hidden">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+           
       <!-- Header -->
       <StackPanel Orientation="Horizontal" Spacing="12" Grid.Row="0" VerticalAlignment="Center" Margin="0,0,0,4">
         <TextBlock Text="Bookmark Lists" FontSize="20" FontWeight="SemiBold" />
@@ -26,6 +29,9 @@
           <RowDefinition Height="*" />
           <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
         <ListView x:Name="ListNames" Grid.Row="0" SelectionMode="Single" IsItemClickEnabled="False" DoubleTapped="ListNames_DoubleTapped"
                   HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,4">
           <ListView.ItemTemplate>
