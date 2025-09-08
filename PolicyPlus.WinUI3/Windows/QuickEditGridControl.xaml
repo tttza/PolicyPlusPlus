@@ -52,8 +52,8 @@
                         </muxc:ItemsRepeater.Layout>
                         <muxc:ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="vm:QuickEditRow">
-                                <!-- Reduced height -->
-                                <Grid Height="46" MinHeight="42" Padding="0,2,0,2">
+                                <!-- Allow variable height for vertical option stacking -->
+                                <Grid MinHeight="42" Padding="0,2,0,2">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="{Binding Columns.Name, ElementName=RootControl}" MinWidth="300" />
                                         <ColumnDefinition Width="4" />
@@ -81,16 +81,16 @@
                                     </Border>
 
                                     <!-- User Option Elements -->
-                                    <ScrollViewer Grid.Column="6" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" IsEnabled="{Binding UserEnabledForOptions}" MaxWidth="300">
+                                    <ScrollViewer Grid.Column="6" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" IsEnabled="{Binding UserEnabledForOptions}" MaxWidth="300">
                                         <ItemsControl ItemsSource="{Binding OptionElements}">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" />
+                                                    <StackPanel Orientation="Vertical" Spacing="4" />
                                                 </ItemsPanelTemplate>
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="vm:OptionElementVM">
-                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="2" ToolTipService.ToolTip="{x:Bind Id}">
+                                                    <StackPanel Orientation="Vertical" Spacing="2" ToolTipService.ToolTip="{x:Bind Id}">
                                                         <ComboBox Width="210" MinWidth="120" Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{x:Bind UserEnumIndex, Mode=TwoWay}" ItemsSource="{x:Bind Choices}" />
                                                         <CheckBox Visibility="{x:Bind IsBoolean, Converter={StaticResource BoolToVisibility}}" IsChecked="{x:Bind UserBool, Mode=TwoWay}" Padding="4,0" />
                                                         <TextBox x:Name="UserPlainText" MinWidth="150" Width="210" Visibility="{x:Bind IsPlainText, Converter={StaticResource BoolToVisibility}}" Text="{x:Bind UserText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="{x:Bind TextMaxLength}" />
@@ -114,16 +114,16 @@
                                     </Border>
 
                                     <!-- Computer Option Elements -->
-                                    <ScrollViewer Grid.Column="10" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" IsEnabled="{Binding ComputerEnabledForOptions}"  MaxWidth="300">
+                                    <ScrollViewer Grid.Column="10" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" IsEnabled="{Binding ComputerEnabledForOptions}"  MaxWidth="300">
                                         <ItemsControl ItemsSource="{Binding OptionElements}">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center" />
+                                                    <StackPanel Orientation="Vertical" Spacing="4" />
                                                 </ItemsPanelTemplate>
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="vm:OptionElementVM">
-                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="2" ToolTipService.ToolTip="{x:Bind Id}">
+                                                    <StackPanel Orientation="Vertical" Spacing="2" ToolTipService.ToolTip="{x:Bind Id}">
                                                         <ComboBox Width="210" MinWidth="120" Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{x:Bind ComputerEnumIndex, Mode=TwoWay}" ItemsSource="{x:Bind Choices}" />
                                                         <CheckBox Visibility="{x:Bind IsBoolean, Converter={StaticResource BoolToVisibility}}" IsChecked="{x:Bind ComputerBool, Mode=TwoWay}" Padding="4,0" />
                                                         <TextBox x:Name="ComputerPlainText" MinWidth="150" Width="210" Visibility="{x:Bind IsPlainText, Converter={StaticResource BoolToVisibility}}" Text="{x:Bind ComputerText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="{x:Bind TextMaxLength}" />
