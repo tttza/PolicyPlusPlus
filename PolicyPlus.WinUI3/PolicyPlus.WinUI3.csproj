@@ -7,43 +7,41 @@
     <UseWinUI>true</UseWinUI>
     <Nullable>enable</Nullable>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
-	<PublishProfile>Properties\PublishProfiles\win-$(Platform).pubxml</PublishProfile>
-	<AssemblyName>PolicyPlusPlus</AssemblyName>
-	<RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
-	<TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <PublishProfile>Properties\PublishProfiles\win-$(Platform).pubxml</PublishProfile>
+    <AssemblyName>PolicyPlusPlus</AssemblyName>
+    <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
 	<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-	<Configurations>Debug;Release;Debug-Unpackaged;Release-Unpackaged</Configurations>
-      <Packaged>true</Packaged>
-	  <Packaged Condition="'$(Configuration)' == 'Debug-Unpackaged' Or '$(Configuration)' == 'Release-Unpackaged'">false</Packaged>
-	  <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
-	  <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
-	  <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
-	  <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
-	  <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
-	  <GenerateTestArtifacts>True</GenerateTestArtifacts>
-	  <AppxBundle>Always</AppxBundle>
-	  <AppxBundlePlatforms>x86|x64|arm64</AppxBundlePlatforms>
-	  <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
+    <Configurations>Debug;Release;Debug-Unpackaged;Release-Unpackaged</Configurations>
+    <Packaged>true</Packaged>
+    <Packaged Condition="'$(Configuration)' == 'Debug-Unpackaged' Or '$(Configuration)' == 'Release-Unpackaged'">false</Packaged>
+    <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
+    <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
+    <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
+    <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
+    <GenerateTestArtifacts>True</GenerateTestArtifacts>
+    <AppxBundle>Always</AppxBundle>
+    <AppxBundlePlatforms>x86|x64|arm64</AppxBundlePlatforms>
+    <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
   </PropertyGroup>
 	
     <PropertyGroup Condition="'$(Packaged)' != 'true'">
-	    <EnableMsixTooling>false</EnableMsixTooling>
+	    <EnableMsixTooling>true</EnableMsixTooling>
 	    <WindowsPackageType>None</WindowsPackageType>
 		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-		<WindowsAppSDKBootstrapInitialize>true</WindowsAppSDKBootstrapInitialize>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Packaged)' == 'true'">
 	    <EnableMsixTooling>true</EnableMsixTooling>
 		<WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
-		<WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
     </PropertyGroup>
 
+	<PropertyGroup Condition="'$(WindowsAppSDKSelfContained)'=='true'">
+		<WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(WindowsAppSDKSelfContained)'=='true'">
-    <WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
-  </PropertyGroup>
-  <ItemGroup>
+	<ItemGroup>
     <EmbeddedResource Include="Assets\*.ico" />
   </ItemGroup>
   <Choose>
@@ -74,9 +72,6 @@
     </When>
   </Choose>
   <ItemGroup>
-    <Page Remove="Windows\LogViewerWindow.xaml" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.250402" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.2.0" />
@@ -89,11 +84,7 @@
   <ItemGroup>
     <Folder Include="Controls" />
   </ItemGroup>
-  <ItemGroup>
-    <None Update="Windows\LogViewerWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </None>
-  </ItemGroup>
+
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <PublishReadyToRun>False</PublishReadyToRun>
     <PublishTrimmed>False</PublishTrimmed>
@@ -175,7 +166,4 @@
       </None>
     </ItemGroup>
   </Target>
-  <ItemGroup>
-    <Page Include="Windows\LogViewerWindow.xaml" />
-  </ItemGroup>
 </Project>
