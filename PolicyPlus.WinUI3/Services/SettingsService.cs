@@ -50,7 +50,7 @@ namespace PolicyPlus.WinUI3.Services
                 else
                 {
                     var root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                    _baseDir = Path.Combine(root, "PolicyPlusMod");
+                    _baseDir = Path.Combine(root, "PolicyPlusPlus");
                 }
                 Directory.CreateDirectory(_baseDir);
                 try { Directory.CreateDirectory(CacheDirectory); } catch { }

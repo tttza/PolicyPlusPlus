@@ -46,7 +46,7 @@ namespace PolicyPlus.WinUI3
                 return _cached;
             }
         }
-        public static string CreditsHeader => $"PolicyPlusMod {Version}";
+        public static string CreditsHeader => $"Policy++ {Version}";
     }
     public partial class App : Application
     {
@@ -112,7 +112,7 @@ namespace PolicyPlus.WinUI3
             catch (Exception ex) { Log.Warn("App", $"settings init failed", ex); }
 
             Window = new MainWindow();
-            try { Window.Title = "PolicyPlusMod"; } catch { }
+            try { Window.Title = "Policy++"; } catch { }
             ApplyThemeTo(Window);
             TryApplyIconTo(Window);
 

@@ -11,7 +11,7 @@
     xmlns:converters="using:PolicyPlus.WinUI3.Converters"
     xmlns:models="using:PolicyPlus.WinUI3.Models"
     mc:Ignorable="d"
-    Title="PolicyPlusMod">
+    Title="Policy++">
 
     <Window.SystemBackdrop>
         <MicaBackdrop />
