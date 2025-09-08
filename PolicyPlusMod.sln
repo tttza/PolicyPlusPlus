@@ -56,8 +56,8 @@ Global
 		{F5E4C0A7-4F9F-495E-9E3F-4E0C2F6F9002}.Debug|ARM64.Build.0 = Debug|ARM64
 		{F5E4C0A7-4F9F-495E-9E3F-4E0C2F6F9002}.Debug|x64.ActiveCfg = Debug|x64
 		{F5E4C0A7-4F9F-495E-9E3F-4E0C2F6F9002}.Debug|x64.Build.0 = Debug|x64
-		{F5E4C0A7-4F9F-495E-9E3F-4E0C2F6F9002}.Debug-Unpackaged|Any CPU.ActiveCfg = Debug-Unpackaged|Any CPU
-		{F5E4C0A7-4F9F-495E-9E3F-4E0C2F6F9002}.Debug-Unpackaged|Any CPU.Build.0 = Debug-Unpackaged|Any CPU
+		{F5E4C0A7-4F9F-495E-9E3F-4E0C2F6F9002}.Debug-Unpackaged|Any CPU.ActiveCfg = Debug-Unpackaged|x64
+		{F5E4C0A7-4F9F-495E-9E3F-4E0C2F6F9002}.Debug-Unpackaged|Any CPU.Build.0 = Debug-Unpackaged|x64
 		{F5E4C0A7-4F9F-495E-9E3F-4E0C2F6F9002}.Debug-Unpackaged|ARM64.ActiveCfg = Debug-Unpackaged|ARM64
 		{F5E4C0A7-4F9F-495E-9E3F-4E0C2F6F9002}.Debug-Unpackaged|ARM64.Build.0 = Debug-Unpackaged|ARM64
 		{F5E4C0A7-4F9F-495E-9E3F-4E0C2F6F9002}.Debug-Unpackaged|x64.ActiveCfg = Debug-Unpackaged|x64

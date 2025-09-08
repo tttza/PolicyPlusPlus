@@ -138,7 +138,7 @@
                             <ToggleMenuFlyoutItem x:Name="ViewDetailsToggle" Text="Details pane" IsChecked="True" Click="ViewDetailsToggle_Click"/>
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Help">
-                            <MenuFlyoutItem Text="About..." Click="BtnAbout_Click" />
+                            <MenuFlyoutItem Text="About..." Click="AboutMenu_Click" />
                             <MenuFlyoutItem Text="View Logs..." Click="BtnViewLogs_Click" />
                         </controls:MenuBarItem>
                     </controls:MenuBar>

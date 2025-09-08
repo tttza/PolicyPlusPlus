@@ -21,7 +21,7 @@ namespace PolicyPlus.WinUI3.Dialogs
                 var asm = typeof(App).Assembly;
                 string? commit = asm.GetCustomAttributes<AssemblyMetadataAttribute>()
                                      .FirstOrDefault(a => a.Key == "CommitId")?.Value;
-                AppTitle.Text = "PolicyPlus++";
+                AppTitle.Text = "Policy++";
                 VersionText.Text = "Version: " + ver;
                 CommitText.Text = string.IsNullOrEmpty(commit) ? string.Empty : "Commit: " + commit;
             }

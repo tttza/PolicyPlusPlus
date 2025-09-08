@@ -1101,6 +1101,18 @@ namespace PolicyPlus.WinUI3
             ShowInfo("Local GPO sources initialized.");
         }
 
+        private async void AboutMenu_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new AboutDialog();
+                if (this.Content is FrameworkElement fe)
+                    dlg.XamlRoot = fe.XamlRoot;
+                await dlg.ShowAsync();
+            }
+            catch { }
+        }
+
         private async void BtnLoadAdmxFolder_Click(object sender, RoutedEventArgs e)
         {
             var hwnd = WindowNative.GetWindowHandle(this);
