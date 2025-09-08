@@ -8,8 +8,6 @@
     <Platforms>x86;x64;ARM64</Platforms>
     <UseWinUI>true</UseWinUI>
     <Nullable>enable</Nullable>
-    <WindowsAppSDKBootstrapInitialize>true</WindowsAppSDKBootstrapInitialize>
-    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
 	<PublishProfile>Properties\PublishProfiles\win-$(Platform).pubxml</PublishProfile>
 	<AssemblyName>PolicyPlusPlus</AssemblyName>
@@ -41,10 +39,14 @@
     <PropertyGroup Condition="'$(Packaged)' != 'true'">
 	    <EnableMsixTooling>false</EnableMsixTooling>
 	    <WindowsPackageType>None</WindowsPackageType>
+		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+		<WindowsAppSDKBootstrapInitialize>true</WindowsAppSDKBootstrapInitialize>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Packaged)' == 'true'">
 	    <EnableMsixTooling>true</EnableMsixTooling>
+		<WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+		<WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
     </PropertyGroup>
 
 
