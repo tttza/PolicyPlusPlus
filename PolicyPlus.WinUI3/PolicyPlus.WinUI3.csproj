@@ -7,7 +7,6 @@
     <UseWinUI>true</UseWinUI>
     <Nullable>enable</Nullable>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
-    <PublishProfile>Properties\PublishProfiles\win-$(Platform).pubxml</PublishProfile>
     <AssemblyName>PolicyPlusPlus</AssemblyName>
     <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -30,11 +29,13 @@
 	    <EnableMsixTooling>true</EnableMsixTooling>
 	    <WindowsPackageType>None</WindowsPackageType>
 		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+		<PublishProfile>Properties\PublishProfiles\win-$(Platform)-standalone.pubxml</PublishProfile>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Packaged)' == 'true'">
 	    <EnableMsixTooling>true</EnableMsixTooling>
 		<WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+		<PublishProfile>Properties\PublishProfiles\win-$(Platform).pubxml</PublishProfile>
     </PropertyGroup>
 
 	<PropertyGroup Condition="'$(WindowsAppSDKSelfContained)'=='true'">

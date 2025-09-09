@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyPlus.WinUI3", "Policy
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyPlus.Core", "PolicyPlus.Core\PolicyPlus.Core.csproj", "{BB0E0680-F6DE-4E73-9316-49E46FDB7071}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "PolicyPlusPlusInstaller", "PolicyPlusPlusInstaller\PolicyPlusPlusInstaller.vdproj", "{0D751D40-712B-5BB6-535F-2C0C9D6A746C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -168,6 +170,22 @@ Global
 		{BB0E0680-F6DE-4E73-9316-49E46FDB7071}.Release-Unpackaged|x64.Build.0 = Release-Unpackaged|x64
 		{BB0E0680-F6DE-4E73-9316-49E46FDB7071}.Release-Unpackaged|x86.ActiveCfg = Release-Unpackaged|x86
 		{BB0E0680-F6DE-4E73-9316-49E46FDB7071}.Release-Unpackaged|x86.Build.0 = Release-Unpackaged|x86
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Debug|Any CPU.ActiveCfg = Debug
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Debug|ARM64.ActiveCfg = Debug
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Debug|x64.ActiveCfg = Debug
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Debug|x86.ActiveCfg = Debug
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Debug-Unpackaged|Any CPU.ActiveCfg = Debug
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Debug-Unpackaged|ARM64.ActiveCfg = Debug
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Debug-Unpackaged|x64.ActiveCfg = Debug
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Debug-Unpackaged|x86.ActiveCfg = Debug
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Release|Any CPU.ActiveCfg = Release
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Release|ARM64.ActiveCfg = Release
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Release|x64.ActiveCfg = Release
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Release|x86.ActiveCfg = Release
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Release-Unpackaged|Any CPU.ActiveCfg = Release
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Release-Unpackaged|ARM64.ActiveCfg = Release
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Release-Unpackaged|x64.ActiveCfg = Release
+		{0D751D40-712B-5BB6-535F-2C0C9D6A746C}.Release-Unpackaged|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
