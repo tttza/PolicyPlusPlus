@@ -88,21 +88,20 @@
                             <MenuFlyoutItem Text="Import .pol..." Click="BtnImportPol_Click" Visibility="Collapsed"/>
                             <MenuFlyoutItem Text="Import .reg..." Click="BtnImportReg_Click" />
                         </controls:MenuBarItem>
-                        <controls:MenuBarItem Title="Options">
-                            <MenuFlyoutItem Text="Language..." Click="BtnLanguage_Click" />
-                            <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Write to temp .pol" IsChecked="{Binding IsChecked, ElementName=ChkUseTempPol, Mode=TwoWay}" Click="ToggleTempPolMenu_Click" Visibility="Collapsed" />
-                            <ToggleMenuFlyoutItem x:Name="ToggleHideEmptyMenu" Text="Hide empty categories" IsChecked="True" Click="ToggleHideEmptyMenu_Click" />
-                            <ToggleMenuFlyoutItem x:Name="ToggleLimitUnfilteredMenu" Text="Limit unfiltered to 1000" IsChecked="True" Click="ToggleLimitUnfilteredMenu_Click" />
+                        <controls:MenuBarItem Title="Changes">
+                            <MenuFlyoutItem Text="Pending..." Click="BtnPendingChanges_Click" />
+                            <MenuFlyoutItem Text="History..." Click="BtnHistoryChanges_Click" />
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Bookmarks">
                             <MenuFlyoutItem Text="Quick Edit..." Click="BtnQuickEdit_Click" />
                             <MenuFlyoutItem Text="Manage lists..." Click="BookmarkManageMenu_Click" />
                             <MenuFlyoutItem Text="Show only bookmarks" Click="BookmarkFilterMenu_Click" />
-
                         </controls:MenuBarItem>
-                        <controls:MenuBarItem Title="Changes">
-                            <MenuFlyoutItem Text="Pending..." Click="BtnPendingChanges_Click" />
-                            <MenuFlyoutItem Text="History..." Click="BtnHistoryChanges_Click" />
+                        <controls:MenuBarItem Title="Options">
+                            <MenuFlyoutItem Text="Language..." Click="BtnLanguage_Click" />
+                            <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Write to temp .pol" IsChecked="{Binding IsChecked, ElementName=ChkUseTempPol, Mode=TwoWay}" Click="ToggleTempPolMenu_Click" Visibility="Collapsed" />
+                            <ToggleMenuFlyoutItem x:Name="ToggleHideEmptyMenu" Text="Hide empty categories" IsChecked="True" Click="ToggleHideEmptyMenu_Click" />
+                            <ToggleMenuFlyoutItem x:Name="ToggleLimitUnfilteredMenu" Text="Limit unfiltered to 1000" IsChecked="True" Click="ToggleLimitUnfilteredMenu_Click" />
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Columns">
                             <ToggleMenuFlyoutItem x:Name="ViewBookmarkToggle" Text="Bookmark" IsChecked="True" Click="ViewBookmarkToggle_Click"/>
