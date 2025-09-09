@@ -6,7 +6,7 @@
     <Platforms>x86;x64;ARM64</Platforms>
     <UseWinUI>true</UseWinUI>
     <Nullable>enable</Nullable>
-    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+	<ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <AssemblyName>PolicyPlusPlus</AssemblyName>
     <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -41,37 +41,12 @@
 	<PropertyGroup Condition="'$(WindowsAppSDKSelfContained)'=='true'">
 		<WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
 	</PropertyGroup>
+	
+    <ItemGroup>
+      <EmbeddedResource Include="Assets\AppIcon.ico" />
+    </ItemGroup>
 
-	<ItemGroup>
-    <EmbeddedResource Include="Assets\*.ico" />
-  </ItemGroup>
-  <Choose>
-    <When Condition="Exists('Assets\\AppIcon.ico')">
-      <PropertyGroup>
-        <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
-      </PropertyGroup>
-    </When>
-    <When Condition="Exists('Assets\\app.ico')">
-      <PropertyGroup>
-        <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-      </PropertyGroup>
-    </When>
-    <When Condition="Exists('Assets\\icon.ico')">
-      <PropertyGroup>
-        <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
-      </PropertyGroup>
-    </When>
-    <When Condition="Exists('Assets\\PolicyPlus.ico')">
-      <PropertyGroup>
-        <ApplicationIcon>Assets\PolicyPlus.ico</ApplicationIcon>
-      </PropertyGroup>
-    </When>
-    <When Condition="Exists('Assets\\PolicyPlusWinUI3.ico')">
-      <PropertyGroup>
-        <ApplicationIcon>Assets\PolicyPlusWinUI3.ico</ApplicationIcon>
-      </PropertyGroup>
-    </When>
-  </Choose>
+  
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.250402" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
@@ -81,9 +56,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PolicyPlus.Core\PolicyPlus.Core.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Controls" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
