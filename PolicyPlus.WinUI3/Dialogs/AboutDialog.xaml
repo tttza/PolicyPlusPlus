@@ -6,25 +6,41 @@
     PrimaryButtonText="OK"
     DefaultButton="Primary"
     MinWidth="420">
-    <StackPanel Spacing="8">
-        <TextBlock x:Name="AppTitle" FontSize="20" FontWeight="SemiBold" />
-        <TextBlock x:Name="VersionText" />
-        <TextBlock x:Name="CommitText" />
-        <TextBlock TextWrapping="Wrap" Text="Derived from the original PolicyPlus project (CC-BY-4.0)."/>
-        <RichTextBlock x:Name="LinksBlock" IsTextSelectionEnabled="True">
-            <Paragraph>
-                <Run Text="Original: "/>
-                <Hyperlink x:Name="OriginalLink" NavigateUri="https://github.com/Fleex255/PolicyPlus">
-                    <Run Text="https://github.com/Fleex255/PolicyPlus" />
-                </Hyperlink>
-            </Paragraph>
-            <Paragraph>
-                <Run Text="Modified: "/>
-                <Hyperlink x:Name="ModifiedLink" NavigateUri="https://github.com/tttza/PolicyPlusMod">
-                    <Run Text="https://github.com/tttza/PolicyPlusMod" />
-                </Hyperlink>
-            </Paragraph>
-        </RichTextBlock>
-        <TextBlock TextWrapping="Wrap" Text="License: Creative Commons Attribution 4.0 International (CC BY 4.0)"/>
-    </StackPanel>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <!-- Main textual content -->
+        <StackPanel Spacing="8">
+            <TextBlock x:Name="AppTitle" FontSize="20" FontWeight="SemiBold" />
+            <TextBlock x:Name="VersionText" />
+            <TextBlock x:Name="CommitText" />
+            <TextBlock TextWrapping="Wrap" Text="Derived from the original PolicyPlus project (CC-BY-4.0)."/>
+            <RichTextBlock x:Name="LinksBlock" IsTextSelectionEnabled="True">
+                <Paragraph>
+                    <Run Text="Original: "/>
+                    <Hyperlink x:Name="OriginalLink" NavigateUri="https://github.com/Fleex255/PolicyPlus">
+                        <Run Text="https://github.com/Fleex255/PolicyPlus" />
+                    </Hyperlink>
+                </Paragraph>
+                <Paragraph>
+                    <Run Text="Modified: "/>
+                    <Hyperlink x:Name="ModifiedLink" NavigateUri="https://github.com/tttza/PolicyPlusMod">
+                        <Run Text="https://github.com/tttza/PolicyPlusMod" />
+                    </Hyperlink>
+                </Paragraph>
+            </RichTextBlock>
+            <TextBlock TextWrapping="Wrap" Text="License: Creative Commons Attribution 4.0 International (CC BY 4.0)"/>
+        </StackPanel>
+        <!-- App icon on right -->
+        <Image Grid.Column="1"
+               Source="ms-appx:///Assets/AppIcon.ico"
+               Width="64"
+               Height="64"
+               Margin="16,0,4,0"
+               VerticalAlignment="Top"
+               HorizontalAlignment="Right"
+               AutomationProperties.Name="Application icon" />
+    </Grid>
 </ContentDialog>
