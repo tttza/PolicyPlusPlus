@@ -141,14 +141,39 @@ namespace PolicyPlus.WinUI3
             if (!UpdateHelper.IsVelopackAvailable)
             { ShowInfo("Updates not available in this build."); return; }
             ShowInfo("Checking for updates...");
-            var (ok, restart, message) = await UpdateHelper.CheckAndApplyVelopackUpdatesAsync();
+            var (ok, hasUpdate, message) = await UpdateHelper.CheckVelopackUpdatesAsync();
             if (!ok)
-            { ShowInfo("Update failed: " + message, InfoBarSeverity.Error); return; }
-            if (message != null && !restart) ShowInfo(message, message.Contains("No") ? InfoBarSeverity.Informational : InfoBarSeverity.Success);
+            { ShowInfo("Update check failed: " + message, InfoBarSeverity.Error); return; }
+            if (!hasUpdate)
+            { if (message != null) ShowInfo(message, InfoBarSeverity.Informational); return; }
+
+            // Prepare confirmation dialog (release notes placeholder if available).
+            string notes = UpdateHelper.GetPendingUpdateNotes() ?? "";
+            string body = string.IsNullOrEmpty(notes) ? "An update is available. Apply it now?" : "An update is available. Apply it now?\n\n" + notes;
+            ContentDialog dlg = new()
+            {
+                Title = "Update Available",
+                Content = body,
+                PrimaryButtonText = "Update",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary
+            };
+            if (this.Content is FrameworkElement feRoot)
+                dlg.XamlRoot = feRoot.XamlRoot;
+            ContentDialogResult res;
+            try { res = await dlg.ShowAsync(); }
+            catch { res = ContentDialogResult.None; }
+            if (res != ContentDialogResult.Primary)
+            { ShowInfo("Update canceled.", InfoBarSeverity.Informational); return; }
+
+            ShowInfo("Downloading update...");
+            var (applyOk, restart, applyMessage) = await UpdateHelper.ApplyVelopackUpdatesAsync();
+            if (!applyOk)
+            { ShowInfo("Update failed: " + applyMessage, InfoBarSeverity.Error); return; }
             if (restart)
             {
                 ShowInfo("Update downloaded. It will be applied when you exit the application.", InfoBarSeverity.Success);
-                // TODO: Show restart now prompt.
+                // TODO: Offer restart now option via prompt (future enhancement).
             }
         }
         private async void MenuOpenStorePage_Click(object sender, RoutedEventArgs e)
