@@ -14,18 +14,18 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Microsoft.UI.Xaml.Documents;
-using PolicyPlus.WinUI3.Windows;
+using PolicyPlusPlus.Windows;
 using Microsoft.UI.Dispatching;
 using System.Threading;
 using Microsoft.UI.Xaml.Media.Animation;
-using PolicyPlus.WinUI3.Utils;
-using PolicyPlus.WinUI3.Services;
-using PolicyPlus.WinUI3.Models;
+using PolicyPlusPlus.Utils;
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Models;
 using System.IO;
 using CommunityToolkit.WinUI.UI.Controls;
 using Windows.Foundation;
-using PolicyPlus.WinUI3.Dialogs;
-using PolicyPlus.WinUI3.ViewModels;
+using PolicyPlusPlus.Dialogs;
+using PolicyPlusPlus.ViewModels;
 using PolicyPlus.Core.Utilities;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
@@ -37,7 +37,7 @@ using Microsoft.UI.Windowing;
 using Velopack;
 #endif
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow : Window
     {

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using PolicyPlus;
 using PolicyPlus.Core.Core;
-using PolicyPlus.WinUI3.ViewModels;
+using PolicyPlusPlus.ViewModels;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
@@ -37,10 +37,10 @@ namespace PolicyPlusModTests.WinUI3
             var text = DetailPathFormatter.BuildPathText(p).Replace("\r\n", "\n");
 
             // Allow either English or Japanese (or other future) localization for the top labels
-            bool hasConfig = text.Contains("Computer Configuration") || text.Contains("ƒRƒ“ƒsƒ…[ƒ^[‚Ì\¬") || text.ToLower().Contains("configuration");
+            bool hasConfig = text.Contains("Computer Configuration") || text.Contains("ã‚³ãƒ³ãƒ”ãƒ¥ãƒ¼ã‚¿ãƒ¼ã®æ§‹æˆ") || text.ToLower().Contains("configuration");
             Assert.True(hasConfig, "Configuration scope label missing");
 
-            bool hasTemplates = text.Contains("Administrative Templates") || text.Contains("ŠÇ——pƒeƒ“ƒvƒŒ[ƒg") || text.ToLower().Contains("template");
+            bool hasTemplates = text.Contains("Administrative Templates") || text.Contains("ç®¡ç†ç”¨ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆ") || text.ToLower().Contains("template");
             Assert.True(hasTemplates, "Administrative Templates label missing");
 
             Assert.Contains("+ Root", text);

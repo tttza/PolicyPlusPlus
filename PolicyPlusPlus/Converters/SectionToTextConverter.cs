@@ -2,7 +2,7 @@ using Microsoft.UI.Xaml.Data;
 using System;
 using PolicyPlus.Core.Core;
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     public sealed partial class SectionToTextConverter : IValueConverter
     {

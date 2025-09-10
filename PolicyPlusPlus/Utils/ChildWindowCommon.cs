@@ -1,9 +1,9 @@
 using Microsoft.UI.Xaml;
-using PolicyPlus.WinUI3.Utils;
+using PolicyPlusPlus.Utils;
 using System;
-using PolicyPlus.WinUI3.Logging; // logging
+using PolicyPlusPlus.Logging; // logging
 
-namespace PolicyPlus.WinUI3.Utils
+namespace PolicyPlusPlus.Utils
 {
     /// <summary>
     /// Provides a single place for common child window startup wiring: theme reapply, size scaling,

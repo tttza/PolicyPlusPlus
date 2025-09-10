@@ -5,7 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {

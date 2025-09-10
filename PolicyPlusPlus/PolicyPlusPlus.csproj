@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>PolicyPlus.WinUI3</RootNamespace>
+    <RootNamespace>PolicyPlusPlus</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x86;x64;ARM64</Platforms>
     <UseWinUI>true</UseWinUI>

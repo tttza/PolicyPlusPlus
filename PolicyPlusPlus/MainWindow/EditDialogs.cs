@@ -2,15 +2,15 @@ using Microsoft.UI.Xaml;
 
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.IO;
-using PolicyPlus.WinUI3.Utils;
-using PolicyPlus.WinUI3.Windows;
+using PolicyPlusPlus.Utils;
+using PolicyPlusPlus.Windows;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {

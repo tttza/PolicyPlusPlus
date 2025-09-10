@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Xunit;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 
 namespace PolicyPlusModTests.WinUI3
 {

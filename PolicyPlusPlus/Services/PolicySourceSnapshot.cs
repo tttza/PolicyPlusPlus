@@ -4,7 +4,7 @@ using PolicyPlus.Core.IO;
 
 using System;
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     public static class PolicySourceSnapshot
     {

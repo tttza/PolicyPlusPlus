@@ -709,7 +709,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_DE775C07E774471BA0255490754F4CB9"
             {
-            "SourcePath" = "8:..\\PolicyPlus.WinUI3\\obj\\x64\\Release\\net8.0-windows10.0.19041.0\\win-x64\\apphost.exe"
+            "SourcePath" = "8:..\\PolicyPlusPlus\\obj\\x64\\Release\\net8.0-windows10.0.19041.0\\win-x64\\apphost.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_BC0871DA85CC48A498F842C73221578B"

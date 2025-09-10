@@ -4,7 +4,7 @@ using System.Linq;
 using PolicyPlus;
 using PolicyPlus.Core.Admx;
 using PolicyPlus.Core.Core;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3

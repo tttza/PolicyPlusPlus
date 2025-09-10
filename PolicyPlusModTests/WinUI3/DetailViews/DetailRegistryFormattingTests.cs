@@ -4,7 +4,7 @@ using Microsoft.Win32;
 using PolicyPlus;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.IO;
-using PolicyPlus.WinUI3.ViewModels;
+using PolicyPlusPlus.ViewModels;
 using PolicyPlusModTests.TestHelpers;
 using Xunit;
 

@@ -3,12 +3,12 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Linq;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 using CommunityToolkit.WinUI.UI.Controls;
-using PolicyPlus.WinUI3.Models;
+using PolicyPlusPlus.Models;
 using System.Collections.Generic;
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {

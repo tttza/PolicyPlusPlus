@@ -8,7 +8,7 @@ using System;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 
-namespace PolicyPlus.WinUI3.Dialogs
+namespace PolicyPlusPlus.Dialogs
 {
     public sealed partial class ImportRegDialog : ContentDialog
     {

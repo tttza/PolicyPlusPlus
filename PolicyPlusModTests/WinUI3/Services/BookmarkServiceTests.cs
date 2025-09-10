@@ -1,5 +1,5 @@
 using System.Linq;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.Services

@@ -6,10 +6,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using PolicyPlus.WinUI3.Utils;
+using PolicyPlusPlus.Utils;
 using PolicyPlus.Core.Core;
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {

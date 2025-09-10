@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     public sealed class BookmarkService
     {

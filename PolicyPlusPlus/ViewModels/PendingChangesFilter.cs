@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 
-namespace PolicyPlus.WinUI3.ViewModels
+namespace PolicyPlusPlus.ViewModels
 {
     public static class PendingChangesFilter
     {

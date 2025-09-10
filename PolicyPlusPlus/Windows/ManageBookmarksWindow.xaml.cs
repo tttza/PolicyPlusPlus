@@ -1,13 +1,13 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using PolicyPlus.WinUI3.Services;
-using PolicyPlus.WinUI3.Utils;
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Utils;
 using System;
 using System.Linq;
 using Windows.ApplicationModel.DataTransfer;
 
-namespace PolicyPlus.WinUI3.Windows
+namespace PolicyPlusPlus.Windows
 {
     public sealed partial class ManageBookmarksWindow : Window
     {

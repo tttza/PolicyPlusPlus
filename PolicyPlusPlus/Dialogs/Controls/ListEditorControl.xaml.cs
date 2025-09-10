@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 
-namespace PolicyPlus.WinUI3.Dialogs.Controls
+namespace PolicyPlusPlus.Dialogs.Controls
 {
     public sealed partial class ListEditorControl : UserControl
     {

@@ -3,9 +3,9 @@ using Microsoft.UI.Xaml.Controls;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 
-namespace PolicyPlus.WinUI3.Dialogs
+namespace PolicyPlusPlus.Dialogs
 {
     public sealed partial class LanguageOptionsDialog : ContentDialog
     {

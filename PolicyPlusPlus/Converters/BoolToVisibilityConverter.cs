@@ -2,7 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using System;
 
-namespace PolicyPlus.WinUI3.Converters
+namespace PolicyPlusPlus.Converters
 {
     public sealed partial class BoolToVisibilityConverter : IValueConverter
     {

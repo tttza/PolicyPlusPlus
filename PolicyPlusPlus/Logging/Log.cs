@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Collections.Generic;
 
-namespace PolicyPlus.WinUI3.Logging
+namespace PolicyPlusPlus.Logging
 {
     // Logging severity levels (ordering important: lower = more verbose)
     public enum DebugLevel
@@ -71,7 +71,7 @@ namespace PolicyPlus.WinUI3.Logging
                 if (i > 0) sb.Append(", ");
                 sb.Append(kv.Key).Append('=');
                 sb.Append(FormatValue(kv.Value));
-                if (sb.Length > maxLen) { sb.Append(" c"); break; }
+                if (sb.Length > maxLen) { sb.Append(" ï¿½c"); break; }
                 i++;
             }
             return sb.ToString();
@@ -87,7 +87,7 @@ namespace PolicyPlus.WinUI3.Logging
                 var first = arr.Length == 0 ? 0 : Math.Min(arr.Length, 3);
                 var parts = new string[first];
                 for (int i = 0; i < first; i++) parts[i] = Convert.ToString(arr.GetValue(i)) ?? string.Empty;
-                return $"[{string.Join('|', parts)}{(arr.Length > first ? "c" : string.Empty)}]";
+                return $"[{string.Join('|', parts)}{(arr.Length > first ? "â€¦" : string.Empty)}]";
             }
             if (value is System.Collections.IEnumerable en && value is not string)
             {
@@ -98,7 +98,7 @@ namespace PolicyPlus.WinUI3.Logging
                     sb.Append(Truncate(Convert.ToString(e) ?? string.Empty, 24));
                     c++; if (c == 3) break;
                 }
-                if (c >= 3) sb.Append('c');
+                if (c >= 3) sb.Append('â€¦');
                 sb.Append(']'); return sb.ToString();
             }
             return Truncate(Convert.ToString(value) ?? string.Empty);
@@ -107,7 +107,7 @@ namespace PolicyPlus.WinUI3.Logging
         private static string Truncate(string s, int max = 48)
         {
             if (s.Length <= max) return s;
-            return s.Substring(0, max) + "c";
+            return s.Substring(0, max) + "â€¦";
         }
 
         // Correlation helpers

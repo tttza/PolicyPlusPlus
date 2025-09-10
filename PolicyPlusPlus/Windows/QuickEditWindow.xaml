@@ -1,8 +1,8 @@
 <Window
-    x:Class="PolicyPlus.WinUI3.Windows.QuickEditWindow"
+    x:Class="PolicyPlusPlus.Windows.QuickEditWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:win="using:PolicyPlus.WinUI3.Windows"
+    xmlns:win="using:PolicyPlusPlus.Windows"
     Title="Quick Edit">
     <!-- Consistent scaling structure: ScaleHost (host) -> RootShell (scaled content) -->
     <Grid x:Name="ScaleHost" Tag="AllowAutoSize">

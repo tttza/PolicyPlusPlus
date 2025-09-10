@@ -1,13 +1,13 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Windows.AppLifecycle;
-using PolicyPlus.WinUI3.Logging;
+using PolicyPlusPlus.Logging;
 #if USE_VELOPACK
 using Velopack;
 #endif
 using Windows.System;
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     internal static class UpdateHelper
     {

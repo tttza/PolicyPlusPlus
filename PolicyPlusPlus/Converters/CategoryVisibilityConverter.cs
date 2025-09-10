@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Data;
 using System;
 using PolicyPlus.Core.Core;
 
-namespace PolicyPlus.WinUI3.Converters
+namespace PolicyPlusPlus.Converters
 {
     public sealed partial class CategoryVisibilityConverter : IValueConverter
     {

@@ -3,9 +3,9 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Collections.Generic;
 using PolicyPlus.Core.Core;
-using PolicyPlus.WinUI3.Logging; // logging
+using PolicyPlusPlus.Logging; // logging
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     public class PendingChange
     {

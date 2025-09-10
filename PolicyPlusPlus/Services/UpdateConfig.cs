@@ -1,4 +1,4 @@
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     // Central constants for update-related configuration.
     internal static partial class UpdateConfig

@@ -5,14 +5,14 @@ using System.Collections.Generic;
 using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml.Media;
-using PolicyPlus.WinUI3.Utils;
+using PolicyPlusPlus.Utils;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Input; // added for InputKeyboardSource
 using Windows.System; // VirtualKey
 using Windows.UI.Core; // CoreVirtualKeyStates
 using System.Linq; // for duplicate detection
 
-namespace PolicyPlus.WinUI3.Windows
+namespace PolicyPlusPlus.Windows
 {
     public sealed partial class ListEditorWindow : Window
     {

@@ -1,4 +1,4 @@
-using PolicyPlus.WinUI3.Filtering;
+using PolicyPlusPlus.Filtering;
 using Xunit;
 
 namespace PolicyPlusModTests.Filtering

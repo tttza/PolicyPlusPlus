@@ -6,7 +6,7 @@ using WinRT.Interop;
 using Windows.Graphics;
 using Windows.ApplicationModel.DataTransfer;
 
-namespace PolicyPlus.WinUI3.Utils
+namespace PolicyPlusPlus.Utils
 {
     internal static class WindowHelpers
     {

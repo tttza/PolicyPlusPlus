@@ -2,7 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     internal static class SearchRankingService
     {

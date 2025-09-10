@@ -1,5 +1,5 @@
 using PolicyPlus;
-using PolicyPlus.WinUI3.Dialogs;
+using PolicyPlusPlus.Dialogs;
 using PolicyPlusModTests.TestHelpers;
 using Xunit;
 

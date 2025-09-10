@@ -11,16 +11,16 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using WinRT.Interop;
-using PolicyPlus.WinUI3.Utils;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Utils;
+using PolicyPlusPlus.Services;
 using Microsoft.UI.Xaml.Input;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx;
-using PolicyPlus.WinUI3.ViewModels; // added for QuickEditRow
-using PolicyPlus.WinUI3.Logging; // logging
+using PolicyPlusPlus.ViewModels; // added for QuickEditRow
+using PolicyPlusPlus.Logging; // logging
 
-namespace PolicyPlus.WinUI3.Windows
+namespace PolicyPlusPlus.Windows
 {
     public sealed partial class EditSettingWindow : Window
     {

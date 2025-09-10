@@ -1,4 +1,4 @@
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
@@ -7,7 +7,7 @@ using System.ComponentModel;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
 
-namespace PolicyPlus.WinUI3.Models
+namespace PolicyPlusPlus.Models
 {
     public sealed class PolicyListRow : INotifyPropertyChanged
     {

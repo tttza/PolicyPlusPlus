@@ -15,13 +15,13 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
-using PolicyPlus.WinUI3.Windows;
-using PolicyPlus.WinUI3.Services;
-using PolicyPlus.WinUI3.Utils;
+using PolicyPlusPlus.Windows;
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Utils;
 using Microsoft.UI.Windowing;
-using PolicyPlus.WinUI3.Logging; // logging
+using PolicyPlusPlus.Logging; // logging
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     internal static partial class BuildInfo
     {

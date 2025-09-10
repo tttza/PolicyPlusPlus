@@ -9,7 +9,7 @@ using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx;
 
-namespace PolicyPlus.WinUI3.Dialogs
+namespace PolicyPlusPlus.Dialogs
 {
     public sealed partial class DetailPolicyFormattedDialog : ContentDialog
     {

@@ -46,7 +46,7 @@
   <ItemGroup>
     <ProjectReference Include="..\PolicyPlus\PolicyPlus.csproj" />
     <ProjectReference Include="..\PolicyPlus.Core\PolicyPlus.Core.csproj" />
-    <ProjectReference Include="..\PolicyPlus.WinUI3\PolicyPlus.WinUI3.csproj" />
+    <ProjectReference Include="..\PolicyPlusPlus\PolicyPlusPlus.csproj" />
   </ItemGroup>
 
 </Project>

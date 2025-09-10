@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using Windows.Foundation;
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {

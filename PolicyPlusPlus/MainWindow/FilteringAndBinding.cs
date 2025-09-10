@@ -6,17 +6,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Windows.System;
-using PolicyPlus.WinUI3.Models;
-using PolicyPlus.WinUI3.Services;
-using PolicyPlus.WinUI3.Dialogs; // FindByRegistryWinUI
+using PolicyPlusPlus.Models;
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Dialogs; // FindByRegistryWinUI
 using PolicyPlus.Core.Utilities;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core; // SearchText
 using System.Threading;
-using PolicyPlus.WinUI3.Filtering; // FilterDecisionEngine
-using PolicyPlus.WinUI3.Logging; // logging
+using PolicyPlusPlus.Filtering; // FilterDecisionEngine
+using PolicyPlusPlus.Logging; // logging
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {

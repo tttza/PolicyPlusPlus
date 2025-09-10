@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PolicyPlus;
 using PolicyPlus.Core.Core;
-using PolicyPlus.WinUI3.ViewModels;
+using PolicyPlusPlus.ViewModels;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
@@ -56,8 +56,8 @@ namespace PolicyPlusModTests.WinUI3
             }
             finally
             {
-                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Pending.Clear();
-                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.History.Clear();
+                PolicyPlusPlus.Services.PendingChangesService.Instance.Pending.Clear();
+                PolicyPlusPlus.Services.PendingChangesService.Instance.History.Clear();
             }
         }
 
@@ -75,8 +75,8 @@ namespace PolicyPlusModTests.WinUI3
             }
             finally
             {
-                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Pending.Clear();
-                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.History.Clear();
+                PolicyPlusPlus.Services.PendingChangesService.Instance.Pending.Clear();
+                PolicyPlusPlus.Services.PendingChangesService.Instance.History.Clear();
             }
         }
 
@@ -88,8 +88,8 @@ namespace PolicyPlusModTests.WinUI3
 
             try
             {
-                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Pending.Clear();
-                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Add(new PolicyPlus.WinUI3.Services.PendingChange
+                PolicyPlusPlus.Services.PendingChangesService.Instance.Pending.Clear();
+                PolicyPlusPlus.Services.PendingChangesService.Instance.Add(new PolicyPlusPlus.Services.PendingChange
                 {
                     PolicyId = all.First(p => p.RawPolicy.Section == AdmxPolicySection.User).UniqueID,
                     Scope = "User",
@@ -101,8 +101,8 @@ namespace PolicyPlusModTests.WinUI3
             }
             finally
             {
-                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Pending.Clear();
-                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.History.Clear();
+                PolicyPlusPlus.Services.PendingChangesService.Instance.Pending.Clear();
+                PolicyPlusPlus.Services.PendingChangesService.Instance.History.Clear();
             }
         }
 
@@ -114,8 +114,8 @@ namespace PolicyPlusModTests.WinUI3
 
             try
             {
-                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Pending.Clear();
-                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Add(new PolicyPlus.WinUI3.Services.PendingChange
+                PolicyPlusPlus.Services.PendingChangesService.Instance.Pending.Clear();
+                PolicyPlusPlus.Services.PendingChangesService.Instance.Add(new PolicyPlusPlus.Services.PendingChange
                 {
                     PolicyId = all.First(p => p.RawPolicy.Section == AdmxPolicySection.Machine).UniqueID,
                     Scope = "Computer",
@@ -127,8 +127,8 @@ namespace PolicyPlusModTests.WinUI3
             }
             finally
             {
-                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.Pending.Clear();
-                PolicyPlus.WinUI3.Services.PendingChangesService.Instance.History.Clear();
+                PolicyPlusPlus.Services.PendingChangesService.Instance.Pending.Clear();
+                PolicyPlusPlus.Services.PendingChangesService.Instance.History.Clear();
             }
         }
     }

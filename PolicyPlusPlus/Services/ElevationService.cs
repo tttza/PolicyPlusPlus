@@ -8,10 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Security.Principal;
 using System.Security.Cryptography;
-using PolicyPlus.WinUI3.Serialization;
-using PolicyPlus.WinUI3.Logging; // logging
+using PolicyPlusPlus.Serialization;
+using PolicyPlusPlus.Logging; // logging
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     internal sealed class ElevationService
     {

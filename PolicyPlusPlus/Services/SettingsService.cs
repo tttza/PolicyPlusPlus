@@ -5,9 +5,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Windows.Storage;
 using Windows.ApplicationModel;
-using PolicyPlus.WinUI3.Serialization;
+using PolicyPlusPlus.Serialization;
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     public sealed class SettingsService
     {

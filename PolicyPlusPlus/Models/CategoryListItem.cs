@@ -1,6 +1,6 @@
 using PolicyPlus.Core.Core;
 
-namespace PolicyPlus.WinUI3.Models
+namespace PolicyPlusPlus.Models
 {
     public sealed class CategoryListItem
     {

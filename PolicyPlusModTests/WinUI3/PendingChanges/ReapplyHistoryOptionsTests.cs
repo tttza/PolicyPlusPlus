@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PolicyPlus.Core.Core;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 using PolicyPlusModTests.TestHelpers;
 using Xunit;
 

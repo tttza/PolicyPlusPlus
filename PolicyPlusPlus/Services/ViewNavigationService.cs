@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using PolicyPlus.Core.Core; // For AdmxPolicySection
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     public sealed class ViewNavigationService
     {

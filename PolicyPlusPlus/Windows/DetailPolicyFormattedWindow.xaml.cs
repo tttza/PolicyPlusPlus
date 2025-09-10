@@ -6,17 +6,17 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Text;
-using PolicyPlus.WinUI3.Utils;
+using PolicyPlusPlus.Utils;
 using Windows.ApplicationModel.DataTransfer;
-using PolicyPlus.WinUI3.ViewModels;
+using PolicyPlusPlus.ViewModels;
 using Microsoft.UI.Xaml.Input;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx;
-using PolicyPlus.WinUI3.Services;
-using PolicyPlus.WinUI3.Logging; // logging
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Logging; // logging
 
-namespace PolicyPlus.WinUI3.Windows
+namespace PolicyPlusPlus.Windows
 {
     public sealed partial class DetailPolicyFormattedWindow : Window
     {

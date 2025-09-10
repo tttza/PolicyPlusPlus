@@ -32,12 +32,12 @@ namespace PolicyPlusModTests.WinUI3
         public void AllXamlEventHandlersHaveBackingMethods()
         {
             var root = GetSolutionRoot();
-            var winUiProject = Path.Combine(root, "PolicyPlus.WinUI3");
+            var winUiProject = Path.Combine(root, "PolicyPlusPlus");
             var xamlFiles = Directory.GetFiles(winUiProject, "*.xaml", SearchOption.AllDirectories)
                                       .Where(p => !p.EndsWith("App.xaml", StringComparison.OrdinalIgnoreCase))
                                       .ToList();
 
-            var assembly = typeof(PolicyPlus.WinUI3.App).Assembly; // target assembly
+            var assembly = typeof(PolicyPlusPlus.App).Assembly; // target assembly
             var missing = new List<string>();
 
             foreach (var xamlPath in xamlFiles)

@@ -7,13 +7,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 using PolicyPlus.Core.Core;
-using PolicyPlus.WinUI3.Dialogs;
+using PolicyPlusPlus.Dialogs;
 using PolicyPlus.Core.Utilities;
-using PolicyPlus.WinUI3.Logging; // logging
+using PolicyPlusPlus.Logging; // logging
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     // Search / suggestion logic partial
     public sealed partial class MainWindow

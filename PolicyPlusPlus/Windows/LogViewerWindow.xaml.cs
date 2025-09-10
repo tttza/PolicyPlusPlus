@@ -1,13 +1,13 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using PolicyPlus.WinUI3.Logging;
-using PolicyPlus.WinUI3.Utils;
+using PolicyPlusPlus.Logging;
+using PolicyPlusPlus.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Text;
 using Windows.ApplicationModel.DataTransfer;
 
-namespace PolicyPlus.WinUI3.Windows
+namespace PolicyPlusPlus.Windows
 {
     public sealed partial class LogViewerWindow : Window, ILogSink
     {

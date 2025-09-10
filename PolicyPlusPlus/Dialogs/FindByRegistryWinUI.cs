@@ -3,9 +3,9 @@ using System.Linq;
 
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Utilities;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 
-namespace PolicyPlus.WinUI3.Dialogs
+namespace PolicyPlusPlus.Dialogs
 {
     public static class FindByRegistryWinUI
     {

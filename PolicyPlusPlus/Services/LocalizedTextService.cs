@@ -6,7 +6,7 @@ using System.Linq;
 using PolicyPlus.Core.Admx;
 using PolicyPlus.Core.Core;
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     internal static class LocalizedTextService
     {

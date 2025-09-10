@@ -1,6 +1,6 @@
 using System;
 
-namespace PolicyPlus.WinUI3.Filtering
+namespace PolicyPlusPlus.Filtering
 {
     /// <summary>
     /// Encapsulates the decision logic for filter presentation (flattening, headers, limits) based on current flags.

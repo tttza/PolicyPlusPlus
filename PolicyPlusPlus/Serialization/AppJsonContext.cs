@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 
-namespace PolicyPlus.WinUI3.Serialization
+namespace PolicyPlusPlus.Serialization
 {
     // DTOs for elevation IPC
     public sealed class HostRequestWriteLocalGpo

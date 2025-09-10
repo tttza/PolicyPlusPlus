@@ -1,11 +1,11 @@
 using PolicyPlus.Core.Core;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace PolicyPlus.WinUI3.ViewModels
+namespace PolicyPlusPlus.ViewModels
 {
     public static class DetailPathFormatter
     {
@@ -30,10 +30,10 @@ namespace PolicyPlus.WinUI3.ViewModels
                 if (!isJa) return en;
                 return en switch
                 {
-                    "Computer Configuration" => "ƒRƒ“ƒsƒ…[ƒ^[‚Ì\¬",
-                    "User Configuration" => "ƒ†[ƒU[‚Ì\¬",
-                    "Computer or User Configuration" => "ƒRƒ“ƒsƒ…[ƒ^[‚Ì\¬ ‚Ü‚½‚Í ƒ†[ƒU[‚Ì\¬",
-                    "Administrative Templates" => "ŠÇ——pƒeƒ“ƒvƒŒ[ƒg",
+                    "Computer Configuration" => "ã‚³ãƒ³ãƒ”ãƒ¥ãƒ¼ã‚¿ãƒ¼ã®æ§‹æˆ",
+                    "User Configuration" => "ãƒ¦ãƒ¼ã‚¶ãƒ¼ã®æ§‹æˆ",
+                    "Computer or User Configuration" => "ã‚³ãƒ³ãƒ”ãƒ¥ãƒ¼ã‚¿ãƒ¼ã®æ§‹æˆ ã¾ãŸã¯ ãƒ¦ãƒ¼ã‚¶ãƒ¼ã®æ§‹æˆ",
+                    "Administrative Templates" => "ç®¡ç†ç”¨ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆ",
                     _ => en
                 };
             }

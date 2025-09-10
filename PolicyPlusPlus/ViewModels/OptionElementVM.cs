@@ -5,7 +5,7 @@ using System.Linq;
 using PolicyPlus.Core.Admx;
 using PolicyPlus.Core.Core; // added for PolicyElement, EnumPolicyElement, etc.
 
-namespace PolicyPlus.WinUI3.ViewModels
+namespace PolicyPlusPlus.ViewModels
 {
     public enum OptionElementType { Enum, Boolean, Text, Decimal, List, MultiText }
 

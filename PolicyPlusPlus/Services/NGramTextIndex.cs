@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     // Simple N-gram inverted index for fast substring candidate filtering.
     internal sealed class NGramTextIndex

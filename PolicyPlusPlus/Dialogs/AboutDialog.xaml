@@ -1,5 +1,5 @@
 <ContentDialog
-    x:Class="PolicyPlus.WinUI3.Dialogs.AboutDialog"
+    x:Class="PolicyPlusPlus.Dialogs.AboutDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="About Policy++"

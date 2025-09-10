@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using PolicyPlus.Core.Core;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 using PolicyPlusModTests.TestHelpers;
 using Xunit;
 
@@ -88,7 +88,7 @@ namespace PolicyPlusModTests.WinUI3
             var original = ApplyAndRecord(pol, opts);
             var roundTripped = RoundTrip(original);
             // simulate reapply path normalization using reflection (internal NormalizeOptions is private)
-            var windowType = typeof(PolicyPlus.WinUI3.Windows.PendingChangesWindow);
+            var windowType = typeof(PolicyPlusPlus.Windows.PendingChangesWindow);
             var mi = windowType.GetMethod("NormalizeOptions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             Assert.NotNull(mi);
             var normalized = (Dictionary<string,object>?)mi!.Invoke(null, new object?[]{ roundTripped.Options });

@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     public enum ElevationErrorCode
     {
@@ -37,9 +37,9 @@ namespace PolicyPlus.WinUI3.Services
     internal sealed class ElevationServiceAdapter : IElevationService
     {
         public Task<ElevationResult> WriteLocalGpoBytesAsync(string? machinePolBase64, string? userPolBase64, bool triggerRefresh = true)
-            => PolicyPlus.WinUI3.Services.ElevationService.Instance.WriteLocalGpoBytesAsync(machinePolBase64, userPolBase64, triggerRefresh);
+            => PolicyPlusPlus.Services.ElevationService.Instance.WriteLocalGpoBytesAsync(machinePolBase64, userPolBase64, triggerRefresh);
 
         public Task<ElevationResult> OpenRegeditAtAsync(string hive, string subKey)
-            => PolicyPlus.WinUI3.Services.ElevationService.Instance.OpenRegeditAtAsync(hive, subKey);
+            => PolicyPlusPlus.Services.ElevationService.Instance.OpenRegeditAtAsync(hive, subKey);
     }
 }

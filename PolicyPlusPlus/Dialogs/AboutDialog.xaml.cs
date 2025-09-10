@@ -2,7 +2,7 @@ using Microsoft.UI.Xaml.Controls;
 using System.Linq;
 using System.Reflection;
 
-namespace PolicyPlus.WinUI3.Dialogs
+namespace PolicyPlusPlus.Dialogs
 {
     public sealed partial class AboutDialog : ContentDialog
     {

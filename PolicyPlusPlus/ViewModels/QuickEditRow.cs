@@ -5,10 +5,10 @@ using System.Linq;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx;
 using PolicyPlus.Core.IO;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 using System.Text; // added
 
-namespace PolicyPlus.WinUI3.ViewModels
+namespace PolicyPlusPlus.ViewModels
 {
     public enum QuickEditState { NotConfigured, Enabled, Disabled }
 

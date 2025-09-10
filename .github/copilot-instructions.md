@@ -5,7 +5,7 @@
 ## 1. What This App Does
 PolicyPlusMod is a Windows desktop tool that loads Administrative Template (ADMX/ADML) definitions, lets users view/search/edit Windows Group Policy (registry-based) settings, and export/import them (REG / semantic policy). Two UIs share one domain layer:
 - `PolicyPlus` (WinForms) – stable reference implementation.
-- `PolicyPlus.WinUI3` (WinUI 3) – modernization in progress.
+- `PolicyPlusPlus` (WinUI 3) – modernization in progress.
 Core logic belongs in `PolicyPlus.Core` and must remain UI-agnostic.
 
 ## 2. Tech Stack
@@ -23,7 +23,7 @@ Core logic belongs in `PolicyPlus.Core` and must remain UI-agnostic.
 PolicyPlusMod.sln
 PolicyPlus.Core/        Domain models & policy processing
 PolicyPlus/             WinForms UI (baseline behavior)
-PolicyPlus.WinUI3/      WinUI 3 UI (modern)
+PolicyPlusPlus/      WinUI 3 UI (modern)
 PolicyPlusModTests/     Tests (Core + limited UI logic)
 Docs/                   Legacy architecture & terminology
 .github/                (This file lives here)
@@ -43,7 +43,7 @@ dotnet --version
 dotnet restore PolicyPlusMod.sln
 dotnet build PolicyPlusMod.sln -c Debug
 dotnet run --project PolicyPlus/PolicyPlus.csproj -c Debug
-dotnet run --project PolicyPlus.WinUI3/PolicyPlus.WinUI3.csproj -c Debug
+dotnet run --project PolicyPlusPlus/PolicyPlusPlus.csproj -c Debug
 ```
 Publish WinForms (Release, single file):
 ```

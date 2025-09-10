@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using Windows.Foundation;
 
-namespace PolicyPlus.WinUI3.Utils
+namespace PolicyPlusPlus.Utils
 {
     internal static class ScaleHelper
     {

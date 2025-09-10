@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using PolicyPlus.WinUI3.Serialization;
+using PolicyPlusPlus.Serialization;
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     internal static class ElevationHost
     {

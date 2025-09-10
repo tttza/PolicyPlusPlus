@@ -1,8 +1,8 @@
 using Microsoft.UI.Xaml.Data;
 using System;
-using PolicyPlus.WinUI3.ViewModels;
+using PolicyPlusPlus.ViewModels;
 
-namespace PolicyPlus.WinUI3.Converters
+namespace PolicyPlusPlus.Converters
 {
     public sealed partial class QuickEditStateToIndexConverter : IValueConverter
     {

@@ -5,9 +5,9 @@ using Microsoft.UI.Xaml.Media;
 using PolicyPlus.Core.Admx;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.IO;
-using PolicyPlus.WinUI3.ViewModels;
-using PolicyPlus.WinUI3.Services;
-using PolicyPlus.WinUI3.Utils;
+using PolicyPlusPlus.ViewModels;
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,9 +17,9 @@ using Windows.Foundation;
 using Windows.Graphics;
 using System.ComponentModel;
 using System;
-using PolicyPlus.WinUI3.Logging; // logging
+using PolicyPlusPlus.Logging; // logging
 
-namespace PolicyPlus.WinUI3.Windows
+namespace PolicyPlusPlus.Windows
 {
     public sealed partial class QuickEditWindow : Window
     {

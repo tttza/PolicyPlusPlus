@@ -7,9 +7,9 @@ using System;
 using System.Text;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
-using PolicyPlus.WinUI3.Logging; // logging
+using PolicyPlusPlus.Logging; // logging
 
-namespace PolicyPlus.WinUI3.Dialogs
+namespace PolicyPlusPlus.Dialogs
 {
     public sealed partial class ImportPolDialog : ContentDialog
     {

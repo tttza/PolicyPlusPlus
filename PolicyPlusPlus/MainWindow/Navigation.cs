@@ -1,11 +1,11 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 using System.Linq;
 using System.Collections.Generic;
 using PolicyPlus.Core.Core;
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {

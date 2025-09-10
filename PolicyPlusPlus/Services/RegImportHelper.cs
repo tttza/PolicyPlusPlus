@@ -3,7 +3,7 @@ using PolicyPlus.Core.IO;
 using System;
 using System.Linq;
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     internal static class RegImportHelper
     {

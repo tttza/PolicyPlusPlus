@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PolicyPlus.WinUI3.ViewModels
+namespace PolicyPlusPlus.ViewModels
 {
     public static class CategoryVisibilityEvaluator
     {

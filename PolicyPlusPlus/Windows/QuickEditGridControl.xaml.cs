@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.Collections.ObjectModel;
-using PolicyPlus.WinUI3.ViewModels;
+using PolicyPlusPlus.ViewModels;
 using System.Linq;
 using System.Collections.Generic;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -10,7 +10,7 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using Microsoft.UI.Xaml.Input;
 
-namespace PolicyPlus.WinUI3.Windows
+namespace PolicyPlusPlus.Windows
 {
     public sealed partial class QuickEditGridControl : UserControl, INotifyPropertyChanged
     {

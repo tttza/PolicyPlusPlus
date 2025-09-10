@@ -3,7 +3,7 @@ using Microsoft.Win32;
 using System;
 using System.Threading.Tasks;
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     public static class RegeditNavigationService
     {

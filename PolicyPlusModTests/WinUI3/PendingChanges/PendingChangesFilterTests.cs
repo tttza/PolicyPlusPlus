@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PolicyPlus.WinUI3.Services;
-using PolicyPlus.WinUI3.ViewModels;
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.ViewModels;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3

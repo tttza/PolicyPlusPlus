@@ -1,12 +1,12 @@
 using Microsoft.UI.Xaml;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using PolicyPlus.Core.Core;
-using PolicyPlus.WinUI3.Logging; // logging
+using PolicyPlusPlus.Logging; // logging
 
-namespace PolicyPlus.WinUI3
+namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {

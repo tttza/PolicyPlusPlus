@@ -4,22 +4,22 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PolicyPlus.WinUI3.Utils;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Utils;
+using PolicyPlusPlus.Services;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 using System.Collections.Specialized;
 using System.IO;
 using System.Threading.Tasks;
-using PolicyPlus.WinUI3.ViewModels;
+using PolicyPlusPlus.ViewModels;
 using Microsoft.UI.Xaml.Input;
 using PolicyPlus.Core.IO;
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Admx;
 using System.Text.Json; // added for JsonElement handling
 
-namespace PolicyPlus.WinUI3.Windows
+namespace PolicyPlusPlus.Windows
 {
     public sealed partial class PendingChangesWindow : Window
     {

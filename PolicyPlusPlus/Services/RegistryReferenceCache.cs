@@ -4,9 +4,9 @@ using System.Linq;
 
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.Utilities;
-using PolicyPlus.WinUI3.Logging; // logging
+using PolicyPlusPlus.Logging; // logging
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     internal static class RegistryReferenceCache
     {

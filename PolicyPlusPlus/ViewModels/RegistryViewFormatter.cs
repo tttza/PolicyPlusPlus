@@ -1,6 +1,6 @@
 using PolicyPlus.Core.Core;
 using PolicyPlus.Core.IO;
-using PolicyPlus.WinUI3.Services;
+using PolicyPlusPlus.Services;
 
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace PolicyPlus.WinUI3.ViewModels
+namespace PolicyPlusPlus.ViewModels
 {
     public static class RegistryViewFormatter
     {
@@ -28,10 +28,10 @@ namespace PolicyPlus.WinUI3.ViewModels
                 if (!isJa) return en;
                 return en switch
                 {
-                    "Key" => "ƒL[",
-                    "Name" => "–¼‘O",
-                    "Type" => "í—Ş",
-                    "Value" => "’l",
+                    "Key" => "ï¿½Lï¿½[",
+                    "Name" => "ï¿½ï¿½ï¿½O",
+                    "Type" => "ï¿½ï¿½ï¿½",
+                    "Value" => "ï¿½l",
                     _ => en
                 };
             }
@@ -40,7 +40,7 @@ namespace PolicyPlus.WinUI3.ViewModels
                 if (!isJa) return en;
                 return en switch
                 {
-                    "(no referenced registry values)" => "(QÆ‚³‚ê‚Ä‚¢‚éƒŒƒWƒXƒgƒŠ’l‚Í‚ ‚è‚Ü‚¹‚ñ)",
+                    "(no referenced registry values)" => "(ï¿½Qï¿½Æ‚ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½éƒŒï¿½Wï¿½Xï¿½gï¿½ï¿½ï¿½lï¿½Í‚ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½)",
                     _ => en
                 };
             }

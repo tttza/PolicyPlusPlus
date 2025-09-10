@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.IO.Compression;
 
-namespace PolicyPlus.WinUI3.Services
+namespace PolicyPlusPlus.Services
 {
     internal static class CacheService
     {
