@@ -64,6 +64,18 @@ namespace PolicyPlus.WinUI3
 
         public App()
         {
+#if USE_VELOPACK
+            try
+            {
+                Velopack.VelopackApp.Build().Run();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("App", $"Velopack init failed: {ex.GetType().Name} {ex.Message}");
+            }
+#elif USE_STORE_UPDATE
+            // Store update checks are not performed at startup (manual trigger only).
+#endif
             InitializeComponent();
             this.UnhandledException += (s, e) => { try { e.Handled = true; } catch { } };
             try

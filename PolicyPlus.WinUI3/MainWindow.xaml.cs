@@ -33,6 +33,9 @@ using PolicyPlus.Core.Admx;
 using System.Collections.Specialized;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
+#if USE_VELOPACK
+using Velopack;
+#endif
 
 namespace PolicyPlus.WinUI3
 {
@@ -104,20 +107,57 @@ namespace PolicyPlus.WinUI3
         private double? _savedAnchorRatio;
         private bool _doubleTapHooked; // used by HookDoubleTapHandlers
 
+#if USE_VELOPACK
+        // UpdateManager handled by UpdateHelper now.
+#endif
         public MainWindow()
         {
-            _suppressSearchOptionEvents = true; // defined in Search partial
+            _suppressSearchOptionEvents = true;
             this.InitializeComponent();
             HookPendingQueue();
             TryInitCustomTitleBar();
             RootGrid.Loaded += (s, e) =>
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
+                InitUpdateMenuVisibility();
             };
             try { BookmarkService.Instance.ActiveListChanged += BookmarkService_ActiveListChanged; } catch { }
             try { Closed += (s, e) => { try { BookmarkService.Instance.ActiveListChanged -= BookmarkService_ActiveListChanged; } catch { } }; } catch { }
         }
-
+        private void InitUpdateMenuVisibility()
+        {
+            try
+            {
+                if (Content is not FrameworkElement fe) return;
+                var checkItem = fe.FindName("MenuCheckForUpdates") as MenuFlyoutItem;
+                var storeItem = fe.FindName("MenuOpenStorePage") as MenuFlyoutItem;
+                if (UpdateHelper.IsVelopackAvailable && checkItem != null) checkItem.Visibility = Visibility.Visible;
+                if (UpdateHelper.IsStoreBuild && storeItem != null) storeItem.Visibility = Visibility.Visible;
+            }
+            catch { }
+        }
+        private async void MenuCheckForUpdates_Click(object sender, RoutedEventArgs e)
+        {
+            if (!UpdateHelper.IsVelopackAvailable)
+            { ShowInfo("Updates not available in this build."); return; }
+            ShowInfo("Checking for updates...");
+            var (ok, restart, message) = await UpdateHelper.CheckAndApplyVelopackUpdatesAsync();
+            if (!ok)
+            { ShowInfo("Update failed: " + message, InfoBarSeverity.Error); return; }
+            if (message != null && !restart) ShowInfo(message, message.Contains("No") ? InfoBarSeverity.Informational : InfoBarSeverity.Success);
+            if (restart)
+            {
+                ShowInfo("Update downloaded. It will be applied when you exit the application.", InfoBarSeverity.Success);
+                // TODO: Show restart now prompt.
+            }
+        }
+        private async void MenuOpenStorePage_Click(object sender, RoutedEventArgs e)
+        {
+            if (!UpdateHelper.IsStoreBuild)
+            { ShowInfo("Store page not available in this build."); return; }
+            var (ok, message) = await UpdateHelper.OpenStorePageAsync();
+            if (!ok) ShowInfo("Failed to open Store page: " + message, InfoBarSeverity.Error);
+        }
         private void BookmarkService_ActiveListChanged(object? sender, EventArgs e)
         {
             try
@@ -135,7 +175,6 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
         }
-
         private void TryInitCustomTitleBar()
         {
             try
@@ -156,7 +195,6 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
         }
-
         private void UpdateTitleBarMargin(AppWindow appWindow)
         {
             try
@@ -170,7 +208,6 @@ namespace PolicyPlus.WinUI3
             }
             catch { }
         }
-
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             try { (RootGrid?.FindName("VersionText") as TextBlock)!.Text = BuildInfo.Version; } catch { }

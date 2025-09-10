@@ -24,19 +24,23 @@
     <AppxBundlePlatforms>x86|x64|arm64</AppxBundlePlatforms>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
   </PropertyGroup>
-	
-    <PropertyGroup Condition="'$(Packaged)' != 'true'">
-	    <EnableMsixTooling>true</EnableMsixTooling>
-	    <WindowsPackageType>None</WindowsPackageType>
-		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-		<PublishProfile>Properties\PublishProfiles\win-$(Platform)-standalone.pubxml</PublishProfile>
-    </PropertyGroup>
 
-    <PropertyGroup Condition="'$(Packaged)' == 'true'">
-	    <EnableMsixTooling>true</EnableMsixTooling>
-		<WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
-		<PublishProfile>Properties\PublishProfiles\win-$(Platform).pubxml</PublishProfile>
-    </PropertyGroup>
+  <!-- Unpackaged (non Store) build: enable Velopack based updating -->
+  <PropertyGroup Condition="'$(Packaged)' != 'true'">
+	<EnableMsixTooling>true</EnableMsixTooling>
+	<WindowsPackageType>None</WindowsPackageType>
+	<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+	<PublishProfile>Properties\PublishProfiles\win-$(Platform)-standalone.pubxml</PublishProfile>
+    <DefineConstants>$(DefineConstants);USE_VELOPACK</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Packaged (Store) build: use Store update mechanism -->
+  <PropertyGroup Condition="'$(Packaged)' == 'true'">
+	<EnableMsixTooling>true</EnableMsixTooling>
+	<WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+	<PublishProfile>Properties\PublishProfiles\win-$(Platform).pubxml</PublishProfile>
+    <DefineConstants>$(DefineConstants);USE_STORE_UPDATE</DefineConstants>
+  </PropertyGroup>
 
 	<PropertyGroup Condition="'$(WindowsAppSDKSelfContained)'=='true'">
 		<WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
@@ -46,7 +50,7 @@
       <EmbeddedResource Include="Assets\AppIcon.ico" />
     </ItemGroup>
 
-  
+  <!-- Common packages -->
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.250402" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
@@ -54,6 +58,12 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4948" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
   </ItemGroup>
+
+  <!-- Velopack referenced only for unpackaged builds -->
+  <ItemGroup Condition="'$(Packaged)' != 'true'">
+    <PackageReference Include="Velopack" Version="0.0.1298" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\PolicyPlus.Core\PolicyPlus.Core.csproj" />
   </ItemGroup>

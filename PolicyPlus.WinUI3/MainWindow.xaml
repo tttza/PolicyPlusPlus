@@ -140,6 +140,9 @@
                         <controls:MenuBarItem Title="Help">
                             <MenuFlyoutItem Text="About..." Click="AboutMenu_Click" />
                             <MenuFlyoutItem Text="View Logs..." Click="BtnViewLogs_Click" />
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem x:Name="MenuCheckForUpdates" Text="Check for Updates..." Click="MenuCheckForUpdates_Click" Visibility="Collapsed" />
+                            <MenuFlyoutItem x:Name="MenuOpenStorePage" Text="Open in Microsoft Store" Click="MenuOpenStorePage_Click" Visibility="Collapsed" />
                         </controls:MenuBarItem>
                     </controls:MenuBar>
 
@@ -284,7 +287,6 @@
                                     <datagrid:DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid HorizontalAlignment="Center">
-                                                <!-- 枠を非表示にするため BorderThickness/BorderBrush 追加 -->
                                                 <Button Padding="2" MinWidth="0" Background="Transparent" BorderThickness="0" BorderBrush="Transparent" IsTabStop="False" Click="BookmarkToggle_Click" DoubleTapped="BookmarkToggle_DoubleTapped" Tag="{Binding Policy}" ToolTipService.ToolTip="Toggle bookmark">
                                                     <FontIcon x:Name="BookmarkGlyph" Glyph="&#xE735;" FontSize="14" Foreground="Gold"  MinWidth="0" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="{Binding IsBookmarked, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Opacity}"/>
                                                 </Button>
