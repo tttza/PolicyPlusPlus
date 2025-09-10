@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Security.Principal;
 using System.Security.Cryptography;
+using System.Linq;
 using PolicyPlusPlus.Serialization;
 using PolicyPlusPlus.Logging; // logging
 
@@ -37,9 +38,16 @@ namespace PolicyPlusPlus.Services
             try { File.AppendAllText(ClientLogPath, DateTime.Now.ToString("s") + "[" + Environment.ProcessId + "] " + msg + Environment.NewLine); } catch { }
         }
 
-        private string GetCurrentExePath()
+        private string GetHostExePath()
         {
-            try { return Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule!.FileName; } catch { return Process.GetCurrentProcess().MainModule!.FileName; }
+            try
+            {
+                string baseDir = AppContext.BaseDirectory;
+                string candidate = Path.Combine(baseDir, "PolicyPPElevationHost.exe");
+                if (File.Exists(candidate)) return candidate;
+            }
+            catch { }
+            throw new FileNotFoundException("PolicyPPElevationHost.exe not found next to application.");
         }
 
         private static bool IsHostLoggingEnabled()
@@ -69,6 +77,10 @@ namespace PolicyPlusPlus.Services
             if (string.IsNullOrEmpty(_clientSid)) return (false, ElevationErrorCode.Unknown, new InvalidOperationException("Cannot determine caller SID"));
             _authToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 
+            string hostExePath;
+            try { hostExePath = GetHostExePath(); }
+            catch (Exception ex) { return (false, ElevationErrorCode.StartFailed, ex); }
+
             var args = new StringBuilder();
             args.Append("--elevation-host ").Append(_pipeName);
             args.Append(" --client-sid \"").Append(_clientSid.Replace("\"", "")).Append("\"");
@@ -77,15 +89,15 @@ namespace PolicyPlusPlus.Services
 
             var psi = new ProcessStartInfo
             {
-                FileName = GetCurrentExePath(),
+                FileName = hostExePath,
                 UseShellExecute = true,
                 Verb = "runas",
                 Arguments = args.ToString(),
                 WindowStyle = ProcessWindowStyle.Hidden,
-                WorkingDirectory = AppContext.BaseDirectory
+                WorkingDirectory = Path.GetDirectoryName(hostExePath) ?? AppContext.BaseDirectory
             };
 
-            ClientLog("Starting elevated host: " + psi.Arguments);
+            ClientLog("Starting elevated host exe: " + psi.FileName + " " + psi.Arguments);
             try { _hostProc = Process.Start(psi); }
             catch (Exception ex) { ClientLog("Start failed: " + ex.Message); return (false, ElevationErrorCode.StartFailed, ex); }
 
@@ -140,7 +152,6 @@ namespace PolicyPlusPlus.Services
                 {
                     last = await action().ConfigureAwait(false);
                     if (last.Ok) return last;
-                    // Only retry for transient connect / IO errors
                     if (last.Code is not ElevationErrorCode.NotConnected and not ElevationErrorCode.ConnectFailed and not ElevationErrorCode.IoError and not ElevationErrorCode.HostExited)
                         return last;
                 }
@@ -150,8 +161,7 @@ namespace PolicyPlusPlus.Services
                 }
                 if (attempt < maxAttempts)
                 {
-                    await Task.Delay(initialDelayMs * attempt).ConfigureAwait(false); // simple linear backoff
-                    // Force re-connect next attempt
+                    await Task.Delay(initialDelayMs * attempt).ConfigureAwait(false);
                     _connected = false;
                     try { _reader?.Dispose(); } catch { }
                     try { _writer?.Dispose(); } catch { }
@@ -198,8 +208,8 @@ namespace PolicyPlusPlus.Services
                     {
                         using var doc = JsonDocument.Parse(resp);
                         var root = doc.RootElement;
-                        bool ok = root.TryGetProperty("ok", out var okProp) && okProp.GetBoolean();
-                        string? err = root.TryGetProperty("error", out var errProp) ? errProp.GetString() : null;
+                        bool ok = (root.TryGetProperty("ok", out var okProp) || root.TryGetProperty("Ok", out okProp)) && okProp.ValueKind == JsonValueKind.True; // fallback for legacy PascalCase
+                        string? err = root.TryGetProperty("error", out var errProp) || root.TryGetProperty("Error", out errProp) ? errProp.GetString() : null;
                         return ClassifyResponse(ok, err);
                     }
                     catch (Exception ex)
@@ -267,8 +277,8 @@ namespace PolicyPlusPlus.Services
                     {
                         using var doc = JsonDocument.Parse(resp);
                         var root = doc.RootElement;
-                        bool ok = root.TryGetProperty("ok", out var okProp) && okProp.GetBoolean();
-                        string? err = root.TryGetProperty("error", out var errProp) ? errProp.GetString() : null;
+                        bool ok = (root.TryGetProperty("ok", out var okProp) || root.TryGetProperty("Ok", out okProp)) && okProp.ValueKind == JsonValueKind.True;
+                        string? err = root.TryGetProperty("error", out var errProp) || root.TryGetProperty("Error", out errProp) ? errProp.GetString() : null;
                         return ClassifyResponse(ok, err);
                     }
                     catch (Exception ex)
