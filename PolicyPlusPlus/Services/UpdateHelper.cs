@@ -11,18 +11,18 @@ namespace PolicyPlusPlus.Services
 {
     internal static class UpdateHelper
     {
-#if USE_VELOPACK
-        private static UpdateManager? _updateManager;
-        private static UpdateInfo? _pendingUpdates; // holds update info instance between check and apply
-        private static bool _restartPending; // set after successful download/apply requiring restart
-        private static bool _deferredInstall; // true when user chose apply-on-exit path
-
+        
         internal enum VelopackUpdateApplyChoice
         {
             RestartNow,
             OnExit,
             Cancel
         }
+#if USE_VELOPACK
+        private static UpdateManager? _updateManager;
+        private static UpdateInfo? _pendingUpdates; // holds update info instance between check and apply
+        private static bool _restartPending; // set after successful download/apply requiring restart
+        private static bool _deferredInstall; // true when user chose apply-on-exit path
 #endif
         public static bool IsVelopackAvailable =>
 #if USE_VELOPACK
@@ -210,6 +210,10 @@ namespace PolicyPlusPlus.Services
                 return (false, false, ex.Message);
             }
         }
+#else
+        // Stub so callers compile when Velopack is excluded.
+        public static Task<(bool ok, bool restartInitiated, string? message)> ApplyVelopackPendingAsync(VelopackUpdateApplyChoice choice)
+            => Task.FromResult<(bool, bool, string?)>((false, false, "Velopack not included"));
 #endif
 
         public static string? GetPendingUpdateNotes()
