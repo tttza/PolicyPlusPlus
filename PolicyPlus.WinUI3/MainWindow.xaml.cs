@@ -140,6 +140,53 @@ namespace PolicyPlus.WinUI3
         {
             if (!UpdateHelper.IsVelopackAvailable)
             { ShowInfo("Updates not available in this build."); return; }
+
+            if (UpdateHelper.IsRestartPending)
+            {
+                if (UpdateHelper.IsDeferredInstall)
+                {
+                    ContentDialog df = new()
+                    {
+                        Title = "Update Ready (Deferred)",
+                        Content = "An update has been prepared and will install when the app exits. Close and restart the application to complete installation.",
+                        PrimaryButtonText = "Exit & Install Now",
+                        CloseButtonText = "Cancel",
+                        DefaultButton = ContentDialogButton.Primary
+                    };
+                    if (this.Content is FrameworkElement feDf) df.XamlRoot = feDf.XamlRoot;
+                    ContentDialogResult dr;
+                    try { dr = await df.ShowAsync(); } catch { dr = ContentDialogResult.None; }
+                    if (dr == ContentDialogResult.Primary)
+                    {
+                        App.Current.Exit();
+                    }
+                    return;
+                }
+                else
+                {
+                    ContentDialog rd = new()
+                    {
+                        Title = "Update Ready",
+                        Content = "An update has been downloaded and is ready to install. Restart the application now?",
+                        PrimaryButtonText = "Restart Now",
+                        CloseButtonText = "Cancel",
+                        DefaultButton = ContentDialogButton.Primary
+                    };
+                    if (this.Content is FrameworkElement feR) rd.XamlRoot = feR.XamlRoot;
+                    ContentDialogResult rRes;
+                    try { rRes = await rd.ShowAsync(); } catch { rRes = ContentDialogResult.None; }
+                    if (rRes == ContentDialogResult.Primary)
+                    {
+                        App.Current.Exit();
+                    }
+                    else
+                    {
+                        ShowInfo("Restart later to finish applying the update.", InfoBarSeverity.Informational);
+                    }
+                    return;
+                }
+            }
+
             ShowInfo("Checking for updates...");
             var (ok, hasUpdate, message) = await UpdateHelper.CheckVelopackUpdatesAsync();
             if (!ok)
@@ -147,33 +194,50 @@ namespace PolicyPlus.WinUI3
             if (!hasUpdate)
             { if (message != null) ShowInfo(message, InfoBarSeverity.Informational); return; }
 
-            // Prepare confirmation dialog (release notes placeholder if available).
-            string notes = UpdateHelper.GetPendingUpdateNotes() ?? "";
-            string body = string.IsNullOrEmpty(notes) ? "An update is available. Apply it now?" : "An update is available. Apply it now?\n\n" + notes;
-            ContentDialog dlg = new()
+            string notes = UpdateHelper.GetPendingUpdateNotes() ?? string.Empty;
+            string body = string.IsNullOrEmpty(notes) ? "An update is available. Choose how to apply it." : "An update is available. Choose how to apply it.\n\n" + notes;
+
+            ContentDialog choiceDlg = new()
             {
                 Title = "Update Available",
                 Content = body,
-                PrimaryButtonText = "Update",
+                PrimaryButtonText = "Install & Restart Now",
+                SecondaryButtonText = "Install On Exit",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Primary
             };
-            if (this.Content is FrameworkElement feRoot)
-                dlg.XamlRoot = feRoot.XamlRoot;
-            ContentDialogResult res;
-            try { res = await dlg.ShowAsync(); }
-            catch { res = ContentDialogResult.None; }
-            if (res != ContentDialogResult.Primary)
-            { ShowInfo("Update canceled.", InfoBarSeverity.Informational); return; }
+            if (this.Content is FrameworkElement root)
+                choiceDlg.XamlRoot = root.XamlRoot;
+            ContentDialogResult choiceRes;
+            try { choiceRes = await choiceDlg.ShowAsync(); } catch { choiceRes = ContentDialogResult.None; }
 
-            ShowInfo("Downloading update...");
-            var (applyOk, restart, applyMessage) = await UpdateHelper.ApplyVelopackUpdatesAsync();
+            if (choiceRes != ContentDialogResult.Primary && choiceRes != ContentDialogResult.Secondary)
+            {
+                _ = UpdateHelper.ApplyVelopackPendingAsync(UpdateHelper.VelopackUpdateApplyChoice.Cancel);
+                ShowInfo("Update canceled.", InfoBarSeverity.Informational);
+                return;
+            }
+
+            var applyChoice = choiceRes == ContentDialogResult.Primary ? UpdateHelper.VelopackUpdateApplyChoice.RestartNow : UpdateHelper.VelopackUpdateApplyChoice.OnExit;
+            ShowInfo(applyChoice == UpdateHelper.VelopackUpdateApplyChoice.RestartNow ? "Applying update and restarting..." : "Downloading update for apply-on-exit...");
+            var (applyOk, restartInitiated, applyMessage) = await UpdateHelper.ApplyVelopackPendingAsync(applyChoice);
             if (!applyOk)
             { ShowInfo("Update failed: " + applyMessage, InfoBarSeverity.Error); return; }
-            if (restart)
+
+            if (restartInitiated)
             {
-                ShowInfo("Update downloaded. It will be applied when you exit the application.", InfoBarSeverity.Success);
-                // TODO: Offer restart now option via prompt (future enhancement).
+                ShowInfo(applyMessage ?? "Restarting...", InfoBarSeverity.Success);
+            }
+            else
+            {
+                if (applyChoice == UpdateHelper.VelopackUpdateApplyChoice.OnExit)
+                {
+                    ShowInfo(applyMessage ?? "Update will be applied on exit.", InfoBarSeverity.Informational);
+                }
+                else
+                {
+                    ShowInfo(applyMessage ?? "Update staged.", InfoBarSeverity.Informational);
+                }
             }
         }
         private async void MenuOpenStorePage_Click(object sender, RoutedEventArgs e)

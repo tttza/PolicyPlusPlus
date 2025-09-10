@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.Windows.AppLifecycle;
 using PolicyPlus.WinUI3.Logging;
 #if USE_VELOPACK
 using Velopack;
@@ -12,7 +13,16 @@ namespace PolicyPlus.WinUI3.Services
     {
 #if USE_VELOPACK
         private static UpdateManager? _updateManager;
-        private static object? _pendingUpdates; // holds update info instance between check and apply
+        private static UpdateInfo? _pendingUpdates; // holds update info instance between check and apply
+        private static bool _restartPending; // set after successful download/apply requiring restart
+        private static bool _deferredInstall; // true when user chose apply-on-exit path
+
+        internal enum VelopackUpdateApplyChoice
+        {
+            RestartNow,
+            OnExit,
+            Cancel
+        }
 #endif
         public static bool IsVelopackAvailable =>
 #if USE_VELOPACK
@@ -24,6 +34,20 @@ namespace PolicyPlus.WinUI3.Services
         public static bool IsStoreBuild =>
 #if USE_STORE_UPDATE
             true;
+#else
+            false;
+#endif
+
+        public static bool IsRestartPending =>
+#if USE_VELOPACK
+            _restartPending;
+#else
+            false;
+#endif
+
+        public static bool IsDeferredInstall =>
+#if USE_VELOPACK
+            _deferredInstall;
 #else
             false;
 #endif
@@ -51,6 +75,14 @@ namespace PolicyPlus.WinUI3.Services
                 InitializeIfNeeded();
                 if (_updateManager == null)
                     return (false, false, "Update manager not available");
+
+                // If restart already pending via immediate path, treat as no new updates.
+                if (_restartPending && !_deferredInstall)
+                    return (true, false, "Update already downloaded. Restart to apply.");
+
+                // If user selected deferred (apply-on-exit) previously, advise manual exit/restart.
+                if (_restartPending && _deferredInstall)
+                    return (true, false, "Update has been downloaded. Exit and restart the application to complete installation.");
 
                 _pendingUpdates = null;
                 var updates = await _updateManager.CheckForUpdatesAsync().ConfigureAwait(false);
@@ -92,12 +124,11 @@ namespace PolicyPlus.WinUI3.Services
                     return (false, false, "Update manager not available");
                 if (_pendingUpdates == null)
                     return (false, false, "No pending update");
+                if (_restartPending)
+                    return (true, !_deferredInstall, _deferredInstall ? "Update has been downloaded. Exit and restart the application to complete installation." : "Restart required");
 
-                var updates = _pendingUpdates; // keep original runtime type
-                await _updateManager.DownloadUpdatesAsync((dynamic)updates).ConfigureAwait(false);
-                await _updateManager.WaitExitThenApplyUpdatesAsync((dynamic)updates, false, false).ConfigureAwait(false);
-                _pendingUpdates = null;
-                return (true, true, "Restart required");
+                var (ok, restartInitiated, message) = await ApplyVelopackPendingAsync(VelopackUpdateApplyChoice.RestartNow).ConfigureAwait(false);
+                return (ok, restartInitiated, message);
             }
             catch (Exception ex)
             {
@@ -124,6 +155,63 @@ namespace PolicyPlus.WinUI3.Services
 #endif
         }
 
+#if USE_VELOPACK
+        // Applies the currently pending update according to user choice.
+        public static async Task<(bool ok, bool restartInitiated, string? message)> ApplyVelopackPendingAsync(VelopackUpdateApplyChoice choice)
+        {
+            try
+            {
+                InitializeIfNeeded();
+                if (_updateManager == null)
+                    return (false, false, "Update manager not available");
+                if (_pendingUpdates == null)
+                {
+                    if (choice == VelopackUpdateApplyChoice.Cancel)
+                        return (true, false, "Cancelled");
+                    return (false, false, "No pending update");
+                }
+                if (choice == VelopackUpdateApplyChoice.Cancel)
+                {
+                    _pendingUpdates = null; // discard
+                    return (true, false, "Cancelled");
+                }
+
+                if (_restartPending)
+                {
+                    if (_deferredInstall)
+                        return (true, false, "Update has been downloaded. Exit and restart the application to complete installation.");
+                    return (true, true, "Restart required");
+                }
+
+                var updates = _pendingUpdates;
+                await _updateManager.DownloadUpdatesAsync(updates).ConfigureAwait(false);
+                bool restartInitiated = false;
+                string message;
+                if (choice == VelopackUpdateApplyChoice.RestartNow)
+                {
+                    // Attempt immediate restart; control might not return if restart proceeds quickly.
+                    _updateManager.ApplyUpdatesAndRestart(updates);
+                    restartInitiated = true;
+                    message = "Restarting to apply update...";
+                }
+                else // OnExit
+                {
+                    await _updateManager.WaitExitThenApplyUpdatesAsync(updates, false, false).ConfigureAwait(false);
+                    restartInitiated = false;
+                    message = "Update will be applied on exit. Please close and restart the application.";
+                }
+                _restartPending = true;
+                _deferredInstall = choice == VelopackUpdateApplyChoice.OnExit;
+
+                return (true, restartInitiated, message);
+            }
+            catch (Exception ex)
+            {
+                return (false, false, ex.Message);
+            }
+        }
+#endif
+
         public static string? GetPendingUpdateNotes()
         {
 #if USE_VELOPACK
@@ -144,6 +232,7 @@ namespace PolicyPlus.WinUI3.Services
             return null;
 #endif
         }
+
 
         public static async Task<(bool ok, string? message)> OpenStorePageAsync()
         {
