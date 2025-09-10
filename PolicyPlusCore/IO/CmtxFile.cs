@@ -1,9 +1,9 @@
-using PolicyPlus.Core.Utils;
+using PolicyPlusCore.Utils;
 
 using System.Collections.Generic;
 using System.Xml;
 
-namespace PolicyPlus.Core.IO
+namespace PolicyPlusCore.IO
 {
     public class CmtxFile
     {

@@ -1,4 +1,4 @@
-﻿using PolicyPlus.Core.IO;
+﻿using PolicyPlusCore.IO;
 
 using System;
 using System.Windows.Forms;

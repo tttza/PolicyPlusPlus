@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-using PolicyPlus.Core.Admx;
+using PolicyPlusCore.Admx;
 using PolicyPlus.UI; // For AppForms
 
 namespace PolicyPlus

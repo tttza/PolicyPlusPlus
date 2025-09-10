@@ -1,9 +1,9 @@
 ﻿using Microsoft.Win32;
 
-using PolicyPlus.Core.Admx;
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.IO;
-using PolicyPlus.Core.Utils;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Utils;
 using PolicyPlus.UI.Find;
 using System;
 using System.Collections.Generic;

@@ -4,8 +4,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System.Collections.Generic;
 using System.ComponentModel;
-using PolicyPlus.Core.IO;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Core;
 
 namespace PolicyPlusPlus.Models
 {

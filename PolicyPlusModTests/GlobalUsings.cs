@@ -1,4 +1,4 @@
-global using PolicyPlus.Core.Core;
-global using PolicyPlus.Core.Admx;
-global using PolicyPlus.Core.IO;
-global using PolicyPlus.Core.Utilities;
+global using PolicyPlusCore.Core;
+global using PolicyPlusCore.Admx;
+global using PolicyPlusCore.IO;
+global using PolicyPlusCore.Utilities;

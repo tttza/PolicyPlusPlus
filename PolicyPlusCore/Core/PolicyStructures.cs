@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace PolicyPlus.Core.Core
+namespace PolicyPlusCore.Core
 {
     // These structures hold information on the behavior of policies and policy elements
     public class PolicyRegistryList

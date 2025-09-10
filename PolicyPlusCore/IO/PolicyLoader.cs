@@ -1,13 +1,13 @@
 using Microsoft.Win32;
 
-using PolicyPlus.Core.Helpers;
-using PolicyPlus.Core.Utils;
+using PolicyPlusCore.Helpers;
+using PolicyPlusCore.Utils;
 
 using System;
 using System.Linq;
 using System.Security.Principal; // elevation check
 
-namespace PolicyPlus.Core.IO
+namespace PolicyPlusCore.IO
 {
     public class PolicyLoader
     {

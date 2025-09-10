@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyPlusModTests", "Polic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyPlusPlus", "PolicyPlusPlus\PolicyPlusPlus.csproj", "{C2329377-4185-4A9D-BD51-AC8A8F0F1739}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyPlus.Core", "PolicyPlus.Core\PolicyPlus.Core.csproj", "{BB0E0680-F6DE-4E73-9316-49E46FDB7071}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolicyPlusCore", "PolicyPlusCore\PolicyPlusCore.csproj", "{BB0E0680-F6DE-4E73-9316-49E46FDB7071}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

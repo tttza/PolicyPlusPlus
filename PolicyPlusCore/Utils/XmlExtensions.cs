@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Xml;
 
-namespace PolicyPlus.Core.Utils
+namespace PolicyPlusCore.Utils
 {
     public static class XmlExtensions
     {

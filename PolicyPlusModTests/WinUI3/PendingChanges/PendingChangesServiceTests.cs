@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PolicyPlusPlus.Services;
 using Xunit;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 
 namespace PolicyPlusModTests.WinUI3
 {

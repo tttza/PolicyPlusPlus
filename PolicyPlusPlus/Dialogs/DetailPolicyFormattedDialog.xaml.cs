@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using Windows.ApplicationModel.DataTransfer;
 using System.Collections.Generic;
-using PolicyPlus.Core.IO;
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.Admx;
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.Admx;
 
 namespace PolicyPlusPlus.Dialogs
 {

@@ -1,8 +1,8 @@
-using PolicyPlus.Core.Admx;
+using PolicyPlusCore.Admx;
 
 using System.Collections.Generic;
 
-namespace PolicyPlus.Core.Core
+namespace PolicyPlusCore.Core
 {
     // Raw data loaded from ADMX files
     public class AdmxProduct

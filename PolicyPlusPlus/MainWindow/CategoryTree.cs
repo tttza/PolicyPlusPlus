@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using PolicyPlusPlus.Utils;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 
 namespace PolicyPlusPlus
 {

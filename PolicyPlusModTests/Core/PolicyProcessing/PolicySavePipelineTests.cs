@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using PolicyPlus;
-using PolicyPlus.Core.Admx;
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.IO;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
 
 using Xunit;
 

@@ -1,5 +1,5 @@
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.IO;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
 
 using System;
 using System.Collections.Generic;

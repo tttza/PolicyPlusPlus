@@ -1,5 +1,5 @@
-﻿using PolicyPlus.Core.Admx;
-using PolicyPlus.Core.Core;
+﻿using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
 
 using System;
 using System.Collections;

@@ -2,8 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.Utilities;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.Utilities;
 using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus.Services

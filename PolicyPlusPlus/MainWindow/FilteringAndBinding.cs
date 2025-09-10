@@ -9,9 +9,9 @@ using Windows.System;
 using PolicyPlusPlus.Models;
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Dialogs; // FindByRegistryWinUI
-using PolicyPlus.Core.Utilities;
-using PolicyPlus.Core.IO;
-using PolicyPlus.Core.Core; // SearchText
+using PolicyPlusCore.Utilities;
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Core; // SearchText
 using System.Threading;
 using PolicyPlusPlus.Filtering; // FilterDecisionEngine
 using PolicyPlusPlus.Logging; // logging

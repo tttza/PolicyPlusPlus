@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using System;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 
 namespace PolicyPlusPlus.Converters
 {

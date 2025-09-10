@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <RootNamespace>PolicyPlus.Core</RootNamespace>
+    <RootNamespace>PolicyPlusCore</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Configurations>Debug;Release;Debug-Unpackaged;Release-Unpackaged</Configurations>

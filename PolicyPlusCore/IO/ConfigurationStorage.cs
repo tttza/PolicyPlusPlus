@@ -2,7 +2,7 @@ using Microsoft.Win32;
 
 using System;
 
-namespace PolicyPlus.Core.IO
+namespace PolicyPlusCore.IO
 {
     public class ConfigurationStorage
     {

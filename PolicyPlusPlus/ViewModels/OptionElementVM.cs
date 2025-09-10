@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using PolicyPlus.Core.Admx;
-using PolicyPlus.Core.Core; // added for PolicyElement, EnumPolicyElement, etc.
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core; // added for PolicyElement, EnumPolicyElement, etc.
 
 namespace PolicyPlusPlus.ViewModels
 {

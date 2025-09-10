@@ -1,10 +1,10 @@
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace PolicyPlus.Core.Admx
+namespace PolicyPlusCore.Admx
 {
     public class AdmxBundle
     {

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using PolicyPlus;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 using PolicyPlusPlus;
 using PolicyPlusPlus.Services;
 using Xunit;

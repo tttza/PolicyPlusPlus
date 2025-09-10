@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
-using PolicyPlus.Core.IO;
-using PolicyPlus.Core.Admx;
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Admx;
 using System.Diagnostics; // for Debug logging (lightweight)
 
-namespace PolicyPlus.Core.Core
+namespace PolicyPlusCore.Core
 {
     public class PolicyProcessing
     {

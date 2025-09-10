@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace PolicyPlus.Core.Utils
+namespace PolicyPlusCore.Utils
 {
     [StructLayout(LayoutKind.Explicit)]
     public struct ReinterpretableDword

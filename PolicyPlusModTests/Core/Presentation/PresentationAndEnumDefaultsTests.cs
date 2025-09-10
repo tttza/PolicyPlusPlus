@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.Admx;
 using PolicyPlus.UI.PolicyDetail;
 using Xunit;
 using PolicyPlusModTests.TestHelpers; // PolAssert

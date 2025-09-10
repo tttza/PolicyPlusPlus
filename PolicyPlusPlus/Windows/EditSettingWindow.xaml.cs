@@ -14,9 +14,9 @@ using WinRT.Interop;
 using PolicyPlusPlus.Utils;
 using PolicyPlusPlus.Services;
 using Microsoft.UI.Xaml.Input;
-using PolicyPlus.Core.IO;
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.Admx;
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.Admx;
 using PolicyPlusPlus.ViewModels; // added for QuickEditRow
 using PolicyPlusPlus.Logging; // logging
 

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Win32;
 
-using PolicyPlus.Core.IO;
+using PolicyPlusCore.IO;
 
 using System;
 using System.Linq;

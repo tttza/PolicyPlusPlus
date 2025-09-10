@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using System.Text;
 
-namespace PolicyPlus.Core.Utilities
+namespace PolicyPlusCore.Utilities
 {
     public static class SearchText
     {

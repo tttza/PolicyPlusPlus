@@ -6,7 +6,7 @@
 PolicyPlusMod is a Windows desktop tool that loads Administrative Template (ADMX/ADML) definitions, lets users view/search/edit Windows Group Policy (registry-based) settings, and export/import them (REG / semantic policy). Two UIs share one domain layer:
 - `PolicyPlus` (WinForms) – stable reference implementation.
 - `PolicyPlusPlus` (WinUI 3) – modernization in progress.
-Core logic belongs in `PolicyPlus.Core` and must remain UI-agnostic.
+Core logic belongs in `PolicyPlusCore` and must remain UI-agnostic.
 
 ## 2. Tech Stack
 - Language: C# (legacy VB already ported; VB files excluded).
@@ -21,7 +21,7 @@ Core logic belongs in `PolicyPlus.Core` and must remain UI-agnostic.
 ## 3. Repository Layout (High Value Areas)
 ```
 PolicyPlusMod.sln
-PolicyPlus.Core/        Domain models & policy processing
+PolicyPlusCore/        Domain models & policy processing
 PolicyPlus/             WinForms UI (baseline behavior)
 PolicyPlusPlus/      WinUI 3 UI (modern)
 PolicyPlusModTests/     Tests (Core + limited UI logic)
@@ -54,7 +54,7 @@ dotnet publish PolicyPlus/PolicyPlus.csproj -c Release -r win-x64 --self-contain
 - Favor small, clear methods; keep hot paths lean.
 - Code comments: intent/clarification only (English). NO change narration.
 - Never embed version/diff history in comments (Git handles history).
-- Add logic to `PolicyPlus.Core` first; WinForms acts as behavioral reference.
+- Add logic to `PolicyPlusCore` first; WinForms acts as behavioral reference.
 - WinUI 3 must compile; feature gaps must degrade gracefully (no throwing stubs).
 - Warnings treated as errors; fix nullability properly.
 - Only `IPolicySource` implementations touch the registry.
@@ -127,7 +127,7 @@ Optionally also Release build.
 ## 13. Sample Feature Walkthrough (Illustrative)
 Goal: Add helper `PolicyLookup.FindPolicy(bundle, uniqueId)`.
 Steps:
-- Add utility `PolicyPlus.Core/Utilities/PolicyLookup.cs`.
+- Add utility `PolicyPlusCore/Utilities/PolicyLookup.cs`.
 - Implement dictionary lookup via `AdmxBundle.Policies`.
 - Add tests for found / missing ID.
 - Build + test.

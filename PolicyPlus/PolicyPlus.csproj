@@ -197,7 +197,7 @@
   <Compile Remove="Utils\XmlExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PolicyPlus.Core\PolicyPlus.Core.csproj" />
+    <ProjectReference Include="..\PolicyPlusCore\PolicyPlusCore.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Helpers\PInvoke.cs" />

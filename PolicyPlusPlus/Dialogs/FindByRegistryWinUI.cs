@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
 
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.Utilities;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.Utilities;
 using PolicyPlusPlus.Services;
 
 namespace PolicyPlusPlus.Dialogs

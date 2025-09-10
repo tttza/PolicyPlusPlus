@@ -5,8 +5,8 @@ using System.Linq;
 using PolicyPlus.UI.PolicyDetail;
 using PolicyPlusModTests.TestHelpers;
 using Xunit;
-using PolicyPlus.Core.IO;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Core;
 
 namespace PolicyPlusModTests
 {

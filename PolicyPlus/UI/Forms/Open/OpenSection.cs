@@ -2,7 +2,7 @@
 using System;
 using System.Windows.Forms;
 
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 
 namespace PolicyPlus
 {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Win32;
 using Xunit;
 using PolicyPlusModTests.TestHelpers;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 
 namespace PolicyPlusModTests
 {

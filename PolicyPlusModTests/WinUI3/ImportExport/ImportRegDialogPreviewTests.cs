@@ -1,7 +1,7 @@
 using System.IO;
 
-using PolicyPlus.Core.IO;
-using PolicyPlus.Core.Utilities;
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Utilities;
 
 using Xunit;
 

@@ -11,8 +11,8 @@ using PolicyPlusPlus.Windows;
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.ViewModels;
 using PolicyPlusPlus.Utils;
-using PolicyPlus.Core.IO;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Core;
 
 namespace PolicyPlusPlus
 {

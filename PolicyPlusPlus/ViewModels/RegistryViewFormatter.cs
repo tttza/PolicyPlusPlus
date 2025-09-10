@@ -1,5 +1,5 @@
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.IO;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
 using PolicyPlusPlus.Services;
 
 using System;
@@ -28,10 +28,10 @@ namespace PolicyPlusPlus.ViewModels
                 if (!isJa) return en;
                 return en switch
                 {
-                    "Key" => "ï¿½Lï¿½[",
-                    "Name" => "ï¿½ï¿½ï¿½O",
-                    "Type" => "ï¿½ï¿½ï¿½",
-                    "Value" => "ï¿½l",
+                    "Key" => "ƒL[",
+                    "Name" => "–¼‘O",
+                    "Type" => "í—Ş",
+                    "Value" => "’l",
                     _ => en
                 };
             }
@@ -40,7 +40,7 @@ namespace PolicyPlusPlus.ViewModels
                 if (!isJa) return en;
                 return en switch
                 {
-                    "(no referenced registry values)" => "(ï¿½Qï¿½Æ‚ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½éƒŒï¿½Wï¿½Xï¿½gï¿½ï¿½ï¿½lï¿½Í‚ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½)",
+                    "(no referenced registry values)" => "(QÆ‚³‚ê‚Ä‚¢‚éƒŒƒWƒXƒgƒŠ’l‚ª‚ ‚è‚Ü‚¹‚ñ)",
                     _ => en
                 };
             }

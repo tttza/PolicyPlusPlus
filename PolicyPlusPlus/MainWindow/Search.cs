@@ -8,9 +8,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using PolicyPlusPlus.Services;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 using PolicyPlusPlus.Dialogs;
-using PolicyPlus.Core.Utilities;
+using PolicyPlusCore.Utilities;
 using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus

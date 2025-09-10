@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using PolicyPlus;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 
 namespace PolicyPlusModTests.TestHelpers
 {

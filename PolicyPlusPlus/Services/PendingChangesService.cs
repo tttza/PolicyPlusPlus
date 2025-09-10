@@ -2,7 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Collections.Generic;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus.Services

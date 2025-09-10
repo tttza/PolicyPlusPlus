@@ -3,7 +3,7 @@ using PolicyPlusPlus.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus

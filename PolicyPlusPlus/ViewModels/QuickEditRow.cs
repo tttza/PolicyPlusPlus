@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.Admx;
-using PolicyPlus.Core.IO;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.IO;
 using PolicyPlusPlus.Services;
 using System.Text; // added
 

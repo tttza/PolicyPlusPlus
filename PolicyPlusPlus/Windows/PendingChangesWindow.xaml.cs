@@ -14,9 +14,9 @@ using System.IO;
 using System.Threading.Tasks;
 using PolicyPlusPlus.ViewModels;
 using Microsoft.UI.Xaml.Input;
-using PolicyPlus.Core.IO;
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.Admx;
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.Admx;
 using System.Text.Json; // added for JsonElement handling
 
 namespace PolicyPlusPlus.Windows

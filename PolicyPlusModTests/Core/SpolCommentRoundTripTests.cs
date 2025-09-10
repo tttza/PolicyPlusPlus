@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
 using Xunit;
-using PolicyPlus.Core.Admx;
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.IO;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
 
 namespace PolicyPlusModTests.Core
 {

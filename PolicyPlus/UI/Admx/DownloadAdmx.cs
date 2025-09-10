@@ -6,7 +6,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Security.AccessControl;
 using System.Net.Http;
-using PolicyPlus.Core.Helpers; // For HttpClient download
+using PolicyPlusCore.Helpers; // For HttpClient download
 
 namespace PolicyPlus.UI.Admx
 {

@@ -1,8 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
-using PolicyPlus.Core.IO;
-using PolicyPlus.Core.Utilities;
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Utilities;
 
 using System;
 using Windows.Storage.Pickers;

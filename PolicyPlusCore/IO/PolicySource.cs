@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PolicyPlus.Core.Utils;
+using PolicyPlusCore.Utils;
 
-namespace PolicyPlus.Core.IO
+namespace PolicyPlusCore.IO
 {
     public interface IPolicySource
     {

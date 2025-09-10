@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using PolicyPlus;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 using PolicyPlusPlus.ViewModels;
 using Xunit;
 

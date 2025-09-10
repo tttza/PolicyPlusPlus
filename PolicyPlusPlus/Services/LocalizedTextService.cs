@@ -3,8 +3,8 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using PolicyPlus.Core.Admx;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
 
 namespace PolicyPlusPlus.Services
 {

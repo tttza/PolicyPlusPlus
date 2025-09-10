@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-using PolicyPlus.Core.Core; // For AdmxPolicySection
+using PolicyPlusCore.Core; // For AdmxPolicySection
 
 namespace PolicyPlusPlus.Services
 {

@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace PolicyPlus.Core.Helpers
+namespace PolicyPlusCore.Helpers
 {
     class PInvoke
     {

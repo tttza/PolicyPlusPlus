@@ -3,7 +3,7 @@ using System.IO;
 
 using Microsoft.Win32;
 
-using PolicyPlus.Core.IO;
+using PolicyPlusCore.IO;
 
 using Xunit;
 

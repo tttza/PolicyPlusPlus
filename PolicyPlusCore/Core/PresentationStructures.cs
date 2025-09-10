@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace PolicyPlus.Core.Core
+namespace PolicyPlusCore.Core
 {
     // These structures hold information on how the UI for policy elements appears
     public class Presentation

@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml;
 using PolicyPlusPlus.Services;
 using System.Linq;
 using System.Collections.Generic;
-using PolicyPlus.Core.Core;
+using PolicyPlusCore.Core;
 
 namespace PolicyPlusPlus
 {

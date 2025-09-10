@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using PolicyPlus;
-using PolicyPlus.Core.Core;
-using PolicyPlus.Core.IO;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
 using PolicyPlusPlus.Models;
 using PolicyPlusPlus.Services;
 using Xunit;
