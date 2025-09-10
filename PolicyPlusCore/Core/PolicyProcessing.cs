@@ -27,9 +27,6 @@ namespace PolicyPlusCore.Core
         public static PolicyState GetPolicyState(IPolicySource PolicySource, PolicyPlusPolicy Policy)
         {
             if (Policy == null) return PolicyState.NotConfigured; // defensive
-            LogDebug("PolicyProcessing", $"GetPolicyState policyId={Policy.UniqueID}");
-            // New explicit On/Off priority: If explicit registry patterns (OnValue/OffValue or their lists) clearly indicate one side, decide early.
-            // This avoids heuristic noise from presence/absence of unrelated element values.
             var rawpol = Policy.RawPolicy;
             if (rawpol.AffectedValues == null)
                 rawpol.AffectedValues = new PolicyRegistryList();
