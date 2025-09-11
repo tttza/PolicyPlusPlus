@@ -150,7 +150,10 @@ namespace PolicyPlusPlus.ViewModels
                                 {
                                     if (string.Equals(pe.ID, e.ID, StringComparison.OrdinalIgnoreCase))
                                     {
-                                        display = pe.ID; // use ID; could map to label resolved elsewhere
+                                        if (pe is CheckBoxPresentationElement cbpe && !string.IsNullOrWhiteSpace(cbpe.Text))
+                                            display = cbpe.Text;
+                                        else
+                                            display = pe.ID;
                                         break;
                                     }
                                 }
@@ -168,18 +171,21 @@ namespace PolicyPlusPlus.ViewModels
                         }
                         else if (e is BooleanPolicyElement)
                         {
-                            // Look up defaultChecked from presentation if available
-                            bool? def = null;
+                            bool? def = null; string? label = display;
                             try
                             {
                                 if (policy.Presentation != null)
                                 {
                                     var pe = policy.Presentation.Elements.FirstOrDefault(p => p.ElementType == "checkBox" && string.Equals(p.ID, e.ID, StringComparison.OrdinalIgnoreCase)) as CheckBoxPresentationElement;
-                                    if (pe != null) def = pe.DefaultState;
+                                    if (pe != null)
+                                    {
+                                        def = pe.DefaultState;
+                                        if (!string.IsNullOrWhiteSpace(pe.Text)) label = pe.Text;
+                                    }
                                 }
                             }
                             catch { }
-                            vm = new OptionElementVM(this, e, OptionElementType.Boolean, display, defaultBool: def);
+                            vm = new OptionElementVM(this, e, OptionElementType.Boolean, label ?? display, defaultBool: def);
                         }
                         else if (e is DecimalPolicyElement de)
                         {
@@ -201,13 +207,14 @@ namespace PolicyPlusPlus.ViewModels
                         }
                         else if (e is TextPolicyElement te)
                         {
-                            string? defText = null; int maxLen = te.MaxLength; IEnumerable<string>? sugg = null;
+                            string? defText = null; int maxLen = te.MaxLength; IEnumerable<string>? sugg = null; string label = display;
                             try
                             {
                                 if (policy.Presentation != null)
                                 {
                                     var pe = policy.Presentation.Elements.FirstOrDefault(p => p.ElementType == "textBox" && string.Equals(p.ID, te.ID, StringComparison.OrdinalIgnoreCase)) as TextBoxPresentationElement;
-                                    if (pe != null) defText = pe.DefaultValue;
+                                    if (pe != null)
+                                    { defText = pe.DefaultValue; }
                                     var cbPres = policy.Presentation.Elements.FirstOrDefault(p => p.ElementType == "comboBox" && string.Equals(p.ID, te.ID, StringComparison.OrdinalIgnoreCase)) as ComboBoxPresentationElement;
                                     if (cbPres != null)
                                     {
@@ -217,7 +224,7 @@ namespace PolicyPlusPlus.ViewModels
                                 }
                             }
                             catch { }
-                            vm = new OptionElementVM(this, e, OptionElementType.Text, display, defaultText: defText, textMaxLength: maxLen, suggestions: sugg);
+                            vm = new OptionElementVM(this, e, OptionElementType.Text, label, defaultText: defText, textMaxLength: maxLen, suggestions: sugg);
                         }
                         else if (e is MultiTextPolicyElement)
                         { vm = new OptionElementVM(this, e, OptionElementType.MultiText, display); }
