@@ -48,7 +48,9 @@
 	</PropertyGroup>
 	
     <ItemGroup>
-      <EmbeddedResource Include="Assets\AppIcon.ico" />
+      <EmbeddedResource Include="Assets\AppIcon.ico">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
     </ItemGroup>
 
   <!-- Common packages -->
