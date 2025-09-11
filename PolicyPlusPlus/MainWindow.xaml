@@ -57,9 +57,10 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/><!-- bottom status bar -->
             </Grid.RowDefinitions>
 
-            <controls:InfoBar x:Name="StatusBar" Grid.RowSpan="2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="12" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" IsOpen="False" Severity="Informational" Canvas.ZIndex="5" />
+            <controls:InfoBar x:Name="StatusBar" Grid.RowSpan="3" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="12" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" IsOpen="False" Severity="Informational" Canvas.ZIndex="5" />
 
             <Grid Grid.Row="1">
                 <Grid.RowDefinitions>
@@ -73,7 +74,6 @@
                 <Grid x:Name="AppTitleBar" Grid.Row="0" Margin="8,8,8,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
-                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <controls:MenuBar>
                         <controls:MenuBarItem Title="File">
@@ -145,11 +145,6 @@
                             <MenuFlyoutItem x:Name="MenuOpenStorePage" Text="Open in Microsoft Store" Click="MenuOpenStorePage_Click" Visibility="Collapsed" />
                         </controls:MenuBarItem>
                     </controls:MenuBar>
-
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                        <TextBlock x:Name="VersionText" Margin="0,0,12,0" Opacity="0.7" />
-                        <TextBlock x:Name="LoaderInfo" VerticalAlignment="Center"/>
-                    </StackPanel>
                 </Grid>
 
                 <!-- Hidden flags for column visibility -->
@@ -402,7 +397,21 @@
 
             </Grid>
 
-            <Grid x:Name="BusyOverlay" Background="#80000000" Visibility="Collapsed" Grid.RowSpan="2" Canvas.ZIndex="10">
+            <!-- Bottom status bar -->
+            <Border x:Name="BottomStatusBar" Grid.Row="2" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}">
+                <Grid Margin="8,2,8,2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" Grid.Column="1" Spacing="12" VerticalAlignment="Center">
+                        <TextBlock x:Name="VersionText" Opacity="0.7" />
+                        <TextBlock x:Name="LoaderInfo" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid x:Name="BusyOverlay" Background="#80000000" Visibility="Collapsed" Grid.RowSpan="3" Canvas.ZIndex="10">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
                     <controls:ProgressRing IsActive="True" Width="48" Height="48"/>
                     <TextBlock x:Name="BusyText" Text="Working..."/>
