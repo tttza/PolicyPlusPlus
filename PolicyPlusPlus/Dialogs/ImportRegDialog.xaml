@@ -14,6 +14,7 @@
             <TextBox x:Name="RegPath" Width="360" PlaceholderText="Select a .reg file..." IsReadOnly="True"/>
             <Button Content="Browse..." Click="Browse_Click"/>
         </StackPanel>
+        <ToggleSwitch x:Name="OnlyPoliciesSwitch" Header="Keep only policy-related keys (recommended)" IsOn="True" />
         <TextBox x:Name="PreviewBox"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"

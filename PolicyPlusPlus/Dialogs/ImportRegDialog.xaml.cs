@@ -7,16 +7,23 @@ using PolicyPlusCore.Utilities;
 using System;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
+using PolicyPlusPlus.Services;
 
 namespace PolicyPlusPlus.Dialogs
 {
     public sealed partial class ImportRegDialog : ContentDialog
     {
         public RegFile? ParsedReg { get; private set; }
+        private RegFile? _originalReg; // Unmodified source snapshot
+
         public ImportRegDialog()
         {
             InitializeComponent();
             this.PrimaryButtonClick += ImportRegDialog_PrimaryButtonClick;
+            if (OnlyPoliciesSwitch != null)
+            {
+                OnlyPoliciesSwitch.Toggled += (_, __) => { RebuildParsedFromOriginal(); RefreshPreview(); };
+            }
         }
 
         private async void Browse_Click(object sender, RoutedEventArgs e)
@@ -39,6 +46,11 @@ namespace PolicyPlusPlus.Dialogs
                 if (!TryLoad(RegPath.Text))
                 { args.Cancel = true; return; }
             }
+            else
+            {
+                // Ensure latest toggle state is reflected (rebuild just before Apply)
+                RebuildParsedFromOriginal();
+            }
         }
 
         private bool TryLoad(string? path)
@@ -46,14 +58,45 @@ namespace PolicyPlusPlus.Dialogs
             if (string.IsNullOrWhiteSpace(path)) return false;
             try
             {
-                ParsedReg = RegFile.Load(path, "");
-                PreviewBox.Text = RegPreviewBuilder.BuildPreview(ParsedReg, maxPerHive: 500);
+                _originalReg = RegFile.Load(path, "");
+                RebuildParsedFromOriginal();
+                RefreshPreview();
                 return true;
             }
             catch
             {
-                ParsedReg = null; PreviewBox.Text = string.Empty; return false;
+                _originalReg = null; ParsedReg = null; PreviewBox.Text = string.Empty; return false;
             }
+        }
+
+        private void RebuildParsedFromOriginal()
+        {
+            if (_originalReg == null)
+            {
+                ParsedReg = null; return;
+            }
+            try
+            {
+                ParsedReg = RegImportHelper.Clone(_originalReg);
+                if (OnlyPoliciesSwitch != null && OnlyPoliciesSwitch.IsOn)
+                {
+                    RegImportHelper.FilterToPolicyKeysInPlace(ParsedReg);
+                }
+            }
+            catch
+            {
+                ParsedReg = null;
+            }
+        }
+
+        private void RefreshPreview()
+        {
+            if (ParsedReg == null) { PreviewBox.Text = string.Empty; return; }
+            try
+            {
+                PreviewBox.Text = RegPreviewBuilder.BuildPreview(ParsedReg, maxPerHive: 500);
+            }
+            catch { PreviewBox.Text = string.Empty; }
         }
     }
 }
