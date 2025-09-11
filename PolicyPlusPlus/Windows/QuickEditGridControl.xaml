@@ -90,7 +90,7 @@
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="vm:OptionElementVM">
-                                                    <StackPanel Orientation="Vertical" Spacing="2" ToolTipService.ToolTip="{x:Bind Id}">
+                                                    <StackPanel Orientation="Vertical" Spacing="2" ToolTipService.ToolTip="{x:Bind Id}" HorizontalAlignment="Left">
                                                         <ComboBox Width="210" MinWidth="120" Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{x:Bind UserEnumIndex, Mode=TwoWay}" ItemsSource="{x:Bind Choices}" />
                                                         <CheckBox Visibility="{x:Bind IsBoolean, Converter={StaticResource BoolToVisibility}}" IsChecked="{x:Bind UserBool, Mode=TwoWay}" Padding="4,0" />
                                                         <TextBox x:Name="UserPlainText" MinWidth="150" Width="210" Visibility="{x:Bind IsPlainText, Converter={StaticResource BoolToVisibility}}" Text="{x:Bind UserText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="{x:Bind TextMaxLength}" />
