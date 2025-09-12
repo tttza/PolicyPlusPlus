@@ -114,12 +114,14 @@ namespace PolicyPlusPlus
         {
             _suppressSearchOptionEvents = true;
             this.InitializeComponent();
+            try { PolicySourceManager.Instance.SourcesChanged += (_, __) => { _compSource = PolicySourceManager.Instance.CompSource; _userSource = PolicySourceManager.Instance.UserSource; RefreshVisibleRows(); ShowActiveSourceInfo(); }; } catch { }
             HookPendingQueue();
             TryInitCustomTitleBar();
             RootGrid.Loaded += (s, e) =>
             {
                 try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
                 InitUpdateMenuVisibility();
+                try { LoadCustomPolSettings(); } catch { }
             };
             try { BookmarkService.Instance.ActiveListChanged += BookmarkService_ActiveListChanged; } catch { }
             try { Closed += (s, e) => { try { BookmarkService.Instance.ActiveListChanged -= BookmarkService_ActiveListChanged; } catch { } }; } catch { }
@@ -688,20 +690,27 @@ namespace PolicyPlusPlus
 
         private void EnsureLocalSources()
         {
+            // Do not override custom/ temp sources managed by PolicySourceManager
+            var mode = PolicySourceManager.Instance.Mode;
+            if (mode == PolicySourceManager.PolicySourceMode.CustomPol || mode == PolicySourceManager.PolicySourceMode.TempPol)
+            {
+                _compSource = PolicySourceManager.Instance.CompSource;
+                _userSource = PolicySourceManager.Instance.UserSource;
+                return;
+            }
             if (_loader is null || _userSource is null || _compSource is null)
             {
                 _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
                 _compSource = _loader.OpenSource();
                 _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-                if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
+                var li = GetLoaderInfo(); if (li != null) li.Text = _loader.GetDisplayInfo();
             }
             else
             {
-                // Force switch to Local GPO
                 _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
                 _compSource = _loader.OpenSource();
                 _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-                if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
+                var li2 = GetLoaderInfo(); if (li2 != null) li2.Text = _loader.GetDisplayInfo();
             }
         }
 
@@ -732,13 +741,20 @@ namespace PolicyPlusPlus
                 EnsureLocalSources();
                 return;
             }
+            // If custom mode currently active, do not switch
+            if (PolicySourceManager.Instance.Mode == PolicySourceManager.PolicySourceMode.CustomPol)
+            {
+                _compSource = PolicySourceManager.Instance.CompSource;
+                _userSource = PolicySourceManager.Instance.UserSource;
+                return;
+            }
             EnsureTempPolPaths();
             var compLoader = new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolCompPath ?? string.Empty, false);
             var userLoader = new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolUserPath ?? string.Empty, true);
             _compSource = compLoader.OpenSource();
             _userSource = userLoader.OpenSource();
             _loader = compLoader;
-            if (LoaderInfo != null) LoaderInfo.Text = "Temp POL (Comp/User)";
+            var li3 = GetLoaderInfo(); if (li3 != null) li3.Text = "Temp POL (Comp/User)";
         }
 
         private void PolicyList_RightTapped(object sender, RightTappedRoutedEventArgs e)
@@ -798,13 +814,18 @@ namespace PolicyPlusPlus
             _useTempPol = ChkUseTempPol?.IsChecked == true;
             if (_useTempPol)
             {
-                EnsureTempPolPaths();
+                PolicySourceManager.Instance.SwitchToTempPol();
+                _compSource = PolicySourceManager.Instance.CompSource;
+                _userSource = PolicySourceManager.Instance.UserSource;
             }
-            EnsureLocalSourcesUsingTemp();
-            if (_useTempPol)
-                ShowInfo($"Using temp .pol (Comp: {_tempPolCompPath}, User: {_tempPolUserPath})");
             else
-                ShowInfo("Using Local GPO");
+            {
+                PolicySourceManager.Instance.EnsureLocalGpo();
+                _compSource = PolicySourceManager.Instance.CompSource;
+                _userSource = PolicySourceManager.Instance.UserSource;
+            }
+            ShowActiveSourceInfo();
+            RefreshVisibleRows();
         }
 
         private void UpdateClearCategoryFilterButtonState()
@@ -1013,13 +1034,12 @@ namespace PolicyPlusPlus
         {
             try
             {
-                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-                _compSource = _loader.OpenSource();
-                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-                if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
+                PolicySourceManager.Instance.Refresh();
+                _compSource = PolicySourceManager.Instance.CompSource;
+                _userSource = PolicySourceManager.Instance.UserSource;
             }
             catch { }
-           try { PolicySourcesRefreshed?.Invoke(this, EventArgs.Empty); } catch { }
+            try { PolicySourcesRefreshed?.Invoke(this, EventArgs.Empty); } catch { }
         }
 
         private void RefreshList()
@@ -1220,11 +1240,12 @@ namespace PolicyPlusPlus
 
         private void BtnLoadLocalGpo_Click(object sender, RoutedEventArgs e)
         {
-            _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-            _compSource = _loader.OpenSource();
-            _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-            if (LoaderInfo != null) LoaderInfo.Text = _loader.GetDisplayInfo();
-            ShowInfo("Local GPO sources initialized.");
+            PolicySourceManager.Instance.EnsureLocalGpo();
+            _compSource = PolicySourceManager.Instance.CompSource;
+            _userSource = PolicySourceManager.Instance.UserSource;
+            var li4 = GetLoaderInfo(); if (li4 != null) li4.Text = "Local GPO";
+            ShowActiveSourceInfo();
+            RefreshVisibleRows();
         }
 
         private async void AboutMenu_Click(object sender, RoutedEventArgs e)
@@ -1268,6 +1289,23 @@ namespace PolicyPlusPlus
                 var win = new PendingChangesWindow();
                 win.Activate();
                 try { WindowHelpers.BringToFront(win); } catch { }
+            }
+            catch { }
+        }
+
+        private void ShowActiveSourceInfo()
+        {
+            try
+            {
+                var mgr = PolicySourceManager.Instance;
+                string msg = mgr.Mode switch
+                {
+                    PolicySourceManager.PolicySourceMode.CustomPol => $"Custom POL (Comp: {Path.GetFileName(mgr.CustomCompPath ?? "-")}, User: {Path.GetFileName(mgr.CustomUserPath ?? "-")})",
+                    PolicySourceManager.PolicySourceMode.TempPol => "Temp POL",
+                    _ => "Local GPO"
+                };
+                ShowInfo(msg, InfoBarSeverity.Informational);
+                try { if (RootGrid != null) { if (RootGrid.FindName("SourceStatusText") is TextBlock t) t.Text = msg; } } catch { }
             }
             catch { }
         }

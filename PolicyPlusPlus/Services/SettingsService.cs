@@ -9,7 +9,7 @@ using PolicyPlusPlus.Serialization;
 
 namespace PolicyPlusPlus.Services
 {
-    public sealed class SettingsService
+    public sealed partial class SettingsService
     {
         public static SettingsService Instance { get; } = new SettingsService();
 
@@ -342,9 +342,19 @@ namespace PolicyPlusPlus.Services
             s.BookmarksOnly = bookmarksOnly;
             SaveSettings(s);
         }
+
+        public void UpdateCustomPolSettings(bool enableComp, bool enableUser, string? compPath, string? userPath)
+        {
+            var s = LoadSettings();
+            s.CustomPolEnableComputer = enableComp;
+            s.CustomPolEnableUser = enableUser;
+            s.CustomPolCompPath = compPath;
+            s.CustomPolUserPath = userPath;
+            SaveSettings(s);
+        }
     }
 
-    public class AppSettings
+    public partial class AppSettings
     {
         public string? Theme { get; set; }
         public string? UIScale { get; set; }
@@ -365,6 +375,10 @@ namespace PolicyPlusPlus.Services
         public bool? LimitUnfilteredTo1000 { get; set; }
         public bool? ConfiguredOnly { get; set; }
         public bool? BookmarksOnly { get; set; }
+        public bool? CustomPolEnableComputer { get; set; }
+        public bool? CustomPolEnableUser { get; set; }
+        public string? CustomPolCompPath { get; set; }
+        public string? CustomPolUserPath { get; set; }
     }
 
     public class ColumnsOptions

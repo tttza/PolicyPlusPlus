@@ -80,6 +80,12 @@
                             <MenuFlyoutItem Text="Load Local GPO (Computer)" Click="BtnLoadLocalGpo_Click" />
                             <MenuFlyoutItem Text="Load ADMX Folder..." Click="BtnLoadAdmxFolder_Click" />
                             <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem Text="Custom .pol settings..." Click="BtnCustomPolSettings_Click" />
+                            <MenuFlyoutItem Text="Select custom .pol (Both)..." Click="BtnLoadCustomPol_Click" Visibility="Collapsed" />
+                            <MenuFlyoutItem Text="Select computer .pol..." Click="BtnPickCustomCompPol_Click" Visibility="Collapsed" />
+                            <MenuFlyoutItem Text="Select user .pol..." Click="BtnPickCustomUserPol_Click" Visibility="Collapsed" />
+                            <ToggleMenuFlyoutItem x:Name="ToggleUseCustomPolMenu" Text="Use custom .pol" IsChecked="False" Click="ToggleUseCustomPolMenu_Click" />
+                            <MenuFlyoutSeparator/>
                             <MenuFlyoutItem Text="Save" Click="BtnSave_Click" />
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Import/Export">
@@ -401,13 +407,12 @@
             <Border x:Name="BottomStatusBar" Grid.Row="2" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" BorderThickness="0,1,0,0" BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}">
                 <Grid Margin="8,2,8,2">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Orientation="Horizontal" Grid.Column="1" Spacing="12" VerticalAlignment="Center">
-                        <TextBlock x:Name="VersionText" Opacity="0.7" />
-                        <TextBlock x:Name="LoaderInfo" VerticalAlignment="Center"/>
-                    </StackPanel>
+                    <TextBlock x:Name="SourceStatusText" Grid.Column="0" Opacity="0.85" VerticalAlignment="Center" />
+                    <TextBlock x:Name="VersionText" Grid.Column="2" Opacity="0.7" VerticalAlignment="Center" />
                 </Grid>
             </Border>
 

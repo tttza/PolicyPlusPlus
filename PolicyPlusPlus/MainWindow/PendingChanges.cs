@@ -14,17 +14,9 @@ namespace PolicyPlusPlus
         {
             if (items == null || items.Length == 0) { Log.Debug("MainSave", "No pending items"); return (true, null); }
             if (_bundle == null) { Log.Error("MainSave", "Bundle not loaded"); return (false, "No ADMX bundle loaded"); }
-
-            var corr = Log.NewCorrelationId();
-            Log.Info("MainSave", $"{corr} start count={items.Length}");
-            var (ok, error, _, _) = await Services.SaveChangesCoordinator.SaveAsync(
-                _bundle,
-                items,
-                new ElevationServiceAdapter(),
-                TimeSpan.FromSeconds(8),
-                triggerRefresh: true);
-            if (ok) Log.Info("MainSave", $"{corr} success"); else Log.Error("MainSave", $"{corr} failed error={error}");
-            return (ok, error);
+            var mgr = PolicySourceManager.Instance;
+            (bool ok, string? err) result = await mgr.ApplyPendingAsync(_bundle, items, new ElevationServiceAdapter());
+            return (result.ok, result.err);
         }
 
         private async void BtnSave_Click(object sender, RoutedEventArgs e)
@@ -40,7 +32,10 @@ namespace PolicyPlusPlus
                     if (ok)
                     {
                         PendingChangesService.Instance.Applied(pending);
-                        RefreshLocalSources();
+                        PolicySourceManager.Instance.Refresh();
+                        _compSource = PolicySourceManager.Instance.CompSource; // sync caches after refresh
+                        _userSource = PolicySourceManager.Instance.UserSource;
+                        RefreshVisibleRows();
                         UpdateUnsavedIndicator();
                         ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
                         ShowInfo("Saved.", Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success);

@@ -267,14 +267,14 @@ namespace PolicyPlusPlus.Windows
             _isSaving = true; SetStatus("Saving..."); SetSaving(true); if (_saveButton != null) _saveButton.IsEnabled = false;
             try
             {
-                var (ok, error, _, _) = await SaveChangesCoordinator.SaveAsync(_bundle, relevant, _elevation, System.TimeSpan.FromSeconds(8), triggerRefresh: true);
+                var mgr = PolicySourceManager.Instance;
+                var (ok, error) = await mgr.ApplyPendingAsync(_bundle, relevant.ToArray(), new ElevationServiceAdapter());
                 if (ok)
                 {
                     PendingChangesService.Instance.Applied(relevant.ToArray());
                     try { SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList()); } catch { }
                     SetStatus(relevant.Count == 1 ? "Saved 1 change." : $"Saved {relevant.Count} changes.");
-                    // Force main window to reload sources which will raise PolicySourcesRefreshed and update our rows
-                    try { (App.Window as MainWindow)?.RefreshLocalSources(); } catch { }
+                    try { mgr.Refresh(); } catch { }
                 }
                 else SetStatus(string.IsNullOrEmpty(error) ? "Save failed." : $"Save failed: {error}");
             }

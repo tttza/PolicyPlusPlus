@@ -322,33 +322,21 @@ namespace PolicyPlusPlus.Windows
                 if (App.Window is not MainWindow main) return;
                 var bundle = main.Bundle;
                 if (bundle == null) { return; }
-
                 var appliedList = items.ToList();
-
-                var (ok, error, _, _) = await SaveChangesCoordinator.SaveAsync(bundle, appliedList, _elevation, TimeSpan.FromSeconds(8), triggerRefresh: true);
-
+                var mgr = PolicySourceManager.Instance;
+                var (ok, error) = await mgr.ApplyPendingAsync(bundle, appliedList.ToArray(), new ElevationServiceAdapter());
                 if (ok)
                 {
                     PendingChangesService.Instance.Applied(appliedList.ToArray());
-                    try
-                    {
-                        SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList());
-                    }
-                    catch { }
-                    try { main?.RefreshLocalSources(); } catch { }
+                    try { SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList()); } catch { }
+                    try { mgr.Refresh(); } catch { }
                     RefreshViews();
                     ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
                     NotifyApplied(appliedList.Count);
                 }
-                else
-                {
-                    if (!string.IsNullOrEmpty(error)) ShowLocalInfo("Save failed: " + error);
-                }
+                else if (!string.IsNullOrEmpty(error)) ShowLocalInfo("Save failed: " + error);
             }
-            finally
-            {
-                SetSaving(false);
-            }
+            finally { SetSaving(false); }
         }
 
         private void NotifyApplied(int count)
@@ -377,36 +365,25 @@ namespace PolicyPlusPlus.Windows
             if (App.Window is not MainWindow main) return;
             var bundle = main.Bundle;
             if (bundle == null || !bundle.Policies.TryGetValue(h.PolicyId, out var pol)) return;
-
-            // Normalize option value types (they may be JsonElement after JSON round-trip)
             var normalizedOptions = NormalizeOptions(h.Options);
-
-            // Build a synthetic pending change and run through normal save pipeline so disk + registry actually updated
             var pending = new PendingChange
             {
                 PolicyId = h.PolicyId,
                 PolicyName = h.PolicyName,
                 Scope = h.Scope,
                 DesiredState = h.DesiredState,
-                Action = h.DesiredState switch
-                {
-                    PolicyState.Enabled => "Enable",
-                    PolicyState.Disabled => "Disable",
-                    _ => "Clear"
-                },
+                Action = h.DesiredState switch { PolicyState.Enabled => "Enable", PolicyState.Disabled => "Disable", _ => "Clear" },
                 Options = normalizedOptions,
                 Details = h.Details,
                 DetailsFull = h.DetailsFull
             };
-
             SetSaving(true);
             try
             {
-                var list = new List<PendingChange> { pending };
-                var (ok, error, _, _) = await SaveChangesCoordinator.SaveAsync(bundle, list, _elevation, TimeSpan.FromSeconds(8), triggerRefresh: true);
+                var mgr = PolicySourceManager.Instance;
+                var (ok, error) = await mgr.ApplyPendingAsync(bundle, new[] { pending }, new ElevationServiceAdapter());
                 if (ok)
                 {
-                    // Record history entry (do not add to Pending collection first)
                     PendingChangesService.Instance.History.Add(new HistoryRecord
                     {
                         PolicyId = h.PolicyId,
@@ -421,20 +398,14 @@ namespace PolicyPlusPlus.Windows
                         Options = normalizedOptions
                     });
                     try { SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList()); } catch { }
-                    try { main?.RefreshLocalSources(); } catch { }
+                    try { mgr.Refresh(); } catch { }
                     RefreshViews();
                     ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
                     ShowLocalInfo("Reapplied.");
                 }
-                else
-                {
-                    ShowLocalInfo(string.IsNullOrEmpty(error) ? "Reapply failed." : "Reapply failed: " + error);
-                }
+                else ShowLocalInfo(string.IsNullOrEmpty(error) ? "Reapply failed." : "Reapply failed: " + error);
             }
-            finally
-            {
-                SetSaving(false);
-            }
+            finally { SetSaving(false); }
         }
 
         // Legacy sync wrapper kept for minimal impact (unused internally now)
