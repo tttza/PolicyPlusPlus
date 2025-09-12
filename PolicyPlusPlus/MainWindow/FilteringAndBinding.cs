@@ -1,20 +1,20 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
+using PolicyPlusCore.Core; // SearchText
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Utilities;
+using PolicyPlusPlus.Dialogs; // FindByRegistryWinUI
+using PolicyPlusPlus.Filtering; // FilterDecisionEngine
+using PolicyPlusPlus.Logging; // logging
+using PolicyPlusPlus.Models;
+using PolicyPlusPlus.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Windows.System;
-using PolicyPlusPlus.Models;
-using PolicyPlusPlus.Services;
-using PolicyPlusPlus.Dialogs; // FindByRegistryWinUI
-using PolicyPlusCore.Utilities;
-using PolicyPlusCore.IO;
-using PolicyPlusCore.Core; // SearchText
 using System.Threading;
-using PolicyPlusPlus.Filtering; // FilterDecisionEngine
-using PolicyPlusPlus.Logging; // logging
+using Windows.System;
 
 namespace PolicyPlusPlus
 {
@@ -306,10 +306,13 @@ namespace PolicyPlusPlus
                 primary = _sortColumn switch
                 {
                     nameof(PolicyListRow.DisplayName) => p => p.DisplayName ?? string.Empty,
-                    nameof(PolicyListRow.ShortId) => p => { var id = p.UniqueID ?? string.Empty; int i = id.LastIndexOf(':'); return i >= 0 && i + 1 < id.Length ? id[(i + 1)..] : id; },
+                    nameof(PolicyListRow.ShortId) => p => { var id = p.UniqueID ?? string.Empty; int i = id.LastIndexOf(':'); return i >= 0 && i + 1 < id.Length ? id[(i + 1)..] : id; }
+                    ,
                     nameof(PolicyListRow.CategoryName) => p => p.Category?.DisplayName ?? string.Empty,
-                    nameof(PolicyListRow.TopCategoryName) => p => { var c = p.Category; while (c?.Parent != null) c = c.Parent; return c?.DisplayName ?? string.Empty; },
-                    nameof(PolicyListRow.CategoryFullPath) => p => { var parts = new List<string>(); var c = p.Category; while (c != null) { parts.Add(c.DisplayName ?? string.Empty); c = c.Parent; } parts.Reverse(); return string.Join(" / ", parts); },
+                    nameof(PolicyListRow.TopCategoryName) => p => { var c = p.Category; while (c?.Parent != null) c = c.Parent; return c?.DisplayName ?? string.Empty; }
+                    ,
+                    nameof(PolicyListRow.CategoryFullPath) => p => { var parts = new List<string>(); var c = p.Category; while (c != null) { parts.Add(c.DisplayName ?? string.Empty); c = c.Parent; } parts.Reverse(); return string.Join(" / ", parts); }
+                    ,
                     nameof(PolicyListRow.AppliesText) => p => p.RawPolicy.Section switch { AdmxPolicySection.Machine => 1, AdmxPolicySection.User => 2, _ => 0 },
                     nameof(PolicyListRow.SupportedText) => p => p.SupportedOn?.DisplayName ?? string.Empty,
                     _ => null
@@ -363,7 +366,8 @@ namespace PolicyPlusPlus
         private void SetExplanationText(string text)
         {
             if (DetailExplain == null) return; DetailExplain.Blocks.Clear(); var para = new Paragraph(); if (string.IsNullOrEmpty(text)) { DetailExplain.Blocks.Add(para); return; }
-            int lastIndex = 0; foreach (Match m in UrlRegex.Matches(text)) { if (IsInsideDoubleQuotes(text, m.Index)) continue; if (m.Index > lastIndex) para.Inlines.Add(new Run { Text = text[lastIndex..m.Index] }); string url = m.Value; var link = new Hyperlink(); link.Inlines.Add(new Run { Text = url }); link.Click += async (s, e) => { if (Uri.TryCreate(url, UriKind.Absolute, out var uri)) { try { await Launcher.LaunchUriAsync(uri); } catch { } } }; para.Inlines.Add(link); lastIndex = m.Index + m.Length; } if (lastIndex < text.Length) para.Inlines.Add(new Run { Text = text[lastIndex..] }); DetailExplain.Blocks.Add(para);
+            int lastIndex = 0; foreach (Match m in UrlRegex.Matches(text)) { if (IsInsideDoubleQuotes(text, m.Index)) continue; if (m.Index > lastIndex) para.Inlines.Add(new Run { Text = text[lastIndex..m.Index] }); string url = m.Value; var link = new Hyperlink(); link.Inlines.Add(new Run { Text = url }); link.Click += async (s, e) => { if (Uri.TryCreate(url, UriKind.Absolute, out var uri)) { try { await Launcher.LaunchUriAsync(uri); } catch { } } }; para.Inlines.Add(link); lastIndex = m.Index + m.Length; }
+            if (lastIndex < text.Length) para.Inlines.Add(new Run { Text = text[lastIndex..] }); DetailExplain.Blocks.Add(para);
         }
 
         private void RunAsyncSearchAndBind(string q)

@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using Microsoft.Win32;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace PolicyPlusPlus.Services

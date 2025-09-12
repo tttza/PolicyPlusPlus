@@ -1,5 +1,5 @@
-using System;
 using PolicyPlusPlus.Converters;
+using System;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
@@ -75,7 +75,7 @@ namespace PolicyPlusModTests.WinUI3
         public void BoolPairToGlyph_ConvertBack_NotSupported()
         {
             var conv = new BoolPairToGlyphConverter();
-            Assert.Throws<NotSupportedException>(() => { var _ = conv.ConvertBack("", typeof(ValueTuple<bool,bool>), null!, ""); });
+            Assert.Throws<NotSupportedException>(() => { var _ = conv.ConvertBack("", typeof(ValueTuple<bool, bool>), null!, ""); });
         }
     }
 }

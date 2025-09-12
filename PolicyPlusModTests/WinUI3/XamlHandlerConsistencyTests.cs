@@ -72,7 +72,7 @@ namespace PolicyPlusModTests.WinUI3
 
                 if (handlerNames.Count == 0) continue;
 
-                var methods = new HashSet<string>(type.GetMethods(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic)
+                var methods = new HashSet<string>(type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                                                        .Select(m => m.Name), StringComparer.Ordinal);
 
                 foreach (var h in handlerNames)

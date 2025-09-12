@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Globalization;
-using PolicyPlusCore.IO;
 using PolicyPlusCore.Admx;
-using System.Diagnostics; // for Debug logging (lightweight)
+using PolicyPlusCore.IO;
+using System.Globalization;
 
 namespace PolicyPlusCore.Core
 {
@@ -111,7 +107,8 @@ namespace PolicyPlusCore.Core
                         EvidenceVar += 1m;
                 }
                 catch (Exception ex) { LogError("PolicyProcessing", $"checkOneVal failed key={Key} val={ValueName}", ex); }
-            };
+            }
+            ;
             void checkValList(PolicyRegistrySingleList? ValList, string DefaultKey, ref decimal EvidenceVar)
             {
                 if (ValList is null) return;
@@ -125,7 +122,8 @@ namespace PolicyPlusCore.Core
                     }
                 }
                 catch (Exception ex) { LogError("PolicyProcessing", "checkValList failed", ex); }
-            };
+            }
+            ;
             if (!string.IsNullOrEmpty(rawpol.RegistryValue))
             {
                 if (rawpol.AffectedValues.OnValue is null)
@@ -516,7 +514,8 @@ namespace PolicyPlusCore.Core
                 var rkvp = new RegistryKeyValuePair() { Key = Key, Value = Value };
                 if (!entries.Contains(rkvp))
                     entries.Add(rkvp);
-            };
+            }
+            ;
             var rawpol = Policy.RawPolicy;
             if (rawpol == null)
                 return entries;
@@ -533,7 +532,8 @@ namespace PolicyPlusCore.Core
                     string entryKey = string.IsNullOrEmpty(e.RegistryKey) ? listKey : e.RegistryKey;
                     addReg(entryKey, e.RegistryValue);
                 }
-            };
+            }
+            ;
             if (rawpol.AffectedValues != null)
             {
                 addSingleList(rawpol.AffectedValues.OnValueList, "");
@@ -618,7 +618,8 @@ namespace PolicyPlusCore.Core
                         PolicySource.SetValue(Key, ValueName, Value.StringValue, Microsoft.Win32.RegistryValueKind.String);
                         break;
                 }
-            };
+            }
+            ;
             void setSingleList(PolicyRegistrySingleList? SingleList, string DefaultKey)
             {
                 if (SingleList is null)
@@ -629,7 +630,8 @@ namespace PolicyPlusCore.Core
                     string itemKey = string.IsNullOrEmpty(e.RegistryKey) ? listKey : e.RegistryKey;
                     setValue(itemKey, e.RegistryValue, e.Value);
                 }
-            };
+            }
+            ;
             void setList(PolicyRegistryList List, string DefaultKey, string DefaultValue, bool IsOn)
             {
                 if (List is null)
@@ -644,7 +646,8 @@ namespace PolicyPlusCore.Core
                     setValue(DefaultKey, DefaultValue, List.OffValue);
                     setSingleList(List.OffValueList, DefaultKey);
                 }
-            };
+            }
+            ;
             var rawpol = Policy.RawPolicy;
             switch (State)
             {
@@ -857,7 +860,8 @@ namespace PolicyPlusCore.Core
                 }
 
                 return false;
-            };
+            }
+            ;
             var entriesSeen = new List<PolicyPlusSupport>();
 
             bool supDefMet(PolicyPlusSupport Support)

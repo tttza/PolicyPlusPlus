@@ -1,24 +1,22 @@
 using Microsoft.UI.Text;
-using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Documents;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
+using PolicyPlusPlus.Logging; // logging
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Utils;
+using PolicyPlusPlus.ViewModels; // added for QuickEditRow
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using WinRT.Interop;
-using PolicyPlusPlus.Utils;
-using PolicyPlusPlus.Services;
-using Microsoft.UI.Xaml.Input;
-using PolicyPlusCore.IO;
-using PolicyPlusCore.Core;
-using PolicyPlusCore.Admx;
-using PolicyPlusPlus.ViewModels; // added for QuickEditRow
-using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus.Windows
 {
@@ -248,9 +246,9 @@ namespace PolicyPlusPlus.Windows
         private void Accel_Preview(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
         { try { ViewDetailApplyBtn_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
         private void Accel_SectionComp(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { if (SectionSelector!=null) SectionSelector.SelectedIndex = 0; } catch { } args.Handled = true; }
+        { try { if (SectionSelector != null) SectionSelector.SelectedIndex = 0; } catch { } args.Handled = true; }
         private void Accel_SectionUser(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { if (SectionSelector!=null) SectionSelector.SelectedIndex = 1; } catch { } args.Handled = true; }
+        { try { if (SectionSelector != null) SectionSelector.SelectedIndex = 1; } catch { } args.Handled = true; }
         private void Accel_Close(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
         { try { Close(); } catch { } args.Handled = true; }
 

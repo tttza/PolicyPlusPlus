@@ -1,9 +1,9 @@
+using PolicyPlusModTests.TestHelpers;
+using PolicyPlusPlus.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using PolicyPlusPlus.Services;
-using PolicyPlusModTests.TestHelpers;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
@@ -24,7 +24,7 @@ namespace PolicyPlusModTests.WinUI3
         private static (PolicyPlusPolicy policy, Dictionary<string, object> opts) BuildMultiTextCase()
         {
             var pol = TestPolicyFactory.CreateMultiTextPolicy("MACHINE:NormMultiText");
-            var opts = new Dictionary<string, object> { { "MultiTextElem", new [] { "L1","L2" } } };
+            var opts = new Dictionary<string, object> { { "MultiTextElem", new[] { "L1", "L2" } } };
             return (pol, opts);
         }
 
@@ -76,7 +76,7 @@ namespace PolicyPlusModTests.WinUI3
         public void Options_Normalize_From_Json(string kind)
         {
             PolicyPlusPolicy pol; Dictionary<string, object> opts;
-            switch(kind)
+            switch (kind)
             {
                 case "NamedList": (pol, opts) = BuildNamedListCase(); break;
                 case "MultiText": (pol, opts) = BuildMultiTextCase(); break;
@@ -90,15 +90,15 @@ namespace PolicyPlusModTests.WinUI3
             var windowType = typeof(PolicyPlusPlus.Windows.PendingChangesWindow);
             var mi = windowType.GetMethod("NormalizeOptions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             Assert.NotNull(mi);
-            var normalized = (Dictionary<string,object>?)mi!.Invoke(null, new object?[]{ roundTripped.Options });
+            var normalized = (Dictionary<string, object>?)mi!.Invoke(null, new object?[] { roundTripped.Options });
             Assert.NotNull(normalized);
-            foreach(var kv in opts)
+            foreach (var kv in opts)
             {
                 Assert.True(normalized!.ContainsKey(kv.Key));
                 var value = normalized[kv.Key];
-                if (kv.Value is IEnumerable<KeyValuePair<string,string>> kvps)
+                if (kv.Value is IEnumerable<KeyValuePair<string, string>> kvps)
                 {
-                    var list = (value as IEnumerable<KeyValuePair<string,string>>)?.ToList();
+                    var list = (value as IEnumerable<KeyValuePair<string, string>>)?.ToList();
                     Assert.NotNull(list);
                     Assert.Equal(kvps.Count(), list!.Count);
                 }

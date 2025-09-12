@@ -1,9 +1,4 @@
 using Microsoft.Win32;
-
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using PolicyPlusCore.Utils;
 
 namespace PolicyPlusCore.IO
@@ -11,7 +6,7 @@ namespace PolicyPlusCore.IO
     public interface IPolicySource
     {
         bool ContainsValue(string Key, string Value);
-    object? GetValue(string Key, string Value);
+        object? GetValue(string Key, string Value);
         bool WillDeleteValue(string Key, string Value);
         List<string> GetValueNames(string Key);
         void SetValue(string Key, string Value, object Data, RegistryValueKind DataType);
@@ -63,7 +58,8 @@ namespace PolicyPlusCore.IO
                 }
                 while (true);
                 return sb.ToString();
-            };
+            }
+            ;
             while (Stream.BaseStream.Position != Stream.BaseStream.Length)
             {
                 var ped = new PolEntryData();
@@ -103,7 +99,8 @@ namespace PolicyPlusCore.IO
                 foreach (var c in Text)
                     Writer.Write(c);
                 Writer.Write((short)0);
-            };
+            }
+            ;
             Writer.Write(0x67655250U);
             Writer.Write(1);
             foreach (var kv in Entries)
@@ -143,7 +140,7 @@ namespace PolicyPlusCore.IO
                 Entries.Remove(deleterKey);
         }
 
-    public void SetValue(string Key, string Value, object Data, RegistryValueKind DataType)
+        public void SetValue(string Key, string Value, object Data, RegistryValueKind DataType)
         {
             string dictKey = GetDictKey(Key, Value);
             if (Entries.ContainsKey(dictKey))
@@ -154,8 +151,8 @@ namespace PolicyPlusCore.IO
                     Entries.Add(dictKey, PolEntryData.FromMultiString(arr));
                 else if (Data is IEnumerable<string> lines)
                     Entries.Add(dictKey, PolEntryData.FromMultiString(lines.ToArray()));
-        else if (Data != null)
-            Entries.Add(dictKey, PolEntryData.FromMultiString(new[] { Data?.ToString() ?? string.Empty }));
+                else if (Data != null)
+                    Entries.Add(dictKey, PolEntryData.FromMultiString(new[] { Data?.ToString() ?? string.Empty }));
                 else
                     Entries.Add(dictKey, PolEntryData.FromMultiString(Array.Empty<string>()));
                 return;
@@ -170,7 +167,7 @@ namespace PolicyPlusCore.IO
             return Entries.ContainsKey(GetDictKey(Key, Value));
         }
 
-    public object? GetValue(string Key, string Value)
+        public object? GetValue(string Key, string Value)
         {
             if (!ContainsValue(Key, Value))
                 return null;
@@ -180,7 +177,7 @@ namespace PolicyPlusCore.IO
             return entry.AsArbitrary();
         }
 
-    public bool WillDeleteValue(string Key, string Value)
+        public bool WillDeleteValue(string Key, string Value)
         {
             bool willDelete = false;
             string keyRoot = GetDictKey(Key, "");
@@ -190,7 +187,7 @@ namespace PolicyPlusCore.IO
                 {
                     willDelete = true;
                 }
-        else if ((kv.Key ?? string.Empty).StartsWith(GetDictKey(Key, "**delvals")))
+                else if ((kv.Key ?? string.Empty).StartsWith(GetDictKey(Key, "**delvals")))
                 {
                     willDelete = true;
                 }
@@ -232,7 +229,7 @@ namespace PolicyPlusCore.IO
             return valNames;
         }
 
-    public void ApplyDifference(PolFile? OldVersion, IPolicySource Target)
+        public void ApplyDifference(PolFile? OldVersion, IPolicySource Target)
         {
             if (OldVersion is null)
                 OldVersion = new PolFile();
@@ -274,7 +271,7 @@ namespace PolicyPlusCore.IO
             }
         }
 
-    public void Apply(IPolicySource Target)
+        public void Apply(IPolicySource Target)
         {
             ApplyDifference(null, Target);
         }

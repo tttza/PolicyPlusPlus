@@ -1,23 +1,17 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Input;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Utils;
+using PolicyPlusPlus.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PolicyPlusPlus.Utils;
-using PolicyPlusPlus.Services;
-using Windows.ApplicationModel.DataTransfer;
-using Windows.Storage.Pickers;
-using WinRT.Interop;
-using System.Collections.Specialized;
-using System.IO;
-using System.Threading.Tasks;
-using PolicyPlusPlus.ViewModels;
-using Microsoft.UI.Xaml.Input;
-using PolicyPlusCore.IO;
-using PolicyPlusCore.Core;
-using PolicyPlusCore.Admx;
 using System.Text.Json; // added for JsonElement handling
+using System.Threading.Tasks;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace PolicyPlusPlus.Windows
 {
@@ -43,7 +37,7 @@ namespace PolicyPlusPlus.Windows
             BtnClose.Click += (s, e) => this.Close();
             BtnApplySelected.Click += BtnApplySelected_Click;
             BtnDiscardSelected.Click += BtnDiscardSelected_Click;
-            BtnClearFilters.Click += (s, e) => { if (SearchBox!=null) SearchBox.Text = string.Empty; if (ScopeFilter!=null) ScopeFilter.SelectedIndex = 0; if (OperationFilter!=null) OperationFilter.SelectedIndex = 0; if (HistoryTimeRange!=null) HistoryTimeRange.SelectedIndex = 0; if (HistoryType!=null) HistoryType.SelectedIndex = 0; if (HistorySearch!=null) HistorySearch.Text = string.Empty; RefreshViews(); };
+            BtnClearFilters.Click += (s, e) => { if (SearchBox != null) SearchBox.Text = string.Empty; if (ScopeFilter != null) ScopeFilter.SelectedIndex = 0; if (OperationFilter != null) OperationFilter.SelectedIndex = 0; if (HistoryTimeRange != null) HistoryTimeRange.SelectedIndex = 0; if (HistoryType != null) HistoryType.SelectedIndex = 0; if (HistorySearch != null) HistorySearch.Text = string.Empty; RefreshViews(); };
 
             if (RootShell != null)
                 RootShell.Loaded += (s, e) => { RefreshViews(); PendingChangesWindow_Loaded(s, e); };

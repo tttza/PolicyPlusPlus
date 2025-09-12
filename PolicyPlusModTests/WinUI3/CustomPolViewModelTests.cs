@@ -1,6 +1,6 @@
-using Xunit;
-using PolicyPlusPlus.ViewModels;
 using PolicyPlusPlus.Services;
+using PolicyPlusPlus.ViewModels;
+using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
 {

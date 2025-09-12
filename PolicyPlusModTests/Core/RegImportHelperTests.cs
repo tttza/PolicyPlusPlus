@@ -1,7 +1,7 @@
-using PolicyPlusPlus.Services;
 using Microsoft.Win32;
-using Xunit;
+using PolicyPlusPlus.Services;
 using System.Linq;
+using Xunit;
 
 namespace PolicyPlusModTests.Core
 {

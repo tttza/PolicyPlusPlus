@@ -1,3 +1,4 @@
+using PolicyPlusPlus.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Xunit;
-using PolicyPlusPlus.Services;
 
 namespace PolicyPlusModTests.WinUI3
 {
@@ -25,7 +25,7 @@ namespace PolicyPlusModTests.WinUI3
         [Fact]
         public void AppSettings_AllPropertiesAreReferencedSomewhere()
         {
-            var props = typeof(AppSettings).GetProperties(BindingFlags.Instance|BindingFlags.Public)
+            var props = typeof(AppSettings).GetProperties(BindingFlags.Instance | BindingFlags.Public)
                                            .Select(p => p.Name)
                                            .ToList();
 
@@ -56,7 +56,7 @@ namespace PolicyPlusModTests.WinUI3
         [Fact]
         public void ColumnsOptions_AllPropertiesAreReferencedSomewhere()
         {
-            var props = typeof(ColumnsOptions).GetProperties(BindingFlags.Instance|BindingFlags.Public)
+            var props = typeof(ColumnsOptions).GetProperties(BindingFlags.Instance | BindingFlags.Public)
                                               .Select(p => p.Name)
                                               .ToList();
             var root = GetSolutionRoot();

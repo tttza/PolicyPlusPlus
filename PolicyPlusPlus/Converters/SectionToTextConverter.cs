@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml.Data;
-using System;
 using PolicyPlusCore.Core;
+using System;
 
 namespace PolicyPlusPlus
 {

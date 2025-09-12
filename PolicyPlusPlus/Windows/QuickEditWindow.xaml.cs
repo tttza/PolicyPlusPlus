@@ -5,19 +5,19 @@ using Microsoft.UI.Xaml.Media;
 using PolicyPlusCore.Admx;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
-using PolicyPlusPlus.ViewModels;
+using PolicyPlusPlus.Logging; // logging
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Utils;
+using PolicyPlusPlus.ViewModels;
+using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Color = Windows.UI.Color;
-using System.Collections.Specialized;
 using Windows.Foundation;
 using Windows.Graphics;
-using System.ComponentModel;
-using System;
-using PolicyPlusPlus.Logging; // logging
+using Color = Windows.UI.Color;
 
 namespace PolicyPlusPlus.Windows
 {

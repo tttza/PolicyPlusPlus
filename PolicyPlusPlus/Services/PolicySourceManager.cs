@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
+using PolicyPlusCore.Admx;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
 using PolicyPlusPlus.Logging;
-using PolicyPlusCore.Admx;
+using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace PolicyPlusPlus.Services
 {
@@ -89,12 +89,15 @@ namespace PolicyPlusPlus.Services
     internal sealed class PolicySourceManager : IPolicySourceManager
     {
         public static IPolicySourceManager Instance { get; } = new PolicySourceManager();
-        private PolicySourceManager() { _strategies = new Dictionary<PolicySourceMode, IPolicySourceStrategy>
+        private PolicySourceManager()
+        {
+            _strategies = new Dictionary<PolicySourceMode, IPolicySourceStrategy>
         {
             { PolicySourceMode.LocalGpo, new LocalGpoStrategy() },
             { PolicySourceMode.TempPol, new TempPolStrategy() },
             { PolicySourceMode.CustomPol, new CustomPolStrategy() }
-        }; }
+        };
+        }
 
         private readonly Dictionary<PolicySourceMode, IPolicySourceStrategy> _strategies;
 

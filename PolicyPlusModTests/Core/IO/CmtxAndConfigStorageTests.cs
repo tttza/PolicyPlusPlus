@@ -1,7 +1,6 @@
+using Microsoft.Win32;
 using System;
 using System.IO;
-using Microsoft.Win32;
-
 using Xunit;
 
 namespace PolicyPlusModTests

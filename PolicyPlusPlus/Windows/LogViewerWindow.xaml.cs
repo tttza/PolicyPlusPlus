@@ -63,7 +63,8 @@ namespace PolicyPlusPlus.Windows
                 if (_paused || _pending.IsEmpty) return;
                 var sb = new StringBuilder();
                 while (_pending.TryDequeue(out var line)) sb.AppendLine(line);
-                try { if (LogBox != null) { LogBox.Text += sb.ToString(); LogBox.SelectionStart = LogBox.Text.Length; LogBox.SelectionLength = 0; } } catch { } });
+                try { if (LogBox != null) { LogBox.Text += sb.ToString(); LogBox.SelectionStart = LogBox.Text.Length; LogBox.SelectionLength = 0; } } catch { }
+            });
         }
 
         private void LevelCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)

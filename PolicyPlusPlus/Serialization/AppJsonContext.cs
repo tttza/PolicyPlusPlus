@@ -1,7 +1,6 @@
-using System;
+using PolicyPlusPlus.Services;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
-using PolicyPlusPlus.Services;
 
 namespace PolicyPlusPlus.Serialization
 {

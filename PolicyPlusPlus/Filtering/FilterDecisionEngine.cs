@@ -1,5 +1,3 @@
-using System;
-
 namespace PolicyPlusPlus.Filtering
 {
     /// <summary>

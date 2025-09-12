@@ -1,16 +1,16 @@
+using PolicyPlusPlus.Services;
 using System;
 using System.IO;
 using Xunit;
-using PolicyPlusPlus.Services;
 
 namespace PolicyPlusModTests.WinUI3
 {
-    [Collection("PolicySourceManagerSerial")] 
+    [Collection("PolicySourceManagerSerial")]
     public class PolicySourceFlexibleSwitchTests
     {
         private readonly IPolicySourceManager _mgr = PolicySourceManager.Instance;
 
-        [Fact(DisplayName="Flexible custom switch with only computer path generates user placeholder")] 
+        [Fact(DisplayName = "Flexible custom switch with only computer path generates user placeholder")]
         public void SwitchCustom_ComputerOnly_Completes()
         {
             _mgr.Switch(PolicySourceDescriptor.LocalGpo());
@@ -25,7 +25,7 @@ namespace PolicyPlusModTests.WinUI3
             Assert.True(File.Exists(_mgr.CustomUserPath));
         }
 
-        [Fact(DisplayName="Flexible custom switch with only user path generates computer placeholder")] 
+        [Fact(DisplayName = "Flexible custom switch with only user path generates computer placeholder")]
         public void SwitchCustom_UserOnly_Completes()
         {
             _mgr.Switch(PolicySourceDescriptor.LocalGpo());

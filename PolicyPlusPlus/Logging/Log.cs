@@ -1,7 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-using System.Collections.Generic;
 
 namespace PolicyPlusPlus.Logging
 {
@@ -10,8 +10,8 @@ namespace PolicyPlusPlus.Logging
     {
         Trace = 0,
         Debug = 1,
-        Info  = 2,
-        Warn  = 3,
+        Info = 2,
+        Warn = 3,
         Error = 4
     }
 
@@ -56,7 +56,7 @@ namespace PolicyPlusPlus.Logging
 
         public static void Trace(string area, string msg) => Emit(DebugLevel.Trace, area, msg);
         public static void Debug(string area, string msg) => Emit(DebugLevel.Debug, area, msg);
-        public static void Info(string area, string msg)  => Emit(DebugLevel.Info,  area, msg);
+        public static void Info(string area, string msg) => Emit(DebugLevel.Info, area, msg);
         public static void Warn(string area, string msg, Exception? ex = null) => Emit(DebugLevel.Warn, area, msg, ex);
         public static void Error(string area, string msg, Exception? ex = null) => Emit(DebugLevel.Error, area, msg, ex);
 

@@ -1,14 +1,11 @@
 // Separated elevation host implementation
-using System;
-using System.IO;
+using Microsoft.Win32;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Win32;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization; // for JsonPropertyName
 
 namespace PolicyPPElevationHost

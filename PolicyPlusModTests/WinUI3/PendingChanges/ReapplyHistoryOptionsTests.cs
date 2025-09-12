@@ -1,8 +1,8 @@
+using PolicyPlusModTests.TestHelpers;
+using PolicyPlusPlus.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PolicyPlusPlus.Services;
-using PolicyPlusModTests.TestHelpers;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
@@ -27,14 +27,14 @@ namespace PolicyPlusModTests.WinUI3
         private static (PolicyPlusPolicy policy, Dictionary<string, object> opts) BuildListCase()
         {
             var pol = TestPolicyFactory.CreateListPolicy("MACHINE:ReapplyList");
-            var opts = new Dictionary<string, object> { { "ListElem", new List<string>{ "L1", "L2" } } };
+            var opts = new Dictionary<string, object> { { "ListElem", new List<string> { "L1", "L2" } } };
             return (pol, opts);
         }
 
         private static (PolicyPlusPolicy policy, Dictionary<string, object> opts) BuildMultiTextCase()
         {
             var pol = TestPolicyFactory.CreateMultiTextPolicy("MACHINE:ReapplyMultiText");
-            var opts = new Dictionary<string, object> { { "MultiTextElem", new List<string>{ "M1", "M2" } } };
+            var opts = new Dictionary<string, object> { { "MultiTextElem", new List<string> { "M1", "M2" } } };
             return (pol, opts);
         }
 
@@ -66,7 +66,7 @@ namespace PolicyPlusModTests.WinUI3
             PendingChangesService.Instance.Applied(change);
         }
 
-        [Theory(DisplayName = "History stores option types intact for reapply" )]
+        [Theory(DisplayName = "History stores option types intact for reapply")]
         [InlineData("Text")]
         [InlineData("Enum")]
         [InlineData("List")]
@@ -75,7 +75,7 @@ namespace PolicyPlusModTests.WinUI3
         public void History_StoresOptions_Intact(string kind)
         {
             PolicyPlusPolicy pol; Dictionary<string, object> opts;
-            switch(kind)
+            switch (kind)
             {
                 case "Text": (pol, opts) = BuildTextCase(); break;
                 case "Enum": (pol, opts) = BuildEnumCase(); break;
@@ -88,7 +88,7 @@ namespace PolicyPlusModTests.WinUI3
             var h = PendingChangesService.Instance.History.FirstOrDefault(x => x.PolicyId == pol.UniqueID);
             Assert.NotNull(h);
             Assert.Equal(PolicyState.Enabled, h!.DesiredState);
-            foreach(var kv in opts)
+            foreach (var kv in opts)
             {
                 Assert.True(h.Options!.ContainsKey(kv.Key));
                 if (kv.Value is List<string> list)

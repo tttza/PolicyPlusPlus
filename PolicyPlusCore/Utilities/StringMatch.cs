@@ -1,5 +1,3 @@
-using System;
-
 namespace PolicyPlusCore.Utilities
 {
     public static class StringMatch

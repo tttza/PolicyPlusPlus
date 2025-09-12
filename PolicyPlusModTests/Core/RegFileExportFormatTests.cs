@@ -1,7 +1,5 @@
-using System.IO;
-
 using Microsoft.Win32;
-
+using System.IO;
 using Xunit;
 
 namespace PolicyPlusModTests.Core

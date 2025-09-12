@@ -1,38 +1,28 @@
+using CommunityToolkit.WinUI.UI.Controls;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
+using PolicyPlusCore.Utilities;
+using PolicyPlusPlus.Dialogs;
+using PolicyPlusPlus.Models;
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Utils;
+using PolicyPlusPlus.ViewModels;
+using PolicyPlusPlus.Windows;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Windows.ApplicationModel.DataTransfer;
-using Windows.Storage;
-using Microsoft.UI.Xaml.Documents;
-using PolicyPlusPlus.Windows;
-using Microsoft.UI.Dispatching;
-using System.Threading;
-using Microsoft.UI.Xaml.Media.Animation;
-using PolicyPlusPlus.Utils;
-using PolicyPlusPlus.Services;
-using PolicyPlusPlus.Models;
-using System.IO;
-using CommunityToolkit.WinUI.UI.Controls;
-using Windows.Foundation;
-using PolicyPlusPlus.Dialogs;
-using PolicyPlusPlus.ViewModels;
-using PolicyPlusCore.Utilities;
-using PolicyPlusCore.IO;
-using PolicyPlusCore.Core;
-using PolicyPlusCore.Admx;
-using System.Collections.Specialized;
-using Microsoft.UI;
-using Microsoft.UI.Windowing;
 
 namespace PolicyPlusPlus
 {
@@ -41,7 +31,7 @@ namespace PolicyPlusPlus
         public event EventHandler? Saved;
         // Raised whenever Local GPO policy sources are reloaded (after save/apply operations)
         public static event EventHandler? PolicySourcesRefreshed;
-        
+
         private bool _hideEmptyCategories = true;
         private bool _showDetails = true;
         private GridLength? _savedDetailRowHeight;
@@ -112,7 +102,7 @@ namespace PolicyPlusPlus
             this.InitializeComponent();
             try { ObserveSearchOptions(); } catch { }
             try { TryHookCustomPolVm(); } catch { }
-            try { PolicySourceManager.Instance.SourcesChanged += (_, __) => { _compSource = PolicySourceManager.Instance.CompSource; _userSource = PolicySourceManager.Instance.UserSource; RefreshVisibleRows(); var li = RootGrid?.FindName("SourceStatusText") as TextBlock; if (li!=null) li.Text = SourceStatusFormatter.FormatStatus(); }; } catch { }
+            try { PolicySourceManager.Instance.SourcesChanged += (_, __) => { _compSource = PolicySourceManager.Instance.CompSource; _userSource = PolicySourceManager.Instance.UserSource; RefreshVisibleRows(); var li = RootGrid?.FindName("SourceStatusText") as TextBlock; if (li != null) li.Text = SourceStatusFormatter.FormatStatus(); }; } catch { }
             HookPendingQueue();
             TryInitCustomTitleBar();
             RootGrid.Loaded += (s, e) =>
@@ -322,10 +312,12 @@ namespace PolicyPlusPlus
 
                 _configuredOnly = s.ConfiguredOnly ?? false;
                 _bookmarksOnly = s.BookmarksOnly ?? false;
-                try {
+                try
+                {
                     if (ChkConfiguredOnly != null) { ChkConfiguredOnly.IsChecked = _configuredOnly; }
                     if (ChkBookmarksOnly != null) { ChkBookmarksOnly.IsChecked = _bookmarksOnly; }
-                } catch { }
+                }
+                catch { }
 
                 try { UpdateSearchPlaceholder(); } catch { }
                 ApplySavedDetailPaneRatioIfAny();
@@ -758,7 +750,7 @@ namespace PolicyPlusPlus
         private void BtnClearAll_Click(object sender, RoutedEventArgs e)
         {
             _navTyping = false;
-            SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; _bookmarksOnly = false; 
+            SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; _bookmarksOnly = false;
             if (ChkConfiguredOnly != null) ChkConfiguredOnly.IsChecked = false;
             if (ChkBookmarksOnly != null) ChkBookmarksOnly.IsChecked = false;
             try { SettingsService.Instance.UpdateConfiguredOnly(false); } catch { }

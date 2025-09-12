@@ -1,12 +1,10 @@
 using Microsoft.Win32;
 
-using System;
-
 namespace PolicyPlusCore.IO
 {
     public class ConfigurationStorage
     {
-    private RegistryKey? ConfigKey;
+        private RegistryKey? ConfigKey;
 
         public ConfigurationStorage(RegistryHive RegistryBase, string Subkey)
         {

@@ -1,6 +1,3 @@
-using System;
-using System.Linq;
-
 namespace PolicyPPElevationHost
 {
     internal static class Program
@@ -21,7 +18,7 @@ namespace PolicyPPElevationHost
             }
             catch (Exception ex)
             {
-                try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "PolicyPlus_host_fatal.log"), DateTime.Now+" "+ex+Environment.NewLine); } catch { }
+                try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "PolicyPlus_host_fatal.log"), DateTime.Now + " " + ex + Environment.NewLine); } catch { }
                 return 3;
             }
         }

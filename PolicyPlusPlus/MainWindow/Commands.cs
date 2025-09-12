@@ -1,18 +1,16 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using System;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Utils;
+using PolicyPlusPlus.ViewModels;
+using PolicyPlusPlus.Windows;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Windows.ApplicationModel.DataTransfer;
-using PolicyPlusPlus.Windows;
-using PolicyPlusPlus.Services;
-using PolicyPlusPlus.ViewModels;
-using PolicyPlusPlus.Utils;
-using PolicyPlusCore.IO;
-using PolicyPlusCore.Core;
 
 namespace PolicyPlusPlus
 {
@@ -115,7 +113,8 @@ namespace PolicyPlusPlus
 
         private void ContextCopyPath_Click(object sender, RoutedEventArgs e)
         {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p == null) return; var sb = new StringBuilder(); var c = p.Category; var stack = new Stack<string>(); while (c != null) { stack.Push(c.DisplayName ?? string.Empty); c = c.Parent; } sb.AppendLine("Administrative Templates"); foreach (var name in stack) sb.AppendLine("+ " + name); sb.AppendLine("+ " + (p.DisplayName ?? string.Empty)); var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(sb.ToString()); Clipboard.SetContent(dp);
+            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p == null) return; var sb = new StringBuilder(); var c = p.Category; var stack = new Stack<string>(); while (c != null) { stack.Push(c.DisplayName ?? string.Empty); c = c.Parent; }
+            sb.AppendLine("Administrative Templates"); foreach (var name in stack) sb.AppendLine("+ " + name); sb.AppendLine("+ " + (p.DisplayName ?? string.Empty)); var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(sb.ToString()); Clipboard.SetContent(dp);
         }
 
         private void ContextRevealInTree_Click(object sender, RoutedEventArgs e)
@@ -123,7 +122,8 @@ namespace PolicyPlusPlus
 
         private void ContextCopyRegExport_Click(object sender, RoutedEventArgs e)
         {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p == null) return; var section = p.RawPolicy.Section switch { AdmxPolicySection.User => AdmxPolicySection.User, AdmxPolicySection.Machine => AdmxPolicySection.Machine, _ => (_appliesFilter == AdmxPolicySection.User ? AdmxPolicySection.User : AdmxPolicySection.Machine) }; var src = section == AdmxPolicySection.User ? _userSource : _compSource; if (src == null) { var loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, section == AdmxPolicySection.User); src = loader.OpenSource(); } var text = RegistryViewFormatter.BuildRegExport(p, src, section) ?? string.Empty; var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(text); Clipboard.SetContent(dp); ShowInfo("Copied .reg export to clipboard.");
+            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p == null) return; var section = p.RawPolicy.Section switch { AdmxPolicySection.User => AdmxPolicySection.User, AdmxPolicySection.Machine => AdmxPolicySection.Machine, _ => (_appliesFilter == AdmxPolicySection.User ? AdmxPolicySection.User : AdmxPolicySection.Machine) }; var src = section == AdmxPolicySection.User ? _userSource : _compSource; if (src == null) { var loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, section == AdmxPolicySection.User); src = loader.OpenSource(); }
+            var text = RegistryViewFormatter.BuildRegExport(p, src, section) ?? string.Empty; var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(text); Clipboard.SetContent(dp); ShowInfo("Copied .reg export to clipboard.");
         }
 
         private void BtnPendingChanges_Click(object sender, RoutedEventArgs e)

@@ -1,7 +1,7 @@
+using PolicyPlusModTests.TestHelpers;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
-using PolicyPlusModTests.TestHelpers;
 
 namespace PolicyPlusModTests
 {

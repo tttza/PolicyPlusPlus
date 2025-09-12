@@ -1,17 +1,15 @@
 using System;
 using System.Threading.Tasks;
-using Microsoft.Windows.AppLifecycle;
 using PolicyPlusPlus.Logging;
 #if USE_VELOPACK
 using Velopack;
 #endif
-using Windows.System;
 
 namespace PolicyPlusPlus.Services
 {
     internal static class UpdateHelper
     {
-        
+
         internal enum VelopackUpdateApplyChoice
         {
             RestartNow,

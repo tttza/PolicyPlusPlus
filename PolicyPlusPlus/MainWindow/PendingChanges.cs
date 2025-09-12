@@ -1,10 +1,9 @@
 using Microsoft.UI.Xaml;
+using PolicyPlusPlus.Logging; // logging
 using PolicyPlusPlus.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using PolicyPlusCore.Core;
-using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus
 {

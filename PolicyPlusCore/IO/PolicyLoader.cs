@@ -2,9 +2,6 @@ using Microsoft.Win32;
 
 using PolicyPlusCore.Helpers;
 using PolicyPlusCore.Utils;
-
-using System;
-using System.Linq;
 using System.Security.Principal; // elevation check
 
 namespace PolicyPlusCore.IO
@@ -14,10 +11,10 @@ namespace PolicyPlusCore.IO
         private PolicyLoaderSource SourceType;
         private string OriginalArgument;
         private bool User; // Whether this is for a user policy source
-    private IPolicySource SourceObject = new PolFile();
-    private string MainSourcePath = string.Empty; // Path to the POL file or NTUSER.DAT
-    private RegistryKey? MainSourceRegKey; // The hive key, or the mounted hive file
-    private string GptIniPath = string.Empty; // Path to the gpt.ini file, used to increment the version
+        private IPolicySource SourceObject = new PolFile();
+        private string MainSourcePath = string.Empty; // Path to the POL file or NTUSER.DAT
+        private RegistryKey? MainSourceRegKey; // The hive key, or the mounted hive file
+        private string GptIniPath = string.Empty; // Path to the gpt.ini file, used to increment the version
         private bool Writable;
 
         public PolicyLoader(PolicyLoaderSource Source, string Argument, bool IsUser)
@@ -349,7 +346,7 @@ namespace PolicyPlusCore.IO
                     {
                         if (line.StartsWith("Version", StringComparison.InvariantCultureIgnoreCase))
                         {
-                            int curVersion = int.Parse(line.Split(new[]{'='}, 2)[1]);
+                            int curVersion = int.Parse(line.Split(new[] { '=' }, 2)[1]);
                             curVersion += User ? 0x10000 : 1;
                             fGpt.WriteLine("Version=" + curVersion);
                             seenVersion = true;

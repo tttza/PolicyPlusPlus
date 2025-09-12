@@ -1,16 +1,13 @@
+using Microsoft.UI.Input; // added for InputKeyboardSource
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using PolicyPlusPlus.Utils;
 using System;
 using System.Collections.Generic;
-using Microsoft.UI.Text;
-using Microsoft.UI.Windowing;
-using Microsoft.UI.Xaml.Media;
-using PolicyPlusPlus.Utils;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Input; // added for InputKeyboardSource
+using System.Linq; // for duplicate detection
 using Windows.System; // VirtualKey
 using Windows.UI.Core; // CoreVirtualKeyStates
-using System.Linq; // for duplicate detection
 
 namespace PolicyPlusPlus.Windows
 {
@@ -132,7 +129,7 @@ namespace PolicyPlusPlus.Windows
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-                var keyTb = new TextBox { Text = keyOrValue, PlaceholderText = "Key" , Tag = "k" };
+                var keyTb = new TextBox { Text = keyOrValue, PlaceholderText = "Key", Tag = "k" };
                 Grid.SetColumn(keyTb, 0);
                 keyTb.KeyDown += TextBox_KeyDown;
                 keyTb.TextChanged += TextBox_TextChanged;

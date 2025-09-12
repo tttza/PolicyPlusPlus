@@ -1,7 +1,5 @@
 using PolicyPlusCore.Helpers;
 
-using System.Linq;
-
 namespace PolicyPlusCore.Utils
 {
     public static class SystemInfo

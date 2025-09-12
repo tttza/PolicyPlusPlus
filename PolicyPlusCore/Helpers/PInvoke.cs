@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.InteropServices;
 
 namespace PolicyPlusCore.Helpers
@@ -19,8 +18,8 @@ namespace PolicyPlusCore.Helpers
         public static extern bool OpenProcessToken(nint Process, uint Access, ref nint TokenHandle);
         [DllImport("advapi32.dll")]
         public static extern bool AdjustTokenPrivileges(nint Token, bool DisableAll, ref PInvokeTokenPrivileges NewState, uint BufferLength, nint Null, ref uint ReturnLength);
-    [DllImport("advapi32.dll", CharSet = CharSet.Unicode)]
-    public static extern bool LookupPrivilegeValueW(string? SystemName, string Name, ref PInvokeLuid LUID);
+        [DllImport("advapi32.dll", CharSet = CharSet.Unicode)]
+        public static extern bool LookupPrivilegeValueW(string? SystemName, string Name, ref PInvokeLuid LUID);
         [DllImport("kernel32.dll")]
         public static extern bool CloseHandle(nint Handle);
         [DllImport("kernel32.dll")]

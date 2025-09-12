@@ -1,6 +1,6 @@
+using PolicyPlusModTests.TestHelpers;
 using System.Collections.Generic;
 using Xunit;
-using PolicyPlusModTests.TestHelpers;
 
 namespace PolicyPlusModTests
 {

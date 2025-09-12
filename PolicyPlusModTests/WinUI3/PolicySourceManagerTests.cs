@@ -1,12 +1,12 @@
+using PolicyPlusPlus.Services;
 using System;
 using System.IO;
-using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
 {
     // Ensure singleton PolicySourceManager is not accessed concurrently.
-    [Collection("PolicySourceManagerSerial")] 
+    [Collection("PolicySourceManagerSerial")]
     public class PolicySourceManagerTests
     {
         private readonly IPolicySourceManager _mgr = PolicySourceManager.Instance as IPolicySourceManager;
@@ -19,7 +19,7 @@ namespace PolicyPlusModTests.WinUI3
             Assert.Equal(PolicySourceMode.LocalGpo, _mgr.Mode);
         }
 
-        [Fact(DisplayName = "Switch to TempPol provides pol sources")] 
+        [Fact(DisplayName = "Switch to TempPol provides pol sources")]
         public void Switch_TempPol_ProvidesPolSources()
         {
             var ok = _mgr.Switch(PolicySourceDescriptor.TempPol());

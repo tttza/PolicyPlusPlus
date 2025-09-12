@@ -1,13 +1,12 @@
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Windows.ApplicationModel.DataTransfer;
-using System.Collections.Generic;
-using PolicyPlusCore.IO;
-using PolicyPlusCore.Core;
-using PolicyPlusCore.Admx;
 
 namespace PolicyPlusPlus.Dialogs
 {

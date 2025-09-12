@@ -1,11 +1,11 @@
-using PolicyPlusPlus.Services;
-using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
+using PolicyPlusPlus.Services;
 using System.Collections.Generic;
 using System.ComponentModel;
-using PolicyPlusCore.IO;
-using PolicyPlusCore.Core;
+using System.Linq;
 
 namespace PolicyPlusPlus.Models
 {

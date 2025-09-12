@@ -1,6 +1,6 @@
+using PolicyPlusModTests.TestHelpers; // PolAssert
 using System.Collections.Generic;
 using Xunit;
-using PolicyPlusModTests.TestHelpers; // PolAssert
 
 namespace PolicyPlusModTests
 {

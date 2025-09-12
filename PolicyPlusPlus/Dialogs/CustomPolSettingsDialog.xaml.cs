@@ -1,12 +1,12 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Windows.Storage.Pickers;
-using WinRT.Interop;
+using PolicyPlusCore.IO;
+using PolicyPlusPlus.Services;
+using System; // Await extensions
 using System.IO;
 using System.Threading.Tasks;
-using PolicyPlusCore.IO;
-using System; // Await extensions
-using PolicyPlusPlus.Services;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
 namespace PolicyPlusPlus.Dialogs
 {
@@ -35,10 +35,10 @@ namespace PolicyPlusPlus.Dialogs
 
         private async void BrowseComp_Click(object sender, RoutedEventArgs e) => await BrowseAsync(isUser: false);
         private async void BrowseUser_Click(object sender, RoutedEventArgs e) => await BrowseAsync(isUser: true);
-        private async void NewComp_Click(object sender, RoutedEventArgs e) => await CreateNewAsync(isUser:false);
-        private async void NewUser_Click(object sender, RoutedEventArgs e) => await CreateNewAsync(isUser:true);
-        private void ResetComp_Click(object sender, RoutedEventArgs e) { ComputerPolPath = null; if (ComputerPathBox!=null) ComputerPathBox.Text = "(not set)"; }
-        private void ResetUser_Click(object sender, RoutedEventArgs e) { UserPolPath = null; if (UserPathBox!=null) UserPathBox.Text = "(not set)"; }
+        private async void NewComp_Click(object sender, RoutedEventArgs e) => await CreateNewAsync(isUser: false);
+        private async void NewUser_Click(object sender, RoutedEventArgs e) => await CreateNewAsync(isUser: true);
+        private void ResetComp_Click(object sender, RoutedEventArgs e) { ComputerPolPath = null; if (ComputerPathBox != null) ComputerPathBox.Text = "(not set)"; }
+        private void ResetUser_Click(object sender, RoutedEventArgs e) { UserPolPath = null; if (UserPathBox != null) UserPathBox.Text = "(not set)"; }
 
         private async Task CreateNewAsync(bool isUser)
         {
@@ -56,8 +56,8 @@ namespace PolicyPlusPlus.Dialogs
                 var file = await picker.PickSaveFileAsync();
                 if (file == null) return;
                 try { new PolFile().Save(file.Path); } catch { }
-                if (isUser) { UserPolPath = file.Path; if (UserPathBox!=null) UserPathBox.Text = file.Path; }
-                else { ComputerPolPath = file.Path; if (ComputerPathBox!=null) ComputerPathBox.Text = file.Path; }
+                if (isUser) { UserPolPath = file.Path; if (UserPathBox != null) UserPathBox.Text = file.Path; }
+                else { ComputerPolPath = file.Path; if (ComputerPathBox != null) ComputerPathBox.Text = file.Path; }
             }
             catch { }
         }
@@ -66,8 +66,8 @@ namespace PolicyPlusPlus.Dialogs
         {
             var path = await PickAsync();
             if (string.IsNullOrEmpty(path)) return;
-            if (isUser) { UserPolPath = path; if (UserPathBox!=null) UserPathBox.Text = path; }
-            else { ComputerPolPath = path; if (ComputerPathBox!=null) ComputerPathBox.Text = path; }
+            if (isUser) { UserPolPath = path; if (UserPathBox != null) UserPathBox.Text = path; }
+            else { ComputerPolPath = path; if (ComputerPathBox != null) ComputerPathBox.Text = path; }
         }
 
         private async Task<string?> PickAsync()
@@ -101,12 +101,12 @@ namespace PolicyPlusPlus.Dialogs
             if (EnableComputer && string.IsNullOrEmpty(ComputerPolPath))
             {
                 ComputerPolPath = AutoCreateTempPol(false);
-                if (ComputerPathBox!=null) ComputerPathBox.Text = ComputerPolPath ?? "(not set)";
+                if (ComputerPathBox != null) ComputerPathBox.Text = ComputerPolPath ?? "(not set)";
             }
             if (EnableUser && string.IsNullOrEmpty(UserPolPath))
             {
                 UserPolPath = AutoCreateTempPol(true);
-                if (UserPathBox!=null) UserPathBox.Text = UserPolPath ?? "(not set)";
+                if (UserPathBox != null) UserPathBox.Text = UserPolPath ?? "(not set)";
             }
 
             // Validate again after auto-create

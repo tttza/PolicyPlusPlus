@@ -1,10 +1,9 @@
-using System;
-using System.Collections.Concurrent;
-using System.Linq;
-
 using PolicyPlusCore.Core;
 using PolicyPlusCore.Utilities;
 using PolicyPlusPlus.Logging; // logging
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
 
 namespace PolicyPlusPlus.Services
 {

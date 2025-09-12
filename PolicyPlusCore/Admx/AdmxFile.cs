@@ -1,8 +1,5 @@
 using PolicyPlusCore.Core;
 using PolicyPlusCore.Utils;
-
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Xml;
 
@@ -10,9 +7,9 @@ namespace PolicyPlusCore.Admx
 {
     public class AdmxFile
     {
-    public string SourceFile = string.Empty;
-    public string AdmxNamespace = string.Empty;
-    public string SupersededAdm = string.Empty;
+        public string SourceFile = string.Empty;
+        public string AdmxNamespace = string.Empty;
+        public string SupersededAdm = string.Empty;
         public decimal MinAdmlVersion;
         public Dictionary<string, string> Prefixes = new Dictionary<string, string>();
         public List<AdmxProduct> Products = new List<AdmxProduct>();
@@ -243,7 +240,8 @@ namespace PolicyPlusCore.Admx
                                 }
 
                                 return regItem;
-                            };
+                            }
+                            ;
                             PolicyRegistrySingleList loadOneRegList(XmlNode Node)
                             {
                                 var singleList = new PolicyRegistrySingleList();
@@ -270,7 +268,8 @@ namespace PolicyPlusCore.Admx
                                 }
 
                                 return singleList;
-                            };
+                            }
+                            ;
                             PolicyRegistryList loadOnOffValList(string OnValueName, string OffValueName, string OnListName, string OffListName, XmlNode Node)
                             {
                                 var regList = new PolicyRegistryList();
@@ -295,7 +294,8 @@ namespace PolicyPlusCore.Admx
                                 }
 
                                 return regList;
-                            };
+                            }
+                            ;
                             foreach (XmlNode polElement in child.ChildNodes)
                             {
                                 if (polElement.LocalName != "policy")

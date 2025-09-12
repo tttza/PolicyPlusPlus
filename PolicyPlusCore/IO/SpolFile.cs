@@ -1,9 +1,4 @@
 // VB dependency removed: replaced Strings/Constants/Conversions with .NET APIs
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.IO;
-
 using PolicyPlusCore.Admx;
 using PolicyPlusCore.Core;
 
@@ -42,7 +37,8 @@ namespace PolicyPlusCore.IO
                 ParserLine += 1;
                 line = allLines[ParserLine - 1]; // For human-readability in errors
                 return line;
-            };
+            }
+            ;
             bool atEnd()
             {
                 return ParserLine >= allLines.Length;
@@ -83,7 +79,8 @@ namespace PolicyPlusCore.IO
                 }
 
                 return list;
-            };
+            }
+            ;
             if (nextLine() != "Policy Plus Semantic Policy")
                 throw new InvalidDataException("Incorrect signature");
             while (!atEnd())

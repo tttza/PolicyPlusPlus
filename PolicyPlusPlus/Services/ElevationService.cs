@@ -1,16 +1,15 @@
+using PolicyPlusPlus.Logging; // logging
+using PolicyPlusPlus.Serialization;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
+using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Security.Principal;
-using System.Security.Cryptography;
-using System.Linq;
-using PolicyPlusPlus.Serialization;
-using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus.Services
 {

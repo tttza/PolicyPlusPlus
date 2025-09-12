@@ -1,9 +1,7 @@
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
-
-using Microsoft.Win32;
-
 using Xunit;
 
 namespace PolicyPlusModTests
@@ -13,7 +11,7 @@ namespace PolicyPlusModTests
         [Fact(DisplayName = "CmtxFile roundtrip preserves prefixes, comments, and strings")]
         public void CmtxFile_Roundtrip_Works()
         {
-            var table = new Dictionary<string,string>
+            var table = new Dictionary<string, string>
             {
                 {"Microsoft.Policies:PolicyA", "Comment A"},
                 {"Contoso.Settings:PolicyB", "Comment B"}
@@ -95,7 +93,7 @@ namespace PolicyPlusModTests
                 }
             };
             var polFile = new PolFile();
-            var comments = new Dictionary<string,string>();
+            var comments = new Dictionary<string, string>();
             state.Apply(polFile, bundle, comments);
             Assert.True(polFile.GetValueNames("Software\\Policies\\Contoso").Count >= 0);
         }

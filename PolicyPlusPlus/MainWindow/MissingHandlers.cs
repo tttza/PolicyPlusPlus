@@ -1,15 +1,11 @@
+using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using CommunityToolkit.WinUI.UI.Controls;
-using System;
-using System.IO;
-using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Dialogs;
-using PolicyPlusCore.Core;
-using PolicyPlusCore.IO;
 using PolicyPlusPlus.Models; // for PolicyListRow
+using PolicyPlusPlus.Services;
+using System;
 
 namespace PolicyPlusPlus
 {

@@ -1,9 +1,9 @@
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core; // added for PolicyElement, EnumPolicyElement, etc.
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using PolicyPlusCore.Admx;
-using PolicyPlusCore.Core; // added for PolicyElement, EnumPolicyElement, etc.
 
 namespace PolicyPlusPlus.ViewModels
 {
@@ -59,8 +59,8 @@ namespace PolicyPlusPlus.ViewModels
 
         public List<string> UserListItems { get; private set; } = new();
         public List<string> ComputerListItems { get; private set; } = new();
-        public List<KeyValuePair<string,string>> UserNamedListItems { get; private set; } = new();
-        public List<KeyValuePair<string,string>> ComputerNamedListItems { get; private set; } = new();
+        public List<KeyValuePair<string, string>> UserNamedListItems { get; private set; } = new();
+        public List<KeyValuePair<string, string>> ComputerNamedListItems { get; private set; } = new();
         public string UserListSummary => Type == OptionElementType.List ? (ProvidesNames ? $"Edit... ({UserNamedListItems.Count})" : $"Edit... ({UserListItems.Count})") : string.Empty;
         public string ComputerListSummary => Type == OptionElementType.List ? (ProvidesNames ? $"Edit... ({ComputerNamedListItems.Count})" : $"Edit... ({ComputerListItems.Count})") : string.Empty;
 
@@ -97,7 +97,7 @@ namespace PolicyPlusPlus.ViewModels
             if (isUser && Parent.UserState == QuickEditState.Enabled) Parent.QueuePending("User");
             if (!isUser && Parent.ComputerState == QuickEditState.Enabled) Parent.QueuePending("Computer");
         }
-        public void ReplaceNamedList(bool isUser, List<KeyValuePair<string,string>> items)
+        public void ReplaceNamedList(bool isUser, List<KeyValuePair<string, string>> items)
         {
             if (Type != OptionElementType.List || !ProvidesNames) return;
             if (isUser) UserNamedListItems = items; else ComputerNamedListItems = items;
@@ -168,13 +168,13 @@ namespace PolicyPlusPlus.ViewModels
                     case OptionElementType.List:
                         if (ProvidesNames)
                         {
-                            if (v is Dictionary<string,string> dict)
+                            if (v is Dictionary<string, string> dict)
                             {
-                                var list = dict.Select(k => new KeyValuePair<string,string>(k.Key, k.Value)).ToList();
+                                var list = dict.Select(k => new KeyValuePair<string, string>(k.Key, k.Value)).ToList();
                                 if (isUser) UserNamedListItems = list; else ComputerNamedListItems = list;
                                 OnChanged(isUser ? nameof(UserListSummary) : nameof(ComputerListSummary));
                             }
-                            else if (v is IEnumerable<KeyValuePair<string,string>> kvp)
+                            else if (v is IEnumerable<KeyValuePair<string, string>> kvp)
                             {
                                 var list = kvp.ToList(); if (isUser) UserNamedListItems = list; else ComputerNamedListItems = list; OnChanged(isUser ? nameof(UserListSummary) : nameof(ComputerListSummary));
                             }

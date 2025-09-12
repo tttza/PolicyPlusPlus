@@ -1,20 +1,20 @@
+using PolicyPlusPlus.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Windows.Storage;
-using Windows.ApplicationModel;
-using PolicyPlusPlus.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.ApplicationModel;
+using Windows.Storage;
 
 namespace PolicyPlusPlus.Services
 {
     public sealed partial class SettingsService
     {
         public static SettingsService Instance { get; } = new SettingsService();
-        private readonly SemaphoreSlim _sem = new(1,1);
+        private readonly SemaphoreSlim _sem = new(1, 1);
         private string _baseDir = string.Empty;
         private string SettingsPath => Path.Combine(_baseDir, "settings.json");
         private string HistoryPath => Path.Combine(_baseDir, "history.json");
@@ -136,7 +136,7 @@ namespace PolicyPlusPlus.Services
         }
 
         // Bookmark lists
-        public (Dictionary<string,List<string>> lists, string active) LoadBookmarkListsWithActive()
+        public (Dictionary<string, List<string>> lists, string active) LoadBookmarkListsWithActive()
         {
             _sem.Wait();
             try
@@ -155,8 +155,8 @@ namespace PolicyPlusPlus.Services
             catch { return (new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) { ["default"] = new List<string>() }, "default"); }
             finally { _sem.Release(); }
         }
-        public Dictionary<string,List<string>> LoadBookmarkLists() { var (l, _) = LoadBookmarkListsWithActive(); return l; }
-        public void SaveBookmarkLists(Dictionary<string,List<string>> lists, string active)
+        public Dictionary<string, List<string>> LoadBookmarkLists() { var (l, _) = LoadBookmarkListsWithActive(); return l; }
+        public void SaveBookmarkLists(Dictionary<string, List<string>> lists, string active)
         {
             _sem.Wait();
             try { var store = new BookmarkStore { Lists = lists, Active = active }; File.WriteAllText(BookmarkPath, JsonSerializer.Serialize(store, AppJsonContext.Default.BookmarkStore)); }
@@ -165,7 +165,7 @@ namespace PolicyPlusPlus.Services
         }
 
         // Search stats
-        public (Dictionary<string,int> counts, Dictionary<string,DateTime> lastUsed) LoadSearchStats()
+        public (Dictionary<string, int> counts, Dictionary<string, DateTime> lastUsed) LoadSearchStats()
         {
             _sem.Wait();
             try
@@ -181,7 +181,7 @@ namespace PolicyPlusPlus.Services
             catch { return (new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase)); }
             finally { _sem.Release(); }
         }
-        public void SaveSearchStats(Dictionary<string,int> counts, Dictionary<string,DateTime> lastUsed)
+        public void SaveSearchStats(Dictionary<string, int> counts, Dictionary<string, DateTime> lastUsed)
         {
             _sem.Wait();
             try { var data = new SearchStats { Counts = counts, LastUsed = lastUsed }; File.WriteAllText(SearchStatsPath, JsonSerializer.Serialize(data)); }
@@ -229,7 +229,7 @@ namespace PolicyPlusPlus.Services
         public void UpdateColumnLayout(List<ColumnState> states) => Update(s => s.ColumnStates = states);
         public void UpdateSearchOptions(SearchOptions opts) => Update(s => s.Search = opts);
         public void UpdatePathJoinSymbol(string symbol) => Update(s => s.PathJoinSymbol = string.IsNullOrEmpty(symbol) ? "+" : symbol.Substring(0, Math.Min(1, symbol.Length)));
-        public void UpdateCategoryPaneWidth(double width) => Update(s => s.CategoryPaneWidth = Math.Max(0,width));
+        public void UpdateCategoryPaneWidth(double width) => Update(s => s.CategoryPaneWidth = Math.Max(0, width));
         public void UpdateDetailPaneHeightStar(double star) => Update(s => s.DetailPaneHeightStar = Math.Max(0, star));
         public void UpdateSort(string? column, string? direction) => Update(s => { s.SortColumn = column; s.SortDirection = direction; });
         public void UpdateLimitUnfilteredTo1000(bool enabled) => Update(s => s.LimitUnfilteredTo1000 = enabled);
@@ -284,9 +284,9 @@ namespace PolicyPlusPlus.Services
     }
 
     public class CustomPolSettings { public bool EnableComputer { get; set; } public bool EnableUser { get; set; } public string? ComputerPath { get; set; } public string? UserPath { get; set; } public bool Active { get; set; } }
-    public class ColumnsOptions { public bool ShowId { get; set; }=true; public bool ShowCategory{get;set;} public bool ShowTopCategory{get;set;} public bool ShowCategoryPath{get;set;} public bool ShowApplies{get;set;} public bool ShowSupported{get;set;} public bool ShowUserState{get;set;}=true; public bool ShowComputerState{get;set;}=true; public bool ShowBookmark{get;set;}=true; public bool ShowSecondName{get;set;} }
+    public class ColumnsOptions { public bool ShowId { get; set; } = true; public bool ShowCategory { get; set; } public bool ShowTopCategory { get; set; } public bool ShowCategoryPath { get; set; } public bool ShowApplies { get; set; } public bool ShowSupported { get; set; } public bool ShowUserState { get; set; } = true; public bool ShowComputerState { get; set; } = true; public bool ShowBookmark { get; set; } = true; public bool ShowSecondName { get; set; } }
     public class ColumnState { public string Key { get; set; } = string.Empty; public int Index { get; set; } public double Width { get; set; } public bool Visible { get; set; } }
-    public class SearchOptions { public bool InName { get; set; }=true; public bool InId { get; set; }=true; public bool InRegistryKey { get; set; }=true; public bool InRegistryValue { get; set; }=true; public bool InDescription { get; set; } public bool InComments { get; set; } }
-    public class SearchStats { public Dictionary<string,int>? Counts { get; set; }= new(StringComparer.OrdinalIgnoreCase); public Dictionary<string,DateTime>? LastUsed { get; set; }= new(StringComparer.OrdinalIgnoreCase); }
-    public class BookmarkStore { public Dictionary<string,List<string>>? Lists { get; set; } public string? Active { get; set; } }
+    public class SearchOptions { public bool InName { get; set; } = true; public bool InId { get; set; } = true; public bool InRegistryKey { get; set; } = true; public bool InRegistryValue { get; set; } = true; public bool InDescription { get; set; } public bool InComments { get; set; } }
+    public class SearchStats { public Dictionary<string, int>? Counts { get; set; } = new(StringComparer.OrdinalIgnoreCase); public Dictionary<string, DateTime>? LastUsed { get; set; } = new(StringComparer.OrdinalIgnoreCase); }
+    public class BookmarkStore { public Dictionary<string, List<string>>? Lists { get; set; } public string? Active { get; set; } }
 }

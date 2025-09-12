@@ -2,9 +2,8 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
 using System.Runtime.InteropServices;
-using WinRT.Interop;
 using Windows.Graphics;
-using Windows.ApplicationModel.DataTransfer;
+using WinRT.Interop;
 
 namespace PolicyPlusPlus.Utils
 {

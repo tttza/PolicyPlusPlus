@@ -1,12 +1,12 @@
+using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using System;
-using System.Linq;
-using PolicyPlusPlus.Services;
-using CommunityToolkit.WinUI.UI.Controls;
 using PolicyPlusPlus.Models;
+using PolicyPlusPlus.Services;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PolicyPlusPlus
 {
@@ -379,7 +379,7 @@ namespace PolicyPlusPlus
             if (save) { try { SettingsService.Instance.UpdateScale(s); } catch { } }
             try
             {
-                foreach (var id in new[] { "Scale50Menu","Scale67Menu","Scale75Menu","Scale80Menu","Scale90Menu","Scale100Menu","Scale110Menu","Scale125Menu","Scale150Menu","Scale175Menu","Scale200Menu" })
+                foreach (var id in new[] { "Scale50Menu", "Scale67Menu", "Scale75Menu", "Scale80Menu", "Scale90Menu", "Scale100Menu", "Scale110Menu", "Scale125Menu", "Scale150Menu", "Scale175Menu", "Scale200Menu" })
                 {
                     var mi = FindMenu(id); if (mi != null) mi.IsChecked = string.Equals(mi.Text, s, StringComparison.OrdinalIgnoreCase);
                 }
@@ -394,7 +394,7 @@ namespace PolicyPlusPlus
                 if (sender is ToggleMenuFlyoutItem clicked)
                 {
                     // Uncheck all scale items
-                    foreach (var id in new[] { "Scale50Menu","Scale67Menu","Scale75Menu","Scale80Menu","Scale90Menu","Scale100Menu","Scale110Menu","Scale125Menu","Scale150Menu","Scale175Menu","Scale200Menu" })
+                    foreach (var id in new[] { "Scale50Menu", "Scale67Menu", "Scale75Menu", "Scale80Menu", "Scale90Menu", "Scale100Menu", "Scale110Menu", "Scale125Menu", "Scale150Menu", "Scale175Menu", "Scale200Menu" })
                     {
                         var mi = FindMenu(id); if (mi != null) mi.IsChecked = false;
                     }
@@ -434,7 +434,7 @@ namespace PolicyPlusPlus
             ApplyColumnVisibilityFromToggles();
             SaveColumnLayout(includeOrder: false);
         }
-        
+
         private void CategorySplitter_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
             try

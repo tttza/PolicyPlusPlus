@@ -1,13 +1,11 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-
 using PolicyPlusCore.IO;
-
+using PolicyPlusPlus.Logging; // logging
 using System;
 using System.Text;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
-using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus.Dialogs
 {

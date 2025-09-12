@@ -1,11 +1,11 @@
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
+using PolicyPlusPlus.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using PolicyPlusCore.Core;
-using PolicyPlusCore.Admx;
-using PolicyPlusCore.IO;
-using PolicyPlusPlus.Services;
 using System.Text; // added
 
 namespace PolicyPlusPlus.ViewModels

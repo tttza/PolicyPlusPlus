@@ -1,20 +1,17 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Text;
-using PolicyPlusPlus.Utils;
-using Windows.ApplicationModel.DataTransfer;
-using PolicyPlusPlus.ViewModels;
 using Microsoft.UI.Xaml.Input;
-using PolicyPlusCore.IO;
-using PolicyPlusCore.Core;
+using Microsoft.UI.Xaml.Media;
 using PolicyPlusCore.Admx;
-using PolicyPlusPlus.Services;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
 using PolicyPlusPlus.Logging; // logging
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Utils;
+using PolicyPlusPlus.ViewModels;
+using System;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace PolicyPlusPlus.Windows
 {

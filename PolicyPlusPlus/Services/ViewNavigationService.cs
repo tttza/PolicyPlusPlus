@@ -1,7 +1,6 @@
+using PolicyPlusCore.Core; // For AdmxPolicySection
 using System;
 using System.Collections.Generic;
-
-using PolicyPlusCore.Core; // For AdmxPolicySection
 
 namespace PolicyPlusPlus.Services
 {

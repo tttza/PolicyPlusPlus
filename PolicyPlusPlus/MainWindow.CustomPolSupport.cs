@@ -1,15 +1,14 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Windows.Storage.Pickers;
-using WinRT.Interop;
-using System.IO;
-using System.Threading.Tasks;
 using PolicyPlusCore.IO;
-using PolicyPlusCore.Core;
-using System;
 using PolicyPlusPlus.Dialogs;
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.ViewModels; // view model
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
 namespace PolicyPlusPlus
 {

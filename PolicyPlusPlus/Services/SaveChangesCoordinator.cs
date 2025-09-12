@@ -1,10 +1,10 @@
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusPlus.Logging; // logging
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using PolicyPlusCore.Admx;
-using PolicyPlusCore.Core;
-using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus.Services
 {

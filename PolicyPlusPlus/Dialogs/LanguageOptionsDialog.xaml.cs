@@ -1,9 +1,9 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using PolicyPlusPlus.Services;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using PolicyPlusPlus.Services;
 
 namespace PolicyPlusPlus.Dialogs
 {

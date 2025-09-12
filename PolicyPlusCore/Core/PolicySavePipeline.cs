@@ -1,11 +1,6 @@
 using PolicyPlusCore.Admx;
 using PolicyPlusCore.IO;
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Diagnostics; // debug logging only
-
 namespace PolicyPlusCore.Core
 {
     public enum PolicyTargetScope

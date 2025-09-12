@@ -1,9 +1,5 @@
 using PolicyPlusCore.Core;
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-
 namespace PolicyPlusCore.Admx
 {
     public class AdmxBundle
@@ -48,7 +44,7 @@ namespace PolicyPlusCore.Admx
             return fail is null ? Array.Empty<AdmxLoadFailure>() : new[] { fail };
         }
 
-    private AdmxLoadFailure? AddSingleAdmx(string AdmxPath, string LanguageCode)
+        private AdmxLoadFailure? AddSingleAdmx(string AdmxPath, string LanguageCode)
         {
             // Load ADMX file
             AdmxFile admx;
@@ -262,7 +258,7 @@ namespace PolicyPlusCore.Admx
             RawPolicies.Clear();
         }
 
-    private T? FindInTempOrFlat<T>(string UniqueID, Dictionary<string, T> TempDict, Dictionary<string, T> FlatDict) where T : class
+        private T? FindInTempOrFlat<T>(string UniqueID, Dictionary<string, T> TempDict, Dictionary<string, T> FlatDict) where T : class
         {
             // Get the best available structure for an ID
             if (TempDict.ContainsKey(UniqueID))
@@ -275,14 +271,14 @@ namespace PolicyPlusCore.Admx
             }
             else
             {
-        return default;
+                return default;
             }
         }
 
-    public string ResolveString(string? DisplayCode, AdmxFile Admx)
+        public string ResolveString(string? DisplayCode, AdmxFile Admx)
         {
             // Find a localized string from a display code
-        if (string.IsNullOrEmpty(DisplayCode))
+            if (string.IsNullOrEmpty(DisplayCode))
                 return "";
             if (!DisplayCode.StartsWith("$(string."))
                 return DisplayCode;
@@ -294,7 +290,7 @@ namespace PolicyPlusCore.Admx
                 return DisplayCode;
         }
 
-    public Presentation? ResolvePresentation(string DisplayCode, AdmxFile Admx)
+        public Presentation? ResolvePresentation(string DisplayCode, AdmxFile Admx)
         {
             // Find a presentation from a code
             if (!DisplayCode.StartsWith("$(presentation."))

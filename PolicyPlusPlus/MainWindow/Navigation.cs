@@ -1,9 +1,7 @@
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using PolicyPlusPlus.Services;
-using System.Linq;
-using System.Collections.Generic;
 using PolicyPlusCore.Core;
+using PolicyPlusPlus.Services;
+using System.Collections.Generic;
 
 namespace PolicyPlusPlus
 {

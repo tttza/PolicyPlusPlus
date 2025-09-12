@@ -1,17 +1,17 @@
-using System.Collections.Generic;
 using PolicyPlusModTests.TestHelpers;
+using System.Collections.Generic;
 using Xunit;
 
 namespace PolicyPlusModTests
 {
     public class NamedListAndExpandTests
     {
-        [Fact(DisplayName = "Named list (UserProvidesNames) writes each key/value pair")] 
+        [Fact(DisplayName = "Named list (UserProvidesNames) writes each key/value pair")]
         public void NamedList_Writes_KeyValuePairs()
         {
             var pol = new PolFile();
             var policy = TestPolicyFactory.CreateNamedListPolicy();
-            var data = new List<KeyValuePair<string,string>>
+            var data = new List<KeyValuePair<string, string>>
             {
                 new("KeyA","ValA"),
                 new("KeyB","ValB"),

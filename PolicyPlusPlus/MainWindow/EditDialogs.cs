@@ -1,11 +1,9 @@
-using Microsoft.UI.Xaml;
-using PolicyPlusPlus.Services;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
+using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Utils;
 using PolicyPlusPlus.Windows;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 

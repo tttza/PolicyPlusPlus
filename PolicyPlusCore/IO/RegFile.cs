@@ -1,18 +1,13 @@
 // VB dependency removed: replaced Strings/Conversions helpers with .NET equivalents
 using Microsoft.Win32;
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
 namespace PolicyPlusCore.IO
 {
     public class RegFile : IPolicySource
     {
         private const string RegSignature = "Windows Registry Editor Version 5.00";
-    private string Prefix = string.Empty;
-    private string SourceSubtree = string.Empty;
+        private string Prefix = string.Empty;
+        private string SourceSubtree = string.Empty;
         public List<RegFileKey> Keys = new List<RegFileKey>();
 
         private static string EscapeValue(string Text)
@@ -176,7 +171,7 @@ namespace PolicyPlusCore.IO
             }
         }
 
-    public void Save(TextWriter Writer, Dictionary<string, string>? casePreservation = null)
+        public void Save(TextWriter Writer, Dictionary<string, string>? casePreservation = null)
         {
             Writer.WriteLine(RegSignature);
             Writer.WriteLine();
@@ -344,17 +339,17 @@ namespace PolicyPlusCore.IO
             return Prefix + Name;
         }
 
-    private RegFileKey? GetKey(string Name)
+        private RegFileKey? GetKey(string Name)
         {
             return Keys.FirstOrDefault(k => k.Name.Equals(Name, StringComparison.InvariantCultureIgnoreCase));
         }
 
-    private RegFileKey? GetKeyByUnprefixedName(string Name)
+        private RegFileKey? GetKeyByUnprefixedName(string Name)
         {
             return GetKey(PrefixKeyName(Name));
         }
 
-    private RegFileKey GetOrCreateKey(string Name)
+        private RegFileKey GetOrCreateKey(string Name)
         {
             var key = GetKey(Name);
             if (key is null)
@@ -366,7 +361,7 @@ namespace PolicyPlusCore.IO
             return key;
         }
 
-    private RegFileKey? GetNonDeleterKey(string Name)
+        private RegFileKey? GetNonDeleterKey(string Name)
         {
             return Keys.FirstOrDefault(k => !k.IsDeleter && k.Name.Equals(Name, StringComparison.InvariantCultureIgnoreCase));
         }
@@ -388,7 +383,7 @@ namespace PolicyPlusCore.IO
             var val = key.GetValue(Value);
             return val != null && !val.IsDeleter;
         }
-    public object? GetValue(string Key, string Value)
+        public object? GetValue(string Key, string Value)
         {
             if (!IsSourceKeyAcceptable(Key))
                 return null;

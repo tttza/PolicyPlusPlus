@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using PolicyPlusModTests.TestHelpers;
+using System.Collections.Generic;
 using Xunit;
 
 namespace PolicyPlusModTests
@@ -12,7 +12,7 @@ namespace PolicyPlusModTests
             var pol = new PolFile();
             var policy = TestPolicyFactory.CreateComboBoxTextPolicy();
             // Enable with no explicit option value (simulate UI using default)
-            PolicyProcessing.SetPolicyState(pol, policy, PolicyState.Enabled, new Dictionary<string, object>{{"ComboTextElem", "DefaultCombo"}});
+            PolicyProcessing.SetPolicyState(pol, policy, PolicyState.Enabled, new Dictionary<string, object> { { "ComboTextElem", "DefaultCombo" } });
             Assert.True(pol.ContainsValue(policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue));
             Assert.Equal("DefaultCombo", pol.GetValue(policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue));
         }
@@ -21,8 +21,8 @@ namespace PolicyPlusModTests
         public void Text_MaxLength_Truncates()
         {
             var pol = new PolFile();
-            var policy = TestPolicyFactory.CreateMaxLengthTextPolicy(maxLen:5);
-            PolicyProcessing.SetPolicyState(pol, policy, PolicyState.Enabled, new Dictionary<string, object>{{"MaxLenTextElem","123456789"}});
+            var policy = TestPolicyFactory.CreateMaxLengthTextPolicy(maxLen: 5);
+            PolicyProcessing.SetPolicyState(pol, policy, PolicyState.Enabled, new Dictionary<string, object> { { "MaxLenTextElem", "123456789" } });
             Assert.Equal("12345", pol.GetValue(policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue));
         }
 
@@ -48,12 +48,12 @@ namespace PolicyPlusModTests
                 RegistryKey = enumElem.RegistryKey,
                 RegistryValue = enumElem.RegistryValue,
                 Section = AdmxPolicySection.Machine,
-                Elements = new List<PolicyElement>{ enumElem },
+                Elements = new List<PolicyElement> { enumElem },
                 AffectedValues = new PolicyRegistryList(),
                 DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
             };
-            var policy = new PolicyPlusPolicy{ RawPolicy = raw, UniqueID="MACHINE:EnumNonSeq2", DisplayName="Enum NonSeq2" };
-            PolicyProcessing.SetPolicyState(pol, policy, PolicyState.Enabled, new Dictionary<string, object>{{"EnumNS",1}}); // index 1 -> numeric 20
+            var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:EnumNonSeq2", DisplayName = "Enum NonSeq2" };
+            PolicyProcessing.SetPolicyState(pol, policy, PolicyState.Enabled, new Dictionary<string, object> { { "EnumNS", 1 } }); // index 1 -> numeric 20
             Assert.Equal(20u, pol.GetValue(enumElem.RegistryKey, enumElem.RegistryValue));
         }
 
@@ -76,12 +76,12 @@ namespace PolicyPlusModTests
                 RegistryKey = decElem.RegistryKey,
                 RegistryValue = decElem.RegistryValue,
                 Section = AdmxPolicySection.Machine,
-                Elements = new List<PolicyElement>{ decElem },
+                Elements = new List<PolicyElement> { decElem },
                 AffectedValues = new PolicyRegistryList(),
                 DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
             };
-            var policy = new PolicyPlusPolicy{ RawPolicy = raw, UniqueID="MACHINE:DecSpin", DisplayName="DecSpin" };
-            PolicyProcessing.SetPolicyState(pol, policy, PolicyState.Enabled, new Dictionary<string, object>{{"DecSpin", 7u}});
+            var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:DecSpin", DisplayName = "DecSpin" };
+            PolicyProcessing.SetPolicyState(pol, policy, PolicyState.Enabled, new Dictionary<string, object> { { "DecSpin", 7u } });
             Assert.Equal(7u, pol.GetValue(decElem.RegistryKey, decElem.RegistryValue));
         }
     }

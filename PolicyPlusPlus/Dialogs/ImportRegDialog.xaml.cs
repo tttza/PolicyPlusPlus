@@ -1,13 +1,11 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-
 using PolicyPlusCore.IO;
 using PolicyPlusCore.Utilities;
-
+using PolicyPlusPlus.Services;
 using System;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
-using PolicyPlusPlus.Services;
 
 namespace PolicyPlusPlus.Dialogs
 {

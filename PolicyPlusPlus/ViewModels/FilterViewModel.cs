@@ -1,8 +1,7 @@
-using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using PolicyPlusCore.Core;
 using PolicyPlusPlus.Services;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace PolicyPlusPlus.ViewModels
 {

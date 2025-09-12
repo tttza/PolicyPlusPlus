@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml.Data;
-using System;
 using PolicyPlusPlus.ViewModels;
+using System;
 
 namespace PolicyPlusPlus.Converters
 {

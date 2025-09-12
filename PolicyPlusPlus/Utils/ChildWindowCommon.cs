@@ -1,7 +1,6 @@
 using Microsoft.UI.Xaml;
-using PolicyPlusPlus.Utils;
-using System;
 using PolicyPlusPlus.Logging; // logging
+using System;
 
 namespace PolicyPlusPlus.Utils
 {

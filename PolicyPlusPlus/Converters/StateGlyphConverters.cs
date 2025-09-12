@@ -11,7 +11,7 @@ namespace PolicyPlusPlus.Converters
         // neither -> empty string
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is ValueTuple<bool,bool> tup)
+            if (value is ValueTuple<bool, bool> tup)
             {
                 if (tup.Item1) return "\uE73E"; // Accept
                 if (tup.Item2) return "\uE711"; // Block/Cancel

@@ -1,16 +1,14 @@
 using PolicyPlusCore.Utils;
-
-using System.Collections.Generic;
 using System.Xml;
 
 namespace PolicyPlusCore.IO
 {
     public class CmtxFile
     {
-    public Dictionary<string, string> Prefixes = new Dictionary<string, string>();
-    public Dictionary<string, string> Comments = new Dictionary<string, string>();
-    public Dictionary<string, string> Strings = new Dictionary<string, string>();
-    public string SourceFile = string.Empty;
+        public Dictionary<string, string> Prefixes = new Dictionary<string, string>();
+        public Dictionary<string, string> Comments = new Dictionary<string, string>();
+        public Dictionary<string, string> Strings = new Dictionary<string, string>();
+        public string SourceFile = string.Empty;
 
         public static CmtxFile Load(string File)
         {
@@ -29,57 +27,57 @@ namespace PolicyPlusCore.IO
                 switch (child.LocalName ?? "")
                 {
                     case "policyNamespaces":
-                    {
-                        foreach (XmlNode usingElement in child.ChildNodes)
                         {
-                            if (usingElement.LocalName != "using")
-                                continue;
-                            var prefix = usingElement.AttributeOrNull("prefix");
-                            var ns = usingElement.AttributeOrNull("namespace");
-                            if (prefix is null || ns is null)
-                                continue;
-                            cmtx.Prefixes.Add(prefix, ns);
+                            foreach (XmlNode usingElement in child.ChildNodes)
+                            {
+                                if (usingElement.LocalName != "using")
+                                    continue;
+                                var prefix = usingElement.AttributeOrNull("prefix");
+                                var ns = usingElement.AttributeOrNull("namespace");
+                                if (prefix is null || ns is null)
+                                    continue;
+                                cmtx.Prefixes.Add(prefix, ns);
+                            }
+                            break;
                         }
-                        break;
-                    }
                     case "comments":
-                    {
-                        foreach (XmlNode admTemplateElement in child.ChildNodes)
                         {
-                            if (admTemplateElement.LocalName != "admTemplate")
-                                continue;
-                            foreach (XmlNode commentElement in admTemplateElement.ChildNodes)
+                            foreach (XmlNode admTemplateElement in child.ChildNodes)
                             {
-                                if (commentElement.LocalName != "comment")
+                                if (admTemplateElement.LocalName != "admTemplate")
                                     continue;
-                                var policy = commentElement.AttributeOrNull("policyRef");
-                                var text = commentElement.AttributeOrNull("commentText");
-                                if (policy is null || text is null)
-                                    continue;
-                                cmtx.Comments.Add(policy, text);
+                                foreach (XmlNode commentElement in admTemplateElement.ChildNodes)
+                                {
+                                    if (commentElement.LocalName != "comment")
+                                        continue;
+                                    var policy = commentElement.AttributeOrNull("policyRef");
+                                    var text = commentElement.AttributeOrNull("commentText");
+                                    if (policy is null || text is null)
+                                        continue;
+                                    cmtx.Comments.Add(policy, text);
+                                }
                             }
+                            break;
                         }
-                        break;
-                    }
                     case "resources":
-                    {
-                        foreach (XmlNode stringTable in child.ChildNodes)
                         {
-                            if (stringTable.LocalName != "stringTable")
-                                continue;
-                            foreach (XmlNode stringElement in stringTable.ChildNodes)
+                            foreach (XmlNode stringTable in child.ChildNodes)
                             {
-                                if (stringElement.LocalName != "string")
+                                if (stringTable.LocalName != "stringTable")
                                     continue;
-                                var id = stringElement.AttributeOrNull("id");
-                                if (id is null)
-                                    continue;
-                                string text = stringElement.InnerText ?? string.Empty;
-                                cmtx.Strings.Add(id, text);
+                                foreach (XmlNode stringElement in stringTable.ChildNodes)
+                                {
+                                    if (stringElement.LocalName != "string")
+                                        continue;
+                                    var id = stringElement.AttributeOrNull("id");
+                                    if (id is null)
+                                        continue;
+                                    string text = stringElement.InnerText ?? string.Empty;
+                                    cmtx.Strings.Add(id, text);
+                                }
                             }
+                            break;
                         }
-                        break;
-                    }
                 }
             }
             return cmtx;
