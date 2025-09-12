@@ -50,5 +50,6 @@ namespace PolicyPlusPlus.Serialization
     [JsonSerializable(typeof(HostResponse))]
     [JsonSerializable(typeof(List<string>))]
     [JsonSerializable(typeof(BookmarkStore))]
+    [JsonSerializable(typeof(CustomPolSettings))]
     internal partial class AppJsonContext : System.Text.Json.Serialization.JsonSerializerContext { }
 }

@@ -114,7 +114,7 @@ namespace PolicyPlusPlus
         {
             _suppressSearchOptionEvents = true;
             this.InitializeComponent();
-            try { PolicySourceManager.Instance.SourcesChanged += (_, __) => { _compSource = PolicySourceManager.Instance.CompSource; _userSource = PolicySourceManager.Instance.UserSource; RefreshVisibleRows(); ShowActiveSourceInfo(); }; } catch { }
+            try { PolicySourceManager.Instance.SourcesChanged += (_, __) => { _compSource = PolicySourceManager.Instance.CompSource; _userSource = PolicySourceManager.Instance.UserSource; RefreshVisibleRows(); var li = RootGrid?.FindName("SourceStatusText") as TextBlock; if (li!=null) li.Text = SourceStatusFormatter.FormatStatus(); }; } catch { }
             HookPendingQueue();
             TryInitCustomTitleBar();
             RootGrid.Loaded += (s, e) =>
@@ -391,6 +391,18 @@ namespace PolicyPlusPlus
                 // Ensure suppression is released even if an exception occurs
                 _suppressSearchOptionEvents = false;
             }
+        }
+
+        // Helper to detect double-tap originating from bookmark toggle button to suppress edit dialog.
+        private bool IsFromBookmarkButton(DependencyObject? dep)
+        {
+            while (dep != null)
+            {
+                if (dep is Button btn && btn.Tag is PolicyPlusPolicy)
+                    return true;
+                dep = VisualTreeHelper.GetParent(dep);
+            }
+            return false;
         }
 
         private void HookDoubleTapHandlers()
@@ -824,418 +836,8 @@ namespace PolicyPlusPlus
                 _compSource = PolicySourceManager.Instance.CompSource;
                 _userSource = PolicySourceManager.Instance.UserSource;
             }
-            ShowActiveSourceInfo();
+            var liUnified2 = RootGrid?.FindName("SourceStatusText") as TextBlock; if (liUnified2!=null) liUnified2.Text = SourceStatusFormatter.FormatStatus();
             RefreshVisibleRows();
-        }
-
-        private void UpdateClearCategoryFilterButtonState()
-        {
-            try
-            {
-                var btn = RootGrid?.FindName("ClearCategoryFilterButton") as Button;
-                if (btn != null) btn.IsEnabled = _selectedCategory != null;
-            }
-            catch { }
-        }
-
-        private async void BtnLanguage_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
-                string admxPath = SettingsService.Instance.LoadSettings().AdmxSourcePath ?? defaultPath;
-                string currentLang = SettingsService.Instance.LoadSettings().Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
-
-                var dlg = new LanguageOptionsDialog();
-                if (this.Content is FrameworkElement root)
-                {
-                    dlg.XamlRoot = root.XamlRoot;
-                }
-                dlg.Initialize(admxPath, currentLang);
-                var result = await dlg.ShowAsync();
-                if (result == ContentDialogResult.Primary)
-                {
-                    var chosen = dlg.SelectedLanguage;
-                    bool langChanged = !string.IsNullOrEmpty(chosen) && !string.Equals(chosen, currentLang, StringComparison.OrdinalIgnoreCase);
-                    if (langChanged)
-                    {
-                        try { SettingsService.Instance.UpdateLanguage(chosen!); } catch { }
-                        LoadAdmxFolderAsync(admxPath); // this will handle second language priming
-                    }
-                    // 2nd language
-                    var before = SettingsService.Instance.LoadSettings();
-                    bool beforeEnabled = before.SecondLanguageEnabled ?? false;
-                    string beforeSecond = before.SecondLanguage ?? "en-US";
-                    bool afterEnabled = dlg.SecondLanguageEnabled;
-                    string afterSecond = dlg.SelectedSecondLanguage ?? beforeSecond;
-                    bool secondChanged = (beforeEnabled != afterEnabled) || !string.Equals(beforeSecond, afterSecond, StringComparison.OrdinalIgnoreCase);
-                    try { SettingsService.Instance.UpdateSecondLanguageEnabled(afterEnabled); } catch { }
-                    if (afterEnabled && !string.IsNullOrEmpty(afterSecond))
-                    {
-                        try { SettingsService.Instance.UpdateSecondLanguage(afterSecond); } catch { }
-                    }
-
-                    if (secondChanged && !langChanged)
-                    {
-                        // Rebuild in-memory search tuples to include new 2nd language names
-                        RebuildSearchIndex();
-                        // Try to load existing second-language NGram snapshot; fall back to lazy build
-                        try
-                        {
-                            if (afterEnabled && !string.IsNullOrEmpty(afterSecond) && !string.Equals(afterSecond, currentLang, StringComparison.OrdinalIgnoreCase))
-                            {
-                                var fp2 = CacheService.ComputeAdmxFingerprint(_currentAdmxPath ?? admxPath, afterSecond);
-                                if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath ?? admxPath, afterSecond, fp2, _secondIndex.N, "sec-" + afterSecond, out var snap2) && snap2 != null)
-                                { _secondIndex.LoadSnapshot(snap2); _secondIndexBuilt = true; }
-                                else { _secondIndexBuilt = false; }
-                            }
-                            else
-                            {
-                                _secondIndexBuilt = true; // nothing needed
-                            }
-                        }
-                        catch { _secondIndexBuilt = false; }
-                    }
-
-                    ApplySecondLanguageVisibilityToViewMenu();
-                    UpdateColumnVisibilityFromFlags();
-                    if (!langChanged) RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
-                }
-            }
-            catch
-            {
-                ShowInfo("Unable to open Language dialog.", InfoBarSeverity.Error);
-            }
-        }
-
-        private async void BtnExportReg_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var picker = new FileSavePicker();
-                var hwnd = WindowNative.GetWindowHandle(this);
-                InitializeWithWindow.Initialize(picker, hwnd);
-                picker.FileTypeChoices.Add("Registry scripts", new System.Collections.Generic.List<string> { ".reg" });
-                picker.SuggestedFileName = "export";
-                var file = await picker.PickSaveFileAsync();
-                if (file is null) return;
-
-                var reg = PolicySourceSnapshot.SnapshotAllPolicyToReg();
-                reg.Save(file.Path);
-                ShowInfo(".reg exported.", InfoBarSeverity.Success);
-            }
-            catch (Exception ex)
-            {
-                ShowInfo("Failed to export .reg: " + ex.Message, InfoBarSeverity.Error);
-            }
-        }
-
-        private async void BtnImportPol_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var dlg = new ImportPolDialog();
-                if (this.Content is FrameworkElement root) dlg.XamlRoot = root.XamlRoot;
-                var result = await dlg.ShowAsync();
-                if (result == ContentDialogResult.Primary && dlg.Pol != null)
-                {
-                    ShowInfo(".pol loaded (preview).", InfoBarSeverity.Informational);
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowInfo("Failed to import .pol: " + ex.Message, InfoBarSeverity.Error);
-            }
-        }
-
-        private async void BtnImportReg_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var dlg = new ImportRegDialog();
-                if (this.Content is FrameworkElement root) dlg.XamlRoot = root.XamlRoot;
-                var result = await dlg.ShowAsync();
-                if (result == ContentDialogResult.Primary && dlg.ParsedReg != null)
-                {
-                    SetBusy(true, "Saving...");
-                    try
-                    {
-                        if (_useTempPol)
-                        {
-                            // Apply into both temp POLs by hive
-                            EnsureTempPolPaths();
-                            var (userPolNew, machinePolNew) = RegImportHelper.ToPolByHive(dlg.ParsedReg);
-
-                            if (!string.IsNullOrEmpty(_tempPolUserPath))
-                            {
-                                var userPath = _tempPolUserPath!;
-                                var existingUser = File.Exists(userPath) ? PolFile.Load(userPath) : new PolFile();
-                                userPolNew.Apply(existingUser);
-                                existingUser.Save(userPath);
-                            }
-
-                            if (!string.IsNullOrEmpty(_tempPolCompPath))
-                            {
-                                var compPath = _tempPolCompPath!;
-                                var existingComp = File.Exists(compPath) ? PolFile.Load(compPath) : new PolFile();
-                                machinePolNew.Apply(existingComp);
-                                existingComp.Save(compPath);
-                            }
-
-                            EnsureLocalSourcesUsingTemp();
-                            ShowInfo(".reg imported to temp POLs (User/Machine).", InfoBarSeverity.Success);
-                        }
-                        else
-                        {
-                            // Apply into Local GPO via elevation host: split by hive and send each scope separately
-                            var (userPol, machinePol) = RegImportHelper.ToPolByHive(dlg.ParsedReg);
-                            string? machineB64 = null, userB64 = null;
-                            if (machinePol != null)
-                            {
-                                using var msM = new MemoryStream(); using var bwM = new BinaryWriter(msM, System.Text.Encoding.Unicode, true);
-                                machinePol.Save(bwM); msM.Position = 0; machineB64 = Convert.ToBase64String(msM.ToArray());
-                            }
-                            if (userPol != null)
-                            {
-                                using var msU = new MemoryStream(); using var bwU = new BinaryWriter(msU, System.Text.Encoding.Unicode, true);
-                                userPol.Save(bwU); msU.Position = 0; userB64 = Convert.ToBase64String(msU.ToArray());
-                            }
-                            var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(machineB64, userB64, triggerRefresh: true);
-                            if (!res.Ok)
-                            { ShowInfo(".reg import failed: " + (res.Error ?? "elevation error"), InfoBarSeverity.Error); return; }
-                            RefreshLocalSources();
-                            ShowInfo(".reg imported to Local GPO.");
-                        }
-
-                        // Refresh list to reflect new states
-                        RefreshList();
-                        RefreshVisibleRows();
-                    }
-                    finally
-                    {
-                        SetBusy(false);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                SetBusy(false);
-                ShowInfo("Failed to import .reg: " + ex.Message, InfoBarSeverity.Error);
-            }
-        }
-
-        private static string SanitizeFileName(string name)
-        {
-            foreach (var ch in System.IO.Path.GetInvalidFileNameChars()) name = name.Replace(ch, '_');
-            return string.IsNullOrWhiteSpace(name) ? "export" : name;
-        }
-
-        public void RefreshLocalSources()
-        {
-            try
-            {
-                PolicySourceManager.Instance.Refresh();
-                _compSource = PolicySourceManager.Instance.CompSource;
-                _userSource = PolicySourceManager.Instance.UserSource;
-            }
-            catch { }
-            try { PolicySourcesRefreshed?.Invoke(this, EventArgs.Empty); } catch { }
-        }
-
-        private void RefreshList()
-        {
-            try { RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } catch { }
-        }
-
-        private void GoBackAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { BtnBack_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
-
-        private void GoForwardAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { BtnForward_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
-
-        private void RootGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
-        {
-            try
-            {
-                var point = e.GetCurrentPoint(this.Content as UIElement);
-                var props = point.Properties;
-                if (props.IsXButton1Pressed)
-                {
-                    BtnBack_Click(this, new RoutedEventArgs());
-                    e.Handled = true;
-                }
-                else if (props.IsXButton2Pressed)
-                {
-                    BtnForward_Click(this, new RoutedEventArgs());
-                    e.Handled = true;
-                }
-            }
-            catch { }
-        }
-
-        private async void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == global::Windows.System.VirtualKey.Enter)
-            {
-                if (PolicyList?.SelectedItem is PolicyListRow row && row.Policy is not null)
-                {
-                    e.Handled = true;
-                    await OpenEditDialogForPolicyInternalAsync(row.Policy, ensureFront: true);
-                }
-                else if (PolicyList?.SelectedItem is PolicyListRow row2 && row2.Category is not null)
-                {
-                    e.Handled = true;
-                    _selectedCategory = row2.Category;
-                    UpdateSearchPlaceholder();
-                    _navTyping = false;
-                    RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
-                    UpdateNavButtons();
-                }
-            }
-        }
-
-        private bool IsFromBookmarkButton(DependencyObject? dep)
-        {
-            while (dep != null)
-            {
-                if (dep is Button btn && btn.Tag is PolicyPlusPolicy)
-                {
-                    // Bookmark button identified by having a Policy tag and no complex content (FontIcon only)
-                    return true;
-                }
-                dep = VisualTreeHelper.GetParent(dep);
-            }
-            return false;
-        }
-
-        private void PolicyList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
-        {
-            DependencyObject? dep = e.OriginalSource as DependencyObject;
-
-            // Suppress edit when the double-tap was on the bookmark toggle button
-            if (IsFromBookmarkButton(dep)) { e.Handled = true; return; }
-
-            object? item = null;
-
-            var dgRow = FindAncestorDataGridRow(dep);
-            if (dgRow != null)
-            {
-                item = dgRow.DataContext;
-            }
-
-            if (item == null)
-                item = (e.OriginalSource as FrameworkElement)?.DataContext;
-            if (item == null)
-                item = PolicyList?.SelectedItem;
-
-            if (item is PolicyListRow row && row.Policy is PolicyPlusPolicy pol)
-            {
-                e.Handled = true;
-                _ = OpenEditDialogForPolicyInternalAsync(pol, ensureFront: true);
-                return;
-            }
-            if (item is PolicyListRow row2 && row2.Category is PolicyPlusCategory cat)
-            {
-                e.Handled = true;
-                _selectedCategory = cat;
-                UpdateSearchPlaceholder();
-                _navTyping = false;
-                RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
-                SelectCategoryInTree(cat);
-                UpdateNavButtons();
-            }
-        }
-
-        private static DataGridRow? FindAncestorDataGridRow(DependencyObject? start)
-        {
-            while (start != null)
-            {
-                if (start is DataGridRow dgr) return dgr;
-                start = VisualTreeHelper.GetParent(start);
-            }
-            return null;
-        }
-
-        private void PolicyList_Sorting(object? sender, DataGridColumnEventArgs e)
-        {
-            try
-            {
-                string? key = null;
-                if (e.Column == ColName) key = nameof(PolicyListRow.DisplayName);
-                else if (e.Column == ColId) key = nameof(PolicyListRow.ShortId);
-                else if (e.Column == ColCategory) key = nameof(PolicyListRow.CategoryName); // Parent
-                else if (e.Column == ColTopCategory) key = nameof(PolicyListRow.TopCategoryName); // Top
-                else if (e.Column == ColCategoryPath) key = nameof(PolicyListRow.CategoryFullPath); // Full path
-                else if (e.Column == ColApplies) key = nameof(PolicyListRow.AppliesText);
-                else if (e.Column == ColSupported) key = nameof(PolicyListRow.SupportedText);
-                if (string.IsNullOrEmpty(key)) return;
-
-                if (string.Equals(_sortColumn, key, StringComparison.Ordinal))
-                {
-                    if (_sortDirection == DataGridSortDirection.Ascending) _sortDirection = DataGridSortDirection.Descending;
-                    else if (_sortDirection == DataGridSortDirection.Descending) { _sortColumn = null; _sortDirection = null; }
-                    else _sortDirection = DataGridSortDirection.Ascending;
-                }
-                else { _sortColumn = key; _sortDirection = DataGridSortDirection.Ascending; }
-
-                try
-                {
-                    if (_sortColumn == null || _sortDirection == null) SettingsService.Instance.UpdateSort(null, null);
-                    else SettingsService.Instance.UpdateSort(_sortColumn, _sortDirection == DataGridSortDirection.Descending ? "Desc" : "Asc");
-                }
-                catch { }
-
-                foreach (var col in PolicyList.Columns) col.SortDirection = null;
-                if (_sortColumn != null && _sortDirection != null)
-                {
-                    if (_sortColumn == nameof(PolicyListRow.DisplayName)) ColName.SortDirection = _sortDirection;
-                    else if (_sortColumn == nameof(PolicyListRow.ShortId)) ColId.SortDirection = _sortDirection;
-                    else if (_sortColumn == nameof(PolicyListRow.CategoryName)) ColCategory.SortDirection = _sortDirection;
-                    else if (_sortColumn == nameof(PolicyListRow.TopCategoryName)) ColTopCategory.SortDirection = _sortDirection;
-                    else if (_sortColumn == nameof(PolicyListRow.CategoryFullPath)) ColCategoryPath.SortDirection = _sortDirection;
-                    else if (_sortColumn == nameof(PolicyListRow.AppliesText)) ColApplies.SortDirection = _sortDirection;
-                    else if (_sortColumn == nameof(PolicyListRow.SupportedText)) ColSupported.SortDirection = _sortDirection;
-                }
-
-                RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
-            }
-            catch { }
-        }
-
-        private void UpdateSearchPlaceholder()
-        {
-            if (SearchBox == null) return;
-            SearchBox.PlaceholderText = _selectedCategory != null ? $"Search policies in {_selectedCategory.DisplayName}" : "Search policies";
-            UpdateClearCategoryFilterButtonState();
-        }
-
-        private void ViewDetailsToggle_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is ToggleMenuFlyoutItem t)
-            {
-                _showDetails = t.IsChecked;
-                try { SettingsService.Instance.UpdateShowDetails(_showDetails); } catch { }
-                ApplyDetailsPaneVisibility();
-            }
-        }
-
-        private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
-        {
-            _selectedCategory = null;
-            if (CategoryTree != null)
-            {
-                _suppressCategorySelectionChanged = true;
-                var old = CategoryTree.SelectionMode;
-                CategoryTree.SelectionMode = Microsoft.UI.Xaml.Controls.TreeViewSelectionMode.None;
-                BuildCategoryTree();
-                CategoryTree.SelectionMode = old;
-                _suppressCategorySelectionChanged = false;
-            }
-            UpdateSearchPlaceholder();
-            UpdateClearCategoryFilterButtonState();
-            _navTyping = false;
-            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
-            UpdateNavButtons();
         }
 
         private void BtnLoadLocalGpo_Click(object sender, RoutedEventArgs e)
@@ -1244,7 +846,8 @@ namespace PolicyPlusPlus
             _compSource = PolicySourceManager.Instance.CompSource;
             _userSource = PolicySourceManager.Instance.UserSource;
             var li4 = GetLoaderInfo(); if (li4 != null) li4.Text = "Local GPO";
-            ShowActiveSourceInfo();
+            // use unified status update
+            var liUnified = RootGrid?.FindName("SourceStatusText") as TextBlock; if (liUnified!=null) liUnified.Text = SourceStatusFormatter.FormatStatus();
             RefreshVisibleRows();
         }
 
@@ -1297,17 +900,194 @@ namespace PolicyPlusPlus
         {
             try
             {
-                var mgr = PolicySourceManager.Instance;
-                string msg = mgr.Mode switch
-                {
-                    PolicySourceManager.PolicySourceMode.CustomPol => $"Custom POL (Comp: {Path.GetFileName(mgr.CustomCompPath ?? "-")}, User: {Path.GetFileName(mgr.CustomUserPath ?? "-")})",
-                    PolicySourceManager.PolicySourceMode.TempPol => "Temp POL",
-                    _ => "Local GPO"
-                };
+                var msg = SourceStatusFormatter.FormatStatus();
                 ShowInfo(msg, InfoBarSeverity.Informational);
                 try { if (RootGrid != null) { if (RootGrid.FindName("SourceStatusText") is TextBlock t) t.Text = msg; } } catch { }
             }
             catch { }
+        }
+
+        // Restored methods (previously removed during refactor)
+        private void PolicyList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            DependencyObject? dep = e.OriginalSource as DependencyObject;
+            if (dep != null)
+            {
+                if (IsFromBookmarkButton(dep)) { e.Handled = true; return; }
+            }
+            object? item = null;
+            var dgRow = FindAncestorDataGridRow(dep);
+            if (dgRow != null) item = dgRow.DataContext;
+            if (item == null) item = (e.OriginalSource as FrameworkElement)?.DataContext;
+            if (item == null) item = PolicyList?.SelectedItem;
+            if (item is PolicyListRow row && row.Policy is PolicyPlusPolicy pol)
+            {
+                e.Handled = true;
+                _ = OpenEditDialogForPolicyInternalAsync(pol, ensureFront: true);
+                return;
+            }
+            if (item is PolicyListRow row2 && row2.Category is PolicyPlusCategory cat)
+            {
+                e.Handled = true;
+                _selectedCategory = cat;
+                UpdateSearchPlaceholder();
+                _navTyping = false;
+                RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                SelectCategoryInTree(cat);
+                UpdateNavButtons();
+            }
+        }
+
+        private static DataGridRow? FindAncestorDataGridRow(DependencyObject? start)
+        {
+            while (start != null)
+            {
+                if (start is DataGridRow dgr) return dgr;
+                start = VisualTreeHelper.GetParent(start);
+            }
+            return null;
+        }
+
+        private void UpdateSearchPlaceholder()
+        {
+            if (SearchBox == null) return;
+            SearchBox.PlaceholderText = _selectedCategory != null ? $"Search policies in {_selectedCategory.DisplayName}" : "Search policies";
+            try { var btn = RootGrid?.FindName("ClearCategoryFilterButton") as Button; if (btn != null) btn.IsEnabled = _selectedCategory != null; } catch { }
+        }
+
+        private void ViewDetailsToggle_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is ToggleMenuFlyoutItem t)
+            {
+                _showDetails = t.IsChecked;
+                try { SettingsService.Instance.UpdateShowDetails(_showDetails); } catch { }
+                ApplyDetailsPaneVisibility();
+            }
+        }
+
+        private async void BtnExportReg_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var picker = new FileSavePicker();
+                var hwnd = WindowNative.GetWindowHandle(this);
+                InitializeWithWindow.Initialize(picker, hwnd);
+                picker.FileTypeChoices.Add("Registry scripts", new System.Collections.Generic.List<string> { ".reg" });
+                picker.SuggestedFileName = "export";
+                var file = await picker.PickSaveFileAsync();
+                if (file is null) return;
+                var reg = PolicySourceSnapshot.SnapshotAllPolicyToReg();
+                reg.Save(file.Path);
+                ShowInfo(".reg exported.", InfoBarSeverity.Success);
+            }
+            catch (Exception ex)
+            {
+                ShowInfo("Failed to export .reg: " + ex.Message, InfoBarSeverity.Error);
+            }
+        }
+
+        private async void BtnImportPol_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new ImportPolDialog();
+                if (this.Content is FrameworkElement root) dlg.XamlRoot = root.XamlRoot;
+                var result = await dlg.ShowAsync();
+                if (result == ContentDialogResult.Primary && dlg.Pol != null)
+                {
+                    ShowInfo(".pol loaded (preview).", InfoBarSeverity.Informational);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowInfo("Failed to import .pol: " + ex.Message, InfoBarSeverity.Error);
+            }
+        }
+
+        private async void BtnImportReg_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new ImportRegDialog();
+                if (this.Content is FrameworkElement root) dlg.XamlRoot = root.XamlRoot;
+                var result = await dlg.ShowAsync();
+                if (result == ContentDialogResult.Primary && dlg.ParsedReg != null)
+                {
+                    SetBusy(true, "Saving...");
+                    try
+                    {
+                        if (_useTempPol)
+                        {
+                            EnsureTempPolPaths();
+                            var (userPolNew, machinePolNew) = RegImportHelper.ToPolByHive(dlg.ParsedReg);
+                            if (!string.IsNullOrEmpty(_tempPolUserPath))
+                            {
+                                var userPath = _tempPolUserPath!;
+                                var existingUser = File.Exists(userPath) ? PolFile.Load(userPath) : new PolFile();
+                                userPolNew.Apply(existingUser);
+                                existingUser.Save(userPath);
+                            }
+                            if (!string.IsNullOrEmpty(_tempPolCompPath))
+                            {
+                                var compPath = _tempPolCompPath!;
+                                var existingComp = File.Exists(compPath) ? PolFile.Load(compPath) : new PolFile();
+                                machinePolNew.Apply(existingComp);
+                                existingComp.Save(compPath);
+                            }
+                            EnsureLocalSourcesUsingTemp();
+                            ShowInfo(".reg imported to temp POLs (User/Machine).", InfoBarSeverity.Success);
+                        }
+                        else
+                        {
+                            var (userPol, machinePol) = RegImportHelper.ToPolByHive(dlg.ParsedReg);
+                            string? machineB64 = null, userB64 = null;
+                            if (machinePol != null)
+                            {
+                                using var msM = new MemoryStream(); using var bwM = new BinaryWriter(msM, System.Text.Encoding.Unicode, true);
+                                machinePol.Save(bwM); msM.Position = 0; machineB64 = Convert.ToBase64String(msM.ToArray());
+                            }
+                            if (userPol != null)
+                            {
+                                using var msU = new MemoryStream(); using var bwU = new BinaryWriter(msU, System.Text.Encoding.Unicode, true);
+                                userPol.Save(bwU); msU.Position = 0; userB64 = Convert.ToBase64String(msU.ToArray());
+                            }
+                            var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(machineB64, userB64, triggerRefresh: true);
+                            if (!res.Ok)
+                            { ShowInfo(".reg import failed: " + (res.Error ?? "elevation error"), InfoBarSeverity.Error); return; }
+                            RefreshLocalSources();
+                            ShowInfo(".reg imported to Local GPO.");
+                        }
+                        RefreshList();
+                        RefreshVisibleRows();
+                    }
+                    finally { SetBusy(false); }
+                }
+            }
+            catch (Exception ex)
+            {
+                SetBusy(false);
+                ShowInfo("Failed to import .reg: " + ex.Message, InfoBarSeverity.Error);
+            }
+        }
+
+        // Provide no-op if listeners previously expected event
+        private void RaisePolicySourcesRefreshed() { }
+
+        public void RefreshLocalSources()
+        {
+            try
+            {
+                PolicySourceManager.Instance.Refresh();
+                _compSource = PolicySourceManager.Instance.CompSource;
+                _userSource = PolicySourceManager.Instance.UserSource;
+            }
+            catch { }
+            try { PolicySourcesRefreshed?.Invoke(this, EventArgs.Empty); } catch { }
+        }
+
+        private void RefreshList()
+        {
+            try { RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } catch { }
         }
     }
 }

@@ -14,12 +14,7 @@ namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {
-        private string? _customPolCompPath;
-        private string? _customPolUserPath;
-        private bool _useCustomPol;
-
-        private bool _customPolEnableComp;
-        private bool _customPolEnableUser;
+        private CustomPolSettings? _customPol; // unified state loaded once
 
         private FrameworkElement? RootElement => this.Content as FrameworkElement;
         private ToggleMenuFlyoutItem? GetToggleUseCustomPolMenu() => (RootElement?.FindName("ToggleUseCustomPolMenu") as ToggleMenuFlyoutItem);
@@ -30,21 +25,28 @@ namespace PolicyPlusPlus
         {
             try
             {
+                EnsureCustomPolLoaded();
                 var dlg = new CustomPolSettingsDialog();
                 if (Content is FrameworkElement fe) dlg.XamlRoot = fe.XamlRoot;
-                dlg.Initialize(_customPolCompPath, _customPolUserPath, _customPolEnableComp, _customPolEnableUser);
+                dlg.Initialize(_customPol?.ComputerPath, _customPol?.UserPath, _customPol?.EnableComputer ?? false, _customPol?.EnableUser ?? false);
                 var res = await dlg.ShowAsync();
                 if (res == ContentDialogResult.Primary)
                 {
-                    _customPolCompPath = dlg.ComputerPolPath;
-                    _customPolUserPath = dlg.UserPolPath;
-                    _customPolEnableComp = dlg.EnableComputer;
-                    _customPolEnableUser = dlg.EnableUser;
+                    _customPol ??= new CustomPolSettings();
+                    _customPol.ComputerPath = dlg.ComputerPolPath;
+                    _customPol.UserPath = dlg.UserPolPath;
+                    _customPol.EnableComputer = dlg.EnableComputer;
+                    _customPol.EnableUser = dlg.EnableUser;
                     if (dlg.ActivateAfter)
                     {
-                        _useCustomPol = _customPolEnableComp || _customPolEnableUser;
-                        var toggle = GetToggleUseCustomPolMenu(); if (toggle != null) toggle.IsChecked = _useCustomPol;
-                        if (_useCustomPol) SwitchToCustomPol();
+                        _customPol.Active = _customPol.EnableComputer || _customPol.EnableUser;
+                        var toggle = GetToggleUseCustomPolMenu(); if (toggle != null) toggle.IsChecked = _customPol.Active;
+                        PersistCustomPol();
+                        if (_customPol.Active) SwitchToCustomPol();
+                    }
+                    else
+                    {
+                        PersistCustomPol();
                     }
                 }
             }
@@ -57,111 +59,97 @@ namespace PolicyPlusPlus
 
         private void ToggleUseCustomPolMenu_Click(object sender, RoutedEventArgs e)
         {
-            _useCustomPol = (sender as ToggleMenuFlyoutItem)?.IsChecked == true;
-            if (_useCustomPol)
+            EnsureCustomPolLoaded();
+            bool desiredActive = (sender as ToggleMenuFlyoutItem)?.IsChecked == true;
+            _customPol!.Active = desiredActive;
+            if (_customPol.Active)
             {
-                // If both scopes disabled, force configuration instead of silently doing nothing
-                if (!_customPolEnableComp && !_customPolEnableUser)
+                if (!_customPol.EnableComputer && !_customPol.EnableUser)
                 {
                     _ = DispatcherQueue.TryEnqueue(async () =>
                     {
                         var dlg = new CustomPolSettingsDialog();
                         if (Content is FrameworkElement fe) dlg.XamlRoot = fe.XamlRoot;
-                        dlg.Initialize(_customPolCompPath, _customPolUserPath, _customPolEnableComp, _customPolEnableUser);
+                        dlg.Initialize(_customPol.ComputerPath, _customPol.UserPath, _customPol.EnableComputer, _customPol.EnableUser);
                         var res = await dlg.ShowAsync();
                         if (res == ContentDialogResult.Primary)
                         {
-                            _customPolCompPath = dlg.ComputerPolPath;
-                            _customPolUserPath = dlg.UserPolPath;
-                            _customPolEnableComp = dlg.EnableComputer;
-                            _customPolEnableUser = dlg.EnableUser;
-                            _useCustomPol = _customPolEnableComp || _customPolEnableUser;
-                            var toggle2 = GetToggleUseCustomPolMenu(); if (toggle2 != null) toggle2.IsChecked = _useCustomPol;
-                            if (_useCustomPol) { SwitchToCustomPol(); return; }
+                            _customPol.ComputerPath = dlg.ComputerPolPath;
+                            _customPol.UserPath = dlg.UserPolPath;
+                            _customPol.EnableComputer = dlg.EnableComputer;
+                            _customPol.EnableUser = dlg.EnableUser;
+                            _customPol.Active = _customPol.EnableComputer || _customPol.EnableUser;
+                            var toggle2 = GetToggleUseCustomPolMenu(); if (toggle2 != null) toggle2.IsChecked = _customPol.Active;
+                            PersistCustomPol();
+                            if (_customPol.Active) { SwitchToCustomPol(); return; }
                         }
-                        // User cancelled or still not configured
-                        _useCustomPol = false; var tgl = GetToggleUseCustomPolMenu(); if (tgl != null) tgl.IsChecked = false; ShowInfo("Custom POL not configured.", InfoBarSeverity.Warning);
+                        _customPol.Active = false; var tgl = GetToggleUseCustomPolMenu(); if (tgl != null) tgl.IsChecked = false; PersistCustomPol(); ShowInfo("Custom POL not configured.", InfoBarSeverity.Warning);
                     });
                     return;
                 }
-                if (string.IsNullOrEmpty(_customPolCompPath) && _customPolEnableComp)
+                if ((_customPol.EnableComputer && string.IsNullOrEmpty(_customPol.ComputerPath)) || (_customPol.EnableUser && string.IsNullOrEmpty(_customPol.UserPath)))
                 {
-                    ShowInfo("Computer custom POL path not set.", InfoBarSeverity.Warning);
-                }
-                if (string.IsNullOrEmpty(_customPolUserPath) && _customPolEnableUser)
-                {
-                    ShowInfo("User custom POL path not set.", InfoBarSeverity.Warning);
-                }
-                if ((_customPolEnableComp && string.IsNullOrEmpty(_customPolCompPath)) || (_customPolEnableUser && string.IsNullOrEmpty(_customPolUserPath)))
-                {
-                    // Open settings to let user fill paths
                     _ = DispatcherQueue.TryEnqueue(async () =>
                     {
                         var dlg = new CustomPolSettingsDialog();
                         if (Content is FrameworkElement fe) dlg.XamlRoot = fe.XamlRoot;
-                        dlg.Initialize(_customPolCompPath, _customPolUserPath, _customPolEnableComp, _customPolEnableUser);
+                        dlg.Initialize(_customPol.ComputerPath, _customPol.UserPath, _customPol.EnableComputer, _customPol.EnableUser);
                         var res = await dlg.ShowAsync();
                         if (res == ContentDialogResult.Primary)
                         {
-                            _customPolCompPath = dlg.ComputerPolPath;
-                            _customPolUserPath = dlg.UserPolPath;
-                            _customPolEnableComp = dlg.EnableComputer;
-                            _customPolEnableUser = dlg.EnableUser;
-                            _useCustomPol = _customPolEnableComp || _customPolEnableUser;
-                            var toggle3 = GetToggleUseCustomPolMenu(); if (toggle3 != null) toggle3.IsChecked = _useCustomPol;
-                            if (_useCustomPol) SwitchToCustomPol(); else ShowInfo("Custom POL not configured.", InfoBarSeverity.Warning);
+                            _customPol.ComputerPath = dlg.ComputerPolPath;
+                            _customPol.UserPath = dlg.UserPolPath;
+                            _customPol.EnableComputer = dlg.EnableComputer;
+                            _customPol.EnableUser = dlg.EnableUser;
+                            _customPol.Active = _customPol.EnableComputer || _customPol.EnableUser;
+                            var toggle3 = GetToggleUseCustomPolMenu(); if (toggle3 != null) toggle3.IsChecked = _customPol.Active;
+                            PersistCustomPol();
+                            if (_customPol.Active) SwitchToCustomPol(); else ShowInfo("Custom POL not configured.", InfoBarSeverity.Warning);
                         }
                         else
                         {
-                            _useCustomPol = false; var tgl = GetToggleUseCustomPolMenu(); if (tgl != null) tgl.IsChecked = false; ShowInfo("Custom POL cancelled.", InfoBarSeverity.Informational);
+                            _customPol.Active = false; var tgl = GetToggleUseCustomPolMenu(); if (tgl != null) tgl.IsChecked = false; PersistCustomPol(); ShowInfo("Custom POL cancelled.", InfoBarSeverity.Informational);
                         }
                     });
                     return;
                 }
-                if (string.IsNullOrEmpty(_customPolCompPath) || string.IsNullOrEmpty(_customPolUserPath))
-                {
-                    // Mixed enable state handled in SwitchToCustomPol; proceed
-                    SwitchToCustomPol();
-                }
-                else
-                {
-                    SwitchToCustomPol();
-                }
+                SwitchToCustomPol();
             }
             else
             {
-                // Persist disabling so it does not auto-enable on next launch
-                _customPolEnableComp = false;
-                _customPolEnableUser = false;
-                try { SettingsService.Instance.UpdateCustomPolSettings(false, false, _customPolCompPath, _customPolUserPath); } catch { }
+                _customPol.EnableComputer = false; // disable both scopes when deactivating
+                _customPol.EnableUser = false;
+                PersistCustomPol();
                 if (_useTempPol) PolicySourceManager.Instance.SwitchToTempPol(); else PolicySourceManager.Instance.EnsureLocalGpo();
-                _compSource = PolicySourceManager.Instance.CompSource; // keep local cache in sync
+                _compSource = PolicySourceManager.Instance.CompSource;
                 _userSource = PolicySourceManager.Instance.UserSource;
-                UpdateLoaderInfo();
-                ShowActiveSourceInfo();
+                UpdateSourceStatusUnified();
                 RefreshVisibleRows();
             }
         }
 
         private async Task PickBothPolAsync()
         {
-            var comp = await PickFileAsync("Computer"); if (comp == null) return; _customPolCompPath = comp;
-            var user = await PickFileAsync("User"); if (user == null) return; _customPolUserPath = user;
-            EnsurePolFileExists(_customPolCompPath); EnsurePolFileExists(_customPolUserPath);
-            _useCustomPol = true; var toggle = GetToggleUseCustomPolMenu(); if (toggle != null) toggle.IsChecked = true;
-            SwitchToCustomPol(notify:false); // custom message below
+            EnsureCustomPolLoaded();
+            var comp = await PickFileAsync("Computer"); if (comp == null) return; _customPol!.ComputerPath = comp; _customPol.EnableComputer = true;
+            var user = await PickFileAsync("User"); if (user == null) return; _customPol.UserPath = user; _customPol.EnableUser = true;
+            EnsurePolFileExists(_customPol.ComputerPath); EnsurePolFileExists(_customPol.UserPath);
+            _customPol.Active = true; PersistCustomPol(); var toggle = GetToggleUseCustomPolMenu(); if (toggle != null) toggle.IsChecked = true;
+            SwitchToCustomPol(notify:false);
             ShowInfo("Custom .pol loaded.");
-            ShowActiveSourceInfo();
+            UpdateSourceStatusUnified();
         }
 
         private async Task PickSinglePolAsync(bool isUser)
         {
+            EnsureCustomPolLoaded();
             var picked = await PickFileAsync(isUser ? "User" : "Computer");
             if (picked == null) return;
-            if (isUser) _customPolUserPath = picked; else _customPolCompPath = picked;
-            EnsurePolFileExists(picked);
+            if (isUser) { _customPol!.UserPath = picked; _customPol.EnableUser = true; }
+            else { _customPol!.ComputerPath = picked; _customPol.EnableComputer = true; }
+            EnsurePolFileExists(picked); PersistCustomPol();
             ShowInfo((isUser ? "User" : "Computer") + " .pol set.");
-            if (_useCustomPol && !string.IsNullOrEmpty(_customPolCompPath) && !string.IsNullOrEmpty(_customPolUserPath)) { SwitchToCustomPol(); ShowActiveSourceInfo(); }
+            if (_customPol.Active && (!string.IsNullOrEmpty(_customPol.ComputerPath) || !string.IsNullOrEmpty(_customPol.UserPath))) { SwitchToCustomPol(); UpdateSourceStatusUnified(); }
         }
 
         private async Task<string?> PickFileAsync(string label)
@@ -183,16 +171,17 @@ namespace PolicyPlusPlus
             }
         }
 
-        private static void EnsurePolFileExists(string path)
-        { try { if (!File.Exists(path)) new PolFile().Save(path); } catch { } }
+        private static void EnsurePolFileExists(string? path)
+        { try { if (!string.IsNullOrEmpty(path) && !File.Exists(path)) new PolFile().Save(path); } catch { } }
 
         private void SwitchToCustomPol(bool notify = true)
         {
-            if (!_customPolEnableComp && !_customPolEnableUser) return;
+            EnsureCustomPolLoaded();
+            if (!_customPol!.EnableComputer && !_customPol.EnableUser) return;
             try
             {
-                string? compPath = _customPolEnableComp ? _customPolCompPath : null;
-                string? userPath = _customPolEnableUser ? _customPolUserPath : null;
+                string? compPath = _customPol.EnableComputer ? _customPol.ComputerPath : null;
+                string? userPath = _customPol.EnableUser ? _customPol.UserPath : null;
                 if (compPath == null && userPath == null) return;
                 if (compPath != null && !File.Exists(compPath)) { try { new PolFile().Save(compPath); } catch { } }
                 if (userPath != null && !File.Exists(userPath)) { try { new PolFile().Save(userPath); } catch { } }
@@ -214,26 +203,21 @@ namespace PolicyPlusPlus
                 }
                 _compSource = PolicySourceManager.Instance.CompSource;
                 _userSource = PolicySourceManager.Instance.UserSource;
-                UpdateLoaderInfo();
+                UpdateSourceStatusUnified();
                 RefreshVisibleRows();
                 var sb = GetSearchBox(); RebindConsideringAsync(sb?.Text ?? string.Empty);
-                if (notify) ShowActiveSourceInfo();
+                if (notify) UpdateSourceStatusUnified();
             }
             catch { ShowInfo("Unable to switch to custom .pol", InfoBarSeverity.Error); }
         }
 
-        private void UpdateLoaderInfo()
+        private void UpdateSourceStatusUnified()
         {
             var loaderInfo = GetLoaderInfo(); if (loaderInfo != null)
             {
-                var mode = PolicySourceManager.Instance.Mode;
-                loaderInfo.Text = mode switch
-                {
-                    PolicySourceManager.PolicySourceMode.CustomPol => "Custom POL",
-                    PolicySourceManager.PolicySourceMode.TempPol => "Temp POL",
-                    _ => PolicySourceManager.Instance.CompSource is not null ? "Local GPO" : "(No Source)"
-                };
+                loaderInfo.Text = SourceStatusFormatter.FormatStatus();
             }
+            ShowInfo(SourceStatusFormatter.FormatStatus(), InfoBarSeverity.Informational);
         }
 
         private void SaveCustomPolIfActive()
@@ -253,21 +237,53 @@ namespace PolicyPlusPlus
         {
             try
             {
-                var s = SettingsService.Instance.LoadSettings();
-                _customPolEnableComp = s.CustomPolEnableComputer ?? false;
-                _customPolEnableUser = s.CustomPolEnableUser ?? false;
-                _customPolCompPath = _customPolEnableComp ? s.CustomPolCompPath : null;
-                _customPolUserPath = _customPolEnableUser ? s.CustomPolUserPath : null;
-                _useCustomPol = _customPolEnableComp || _customPolEnableUser;
-                var toggle = GetToggleUseCustomPolMenu(); if (toggle != null) toggle.IsChecked = _useCustomPol;
-                if (_useCustomPol && (!string.IsNullOrEmpty(_customPolCompPath) || !string.IsNullOrEmpty(_customPolUserPath)))
+                _customPol = SettingsService.Instance.LoadSettings().CustomPol;
+                if (_customPol == null)
+                {
+                    _customPol = new CustomPolSettings();
+                }
+                var toggle = GetToggleUseCustomPolMenu(); if (toggle != null) toggle.IsChecked = _customPol.Active;
+                if (_customPol.Active && (_customPol.EnableComputer || _customPol.EnableUser))
                 {
                     SwitchToCustomPol(notify:false);
                 }
-                // Ensure status text reflects active source (including custom POL file names) after initialization
-                ShowActiveSourceInfo();
+                UpdateSourceStatusUnified();
             }
             catch { }
+        }
+
+        private void EnsureCustomPolLoaded()
+        {
+            if (_customPol == null)
+            {
+                try { _customPol = SettingsService.Instance.LoadSettings().CustomPol ?? new CustomPolSettings(); } catch { _customPol = new CustomPolSettings(); }
+            }
+        }
+
+        private void PersistCustomPol()
+        {
+            try
+            {
+                if (_customPol != null)
+                {
+                    SettingsService.Instance.UpdateCustomPol(_customPol);
+                }
+            }
+            catch { }
+        }
+    }
+
+    internal static class SourceStatusFormatter
+    {
+        public static string FormatStatus()
+        {
+            var mgr = PolicySourceManager.Instance;
+            return mgr.Mode switch
+            {
+                PolicySourceManager.PolicySourceMode.CustomPol => $"Custom POL (Comp: {System.IO.Path.GetFileName(mgr.CustomCompPath ?? "-")}, User: {System.IO.Path.GetFileName(mgr.CustomUserPath ?? "-")})",
+                PolicySourceManager.PolicySourceMode.TempPol => "Temp POL",
+                _ => "Local GPO"
+            };
         }
     }
 }

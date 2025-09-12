@@ -77,17 +77,48 @@ namespace PolicyPlusPlus.Services
         {
             lock (_gate)
             {
+                AppSettings result;
                 try
                 {
                     if (File.Exists(SettingsPath))
                     {
                         var txt = File.ReadAllText(SettingsPath);
                         var data = JsonSerializer.Deserialize(txt, AppJsonContext.Default.AppSettings);
-                        return data ?? new AppSettings();
+                        result = data ?? new AppSettings();
+                    }
+                    else
+                    {
+                        result = new AppSettings();
+                    }
+                }
+                catch
+                {
+                    result = new AppSettings();
+                }
+
+                // Migration: build CustomPol from legacy fields if new object missing
+                try
+                {
+                    if (result.CustomPol is null)
+                    {
+                        var enableComp = result.CustomPolEnableComputer ?? false;
+                        var enableUser = result.CustomPolEnableUser ?? false;
+                        var compPath = enableComp ? result.CustomPolCompPath : null;
+                        var userPath = enableUser ? result.CustomPolUserPath : null;
+                        var active = enableComp || enableUser; // legacy semantics
+                        result.CustomPol = new CustomPolSettings
+                        {
+                            EnableComputer = enableComp,
+                            EnableUser = enableUser,
+                            ComputerPath = compPath,
+                            UserPath = userPath,
+                            Active = active
+                        };
                     }
                 }
                 catch { }
-                return new AppSettings();
+
+                return result;
             }
         }
 
@@ -350,6 +381,30 @@ namespace PolicyPlusPlus.Services
             s.CustomPolEnableUser = enableUser;
             s.CustomPolCompPath = compPath;
             s.CustomPolUserPath = userPath;
+            // Also populate new unified object; Active derived from enables.
+            s.CustomPol = new CustomPolSettings
+            {
+                EnableComputer = enableComp,
+                EnableUser = enableUser,
+                ComputerPath = enableComp ? compPath : null,
+                UserPath = enableUser ? userPath : null,
+                Active = (enableComp || enableUser)
+            };
+            SaveSettings(s);
+        }
+
+        public void UpdateCustomPolActive(bool active)
+        {
+            var s = LoadSettings();
+            if (s.CustomPol == null) s.CustomPol = new CustomPolSettings();
+            s.CustomPol.Active = active && (s.CustomPol.EnableComputer || s.CustomPol.EnableUser);
+            SaveSettings(s);
+        }
+
+        public void UpdateCustomPol(CustomPolSettings model)
+        {
+            var s = LoadSettings();
+            s.CustomPol = model;
             SaveSettings(s);
         }
     }
@@ -379,6 +434,16 @@ namespace PolicyPlusPlus.Services
         public bool? CustomPolEnableUser { get; set; }
         public string? CustomPolCompPath { get; set; }
         public string? CustomPolUserPath { get; set; }
+        public CustomPolSettings? CustomPol { get; set; }
+    }
+
+    public class CustomPolSettings
+    {
+        public bool EnableComputer { get; set; }
+        public bool EnableUser { get; set; }
+        public string? ComputerPath { get; set; }
+        public string? UserPath { get; set; }
+        public bool Active { get; set; } // true when user wants custom POL mode active
     }
 
     public class ColumnsOptions
