@@ -1,9 +1,5 @@
-using System;
 using System.Collections.Generic;
 using Microsoft.Win32;
-using PolicyPlus;
-using PolicyPlusCore.Core;
-using PolicyPlusCore.IO;
 using PolicyPlusPlus.ViewModels;
 using PolicyPlusModTests.TestHelpers;
 using Xunit;

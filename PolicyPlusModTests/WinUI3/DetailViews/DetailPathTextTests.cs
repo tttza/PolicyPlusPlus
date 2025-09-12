@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using PolicyPlus;
-using PolicyPlusCore.Core;
 using PolicyPlusPlus.ViewModels;
 using Xunit;
 

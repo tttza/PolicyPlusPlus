@@ -1,10 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using PolicyPlus;
-using PolicyPlusCore.Admx;
-using PolicyPlusCore.Core;
-using PolicyPlusCore.IO;
 
 using Xunit;
 

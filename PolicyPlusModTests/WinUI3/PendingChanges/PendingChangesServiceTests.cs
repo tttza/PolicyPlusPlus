@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using PolicyPlusPlus.Services;
 using Xunit;
-using PolicyPlusCore.Core;
 
 namespace PolicyPlusModTests.WinUI3
 {

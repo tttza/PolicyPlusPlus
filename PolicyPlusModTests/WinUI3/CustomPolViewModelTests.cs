@@ -1,4 +1,3 @@
-using System;
 using Xunit;
 using PolicyPlusPlus.ViewModels;
 using PolicyPlusPlus.Services;

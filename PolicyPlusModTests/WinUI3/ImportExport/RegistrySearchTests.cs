@@ -1,4 +1,3 @@
-using PolicyPlus;
 using PolicyPlusPlus.Dialogs;
 using PolicyPlusModTests.TestHelpers;
 using Xunit;

@@ -1,9 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using PolicyPlus;
-using PolicyPlusCore.Admx;
-using PolicyPlusCore.Core;
 using PolicyPlusPlus.Services;
 using Xunit;
 

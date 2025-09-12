@@ -1,8 +1,5 @@
 using System.Collections.Generic;
-using PolicyPlus;
 using Xunit;
-using PolicyPlusModTests.TestHelpers;
-using PolicyPlusCore.Core;
 
 namespace PolicyPlusModTests
 {
