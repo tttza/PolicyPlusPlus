@@ -1,8 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using PolicyPlusPlus.Logging;
+#if USE_STORE_UPDATE
+using Windows.System;
+#endif
 #if USE_VELOPACK
 using Velopack;
+using PolicyPlusPlus.Logging;
 #endif
 
 namespace PolicyPlusPlus.Services

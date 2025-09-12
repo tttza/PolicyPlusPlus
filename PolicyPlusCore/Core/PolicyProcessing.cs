@@ -1,5 +1,6 @@
 using PolicyPlusCore.Admx;
 using PolicyPlusCore.IO;
+using System.Diagnostics;
 using System.Globalization;
 
 namespace PolicyPlusCore.Core
@@ -9,15 +10,11 @@ namespace PolicyPlusCore.Core
         // Internal helper to emit lightweight debug info without introducing dependency on WinUI logging layer.
         private static void LogDebug(string area, string message)
         {
-#if DEBUG
             try { Debug.WriteLine($"[Core:{area}] {message}"); } catch { }
-#endif
         }
         private static void LogError(string area, string message, Exception ex)
         {
-#if DEBUG
             try { Debug.WriteLine($"[Core:{area}] ERROR {message} :: {ex.GetType().Name} {ex.Message}"); } catch { }
-#endif
         }
 
         public static PolicyState GetPolicyState(IPolicySource PolicySource, PolicyPlusPolicy Policy)

@@ -1,5 +1,6 @@
 using PolicyPlusCore.Admx;
 using PolicyPlusCore.IO;
+using System.Diagnostics;
 
 namespace PolicyPlusCore.Core
 {
@@ -25,7 +26,6 @@ namespace PolicyPlusCore.Core
 
     public static class PolicySavePipeline
     {
-#if DEBUG
         private static void LogDebug(string msg)
         {
             try { Debug.WriteLine("[PolicySavePipeline] " + msg); } catch { }
@@ -34,10 +34,6 @@ namespace PolicyPlusCore.Core
         {
             try { Debug.WriteLine($"[PolicySavePipeline] ERROR {msg} :: {ex.GetType().Name} {ex.Message}"); } catch { }
         }
-#else
-        private static void LogDebug(string msg) { }
-        private static void LogError(string msg, Exception ex) { }
-#endif
 
         private static PolFile LoadExistingOrNew(bool isUser)
         {
