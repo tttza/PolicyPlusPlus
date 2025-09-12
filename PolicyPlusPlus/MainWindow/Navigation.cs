@@ -73,9 +73,7 @@ namespace PolicyPlusPlus
                 _configuredOnly = state.ConfiguredOnly;
                 if (ChkConfiguredOnly != null)
                 {
-                    _suppressConfiguredOnlyChanged = true;
                     ChkConfiguredOnly.IsChecked = _configuredOnly;
-                    _suppressConfiguredOnlyChanged = false;
                 }
 
                 // Resolve category via flat index to handle nested categories

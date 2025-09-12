@@ -33,9 +33,6 @@ using PolicyPlusCore.Admx;
 using System.Collections.Specialized;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
-#if USE_VELOPACK
-using Velopack;
-#endif
 
 namespace PolicyPlusPlus
 {
@@ -76,14 +73,12 @@ namespace PolicyPlusPlus
         // Temp .pol mode and save tracking
         private string? _tempPolCompPath = null;
         private string? _tempPolUserPath = null;
-        private bool _useTempPol;
 
         private static readonly System.Text.RegularExpressions.Regex UrlRegex = new(@"(https?://[^\s]+)", System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
         // Prevents SelectionChanged from re-applying category during programmatic tree updates
         private bool _suppressCategorySelectionChanged;
         private bool _suppressAppliesToSelectionChanged;
-        private bool _suppressConfiguredOnlyChanged;
 
         // Typing suppression flag for navigation pushes
         private bool _navTyping;
@@ -106,14 +101,17 @@ namespace PolicyPlusPlus
         private double? _savedAnchorViewportY;
         private double? _savedAnchorRatio;
         private bool _doubleTapHooked; // used by HookDoubleTapHandlers
+        private bool _initialized; // guard to run initialization once
+        private AppSettings? _settingsCache; // cached settings snapshot
 
 #if USE_VELOPACK
         // UpdateManager handled by UpdateHelper now.
 #endif
         public MainWindow()
         {
-            _suppressSearchOptionEvents = true;
             this.InitializeComponent();
+            try { ObserveSearchOptions(); } catch { }
+            try { TryHookCustomPolVm(); } catch { }
             try { PolicySourceManager.Instance.SourcesChanged += (_, __) => { _compSource = PolicySourceManager.Instance.CompSource; _userSource = PolicySourceManager.Instance.UserSource; RefreshVisibleRows(); var li = RootGrid?.FindName("SourceStatusText") as TextBlock; if (li!=null) li.Text = SourceStatusFormatter.FormatStatus(); }; } catch { }
             HookPendingQueue();
             TryInitCustomTitleBar();
@@ -122,9 +120,13 @@ namespace PolicyPlusPlus
                 try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
                 InitUpdateMenuVisibility();
                 try { LoadCustomPolSettings(); } catch { }
+                try { ObserveSearchOptions(); } catch { }
+                try { ObserveFilterOptions(); } catch { }
             };
             try { BookmarkService.Instance.ActiveListChanged += BookmarkService_ActiveListChanged; } catch { }
-            try { Closed += (s, e) => { try { BookmarkService.Instance.ActiveListChanged -= BookmarkService_ActiveListChanged; } catch { } }; } catch { }
+            try { PendingChangesService.Instance.DirtyChanged += (_, __) => UpdateUnsavedIndicator(); } catch { }
+            try { Closed += (s, e) => { try { BookmarkService.Instance.ActiveListChanged -= BookmarkService_ActiveListChanged; } catch { } try { PendingChangesService.Instance.DirtyChanged -= (_, __) => UpdateUnsavedIndicator(); } catch { } }; } catch { }
+            AppWindow.Closing += AppWindow_Closing;
         }
         private void InitUpdateMenuVisibility()
         {
@@ -301,32 +303,38 @@ namespace PolicyPlusPlus
         }
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            // Retained for legacy path; main startup now calls EnsureInitializedAsync earlier.
+            _ = EnsureInitializedAsync();
+        }
+
+        private async System.Threading.Tasks.Task InitializeUiFromSettingsAsync()
+        {
+            if (_initialized) return;
+            _initialized = true;
             try { (RootGrid?.FindName("VersionText") as TextBlock)!.Text = BuildInfo.Version; } catch { }
+            AppSettings s;
+            try { s = _settingsCache ?? SettingsService.Instance.LoadSettings(); _settingsCache = s; }
+            catch { s = new AppSettings(); }
             try
             {
-                var s = SettingsService.Instance.LoadSettings();
-
                 _hideEmptyCategories = s.HideEmptyCategories ?? true;
                 try { ToggleHideEmptyMenu.IsChecked = _hideEmptyCategories; } catch { }
 
-                // Restore persisted filter flags
                 _configuredOnly = s.ConfiguredOnly ?? false;
                 _bookmarksOnly = s.BookmarksOnly ?? false;
                 try {
-                    if (ChkConfiguredOnly != null) { _suppressConfiguredOnlyChanged = true; ChkConfiguredOnly.IsChecked = _configuredOnly; _suppressConfiguredOnlyChanged = false; }
-                    if (ChkBookmarksOnly != null) { _suppressBookmarksOnlyChanged = true; ChkBookmarksOnly.IsChecked = _bookmarksOnly; _suppressBookmarksOnlyChanged = false; }
+                    if (ChkConfiguredOnly != null) { ChkConfiguredOnly.IsChecked = _configuredOnly; }
+                    if (ChkBookmarksOnly != null) { ChkBookmarksOnly.IsChecked = _bookmarksOnly; }
                 } catch { }
 
                 try { UpdateSearchPlaceholder(); } catch { }
-
-                // Apply persisted detail pane ratio before showing
                 ApplySavedDetailPaneRatioIfAny();
 
                 _showDetails = s.ShowDetails ?? true;
                 try { ViewDetailsToggle.IsChecked = _showDetails; } catch { }
                 ApplyDetailsPaneVisibility();
 
-                _limitUnfilteredTo1000 = s.LimitUnfilteredTo1000 ?? true; // default enabled
+                _limitUnfilteredTo1000 = s.LimitUnfilteredTo1000 ?? true;
                 try { ToggleLimitUnfilteredMenu.IsChecked = _limitUnfilteredTo1000; } catch { }
 
                 var themePref = s.Theme ?? "System";
@@ -336,28 +344,17 @@ namespace PolicyPlusPlus
                 var scalePref = s.UIScale ?? "100%";
                 SetScaleFromString(scalePref, updateSelector: false, save: false);
 
-                // Column visibility from settings via menu toggles
                 LoadColumnPrefs();
-
-                // Ensure column events (Loaded / reorder / layout) are hooked so saved order & widths restore correctly
                 try { HookColumnLayoutEvents(); } catch { }
-
-                // Apply saved per-column layout (order, widths, visibility) AFTER initial toggle state
                 try { ApplySavedColumnLayout(); } catch { }
-                // Update 2nd language column header/visibility immediately
                 try { ApplySecondLanguageVisibilityToViewMenu(); } catch { }
-
-                // Apply saved layout (widths, sort)
                 try { ApplyPersistedLayout(); } catch { }
-
                 HookDoubleTapHandlers();
 
                 string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
                 string lastPath = s.AdmxSourcePath ?? defaultPath;
                 if (Directory.Exists(lastPath))
-                {
-                    LoadAdmxFolderAsync(lastPath);
-                }
+                { await LoadAdmxFolderAsync(lastPath); }
 
                 try { InitNavigation(); } catch { }
                 try { UpdateSearchClearButtonVisibility(); } catch { }
@@ -369,29 +366,13 @@ namespace PolicyPlusPlus
                 }
                 catch { }
 
-                // Sync initial UI state for search options (after reading settings)
-                var so2 = s.Search;
-                if (so2 != null)
-                {
-                    try
-                    {
-                        _suppressSearchOptionEvents = true;
-                        if (SearchOptName != null) SearchOptName.IsChecked = so2.InName;
-                        if (SearchOptId != null) SearchOptId.IsChecked = so2.InId;
-                        if (SearchOptDesc != null) SearchOptDesc.IsChecked = so2.InDescription;
-                        if (SearchOptComments != null) SearchOptComments.IsChecked = so2.InComments;
-                        if (SearchOptRegKey != null) SearchOptRegKey.IsChecked = so2.InRegistryKey;
-                        if (SearchOptRegValue != null) SearchOptRegValue.IsChecked = so2.InRegistryValue;
-                    }
-                    finally { _suppressSearchOptionEvents = false; }
-                }
+                try { ObserveSearchOptions(); } catch { }
+                try { ObserveFilterOptions(); } catch { }
             }
-            finally
-            {
-                // Ensure suppression is released even if an exception occurs
-                _suppressSearchOptionEvents = false;
-            }
+            catch { }
         }
+
+        public System.Threading.Tasks.Task EnsureInitializedAsync() => InitializeUiFromSettingsAsync();
 
         // Helper to detect double-tap originating from bookmark toggle button to suppress edit dialog.
         private bool IsFromBookmarkButton(DependencyObject? dep)
@@ -590,7 +571,7 @@ namespace PolicyPlusPlus
             BusyOverlay.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private async void LoadAdmxFolderAsync(string path)
+        private async System.Threading.Tasks.Task LoadAdmxFolderAsync(string path)
         {
             SetBusy(true, "Loading...");
             try
@@ -611,7 +592,7 @@ namespace PolicyPlusPlus
                 List<(PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)>? searchIndexLocal = null;
                 Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)>? searchIndexByIdLocal = null;
 
-                await Task.Run(() =>
+                await System.Threading.Tasks.Task.Run(() =>
                 {
                     var b = new AdmxBundle();
                     var fails = b.LoadFolder(path, langPref);
@@ -619,7 +600,6 @@ namespace PolicyPlusPlus
                     failureCount = fails.Count();
                     allLocal = b.Policies.Values.ToList();
                     totalGroupsLocal = allLocal.GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).Count();
-
                     try
                     {
                         searchIndexLocal = allLocal.Select(p => (
@@ -630,10 +610,7 @@ namespace PolicyPlusPlus
                             DescLower: SearchText.Normalize(p.DisplayExplanation)
                         )).ToList();
                         searchIndexByIdLocal = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
-                        foreach (var e in searchIndexLocal)
-                        {
-                            searchIndexByIdLocal[e.Policy.UniqueID] = e;
-                        }
+                        foreach (var e in searchIndexLocal) searchIndexByIdLocal[e.Policy.UniqueID] = e;
                     }
                     catch
                     {
@@ -687,7 +664,6 @@ namespace PolicyPlusPlus
                 RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
             }
             finally { SetBusy(false); }
-            await Task.CompletedTask;
         }
 
         private void AppliesToSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -702,71 +678,46 @@ namespace PolicyPlusPlus
 
         private void EnsureLocalSources()
         {
-            // Do not override custom/ temp sources managed by PolicySourceManager
-            var mode = PolicySourceManager.Instance.Mode;
-            if (mode == PolicySourceManager.PolicySourceMode.CustomPol || mode == PolicySourceManager.PolicySourceMode.TempPol)
-            {
-                _compSource = PolicySourceManager.Instance.CompSource;
-                _userSource = PolicySourceManager.Instance.UserSource;
-                return;
-            }
-            if (_loader is null || _userSource is null || _compSource is null)
-            {
-                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-                _compSource = _loader.OpenSource();
-                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-                var li = GetLoaderInfo(); if (li != null) li.Text = _loader.GetDisplayInfo();
-            }
-            else
-            {
-                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-                _compSource = _loader.OpenSource();
-                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-                var li2 = GetLoaderInfo(); if (li2 != null) li2.Text = _loader.GetDisplayInfo();
-            }
-        }
-
-        private void EnsureTempPolPaths()
-        {
             try
             {
-                var baseDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "PolicyPlus");
-                System.IO.Directory.CreateDirectory(baseDir);
-                if (string.IsNullOrEmpty(_tempPolCompPath))
+                var mode = PolicySourceManager.Instance.Mode;
+                if (mode == PolicySourceMode.CustomPol || mode == PolicySourceMode.TempPol)
                 {
-                    _tempPolCompPath = System.IO.Path.Combine(baseDir, "machine.pol");
-                    try { var pol = new PolFile(); pol.Save(_tempPolCompPath); } catch { }
+                    _compSource = PolicySourceManager.Instance.CompSource;
+                    _userSource = PolicySourceManager.Instance.UserSource;
+                    return;
                 }
-                if (string.IsNullOrEmpty(_tempPolUserPath))
-                {
-                    _tempPolUserPath = System.IO.Path.Combine(baseDir, "user.pol");
-                    try { var pol = new PolFile(); pol.Save(_tempPolUserPath); } catch { }
-                }
+                PolicySourceManager.Instance.Switch(PolicySourceDescriptor.LocalGpo());
+                _compSource = PolicySourceManager.Instance.CompSource;
+                _userSource = PolicySourceManager.Instance.UserSource;
+                var li = GetLoaderInfo(); if (li != null) li.Text = SourceStatusFormatter.FormatStatus();
             }
             catch { }
         }
 
+        private void EnsureTempPolPaths() { /* legacy no-op: creation handled inside PolicySourceManager */ }
+
         private void EnsureLocalSourcesUsingTemp()
         {
-            if (!_useTempPol)
+            try
             {
-                EnsureLocalSources();
-                return;
-            }
-            // If custom mode currently active, do not switch
-            if (PolicySourceManager.Instance.Mode == PolicySourceManager.PolicySourceMode.CustomPol)
-            {
+                if (PolicySourceManager.Instance.Mode != PolicySourceMode.TempPol)
+                {
+                    EnsureLocalSources();
+                    return;
+                }
+                if (PolicySourceManager.Instance.Mode == PolicySourceMode.CustomPol)
+                {
+                    _compSource = PolicySourceManager.Instance.CompSource;
+                    _userSource = PolicySourceManager.Instance.UserSource;
+                    return;
+                }
+                PolicySourceManager.Instance.Switch(PolicySourceDescriptor.TempPol());
                 _compSource = PolicySourceManager.Instance.CompSource;
                 _userSource = PolicySourceManager.Instance.UserSource;
-                return;
+                var li3 = GetLoaderInfo(); if (li3 != null) li3.Text = SourceStatusFormatter.FormatStatus();
             }
-            EnsureTempPolPaths();
-            var compLoader = new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolCompPath ?? string.Empty, false);
-            var userLoader = new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolUserPath ?? string.Empty, true);
-            _compSource = compLoader.OpenSource();
-            _userSource = userLoader.OpenSource();
-            _loader = compLoader;
-            var li3 = GetLoaderInfo(); if (li3 != null) li3.Text = "Temp POL (Comp/User)";
+            catch { }
         }
 
         private void PolicyList_RightTapped(object sender, RightTappedRoutedEventArgs e)
@@ -808,136 +759,153 @@ namespace PolicyPlusPlus
         {
             _navTyping = false;
             SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; _bookmarksOnly = false; 
-            if (ChkConfiguredOnly != null) { _suppressConfiguredOnlyChanged = true; ChkConfiguredOnly.IsChecked = false; _suppressConfiguredOnlyChanged = false; }
-            if (ChkBookmarksOnly != null) { _suppressBookmarksOnlyChanged = true; ChkBookmarksOnly.IsChecked = false; _suppressBookmarksOnlyChanged = false; }
+            if (ChkConfiguredOnly != null) ChkConfiguredOnly.IsChecked = false;
+            if (ChkBookmarksOnly != null) ChkBookmarksOnly.IsChecked = false;
             try { SettingsService.Instance.UpdateConfiguredOnly(false); } catch { }
             try { SettingsService.Instance.UpdateBookmarksOnly(false); } catch { }
             UpdateSearchPlaceholder(); RunAsyncFilterAndBind();
             UpdateNavButtons();
         }
 
-        private void ChkConfiguredOnly_Checked(object sender, RoutedEventArgs e)
-        {
-            if (_suppressConfiguredOnlyChanged) return; _configuredOnly = ChkConfiguredOnly?.IsChecked == true; try { SettingsService.Instance.UpdateConfiguredOnly(_configuredOnly); } catch { } _navTyping = false; RebindConsideringAsync(SearchBox?.Text ?? string.Empty); UpdateNavButtons();
-        }
-
-        private void ChkUseTempPol_Checked(object sender, RoutedEventArgs e)
-        {
-            _useTempPol = ChkUseTempPol?.IsChecked == true;
-            if (_useTempPol)
-            {
-                PolicySourceManager.Instance.SwitchToTempPol();
-                _compSource = PolicySourceManager.Instance.CompSource;
-                _userSource = PolicySourceManager.Instance.UserSource;
-            }
-            else
-            {
-                PolicySourceManager.Instance.EnsureLocalGpo();
-                _compSource = PolicySourceManager.Instance.CompSource;
-                _userSource = PolicySourceManager.Instance.UserSource;
-            }
-            var liUnified2 = RootGrid?.FindName("SourceStatusText") as TextBlock; if (liUnified2!=null) liUnified2.Text = SourceStatusFormatter.FormatStatus();
-            RefreshVisibleRows();
-        }
-
-        private void BtnLoadLocalGpo_Click(object sender, RoutedEventArgs e)
-        {
-            PolicySourceManager.Instance.EnsureLocalGpo();
-            _compSource = PolicySourceManager.Instance.CompSource;
-            _userSource = PolicySourceManager.Instance.UserSource;
-            var li4 = GetLoaderInfo(); if (li4 != null) li4.Text = "Local GPO";
-            // use unified status update
-            var liUnified = RootGrid?.FindName("SourceStatusText") as TextBlock; if (liUnified!=null) liUnified.Text = SourceStatusFormatter.FormatStatus();
-            RefreshVisibleRows();
-        }
-
         private async void AboutMenu_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                var dlg = new AboutDialog();
-                if (this.Content is FrameworkElement fe)
-                    dlg.XamlRoot = fe.XamlRoot;
+                var txt = "Policy Plus Plus\n\n" + BuildInfo.Version + "\n\n";
+                txt += "Copyright 2023 Policy Plus Software Ltd.\n\n";
+                txt += "https://wwwPolicyPlusPlus.com\n\n";
+
+                var dlg = new ContentDialog
+                {
+                    Title = "About Policy Plus Plus",
+                    Content = txt,
+                    CloseButtonText = "Close"
+                };
+                if (Content is FrameworkElement fe) dlg.XamlRoot = fe.XamlRoot;
                 await dlg.ShowAsync();
             }
             catch { }
         }
-
         private async void BtnLoadAdmxFolder_Click(object sender, RoutedEventArgs e)
-        {
-            var hwnd = WindowNative.GetWindowHandle(this);
-            var picker = new FolderPicker();
-            InitializeWithWindow.Initialize(picker, hwnd);
-            picker.FileTypeFilter.Add("*");
-            var folder = await picker.PickSingleFolderAsync();
-            if (folder is null) return;
-            try { SettingsService.Instance.UpdateAdmxSourcePath(folder.Path); } catch { }
-            LoadAdmxFolderAsync(folder.Path);
-        }
-
-        private void ToggleLimitUnfilteredMenu_Click(object sender, RoutedEventArgs e)
-        { try { if (sender is ToggleMenuFlyoutItem t) { _limitUnfilteredTo1000 = t.IsChecked; SettingsService.Instance.UpdateLimitUnfilteredTo1000(_limitUnfilteredTo1000); RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } } catch { } }
-
-        private void SearchOptionsFlyout_Opened(object sender, object e)
-        { try { var so = SettingsService.Instance.LoadSettings().Search ?? new SearchOptions(); _suppressSearchOptionEvents = true; if (SearchOptName != null) SearchOptName.IsChecked = so.InName; if (SearchOptId != null) SearchOptId.IsChecked = so.InId; if (SearchOptDesc != null) SearchOptDesc.IsChecked = so.InDescription; if (SearchOptComments != null) SearchOptComments.IsChecked = so.InComments; if (SearchOptRegKey != null) SearchOptRegKey.IsChecked = so.InRegistryKey; if (SearchOptRegValue != null) SearchOptRegValue.IsChecked = so.InRegistryValue; } finally { _suppressSearchOptionEvents = false; } }
-
-        private void RebindConsideringAsync(string q)
-        {
-            try { if (string.IsNullOrWhiteSpace(q)) RunAsyncFilterAndBind(); else RunAsyncSearchAndBind(q); } catch { } }
-
-        private void UnsavedIndicator_Tapped(object sender, TappedRoutedEventArgs e)
         {
             try
             {
-                var win = new PendingChangesWindow();
-                win.Activate();
-                try { WindowHelpers.BringToFront(win); } catch { }
+                var dlg = new FolderPicker();
+                var hwnd = WindowNative.GetWindowHandle(this);
+                InitializeWithWindow.Initialize(dlg, hwnd);
+                dlg.SuggestedStartLocation = PickerLocationId.Desktop;
+                dlg.FileTypeFilter.Add(".xml");
+                dlg.FileTypeFilter.Add(".admx");
+                dlg.FileTypeFilter.Add(".zip");
+
+                var file = await dlg.PickSingleFolderAsync();
+                if (file == null) return;
+                SetBusy(true, "Loading ADMX folder...");
+                try
+                {
+                    var path = file.Path;
+                    var ok = true;
+                    try { ok = Directory.Exists(path); } catch { ok = false; }
+                    if (!ok)
+                    {
+                        ShowInfo("Folder not found. Please re-select.", InfoBarSeverity.Error);
+                        return;
+                    }
+
+                    string? lastPath = null;
+                    try { lastPath = SettingsService.Instance.LoadSettings().AdmxSourcePath; } catch { }
+                    bool isSamePath = false;
+                    try { isSamePath = string.Equals(lastPath, path, StringComparison.OrdinalIgnoreCase); } catch { }
+
+                    await LoadAdmxFolderAsync(path);
+
+                    if (!isSamePath)
+                    {
+                        // New path; suggest reloading after save
+                        ContentDialog reloadDlg = new()
+                        {
+                            Title = "ADMX Load Complete",
+                            Content = "The selected ADMX folder has been loaded. Save changes to use it as the default source?",
+                            PrimaryButtonText = "Save & Reload",
+                            SecondaryButtonText = "Discard Changes",
+                            CloseButtonText = "Cancel",
+                            DefaultButton = ContentDialogButton.Primary
+                        };
+                        if (this.Content is FrameworkElement fe) reloadDlg.XamlRoot = fe.XamlRoot;
+                        ContentDialogResult res;
+                        try { res = await reloadDlg.ShowAsync(); } catch { res = ContentDialogResult.None; }
+                        if (res == ContentDialogResult.Primary)
+                        {
+                            // Save as new default
+                            SettingsService.Instance.UpdateAdmxSourcePath(path);
+                        }
+                        else if (res == ContentDialogResult.None)
+                        {
+                            // cancel close
+                            return;
+                        }
+                        else
+                        {
+                            // discard
+                            PendingChangesService.Instance.DiscardAll();
+                        }
+                    }
+                }
+                finally { SetBusy(false); }
+            }
+            catch (Exception ex)
+            {
+                SetBusy(false);
+                ShowInfo("Failed to load ADMX folder: " + ex.Message, InfoBarSeverity.Error);
+            }
+        }
+        private void ToggleLimitUnfilteredMenu_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (FilterVM != null && sender is ToggleMenuFlyoutItem t)
+                {
+                    FilterVM.LimitUnfilteredTo1000 = t.IsChecked;
+                }
             }
             catch { }
+        }
+        private void RebindConsideringAsync(string q)
+        {
+            try { if (string.IsNullOrWhiteSpace(q)) RunAsyncFilterAndBind(); else RunAsyncSearchAndBind(q); } catch { }
+        }
+        private void UnsavedIndicator_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            // If no pending changes, act as a refresh
+            if (PendingChangesService.Instance.Pending.Count == 0)
+            {
+                RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                return;
+            }
+
+            // Otherwise, show the pending changes window
+            var win = new PendingChangesWindow();
+            win.Activate();
+            try { WindowHelpers.BringToFront(win); } catch { }
         }
 
         private void ShowActiveSourceInfo()
         {
-            try
-            {
-                var msg = SourceStatusFormatter.FormatStatus();
-                ShowInfo(msg, InfoBarSeverity.Informational);
-                try { if (RootGrid != null) { if (RootGrid.FindName("SourceStatusText") is TextBlock t) t.Text = msg; } } catch { }
-            }
-            catch { }
+            try { UpdateSourceStatusUnified(); } catch { }
         }
 
-        // Restored methods (previously removed during refactor)
         private void PolicyList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             DependencyObject? dep = e.OriginalSource as DependencyObject;
-            if (dep != null)
-            {
-                if (IsFromBookmarkButton(dep)) { e.Handled = true; return; }
-            }
+            if (dep != null && IsFromBookmarkButton(dep)) { e.Handled = true; return; }
             object? item = null;
             var dgRow = FindAncestorDataGridRow(dep);
             if (dgRow != null) item = dgRow.DataContext;
             if (item == null) item = (e.OriginalSource as FrameworkElement)?.DataContext;
             if (item == null) item = PolicyList?.SelectedItem;
-            if (item is PolicyListRow row && row.Policy is PolicyPlusPolicy pol)
-            {
-                e.Handled = true;
-                _ = OpenEditDialogForPolicyInternalAsync(pol, ensureFront: true);
-                return;
-            }
-            if (item is PolicyListRow row2 && row2.Category is PolicyPlusCategory cat)
-            {
-                e.Handled = true;
-                _selectedCategory = cat;
-                UpdateSearchPlaceholder();
-                _navTyping = false;
-                RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
-                SelectCategoryInTree(cat);
-                UpdateNavButtons();
-            }
+            if (item is PolicyListRow row && row.Policy is PolicyPlusPolicy pol) { e.Handled = true; _ = OpenEditDialogForPolicyInternalAsync(pol, true); return; }
+            if (item is PolicyListRow row2 && row2.Category is PolicyPlusCategory cat) { e.Handled = true; _selectedCategory = cat; UpdateSearchPlaceholder(); _navTyping = false; RebindConsideringAsync(SearchBox?.Text ?? string.Empty); SelectCategoryInTree(cat); UpdateNavButtons(); }
         }
-
         private static DataGridRow? FindAncestorDataGridRow(DependencyObject? start)
         {
             while (start != null)
@@ -947,14 +915,12 @@ namespace PolicyPlusPlus
             }
             return null;
         }
-
         private void UpdateSearchPlaceholder()
         {
             if (SearchBox == null) return;
             SearchBox.PlaceholderText = _selectedCategory != null ? $"Search policies in {_selectedCategory.DisplayName}" : "Search policies";
             try { var btn = RootGrid?.FindName("ClearCategoryFilterButton") as Button; if (btn != null) btn.IsEnabled = _selectedCategory != null; } catch { }
         }
-
         private void ViewDetailsToggle_Click(object sender, RoutedEventArgs e)
         {
             if (sender is ToggleMenuFlyoutItem t)
@@ -964,7 +930,6 @@ namespace PolicyPlusPlus
                 ApplyDetailsPaneVisibility();
             }
         }
-
         private async void BtnExportReg_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -1016,7 +981,8 @@ namespace PolicyPlusPlus
                     SetBusy(true, "Saving...");
                     try
                     {
-                        if (_useTempPol)
+                        bool tempMode = PolicySourceManager.Instance.Mode == PolicySourceMode.TempPol;
+                        if (tempMode)
                         {
                             EnsureTempPolPaths();
                             var (userPolNew, machinePolNew) = RegImportHelper.ToPolByHive(dlg.ParsedReg);
@@ -1073,6 +1039,7 @@ namespace PolicyPlusPlus
         // Provide no-op if listeners previously expected event
         private void RaisePolicySourcesRefreshed() { }
 
+        // Refresh current sources via manager and notify listeners
         public void RefreshLocalSources()
         {
             try
@@ -1085,9 +1052,147 @@ namespace PolicyPlusPlus
             try { PolicySourcesRefreshed?.Invoke(this, EventArgs.Empty); } catch { }
         }
 
-        private void RefreshList()
+        private void RefreshList() { try { RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } catch { } }
+
+        private FilterViewModel? FilterVM => (RootGrid?.Resources?["FilterVM"]) as FilterViewModel;
+        private void ObserveFilterOptions()
         {
-            try { RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } catch { }
+            var vm = FilterVM; if (vm == null) return;
+            vm.PropertyChanged += (_, args) =>
+            {
+                try
+                {
+                    if (args.PropertyName == nameof(FilterViewModel.ConfiguredOnly))
+                    {
+                        _configuredOnly = vm.ConfiguredOnly;
+                        _navTyping = false;
+                        RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                    }
+                    else if (args.PropertyName == nameof(FilterViewModel.BookmarksOnly))
+                    {
+                        _bookmarksOnly = vm.BookmarksOnly;
+                        _navTyping = false;
+                        RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                    }
+                    else if (args.PropertyName == nameof(FilterViewModel.LimitUnfilteredTo1000))
+                    {
+                        _limitUnfilteredTo1000 = vm.LimitUnfilteredTo1000;
+                        _navTyping = false;
+                        RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                    }
+                    else if (args.PropertyName == nameof(FilterViewModel.HideEmptyCategories))
+                    {
+                        _hideEmptyCategories = vm.HideEmptyCategories;
+                        BuildCategoryTree();
+                    }
+                    else if (args.PropertyName == nameof(FilterViewModel.ShowDetails))
+                    {
+                        _showDetails = vm.ShowDetails;
+                        ApplyDetailsPaneVisibility();
+                    }
+                }
+                catch { }
+            };
+            _configuredOnly = vm.ConfiguredOnly;
+            _bookmarksOnly = vm.BookmarksOnly;
+            _limitUnfilteredTo1000 = vm.LimitUnfilteredTo1000;
+        }
+
+        private async void AppWindow_Closing(object? sender, AppWindowClosingEventArgs e)
+        {
+            try
+            {
+                if (!PendingChangesService.Instance.IsDirty) return;
+                e.Cancel = true; // we'll decide
+                var dlg = new ContentDialog
+                {
+                    Title = "Unsaved Changes",
+                    Content = "There are pending policy changes. Save before exiting?",
+                    PrimaryButtonText = "Save",
+                    SecondaryButtonText = "Discard",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Primary
+                };
+                if (Content is FrameworkElement fe) dlg.XamlRoot = fe.XamlRoot;
+                ContentDialogResult res;
+                try { res = await dlg.ShowAsync(); } catch { res = ContentDialogResult.None; }
+                if (res == ContentDialogResult.Primary)
+                {
+                    var pending = PendingChangesService.Instance.Pending.ToArray();
+                    var (ok, err) = await SavePendingAsync(pending);
+                    if (ok) PendingChangesService.Instance.Applied(pending);
+                    else ShowInfo("Save failed: " + (err ?? "unknown"), InfoBarSeverity.Error);
+                    // proceed to close regardless of failure? only if saved ok
+                    if (!ok) return; // keep window open if failed
+                }
+                else if (res == ContentDialogResult.None)
+                {
+                    // cancel close
+                    return;
+                }
+                else if (res == ContentDialogResult.Secondary)
+                {
+                    // discard
+                    PendingChangesService.Instance.DiscardAll();
+                }
+                this.AppWindow.Closing -= AppWindow_Closing; // avoid re-entry
+                Close();
+            }
+            catch { }
+        }
+
+        private string? _lastInfoMessage; private DateTime _lastInfoTime;
+        private void ShowInfoDedup(string message, InfoBarSeverity severity = InfoBarSeverity.Informational, int minIntervalMs = 1200)
+        {
+            try
+            {
+                var now = DateTime.UtcNow;
+                if (string.Equals(_lastInfoMessage, message, StringComparison.OrdinalIgnoreCase) && (now - _lastInfoTime).TotalMilliseconds < minIntervalMs)
+                {
+                    // Update existing bar severity only (avoid flicker)
+                    if (StatusBar != null)
+                    {
+                        StatusBar.Severity = severity;
+                        if (!StatusBar.IsOpen) StatusBar.IsOpen = true;
+                    }
+                    return;
+                }
+                _lastInfoMessage = message; _lastInfoTime = now;
+                ShowInfo(message, severity);
+            }
+            catch { }
+        }
+
+        private void UpdateSourceStatusUnified()
+        {
+            var loaderInfo = GetLoaderInfo(); if (loaderInfo != null)
+            {
+                loaderInfo.Text = SourceStatusFormatter.FormatStatus();
+            }
+            ShowInfoDedup(SourceStatusFormatter.FormatStatus(), InfoBarSeverity.Informational);
+        }
+
+        private void ChkUseTempPol_Checked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is CheckBox cb)
+                {
+                    if (cb.IsChecked == true)
+                    {
+                        PolicySourceManager.Instance.Switch(PolicySourceDescriptor.TempPol());
+                    }
+                    else if (PolicySourceManager.Instance.Mode == PolicySourceMode.TempPol)
+                    {
+                        PolicySourceManager.Instance.Switch(PolicySourceDescriptor.LocalGpo());
+                    }
+                    _compSource = PolicySourceManager.Instance.CompSource;
+                    _userSource = PolicySourceManager.Instance.UserSource;
+                    UpdateSourceStatusUnified();
+                    RefreshVisibleRows();
+                }
+            }
+            catch { ShowInfo("Temp POL toggle failed", InfoBarSeverity.Error); }
         }
     }
 }

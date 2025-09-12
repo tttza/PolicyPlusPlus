@@ -21,7 +21,6 @@ namespace PolicyPlusPlus.ViewModels
         {
             var sb = new StringBuilder();
 
-            // Use app-selected primary language (ADMX language) instead of OS UI culture for consistency
             string primaryLang = GetPrimaryLanguage();
             string lang = useSecondLanguage ? (secondLanguageCode ?? primaryLang) : primaryLang;
             bool isJa = lang.StartsWith("ja", System.StringComparison.OrdinalIgnoreCase);
@@ -52,12 +51,14 @@ namespace PolicyPlusPlus.ViewModels
             {
                 foreach (var name in GetCategoryChain(policy.Category, useSecondLanguage, secondLanguageCode))
                 {
-                    sb.AppendLine(new string(' ', depth * 2) + joinSymbol + " " + name);
+                    var display = string.IsNullOrWhiteSpace(name) ? policy.Category.DisplayName : name; // fallback safety
+                    sb.AppendLine(new string(' ', depth * 2) + joinSymbol + " " + display);
                     depth++;
                 }
             }
 
             string policyName = useSecondLanguage ? LocalizedTextService.GetPolicyNameIn(policy, secondLanguageCode ?? primaryLang) : policy.DisplayName;
+            if (string.IsNullOrWhiteSpace(policyName)) policyName = policy.DisplayName; // fallback
             sb.Append(new string(' ', depth * 2) + " " + policyName);
 
             return sb.ToString();
@@ -70,6 +71,7 @@ namespace PolicyPlusPlus.ViewModels
             while (cur != null)
             {
                 string name = useSecondLanguage ? LocalizedTextService.GetCategoryNameIn(cur, secondLanguageCode ?? GetPrimaryLanguage()) : cur.DisplayName;
+                if (string.IsNullOrWhiteSpace(name)) name = cur.DisplayName; // ensure non-empty so test expectations hold
                 stack.Push(name);
                 cur = cur.Parent;
             }

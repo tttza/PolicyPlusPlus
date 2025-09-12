@@ -71,6 +71,20 @@ namespace PolicyPlusPlus
             args.Handled = true;
         }
 
+        private void BtnLoadLocalGpo_Click(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                PolicySourceManager.Instance.Switch(PolicySourceDescriptor.LocalGpo());
+                _compSource = PolicySourceManager.Instance.CompSource;
+                _userSource = PolicySourceManager.Instance.UserSource;
+                UpdateSourceStatusUnified();
+                RefreshVisibleRows();
+                ShowInfo("Local GPO loaded.");
+            }
+            catch { ShowInfo("Failed to load Local GPO", InfoBarSeverity.Error); }
+        }
+
         private async void ContextEdit_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -137,7 +151,25 @@ namespace PolicyPlusPlus
         { if (sender is ToggleMenuFlyoutItem t) { _hideEmptyCategories = t.IsChecked; try { SettingsService.Instance.UpdateHideEmptyCategories(_hideEmptyCategories); } catch { } BuildCategoryTree(); ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty); } }
 
         private void ToggleTempPolMenu_Click(object sender, RoutedEventArgs e)
-        { if (sender is ToggleMenuFlyoutItem t) { ChkUseTempPol.IsChecked = t.IsChecked; ChkUseTempPol_Checked(ChkUseTempPol, new RoutedEventArgs()); } }
+        {
+            if (sender is not ToggleMenuFlyoutItem t) return;
+            try
+            {
+                if (t.IsChecked == true)
+                {
+                    PolicySourceManager.Instance.Switch(PolicySourceDescriptor.TempPol());
+                }
+                else if (PolicySourceManager.Instance.Mode == PolicySourceMode.TempPol)
+                {
+                    PolicySourceManager.Instance.Switch(PolicySourceDescriptor.LocalGpo());
+                }
+                _compSource = PolicySourceManager.Instance.CompSource;
+                _userSource = PolicySourceManager.Instance.UserSource;
+                UpdateSourceStatusUnified();
+                RefreshVisibleRows();
+            }
+            catch { ShowInfo("Temp POL toggle failed", InfoBarSeverity.Error); }
+        }
 
         private void BookmarkToggle_Click(object sender, RoutedEventArgs e)
         {

@@ -20,15 +20,13 @@ namespace PolicyPlusPlus
             try
             {
                 if (DetailsPane == null || DetailRow == null || DetailsSplitter == null || SplitterRow == null) return;
-
+                // Use _showDetails which is sourced from ViewModel binding
                 if (_showDetails)
                 {
                     DetailsPane.Visibility = Visibility.Visible;
                     DetailsSplitter.Visibility = Visibility.Visible;
-                    // If we have a previously saved star height, keep it; otherwise use a reasonable default ratio
                     if (!_savedDetailRowHeight.HasValue || _savedDetailRowHeight.Value.Value <= 0)
                         _savedDetailRowHeight = new GridLength(0.3, GridUnitType.Star);
-
                     DetailRow.Height = _savedDetailRowHeight.Value;
                     SplitterRow.Height = _savedSplitterRowHeight ?? new GridLength(8);
                 }
@@ -38,7 +36,6 @@ namespace PolicyPlusPlus
                         _savedDetailRowHeight = DetailRow.Height;
                     if (SplitterRow.Height.Value > 0)
                         _savedSplitterRowHeight = SplitterRow.Height;
-
                     DetailsPane.Visibility = Visibility.Collapsed;
                     DetailsSplitter.Visibility = Visibility.Collapsed;
                     DetailRow.Height = new GridLength(0);

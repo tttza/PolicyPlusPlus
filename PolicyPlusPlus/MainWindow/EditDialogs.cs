@@ -1,10 +1,9 @@
 using Microsoft.UI.Xaml;
-
+using PolicyPlusPlus.Services;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
 using PolicyPlusPlus.Utils;
 using PolicyPlusPlus.Windows;
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,11 +18,32 @@ namespace PolicyPlusPlus
             UpdateUnsavedIndicator();
         }
 
+        private PolicyLoader CreateLoaderFor(AdmxPolicySection section)
+        {
+            var mode = PolicySourceManager.Instance.Mode;
+            if (mode == PolicySourceMode.TempPol)
+            {
+                // TempPol paths managed inside manager; open fresh source via manager for isolation.
+                return new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, section == AdmxPolicySection.User);
+            }
+            if (mode == PolicySourceMode.CustomPol)
+            {
+                var path = section == AdmxPolicySection.User ? PolicySourceManager.Instance.CustomUserPath : PolicySourceManager.Instance.CustomCompPath;
+                if (!string.IsNullOrEmpty(path))
+                    return new PolicyLoader(PolicyLoaderSource.PolFile, path!, section == AdmxPolicySection.User);
+            }
+            return new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, section == AdmxPolicySection.User);
+        }
+
         private async Task OpenEditDialogForPolicyAsync(PolicyPlusPolicy representative, bool ensureFront = false)
         {
             if (_bundle is null) return;
             if (_compSource is null || _userSource is null || _loader is null)
-            { _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false); _compSource = _loader.OpenSource(); _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource(); }
+            {
+                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
+                _compSource = _loader.OpenSource();
+                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
+            }
 
             var displayName = representative.DisplayName;
             _nameGroups.TryGetValue(displayName, out var groupList);
@@ -40,12 +60,8 @@ namespace PolicyPlusPlus
             if (App.TryActivateExistingEdit(targetPolicy.UniqueID))
                 return;
 
-            var compLoader = _useTempPol && _tempPolCompPath != null
-                ? new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolCompPath, false)
-                : new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-            var userLoader = _useTempPol && _tempPolUserPath != null
-                ? new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolUserPath, true)
-                : new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true);
+            var compLoader = CreateLoaderFor(AdmxPolicySection.Machine);
+            var userLoader = CreateLoaderFor(AdmxPolicySection.User);
 
             var win = new EditSettingWindow();
             win.Initialize(targetPolicy,
@@ -80,7 +96,11 @@ namespace PolicyPlusPlus
         {
             if (_bundle == null) return;
             if (_compSource is null || _userSource is null || _loader is null)
-            { _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false); _compSource = _loader.OpenSource(); _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource(); }
+            {
+                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
+                _compSource = _loader.OpenSource();
+                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
+            }
 
             if (!_bundle.Policies.TryGetValue(policyId, out var policy))
             {
@@ -88,12 +108,8 @@ namespace PolicyPlusPlus
                 if (policy == null) return;
             }
 
-            var compLoader = _useTempPol && _tempPolCompPath != null
-                ? new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolCompPath, false)
-                : new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-            var userLoader = _useTempPol && _tempPolUserPath != null
-                ? new PolicyLoader(PolicyLoaderSource.PolFile, _tempPolUserPath, true)
-                : new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true);
+            var compLoader = CreateLoaderFor(AdmxPolicySection.Machine);
+            var userLoader = CreateLoaderFor(AdmxPolicySection.User);
 
             var win = new EditSettingWindow();
             win.Initialize(policy, preferredSection, _bundle!, _compSource!, _userSource!, compLoader, userLoader, _compComments, _userComments);

@@ -6,411 +6,257 @@ using System.Text.Json.Serialization;
 using Windows.Storage;
 using Windows.ApplicationModel;
 using PolicyPlusPlus.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PolicyPlusPlus.Services
 {
     public sealed partial class SettingsService
     {
         public static SettingsService Instance { get; } = new SettingsService();
-
-        private readonly object _gate = new();
+        private readonly SemaphoreSlim _sem = new(1,1);
         private string _baseDir = string.Empty;
         private string SettingsPath => Path.Combine(_baseDir, "settings.json");
         private string HistoryPath => Path.Combine(_baseDir, "history.json");
         private string SearchStatsPath => Path.Combine(_baseDir, "searchstats.json");
         private string BookmarkPath => Path.Combine(_baseDir, "bookmarks.json");
         public string CacheDirectory => Path.Combine(_baseDir, "Cache");
+        private AppSettings? _cachedSettings;
 
-        private JsonSerializerOptions _json = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
-
-        private static readonly JsonSerializerOptions _historyJson = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
-
+        private static readonly JsonSerializerOptions PrettyIgnoreNull = new() { WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+        private static readonly JsonSerializerOptions HistoryJson = new() { WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
         private SettingsService() { }
 
         public void Initialize()
         {
             try
             {
-                bool isPackaged = true;
-                try { _ = Package.Current; }
-                catch { isPackaged = false; }
-
-                if (isPackaged)
-                {
-                    _baseDir = ApplicationData.Current.LocalFolder.Path;
-                }
-                else
-                {
-                    var root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                    _baseDir = Path.Combine(root, "PolicyPlusPlus");
-                }
+                bool packaged = true; try { _ = Package.Current; } catch { packaged = false; }
+                _baseDir = packaged ? ApplicationData.Current.LocalFolder.Path : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PolicyPlusPlus");
                 Directory.CreateDirectory(_baseDir);
                 try { Directory.CreateDirectory(CacheDirectory); } catch { }
             }
             catch { }
         }
 
-        // TEST HOOK: allow tests to isolate settings I/O without touching real user data.
         internal void InitializeForTests(string baseDirectory)
         {
-            lock (_gate)
+            _sem.Wait();
+            try { _baseDir = baseDirectory; Directory.CreateDirectory(_baseDir); _cachedSettings = null; }
+            finally { _sem.Release(); }
+        }
+
+        private AppSettings LoadFromDisk_NoLock()
+        {
+            try
+            {
+                if (File.Exists(SettingsPath))
+                {
+                    var txt = File.ReadAllText(SettingsPath);
+                    return JsonSerializer.Deserialize(txt, AppJsonContext.Default.AppSettings) ?? new AppSettings();
+                }
+            }
+            catch { }
+            return new AppSettings();
+        }
+
+        private void MigrateIfNeeded_NoLock(AppSettings s)
+        {
+            int ver = s.SchemaVersion ?? 0;
+            if (ver < 1) ver = 1;
+            if (s.CustomPol is null && (s.CustomPolEnableComputer.HasValue || s.CustomPolEnableUser.HasValue || s.CustomPolCompPath != null || s.CustomPolUserPath != null))
             {
                 try
                 {
-                    _baseDir = baseDirectory;
-                    Directory.CreateDirectory(_baseDir);
-                    try { Directory.CreateDirectory(CacheDirectory); } catch { }
+                    bool comp = s.CustomPolEnableComputer ?? false;
+                    bool user = s.CustomPolEnableUser ?? false;
+                    s.CustomPol = new CustomPolSettings
+                    {
+                        EnableComputer = comp,
+                        EnableUser = user,
+                        ComputerPath = comp ? s.CustomPolCompPath : null,
+                        UserPath = user ? s.CustomPolUserPath : null,
+                        Active = comp || user
+                    };
                 }
                 catch { }
             }
+            if (s.CustomPol != null)
+            {
+                s.CustomPolEnableComputer = null; s.CustomPolEnableUser = null; s.CustomPolCompPath = null; s.CustomPolUserPath = null;
+                if (ver < 2) ver = 2;
+            }
+            s.SchemaVersion = ver;
+        }
+
+        private AppSettings GetSettingsInternal()
+        {
+            if (_cachedSettings == null)
+            {
+                _cachedSettings = LoadFromDisk_NoLock();
+                MigrateIfNeeded_NoLock(_cachedSettings);
+            }
+            return _cachedSettings;
         }
 
         public AppSettings LoadSettings()
         {
-            lock (_gate)
-            {
-                AppSettings result;
-                try
-                {
-                    if (File.Exists(SettingsPath))
-                    {
-                        var txt = File.ReadAllText(SettingsPath);
-                        var data = JsonSerializer.Deserialize(txt, AppJsonContext.Default.AppSettings);
-                        result = data ?? new AppSettings();
-                    }
-                    else
-                    {
-                        result = new AppSettings();
-                    }
-                }
-                catch
-                {
-                    result = new AppSettings();
-                }
-
-                // Migration: build CustomPol from legacy fields if new object missing
-                try
-                {
-                    if (result.CustomPol is null)
-                    {
-                        var enableComp = result.CustomPolEnableComputer ?? false;
-                        var enableUser = result.CustomPolEnableUser ?? false;
-                        var compPath = enableComp ? result.CustomPolCompPath : null;
-                        var userPath = enableUser ? result.CustomPolUserPath : null;
-                        var active = enableComp || enableUser; // legacy semantics
-                        result.CustomPol = new CustomPolSettings
-                        {
-                            EnableComputer = enableComp,
-                            EnableUser = enableUser,
-                            ComputerPath = compPath,
-                            UserPath = userPath,
-                            Active = active
-                        };
-                    }
-                }
-                catch { }
-
-                return result;
-            }
+            _sem.Wait();
+            try { return GetSettingsInternal(); }
+            finally { _sem.Release(); }
+        }
+        public async Task<AppSettings> LoadSettingsAsync()
+        {
+            await _sem.WaitAsync();
+            try { return GetSettingsInternal(); }
+            finally { _sem.Release(); }
         }
 
         public void SaveSettings(AppSettings s)
         {
-            lock (_gate)
-            {
-                try
-                {
-                    File.WriteAllText(SettingsPath, JsonSerializer.Serialize(s ?? new AppSettings(), AppJsonContext.Default.AppSettings));
-                }
-                catch { }
-            }
+            _sem.Wait();
+            try { MigrateIfNeeded_NoLock(s); _cachedSettings = s ?? new AppSettings(); File.WriteAllText(SettingsPath, JsonSerializer.Serialize(_cachedSettings, AppJsonContext.Default.AppSettings)); }
+            catch { }
+            finally { _sem.Release(); }
         }
 
-        // Bookmarks (separate file, no legacy migration needed)
-        public Dictionary<string, List<string>> LoadBookmarkLists()
+        private void Update(Action<AppSettings> mutator)
         {
-            var (lists, _) = LoadBookmarkListsWithActive();
-            return lists;
+            _sem.Wait();
+            try { var s = GetSettingsInternal(); mutator(s); File.WriteAllText(SettingsPath, JsonSerializer.Serialize(s, AppJsonContext.Default.AppSettings)); }
+            catch { }
+            finally { _sem.Release(); }
         }
 
-        public (Dictionary<string, List<string>> lists, string active) LoadBookmarkListsWithActive()
+        public void ReloadFromDisk()
         {
-            lock (_gate)
-            {
-                try
-                {
-                    if (File.Exists(BookmarkPath))
-                    {
-                        var txt = File.ReadAllText(BookmarkPath);
-                        var data = JsonSerializer.Deserialize(txt, AppJsonContext.Default.BookmarkStore) ?? new BookmarkStore();
-                        var lists = data.Lists ?? new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-                        if (lists.Count == 0) lists["default"] = new List<string>();
-                        var active = string.IsNullOrEmpty(data.Active) || !lists.ContainsKey(data.Active) ? "default" : data.Active;
-                        return (lists, active);
-                    }
-                }
-                catch { }
-                return (new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) { ["default"] = new List<string>() }, "default");
-            }
+            _sem.Wait();
+            try { _cachedSettings = LoadFromDisk_NoLock(); MigrateIfNeeded_NoLock(_cachedSettings); }
+            finally { _sem.Release(); }
         }
 
-        public void SaveBookmarkLists(Dictionary<string, List<string>> lists, string active)
+        // Bookmark lists
+        public (Dictionary<string,List<string>> lists, string active) LoadBookmarkListsWithActive()
         {
-            lock (_gate)
-            {
-                try
-                {
-                    var data = new BookmarkStore { Lists = lists, Active = active };
-                    File.WriteAllText(BookmarkPath, JsonSerializer.Serialize(data, AppJsonContext.Default.BookmarkStore));
-                }
-                catch { }
-            }
-        }
-
-        public void UpdateTheme(string theme)
-        {
-            var s = LoadSettings();
-            s.Theme = theme;
-            SaveSettings(s);
-        }
-
-        public void UpdateScale(string scale)
-        {
-            var s = LoadSettings();
-            s.UIScale = scale;
-            SaveSettings(s);
-        }
-
-        public void UpdateLanguage(string lang)
-        {
-            var s = LoadSettings();
-            s.Language = lang;
-            SaveSettings(s);
-        }
-
-        public void UpdateSecondLanguageEnabled(bool enabled)
-        {
-            var s = LoadSettings();
-            s.SecondLanguageEnabled = enabled;
-            if (enabled && string.IsNullOrEmpty(s.SecondLanguage)) s.SecondLanguage = "en-US";
-            SaveSettings(s);
-        }
-
-        public void UpdateSecondLanguage(string lang)
-        {
-            var s = LoadSettings();
-            s.SecondLanguage = lang;
-            SaveSettings(s);
-        }
-
-        public void UpdateAdmxSourcePath(string path)
-        {
-            var s = LoadSettings();
-            s.AdmxSourcePath = path;
-            SaveSettings(s);
-        }
-
-        public void UpdateHideEmptyCategories(bool hide)
-        {
-            var s = LoadSettings();
-            s.HideEmptyCategories = hide;
-            SaveSettings(s);
-        }
-
-        public void UpdateShowDetails(bool show)
-        {
-            var s = LoadSettings();
-            s.ShowDetails = show;
-            SaveSettings(s);
-        }
-
-        public void UpdateColumns(ColumnsOptions cols)
-        {
-            var s = LoadSettings();
-            s.Columns = cols;
-            SaveSettings(s);
-        }
-
-        public void UpdateColumnLayout(List<ColumnState> states)
-        {
-            var s = LoadSettings();
-            s.ColumnStates = states;
-            SaveSettings(s);
-        }
-
-        public List<ColumnState> LoadColumnLayout()
-        {
+            _sem.Wait();
             try
             {
-                var s = LoadSettings();
-                return s.ColumnStates ?? new List<ColumnState>();
-            }
-            catch { return new List<ColumnState>(); }
-        }
-
-        public void UpdateSearchOptions(SearchOptions opts)
-        {
-            var s = LoadSettings();
-            s.Search = opts;
-            SaveSettings(s);
-        }
-
-        public void UpdatePathJoinSymbol(string symbol)
-        {
-            var s = LoadSettings();
-            s.PathJoinSymbol = string.IsNullOrEmpty(symbol) ? "+" : symbol.Substring(0, Math.Min(1, symbol.Length));
-            SaveSettings(s);
-        }
-
-        public void UpdateCategoryPaneWidth(double width)
-        {
-            var s = LoadSettings();
-            s.CategoryPaneWidth = Math.Max(0, width);
-            SaveSettings(s);
-        }
-
-        public void UpdateDetailPaneHeightStar(double star)
-        {
-            var s = LoadSettings();
-            s.DetailPaneHeightStar = Math.Max(0, star);
-            SaveSettings(s);
-        }
-
-        public void UpdateSort(string? column, string? direction)
-        {
-            var s = LoadSettings();
-            s.SortColumn = column;
-            s.SortDirection = direction;
-            SaveSettings(s);
-        }
-
-        public (Dictionary<string, int> counts, Dictionary<string, DateTime> lastUsed) LoadSearchStats()
-        {
-            lock (_gate)
-            {
-                try
+                if (File.Exists(BookmarkPath))
                 {
-                    if (File.Exists(SearchStatsPath))
-                    {
-                        var txt = File.ReadAllText(SearchStatsPath);
-                        var data = JsonSerializer.Deserialize<SearchStats>(txt) ?? new SearchStats();
-                        return (data.Counts ?? new(), data.LastUsed ?? new());
-                    }
+                    var txt = File.ReadAllText(BookmarkPath);
+                    var data = JsonSerializer.Deserialize(txt, AppJsonContext.Default.BookmarkStore) ?? new BookmarkStore();
+                    var lists = data.Lists ?? new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+                    if (lists.Count == 0) lists["default"] = new List<string>();
+                    var active = string.IsNullOrEmpty(data.Active) || !lists.ContainsKey(data.Active) ? "default" : data.Active;
+                    return (lists, active);
                 }
-                catch { }
-                return (new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase), new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase));
+                return (new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) { ["default"] = new List<string>() }, "default");
             }
+            catch { return (new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase) { ["default"] = new List<string>() }, "default"); }
+            finally { _sem.Release(); }
         }
-
-        public void SaveSearchStats(Dictionary<string, int> counts, Dictionary<string, DateTime> lastUsed)
+        public Dictionary<string,List<string>> LoadBookmarkLists() { var (l, _) = LoadBookmarkListsWithActive(); return l; }
+        public void SaveBookmarkLists(Dictionary<string,List<string>> lists, string active)
         {
-            lock (_gate)
-            {
-                try
-                {
-                    var data = new SearchStats { Counts = counts, LastUsed = lastUsed };
-                    File.WriteAllText(SearchStatsPath, JsonSerializer.Serialize(data));
-                }
-                catch { }
-            }
+            _sem.Wait();
+            try { var store = new BookmarkStore { Lists = lists, Active = active }; File.WriteAllText(BookmarkPath, JsonSerializer.Serialize(store, AppJsonContext.Default.BookmarkStore)); }
+            catch { }
+            finally { _sem.Release(); }
         }
 
+        // Search stats
+        public (Dictionary<string,int> counts, Dictionary<string,DateTime> lastUsed) LoadSearchStats()
+        {
+            _sem.Wait();
+            try
+            {
+                if (File.Exists(SearchStatsPath))
+                {
+                    var txt = File.ReadAllText(SearchStatsPath);
+                    var data = JsonSerializer.Deserialize<SearchStats>(txt) ?? new SearchStats();
+                    return (data.Counts ?? new(StringComparer.OrdinalIgnoreCase), data.LastUsed ?? new(StringComparer.OrdinalIgnoreCase));
+                }
+                return (new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase));
+            }
+            catch { return (new(StringComparer.OrdinalIgnoreCase), new(StringComparer.OrdinalIgnoreCase)); }
+            finally { _sem.Release(); }
+        }
+        public void SaveSearchStats(Dictionary<string,int> counts, Dictionary<string,DateTime> lastUsed)
+        {
+            _sem.Wait();
+            try { var data = new SearchStats { Counts = counts, LastUsed = lastUsed }; File.WriteAllText(SearchStatsPath, JsonSerializer.Serialize(data)); }
+            catch { }
+            finally { _sem.Release(); }
+        }
+
+        // History
         public List<HistoryRecord> LoadHistory()
         {
-            lock (_gate)
+            _sem.Wait();
+            try
             {
-                try
+                if (File.Exists(HistoryPath))
                 {
-                    if (File.Exists(HistoryPath))
-                    {
-                        var txt = File.ReadAllText(HistoryPath);
-                        var list = JsonSerializer.Deserialize<List<HistoryRecord>>(txt, _historyJson);
-                        return list ?? new List<HistoryRecord>();
-                    }
+                    var txt = File.ReadAllText(HistoryPath);
+                    return JsonSerializer.Deserialize<List<HistoryRecord>>(txt, HistoryJson) ?? new List<HistoryRecord>();
                 }
-                catch { }
                 return new List<HistoryRecord>();
             }
+            catch { return new List<HistoryRecord>(); }
+            finally { _sem.Release(); }
         }
-
         public void SaveHistory(List<HistoryRecord> records)
         {
-            lock (_gate)
-            {
-                try
-                {
-                    File.WriteAllText(HistoryPath, JsonSerializer.Serialize(records ?? new List<HistoryRecord>(), _historyJson));
-                }
-                catch { }
-            }
+            _sem.Wait();
+            try { File.WriteAllText(HistoryPath, JsonSerializer.Serialize(records ?? new List<HistoryRecord>(), HistoryJson)); }
+            catch { }
+            finally { _sem.Release(); }
         }
 
-        public void UpdateLimitUnfilteredTo1000(bool enabled)
-        {
-            var s = LoadSettings();
-            s.LimitUnfilteredTo1000 = enabled;
-            SaveSettings(s);
-        }
+        // Column layout helpers
+        public List<ColumnState> LoadColumnLayout() { try { return LoadSettings().ColumnStates ?? new List<ColumnState>(); } catch { return new List<ColumnState>(); } }
 
-        public void UpdateConfiguredOnly(bool configuredOnly)
-        {
-            var s = LoadSettings();
-            s.ConfiguredOnly = configuredOnly;
-            SaveSettings(s);
-        }
-
-        public void UpdateBookmarksOnly(bool bookmarksOnly)
-        {
-            var s = LoadSettings();
-            s.BookmarksOnly = bookmarksOnly;
-            SaveSettings(s);
-        }
-
+        // Update wrappers
+        public void UpdateTheme(string theme) => Update(s => s.Theme = theme);
+        public void UpdateScale(string scale) => Update(s => s.UIScale = scale);
+        public void UpdateLanguage(string lang) => Update(s => s.Language = lang);
+        public void UpdateSecondLanguageEnabled(bool enabled) => Update(s => { s.SecondLanguageEnabled = enabled; if (enabled && string.IsNullOrEmpty(s.SecondLanguage)) s.SecondLanguage = "en-US"; });
+        public void UpdateSecondLanguage(string lang) => Update(s => s.SecondLanguage = lang);
+        public void UpdateAdmxSourcePath(string path) => Update(s => s.AdmxSourcePath = path);
+        public void UpdateHideEmptyCategories(bool hide) => Update(s => s.HideEmptyCategories = hide);
+        public void UpdateShowDetails(bool show) => Update(s => s.ShowDetails = show);
+        public void UpdateColumns(ColumnsOptions cols) => Update(s => s.Columns = cols);
+        public void UpdateColumnLayout(List<ColumnState> states) => Update(s => s.ColumnStates = states);
+        public void UpdateSearchOptions(SearchOptions opts) => Update(s => s.Search = opts);
+        public void UpdatePathJoinSymbol(string symbol) => Update(s => s.PathJoinSymbol = string.IsNullOrEmpty(symbol) ? "+" : symbol.Substring(0, Math.Min(1, symbol.Length)));
+        public void UpdateCategoryPaneWidth(double width) => Update(s => s.CategoryPaneWidth = Math.Max(0,width));
+        public void UpdateDetailPaneHeightStar(double star) => Update(s => s.DetailPaneHeightStar = Math.Max(0, star));
+        public void UpdateSort(string? column, string? direction) => Update(s => { s.SortColumn = column; s.SortDirection = direction; });
+        public void UpdateLimitUnfilteredTo1000(bool enabled) => Update(s => s.LimitUnfilteredTo1000 = enabled);
+        public void UpdateConfiguredOnly(bool configuredOnly) => Update(s => s.ConfiguredOnly = configuredOnly);
+        public void UpdateBookmarksOnly(bool bookmarksOnly) => Update(s => s.BookmarksOnly = bookmarksOnly);
         public void UpdateCustomPolSettings(bool enableComp, bool enableUser, string? compPath, string? userPath)
         {
-            var s = LoadSettings();
-            s.CustomPolEnableComputer = enableComp;
-            s.CustomPolEnableUser = enableUser;
-            s.CustomPolCompPath = compPath;
-            s.CustomPolUserPath = userPath;
-            // Also populate new unified object; Active derived from enables.
-            s.CustomPol = new CustomPolSettings
+            Update(s =>
             {
-                EnableComputer = enableComp,
-                EnableUser = enableUser,
-                ComputerPath = enableComp ? compPath : null,
-                UserPath = enableUser ? userPath : null,
-                Active = (enableComp || enableUser)
-            };
-            SaveSettings(s);
+                s.CustomPol = new CustomPolSettings
+                {
+                    EnableComputer = enableComp,
+                    EnableUser = enableUser,
+                    ComputerPath = enableComp ? compPath : null,
+                    UserPath = enableUser ? userPath : null,
+                    Active = (enableComp || enableUser)
+                };
+                s.CustomPolEnableComputer = null; s.CustomPolEnableUser = null; s.CustomPolCompPath = null; s.CustomPolUserPath = null;
+            });
         }
-
-        public void UpdateCustomPolActive(bool active)
-        {
-            var s = LoadSettings();
-            if (s.CustomPol == null) s.CustomPol = new CustomPolSettings();
-            s.CustomPol.Active = active && (s.CustomPol.EnableComputer || s.CustomPol.EnableUser);
-            SaveSettings(s);
-        }
-
-        public void UpdateCustomPol(CustomPolSettings model)
-        {
-            var s = LoadSettings();
-            s.CustomPol = model;
-            SaveSettings(s);
-        }
+        public void UpdateCustomPolActive(bool active) => Update(s => { s.CustomPol ??= new CustomPolSettings(); s.CustomPol.Active = active && (s.CustomPol.EnableComputer || s.CustomPol.EnableUser); });
+        public void UpdateCustomPol(CustomPolSettings model) => Update(s => { s.CustomPol = model; s.CustomPolEnableComputer = null; s.CustomPolEnableUser = null; s.CustomPolCompPath = null; s.CustomPolUserPath = null; });
     }
 
     public partial class AppSettings
     {
+        public int? SchemaVersion { get; set; }
         public string? Theme { get; set; }
         public string? UIScale { get; set; }
         public string? Language { get; set; }
@@ -437,56 +283,10 @@ namespace PolicyPlusPlus.Services
         public CustomPolSettings? CustomPol { get; set; }
     }
 
-    public class CustomPolSettings
-    {
-        public bool EnableComputer { get; set; }
-        public bool EnableUser { get; set; }
-        public string? ComputerPath { get; set; }
-        public string? UserPath { get; set; }
-        public bool Active { get; set; } // true when user wants custom POL mode active
-    }
-
-    public class ColumnsOptions
-    {
-        public bool ShowId { get; set; } = true;
-        public bool ShowCategory { get; set; } = false;
-        public bool ShowTopCategory { get; set; } = false;
-        public bool ShowCategoryPath { get; set; } = false;
-        public bool ShowApplies { get; set; } = false;
-        public bool ShowSupported { get; set; } = false;
-        public bool ShowUserState { get; set; } = true;
-        public bool ShowComputerState { get; set; } = true;
-        public bool ShowBookmark { get; set; } = true;
-        public bool ShowSecondName { get; set; } = false;
-    }
-
-    public class ColumnState
-    {
-        public string Key { get; set; } = string.Empty;
-        public int Index { get; set; }
-        public double Width { get; set; }
-        public bool Visible { get; set; }
-    }
-
-    public class SearchOptions
-    {
-        public bool InName { get; set; } = true;
-        public bool InId { get; set; } = true;
-        public bool InRegistryKey { get; set; } = true;
-        public bool InRegistryValue { get; set; } = true;
-        public bool InDescription { get; set; } = false;
-        public bool InComments { get; set; } = false;
-    }
-
-    public class SearchStats
-    {
-        public Dictionary<string, int>? Counts { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-        public Dictionary<string, DateTime>? LastUsed { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-    }
-
-    public class BookmarkStore
-    {
-        public Dictionary<string, List<string>>? Lists { get; set; }
-        public string? Active { get; set; }
-    }
+    public class CustomPolSettings { public bool EnableComputer { get; set; } public bool EnableUser { get; set; } public string? ComputerPath { get; set; } public string? UserPath { get; set; } public bool Active { get; set; } }
+    public class ColumnsOptions { public bool ShowId { get; set; }=true; public bool ShowCategory{get;set;} public bool ShowTopCategory{get;set;} public bool ShowCategoryPath{get;set;} public bool ShowApplies{get;set;} public bool ShowSupported{get;set;} public bool ShowUserState{get;set;}=true; public bool ShowComputerState{get;set;}=true; public bool ShowBookmark{get;set;}=true; public bool ShowSecondName{get;set;} }
+    public class ColumnState { public string Key { get; set; } = string.Empty; public int Index { get; set; } public double Width { get; set; } public bool Visible { get; set; } }
+    public class SearchOptions { public bool InName { get; set; }=true; public bool InId { get; set; }=true; public bool InRegistryKey { get; set; }=true; public bool InRegistryValue { get; set; }=true; public bool InDescription { get; set; } public bool InComments { get; set; } }
+    public class SearchStats { public Dictionary<string,int>? Counts { get; set; }= new(StringComparer.OrdinalIgnoreCase); public Dictionary<string,DateTime>? LastUsed { get; set; }= new(StringComparer.OrdinalIgnoreCase); }
+    public class BookmarkStore { public Dictionary<string,List<string>>? Lists { get; set; } public string? Active { get; set; } }
 }

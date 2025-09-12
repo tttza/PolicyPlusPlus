@@ -76,6 +76,6 @@
         </Grid>
 
         <CheckBox Grid.Row="4" x:Name="ActivateCheck" Content="Activate custom .pol after closing" IsChecked="True" />
-        <TextBlock Grid.Row="5" Text="If a file does not exist it will be created automatically. 'New' creates an empty file immediately. 'Reset' clears the path (and you must disable the scope or choose a new file)." FontSize="12" Opacity="0.7" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="5" Text="'New' creates an empty file immediately. 'Reset' clears the path (and you must disable the scope or choose a new file)." FontSize="12" Opacity="0.7" TextWrapping="Wrap"/>
     </Grid>
 </ContentDialog>

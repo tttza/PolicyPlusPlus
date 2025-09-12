@@ -73,7 +73,8 @@ namespace PolicyPlusPlus
             {
                 Log.Debug("App", $"Velopack init failed: {ex.GetType().Name} {ex.Message}");
             }
-#elif USE_STORE_UPDATE
+#endif
+#if USE_STORE_UPDATE
             // Store update checks are not performed at startup (manual trigger only).
 #endif
             InitializeComponent();
@@ -85,7 +86,7 @@ namespace PolicyPlusPlus
             catch (Exception ex) { Log.Debug("App", $"attach ProcessExit failed: {ex.GetType().Name} {ex.Message}"); }
         }
 
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+        protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             try
             {
@@ -103,10 +104,26 @@ namespace PolicyPlusPlus
             }
             catch (Exception ex) { Log.Warn("App", $"settings init failed", ex); }
 
+            var customPolVm = new ViewModels.CustomPolViewModel(SettingsService.Instance, SettingsService.Instance.LoadSettings().CustomPol);
+
             Window = new MainWindow();
             try { Window.Title = "Policy++"; } catch { }
+            if (Window.Content is FrameworkElement feRoot)
+            {
+                feRoot.DataContext = customPolVm;
+            }
             ApplyThemeTo(Window);
             TryApplyIconTo(Window);
+
+            // Await async UI initialization (ADMX load etc.) before first Activate where possible.
+            try
+            {
+                if (Window is MainWindow mw)
+                {
+                    await mw.EnsureInitializedAsync();
+                }
+            }
+            catch (Exception ex) { Log.Debug("App", $"async init failed: {ex.Message}"); }
 
             Window.Closed += async (s, e) =>
             {
@@ -168,7 +185,7 @@ namespace PolicyPlusPlus
                     {
                         _iconPathCache = path;
                         w.AppWindow?.SetIcon(path);
-                    }
+                      }
                 }
             }
             catch (Exception ex) { Log.Debug("App", $"fallback icon apply failed: {ex.Message}"); }
@@ -180,11 +197,6 @@ namespace PolicyPlusPlus
             if (Window != null) ApplyThemeTo(Window);
             foreach (var w in _secondaryWindows) ApplyThemeTo(w);
             ThemeChanged?.Invoke(null, EventArgs.Empty);
-        }
-
-        public static void SetGlobalTheme(string theme)
-        {
-            SetGlobalTheme(theme switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
         }
 
         public static void SetGlobalScale(double scale)
@@ -208,15 +220,11 @@ namespace PolicyPlusPlus
             TryApplyIconTo(w);
         }
         public static void UnregisterWindow(Window w)
-        {
-            _secondaryWindows.Remove(w);
-        }
+        { _secondaryWindows.Remove(w); }
         public static void CloseAllSecondaryWindows()
         {
             foreach (var w in _secondaryWindows.ToArray())
-            {
-                try { w.Close(); } catch { }
-            }
+            { try { w.Close(); } catch { } }
             _secondaryWindows.Clear();
             _openEditWindows.Clear();
         }

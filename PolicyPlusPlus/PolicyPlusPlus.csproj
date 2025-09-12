@@ -9,7 +9,7 @@
 	<ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <AssemblyName>PolicyPlusPlus</AssemblyName>
     <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
 	<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <Configurations>Debug;Release;Debug-Unpackaged;Release-Unpackaged</Configurations>
     <Packaged>true</Packaged>

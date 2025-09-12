@@ -43,7 +43,17 @@ namespace PolicyPlusPlus.Services
 
         private const int MaxHistoryEntries = 100; // cap
 
+        public event EventHandler? DirtyChanged;
+        private bool _isDirty;
+        public bool IsDirty
+        {
+            get => _isDirty;
+            private set { if (value == _isDirty) return; _isDirty = value; DirtyChanged?.Invoke(this, EventArgs.Empty); }
+        }
+
         private PendingChangesService() { }
+
+        private void UpdateDirtyFlag() => IsDirty = Pending.Count > 0;
 
         private static Dictionary<string, object>? CloneOptions(Dictionary<string, object>? src)
         {
@@ -93,6 +103,7 @@ namespace PolicyPlusPlus.Services
                 Pending.Add(change);
                 Log.Info("PendingChanges", $"Added pending policy id={pid} scope={scope} action={change.Action}");
             }
+            UpdateDirtyFlag();
         }
 
         // Discard: just remove pending entries
@@ -105,6 +116,7 @@ namespace PolicyPlusPlus.Services
                 Pending.Remove(c);
                 Log.Info("PendingChanges", $"Discarded policy id={c.PolicyId} scope={c.Scope}");
             }
+            UpdateDirtyFlag();
         }
 
         private void TrimHistoryIfNeeded()
@@ -151,6 +163,7 @@ namespace PolicyPlusPlus.Services
                 Pending.Remove(c);
                 Log.Info("PendingChanges", $"Applied policy id={c.PolicyId} scope={c.Scope} action={c.Action} state={c.DesiredState}");
             }
+            UpdateDirtyFlag();
         }
 
         public void DiscardAll()
@@ -160,6 +173,7 @@ namespace PolicyPlusPlus.Services
             var all = Pending.ToArray();
             foreach (var c in all) Pending.Remove(c);
             Log.Info("PendingChanges", $"DiscardAll removed={count}");
+            UpdateDirtyFlag();
         }
     }
 }

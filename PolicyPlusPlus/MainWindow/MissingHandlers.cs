@@ -50,19 +50,21 @@ namespace PolicyPlusPlus
                 var result = await dlg.ShowAsync();
                 if (result == ContentDialogResult.Primary)
                 {
-                    var chosen = dlg.SelectedLanguage;
-                    bool langChanged = !string.IsNullOrEmpty(chosen) && !string.Equals(chosen, currentLang, StringComparison.OrdinalIgnoreCase);
-                    if (langChanged)
-                    { try { SettingsService.Instance.UpdateLanguage(chosen!); } catch { } LoadAdmxFolderAsync(admxPath); }
+                    var settings = _settingsCache ?? SettingsService.Instance.LoadSettings();
+                    _settingsCache = settings;
+                    var chosen = (sender as MenuFlyoutItem)?.Tag as string;
+                    bool langChanged = false;
+                    if (!string.IsNullOrEmpty(chosen) && !string.Equals(chosen, settings.Language, StringComparison.OrdinalIgnoreCase))
+                    { langChanged = true; try { SettingsService.Instance.UpdateLanguage(chosen!); settings.Language = chosen; } catch { } await LoadAdmxFolderAsync(admxPath); }
 
-                    var before = SettingsService.Instance.LoadSettings();
+                    var before = settings; // already cached
                     bool beforeEnabled = before.SecondLanguageEnabled ?? false;
                     string beforeSecond = before.SecondLanguage ?? "en-US";
                     bool afterEnabled = dlg.SecondLanguageEnabled;
                     string afterSecond = dlg.SelectedSecondLanguage ?? beforeSecond;
                     bool secondChanged = (beforeEnabled != afterEnabled) || !string.Equals(beforeSecond, afterSecond, StringComparison.OrdinalIgnoreCase);
-                    try { SettingsService.Instance.UpdateSecondLanguageEnabled(afterEnabled); } catch { }
-                    if (afterEnabled && !string.IsNullOrEmpty(afterSecond)) { try { SettingsService.Instance.UpdateSecondLanguage(afterSecond); } catch { } }
+                    try { SettingsService.Instance.UpdateSecondLanguageEnabled(afterEnabled); before.SecondLanguageEnabled = afterEnabled; } catch { }
+                    if (afterEnabled && !string.IsNullOrEmpty(afterSecond)) { try { SettingsService.Instance.UpdateSecondLanguage(afterSecond); before.SecondLanguage = afterSecond; } catch { } }
 
                     if (secondChanged && !langChanged)
                     { RebuildSearchIndex(); }

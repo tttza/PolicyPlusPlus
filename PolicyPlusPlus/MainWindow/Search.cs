@@ -12,17 +12,15 @@ using PolicyPlusCore.Core;
 using PolicyPlusPlus.Dialogs;
 using PolicyPlusCore.Utilities;
 using PolicyPlusPlus.Logging; // logging
+using PolicyPlusPlus.ViewModels;
 
 namespace PolicyPlusPlus
 {
-    // Search / suggestion logic partial
     public sealed partial class MainWindow
     {
-        private bool _suppressSearchOptionEvents; // master flag shared (now used in handlers)
         private List<(PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)> _searchIndex = new();
         private Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)> _searchIndexById = new(StringComparer.OrdinalIgnoreCase);
         private CancellationTokenSource? _searchDebounceCts;
-        private CancellationTokenSource? _searchOptionsDebounceCts; // used to debounce option toggles
         private bool _searchInName = true;
         private bool _searchInId = true;
         private bool _searchInRegistryKey = true;
@@ -32,7 +30,36 @@ namespace PolicyPlusPlus
         private readonly Dictionary<string, string> _compComments = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> _userComments = new(StringComparer.OrdinalIgnoreCase);
 
-        // Description index prebuild (moved from main)
+        private SearchOptionsViewModel? SearchOptionsVM => (RootGrid?.Resources?["SearchOptionsVM"]) as SearchOptionsViewModel;
+
+        private void SyncSearchFlagsFromViewModel()
+        {
+            var vm = SearchOptionsVM; if (vm == null) return;
+            _searchInName = vm.InName;
+            _searchInId = vm.InId;
+            _searchInRegistryKey = vm.InRegistryKey;
+            _searchInRegistryValue = vm.InRegistryValue;
+            _searchInDescription = vm.InDescription;
+            _searchInComments = vm.InComments;
+        }
+
+        private void ObserveSearchOptions()
+        {
+            var vm = SearchOptionsVM; if (vm == null) return;
+            vm.PropertyChanged += (_, __) =>
+            {
+                try
+                {
+                    SyncSearchFlagsFromViewModel();
+                    var q = SearchBox?.Text ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(q)) RunAsyncFilterAndBind(); else RunAsyncSearchAndBind(q);
+                }
+                catch (Exception ex) { Log.Warn("MainSearch", "ObserveSearchOptions update failed", ex); }
+            };
+            SyncSearchFlagsFromViewModel();
+        }
+
+        // Description index prebuild logic remains unchanged below
         private void StartPrebuildDescIndex()
         {
             try
@@ -69,7 +96,8 @@ namespace PolicyPlusPlus
         {
             try
             {
-                var s = SettingsService.Instance.LoadSettings();
+                var s = _settingsCache ?? SettingsService.Instance.LoadSettings();
+                _settingsCache = s;
                 bool secondEnabled = s.SecondLanguageEnabled ?? false;
                 string secondLang = (secondEnabled ? (s.SecondLanguage ?? "en-US") : string.Empty) ?? string.Empty;
                 string currentLang = s.Language ?? _currentLanguage ?? string.Empty;
@@ -159,47 +187,7 @@ namespace PolicyPlusPlus
         private void ShowBaselineSuggestions()
         { try { if (SearchBox == null) return; var allowed = new HashSet<string>(_allPolicies.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase); var list = BuildSuggestions(string.Empty, allowed); SearchBox.ItemsSource = list; } catch (Exception ex) { Log.Warn("MainSearch", "ShowBaselineSuggestions failed", ex); } }
 
-        private void HandleSearchOptionChanged()
-        {
-            if (_suppressSearchOptionEvents) return;
-            _searchOptionsDebounceCts?.Cancel();
-            _searchOptionsDebounceCts = new CancellationTokenSource();
-            var token = _searchOptionsDebounceCts.Token;
-            _ = Task.Run(async () =>
-            {
-                try { await Task.Delay(160, token); } catch { return; }
-                if (token.IsCancellationRequested) return;
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    try
-                    {
-                        _searchInName = SearchOptName?.IsChecked == true;
-                        _searchInId = SearchOptId?.IsChecked == true;
-                        _searchInDescription = SearchOptDesc?.IsChecked == true;
-                        _searchInComments = SearchOptComments?.IsChecked == true;
-                        _searchInRegistryKey = SearchOptRegKey?.IsChecked == true;
-                        _searchInRegistryValue = SearchOptRegValue?.IsChecked == true;
-                        SettingsService.Instance.UpdateSearchOptions(new SearchOptions
-                        {
-                            InName = _searchInName,
-                            InId = _searchInId,
-                            InDescription = _searchInDescription,
-                            InComments = _searchInComments,
-                            InRegistryKey = _searchInRegistryKey,
-                            InRegistryValue = _searchInRegistryValue
-                        });
-                        var q = SearchBox?.Text ?? string.Empty;
-                        if (string.IsNullOrWhiteSpace(q)) RunAsyncFilterAndBind(); else RunAsyncSearchAndBind(q);
-                    }
-                    catch (Exception ex) { Log.Error("MainSearch", "HandleSearchOptionChanged apply failed", ex); }
-                });
-            });
-        }
-
         // XAML event proxies
-        private void SearchOption_Toggle_Click(object sender, RoutedEventArgs e)
-        { HandleSearchOptionChanged(); }
-
         private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
             try

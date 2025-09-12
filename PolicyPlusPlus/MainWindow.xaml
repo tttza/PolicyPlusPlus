@@ -10,6 +10,7 @@
     xmlns:datagrid="using:CommunityToolkit.WinUI.UI.Controls"
     xmlns:converters="using:PolicyPlusPlus.Converters"
     xmlns:models="using:PolicyPlusPlus.Models"
+    xmlns:viewModels="using:PolicyPlusPlus.ViewModels"
     mc:Ignorable="d"
     Title="Policy++">
 
@@ -19,6 +20,10 @@
 
     <!-- Scale host wraps real content so scaled content always fills window without gaps -->
     <Grid x:Name="ScaleHost">
+        <Grid.Resources>
+            <viewModels:SearchOptionsViewModel x:Key="SearchOptionsVM" />
+            <viewModels:FilterViewModel x:Key="FilterVM" />
+        </Grid.Resources>
         <Grid x:Name="RootGrid" Background="{ThemeResource WindowBackground}" Loaded="Window_Loaded" KeyDown="RootGrid_KeyDown" PointerPressed="RootGrid_PointerPressed" KeyboardAcceleratorPlacementMode="Hidden">
             <Grid.KeyboardAccelerators>
                 <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="SaveAccelerator_Invoked"/>
@@ -84,7 +89,7 @@
                             <MenuFlyoutItem Text="Select custom .pol (Both)..." Click="BtnLoadCustomPol_Click" Visibility="Collapsed" />
                             <MenuFlyoutItem Text="Select computer .pol..." Click="BtnPickCustomCompPol_Click" Visibility="Collapsed" />
                             <MenuFlyoutItem Text="Select user .pol..." Click="BtnPickCustomUserPol_Click" Visibility="Collapsed" />
-                            <ToggleMenuFlyoutItem x:Name="ToggleUseCustomPolMenu" Text="Use custom .pol" IsChecked="False" Click="ToggleUseCustomPolMenu_Click" />
+                            <ToggleMenuFlyoutItem x:Name="ToggleUseCustomPolMenu" Text="Use custom .pol" Click="ToggleUseCustomPolMenu_Click" />
                             <MenuFlyoutSeparator/>
                             <MenuFlyoutItem Text="Save" Click="BtnSave_Click" />
                         </controls:MenuBarItem>
@@ -106,8 +111,8 @@
                         <controls:MenuBarItem Title="Options">
                             <MenuFlyoutItem Text="Language..." Click="BtnLanguage_Click" />
                             <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Write to temp .pol" IsChecked="{Binding IsChecked, ElementName=ChkUseTempPol, Mode=TwoWay}" Click="ToggleTempPolMenu_Click" Visibility="Collapsed" />
-                            <ToggleMenuFlyoutItem x:Name="ToggleHideEmptyMenu" Text="Hide empty categories" IsChecked="True" Click="ToggleHideEmptyMenu_Click" />
-                            <ToggleMenuFlyoutItem x:Name="ToggleLimitUnfilteredMenu" Text="Limit unfiltered to 1000" IsChecked="True" Click="ToggleLimitUnfilteredMenu_Click" />
+                            <ToggleMenuFlyoutItem x:Name="ToggleHideEmptyMenu" Text="Hide empty categories" IsChecked="{Binding HideEmptyCategories, Source={StaticResource FilterVM}, Mode=TwoWay}" />
+                            <ToggleMenuFlyoutItem x:Name="ToggleLimitUnfilteredMenu" Text="Limit unfiltered to 1000" IsChecked="{Binding LimitUnfilteredTo1000, Source={StaticResource FilterVM}, Mode=TwoWay}" />
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Columns">
                             <ToggleMenuFlyoutItem x:Name="ViewBookmarkToggle" Text="Bookmark" IsChecked="True" Click="ViewBookmarkToggle_Click"/>
@@ -141,7 +146,7 @@
                                 <ToggleMenuFlyoutItem x:Name="Scale200Menu" Text="200%" Click="ScaleMenu_Click" />
                             </MenuFlyoutSubItem>
                             <MenuFlyoutSeparator />
-                            <ToggleMenuFlyoutItem x:Name="ViewDetailsToggle" Text="Details pane" IsChecked="True" Click="ViewDetailsToggle_Click"/>
+                            <ToggleMenuFlyoutItem x:Name="ViewDetailsToggle" Text="Details pane" IsChecked="{Binding ShowDetails, Source={StaticResource FilterVM}, Mode=TwoWay}"/>
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Help">
                             <MenuFlyoutItem Text="About..." Click="AboutMenu_Click" />
@@ -184,9 +189,9 @@
                             <ComboBoxItem Content="User"/>
                         </ComboBox>
                         <TextBlock Text="|" VerticalAlignment="Center"/>
-                        <CheckBox x:Name="ChkConfiguredOnly" Content="Configured only" Checked="ChkConfiguredOnly_Checked" Unchecked="ChkConfiguredOnly_Checked"/>
+                        <CheckBox x:Name="ChkConfiguredOnly" Content="Configured only" IsChecked="{Binding ConfiguredOnly, Source={StaticResource FilterVM}, Mode=TwoWay}"/>
                         <TextBlock Text="|" VerticalAlignment="Center"/>
-                        <CheckBox x:Name="ChkBookmarksOnly" Content="Bookmarks only" Checked="ChkBookmarksOnly_Checked" Unchecked="ChkBookmarksOnly_Checked"/>
+                        <CheckBox x:Name="ChkBookmarksOnly" Content="Bookmarks only" IsChecked="{Binding BookmarksOnly, Source={StaticResource FilterVM}, Mode=TwoWay}"/>
                         <TextBlock Text="|" VerticalAlignment="Center"/>
                         <TextBlock x:Name="PolicyCount" VerticalAlignment="Center"/>
                         <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Visibility="Collapsed" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
@@ -199,16 +204,16 @@
                         <Button x:Name="SearchOptionsBtn" Style="{StaticResource NavIconButtonStyle}" ToolTipService.ToolTip="Search options">
                             <FontIcon Glyph="&#xE713;" FontSize="12"/>
                             <Button.Flyout>
-                                <Flyout Opened="SearchOptionsFlyout_Opened">
+                                <Flyout>
                                     <StackPanel>
-                                        <CheckBox x:Name="SearchOptName" Content="Search name" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                        <CheckBox x:Name="SearchOptDesc" Content="Search description" IsChecked="False" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                        <CheckBox x:Name="SearchOptComments" Content="Search comments" IsChecked="False" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                        <CheckBox x:Name="SearchOptName" Content="Search name" IsChecked="{Binding InName, Source={StaticResource SearchOptionsVM}, Mode=TwoWay}"/>
+                                        <CheckBox x:Name="SearchOptDesc" Content="Search description" IsChecked="{Binding InDescription, Source={StaticResource SearchOptionsVM}, Mode=TwoWay}"/>
+                                        <CheckBox x:Name="SearchOptComments" Content="Search comments" IsChecked="{Binding InComments, Source={StaticResource SearchOptionsVM}, Mode=TwoWay}"/>
                                         <!-- Divider -->
                                         <Border Height="1" Background="{ThemeResource ControlStrokeColorDefaultBrush}" Margin="0,6,0,6" />
-                                        <CheckBox x:Name="SearchOptId" Content="Search ID" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                        <CheckBox x:Name="SearchOptRegKey" Content="Search registry key path" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
-                                        <CheckBox x:Name="SearchOptRegValue" Content="Search registry value name" IsChecked="True" Checked="SearchOption_Toggle_Click" Unchecked="SearchOption_Toggle_Click"/>
+                                        <CheckBox x:Name="SearchOptId" Content="Search ID" IsChecked="{Binding InId, Source={StaticResource SearchOptionsVM}, Mode=TwoWay}"/>
+                                        <CheckBox x:Name="SearchOptRegKey" Content="Search registry key path" IsChecked="{Binding InRegistryKey, Source={StaticResource SearchOptionsVM}, Mode=TwoWay}"/>
+                                        <CheckBox x:Name="SearchOptRegValue" Content="Search registry value name" IsChecked="{Binding InRegistryValue, Source={StaticResource SearchOptionsVM}, Mode=TwoWay}"/>
                                     </StackPanel>
                                 </Flyout>
                             </Button.Flyout>
