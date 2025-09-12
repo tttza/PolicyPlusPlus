@@ -1046,7 +1046,7 @@ namespace PolicyPlusPlus
 
         private void RefreshList() { try { RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } catch { } }
 
-        private FilterViewModel? FilterVM => (RootGrid?.Resources?["FilterVM"]) as FilterViewModel;
+        private FilterViewModel? FilterVM => (ScaleHost?.Resources?["FilterVM"] as FilterViewModel) ?? (RootGrid?.Resources?["FilterVM"] as FilterViewModel); // include ScaleHost resources (actual location)
         private void ObserveFilterOptions()
         {
             var vm = FilterVM; if (vm == null) return;
