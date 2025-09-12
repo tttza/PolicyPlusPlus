@@ -29,7 +29,7 @@ namespace PolicyPlusPlus
         private readonly Dictionary<string, string> _compComments = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> _userComments = new(StringComparer.OrdinalIgnoreCase);
 
-        private SearchOptionsViewModel? SearchOptionsVM => (RootGrid?.Resources?["SearchOptionsVM"]) as SearchOptionsViewModel;
+        private SearchOptionsViewModel? SearchOptionsVM => (ScaleHost?.Resources?["SearchOptionsVM"] as SearchOptionsViewModel) ?? (RootGrid?.Resources?["SearchOptionsVM"] as SearchOptionsViewModel); // include ScaleHost like FilterVM
 
         private void SyncSearchFlagsFromViewModel()
         {
