@@ -56,6 +56,8 @@ namespace PolicyPlusPlus
                 try
                 {
                     SyncToggleFromVm();
+                    // Persist snapshot so next launch reflects current toggle/paths/activation.
+                    try { SettingsService.Instance.UpdateCustomPol(vm.Snapshot()); } catch { }
                     if (!vm.Active)
                     {
                         // Restore previous non-custom mode.
