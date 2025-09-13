@@ -16,15 +16,21 @@ namespace PolicyPlusPlus.Tests.UI.Infrastructure;
 public sealed class TestAppHost : IDisposable
 {
     private readonly string _exePath;
+    private readonly string? _forcedTestDataDir; // optional externally supplied test data directory
     private Process? _process;
     public AppAutomation? App { get; private set; }
     public AutomationBase? Automation { get; private set; }
     public Window? MainWindow { get; private set; }
     private readonly StringBuilder _stdout = new();
     private readonly StringBuilder _stderr = new();
+    private string? _testDataDirectory; // actual directory used (forced or generated)
+    public string TestDataDirectory => _testDataDirectory ?? string.Empty; // exposed for tests to read settings.json
 
-    public TestAppHost()
+    public TestAppHost() : this(null) { }
+
+    public TestAppHost(string? testDataDirectory)
     {
+        _forcedTestDataDir = testDataDirectory;
         var solutionDir = FindSolutionDirectory();
         var appProjectDir = Path.Combine(solutionDir, "PolicyPlusPlus");
         var baseConfig = GetConfiguration();
@@ -37,7 +43,7 @@ public sealed class TestAppHost : IDisposable
         };
         var configs = new[] { baseConfig, ToggleUnpackaged(baseConfig), "Debug-Unpackaged", "Debug", "Release-Unpackaged", "Release" }
             .Where(c => !string.IsNullOrWhiteSpace(c))
-            .Select(c => c!) // enforce non-null for array creation
+            .Select(c => c!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
         _exePath = ResolveExecutablePath(appProjectDir, configs, arch)
@@ -94,9 +100,8 @@ public sealed class TestAppHost : IDisposable
     public void Launch()
     {
         if (App != null) return;
-        // Create per-test temp root for app data & policy persistence isolation.
-        string tempRoot = Path.Combine(Path.GetTempPath(), "PolicyPlusUITest_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempRoot);
+        _testDataDirectory = _forcedTestDataDir ?? Path.Combine(Path.GetTempPath(), "PolicyPlusUITest_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_testDataDirectory);
         var psi = new ProcessStartInfo(_exePath)
         {
             UseShellExecute = false,
@@ -106,11 +111,10 @@ public sealed class TestAppHost : IDisposable
             StandardErrorEncoding = Encoding.UTF8,
             WorkingDirectory = Path.GetDirectoryName(_exePath)!
         };
-        psi.Environment["POLICYPLUS_TEST_DATA_DIR"] = tempRoot;
+        psi.Environment["POLICYPLUS_TEST_DATA_DIR"] = _testDataDirectory;
         psi.Environment["POLICYPLUS_TEST_MEMORY_POL"] = "1";
         try
         {
-            // Point ADMX loading to dummy minimal set for deterministic tests.
             var solutionDir = FindSolutionDirectory();
             var dummyDir = Path.Combine(solutionDir, "PolicyPlusPlus.Tests.UI", "TestAssets", "Admx");
             if (Directory.Exists(dummyDir))
@@ -119,8 +123,7 @@ public sealed class TestAppHost : IDisposable
             }
         }
         catch { }
-        // Force primary language to en-US and enable a second language fr-FR (partial, with missing strings)
-        psi.Environment["POLICYPLUS_FORCE_LANGUAGE"] = "en-US"; // custom env we will honor in settings init (if implemented)
+        psi.Environment["POLICYPLUS_FORCE_LANGUAGE"] = "en-US";
         psi.Environment["POLICYPLUS_FORCE_SECOND_LANGUAGE"] = "fr-FR";
         psi.Environment["POLICYPLUS_FORCE_SECOND_ENABLED"] = "1";
         _process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start application");
