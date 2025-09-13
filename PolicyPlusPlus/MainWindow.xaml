@@ -196,7 +196,7 @@
                         <TextBlock x:Name="PolicyCount" VerticalAlignment="Center"/>
                         <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Visibility="Collapsed" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
                         <Grid x:Name="SearchBoxHost" Width="360" Margin="16,0,0,0">
-                            <AutoSuggestBox x:Name="SearchBox" Padding="0,0,28,0" PlaceholderText="Search policies" Loaded="SearchBox_Loaded" TextChanged="SearchBox_TextChanged" QuerySubmitted="SearchBox_QuerySubmitted" SuggestionChosen="SearchBox_SuggestionChosen" />
+                            <AutoSuggestBox x:Name="SearchBox" AutomationProperties.AutomationId="SearchBox" Padding="0,0,28,0" PlaceholderText="Search policies" Loaded="SearchBox_Loaded" TextChanged="SearchBox_TextChanged" QuerySubmitted="SearchBox_QuerySubmitted" SuggestionChosen="SearchBox_SuggestionChosen" />
                             <Grid x:Name="SearchClearBtn" Width="24" Height="24" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,-2,6,0" Background="Transparent" Visibility="Collapsed" ToolTipService.ToolTip="Clear search" Tapped="SearchClearBtn_Tapped">
                                 <FontIcon Glyph="&#xE10A;" FontSize="10" Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                             </Grid>
@@ -262,7 +262,7 @@
                         </Grid.RowDefinitions>
 
                         <!-- DataGrid -->
-                        <datagrid:DataGrid x:Name="PolicyList"
+                        <datagrid:DataGrid x:Name="PolicyList" AutomationProperties.AutomationId="PolicyList"
                                           Grid.Row="0"
                                           AutoGenerateColumns="False"
                                           IsReadOnly="True"
