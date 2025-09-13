@@ -22,8 +22,13 @@ namespace PolicyPlusPlus
         private AutoSuggestBox? GetSearchBox() => (RootElement?.FindName("SearchBox") as AutoSuggestBox);
 
         private bool _customVmHooked;
+        private bool _customPolConfigDialogOpen; // prevents duplicate dialogs
         // Tracks the mode in effect before switching to a custom POL so we can restore correctly (LocalGpo vs TempPol)
         private PolicySourceMode _previousNonCustomMode = PolicySourceMode.LocalGpo;
+
+        private static bool IsCustomPolConfigured(CustomPolViewModel vm) =>
+            (vm.EnableComputer && !string.IsNullOrEmpty(vm.ComputerPath)) ||
+            (vm.EnableUser && !string.IsNullOrEmpty(vm.UserPath));
 
         private void TryHookCustomPolVm()
         {
@@ -34,7 +39,10 @@ namespace PolicyPlusPlus
             _customVmHooked = true;
             if (vm.Active && (vm.EnableComputer || vm.EnableUser))
             {
-                SwitchToCustomPol(false);
+                if (IsCustomPolConfigured(vm))
+                    SwitchToCustomPol(false);
+                else
+                    PromptConfigureCustomPol(vm);
             }
             SyncToggleFromVm();
         }
@@ -67,12 +75,60 @@ namespace PolicyPlusPlus
                         RefreshVisibleRows();
                         return;
                     }
+                    // Active but not configured -> prompt
+                    if (vm.Active && !IsCustomPolConfigured(vm))
+                    {
+                        PromptConfigureCustomPol(vm);
+                        return;
+                    }
                     if (vm.Active && (vm.EnableComputer || vm.EnableUser))
                     {
                         SwitchToCustomPol(false);
                     }
                 }
                 catch { }
+            });
+        }
+
+        private void PromptConfigureCustomPol(CustomPolViewModel vm)
+        {
+            if (_customPolConfigDialogOpen) return;
+            _customPolConfigDialogOpen = true;
+            _ = DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    var dlg = new CustomPolSettingsDialog();
+                    if (Content is FrameworkElement fe) dlg.XamlRoot = fe.XamlRoot;
+                    dlg.Initialize(vm.ComputerPath, vm.UserPath, vm.EnableComputer, vm.EnableUser);
+                    var res = await dlg.ShowAsync();
+                    if (res == ContentDialogResult.Primary)
+                    {
+                        vm.EnableComputer = dlg.EnableComputer;
+                        vm.EnableUser = dlg.EnableUser;
+                        vm.ComputerPath = dlg.ComputerPolPath;
+                        vm.UserPath = dlg.UserPolPath;
+                        vm.Active = vm.EnableComputer || vm.EnableUser; // may trigger state changed again
+                        if (vm.Active && IsCustomPolConfigured(vm))
+                        {
+                            SwitchToCustomPol();
+                        }
+                        else
+                        {
+                            vm.Active = false;
+                            var t = GetToggleUseCustomPolMenu(); if (t != null) t.IsChecked = false;
+                            ShowInfo("Custom POL not configured.", InfoBarSeverity.Warning);
+                        }
+                    }
+                    else
+                    {
+                        vm.Active = false;
+                        var t = GetToggleUseCustomPolMenu(); if (t != null) t.IsChecked = false;
+                        ShowInfo("Custom POL not configured.", InfoBarSeverity.Warning);
+                    }
+                }
+                catch { vm.Active = false; }
+                finally { _customPolConfigDialogOpen = false; }
             });
         }
 
@@ -123,49 +179,55 @@ namespace PolicyPlusPlus
             TryHookCustomPolVm();
             var vm = CustomPolVM; if (vm == null) return;
             bool desired = (sender as ToggleMenuFlyoutItem)?.IsChecked == true;
-            vm.Active = desired;
-            if (vm.Active && !vm.EnableComputer && !vm.EnableUser)
+
+            if (!desired)
             {
-                _ = DispatcherQueue.TryEnqueue(async () =>
+                if (vm.Active) vm.Active = false; // triggers restore via state changed
+                else
                 {
-                    var dlg = new CustomPolSettingsDialog();
-                    if (Content is FrameworkElement fe) dlg.XamlRoot = fe.XamlRoot;
-                    dlg.Initialize(vm.ComputerPath, vm.UserPath, vm.EnableComputer, vm.EnableUser);
-                    var res = await dlg.ShowAsync();
-                    if (res == ContentDialogResult.Primary)
-                    {
-                        vm.EnableComputer = dlg.EnableComputer; vm.EnableUser = dlg.EnableUser; vm.ComputerPath = dlg.ComputerPolPath; vm.UserPath = dlg.UserPolPath; vm.Active = vm.EnableComputer || vm.EnableUser;
-                        if (vm.Active) SwitchToCustomPol(); else vm.Active = false;
-                    }
-                    else { vm.Active = false; ShowInfo("Custom POL not configured.", InfoBarSeverity.Warning); }
-                });
+                    RestorePreviousMode();
+                    _compSource = PolicySourceManager.Instance.CompSource; _userSource = PolicySourceManager.Instance.UserSource;
+                    RefreshVisibleRows();
+                }
+                return;
             }
-            else if (!vm.Active)
+
+            // desired == true
+            if (!IsCustomPolConfigured(vm))
             {
-                vm.EnableComputer = false; vm.EnableUser = false;
-                RestorePreviousMode();
-                _compSource = PolicySourceManager.Instance.CompSource; _userSource = PolicySourceManager.Instance.UserSource;
-                RefreshVisibleRows();
+                // Keep toggle visually checked for now; will revert if user cancels.
+                PromptConfigureCustomPol(vm);
+                return;
             }
+
+            if (!vm.Active)
+                vm.Active = true; // state change handler will switch sources
             else
-            {
                 SwitchToCustomPol();
-            }
         }
 
         private async Task PickBothPolAsync()
         {
             TryHookCustomPolVm();
-            var vm = CustomPolVM; if (vm == null) return;
-            var comp = await PickFileAsync("Computer"); if (comp == null) return; vm.ComputerPath = comp; vm.EnableComputer = true;
-            var user = await PickFileAsync("User"); if (user == null) return; vm.UserPath = user; vm.EnableUser = true;
+            var vm = CustomPolVM;
+            if (vm == null) return;
+            var comp = await PickFileAsync("Computer");
+            if (comp == null) return;
+            vm.ComputerPath = comp;
+            vm.EnableComputer = true;
+            var user = await PickFileAsync("User");
+            if (user == null) return;
+            vm.UserPath = user;
+            vm.EnableUser = true;
             EnsurePolFileExists(vm.ComputerPath); EnsurePolFileExists(vm.UserPath);
             vm.Active = true; SwitchToCustomPol(false); ShowInfo("Custom .pol loaded.");
         }
 
         private async Task PickSinglePolAsync(bool isUser)
         {
-            TryHookCustomPolVm(); var vm = CustomPolVM; if (vm == null) return;
+            TryHookCustomPolVm();
+            var vm = CustomPolVM;
+            if (vm == null) return;
             var picked = await PickFileAsync(isUser ? "User" : "Computer"); if (picked == null) return;
             if (isUser) { vm.UserPath = picked; vm.EnableUser = true; } else { vm.ComputerPath = picked; vm.EnableComputer = true; }
             EnsurePolFileExists(picked); ShowInfo((isUser ? "User" : "Computer") + " .pol set.");
@@ -200,7 +262,6 @@ namespace PolicyPlusPlus
             if (!vm.EnableComputer && !vm.EnableUser) return;
             try
             {
-                // Record the current non-custom mode so we can restore it later
                 if (PolicySourceManager.Instance.Mode != PolicySourceMode.CustomPol)
                     _previousNonCustomMode = PolicySourceManager.Instance.Mode;
 
