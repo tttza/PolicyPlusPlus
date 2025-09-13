@@ -58,6 +58,9 @@ namespace PolicyPlusPlus
             SyncSearchFlagsFromViewModel();
         }
 
+        private void ShowBaselineSuggestions()
+        { try { if (SearchBox == null) return; var allowed = new HashSet<string>(_allPolicies.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase); var list = BuildSuggestions(string.Empty, allowed); SearchBox.ItemsSource = list; } catch (Exception ex) { Log.Warn("MainSearch", "ShowBaselineSuggestions failed", ex); } }
+
         // Description index prebuild logic remains unchanged below
         private void StartPrebuildDescIndex()
         {
@@ -175,16 +178,26 @@ namespace PolicyPlusPlus
         private void SearchBox_TextChanged(object sender, AutoSuggestBoxTextChangedEventArgs e)
         {
             UpdateSearchClearButtonVisibility();
-            if (e.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+            try
             {
-                var q = (SearchBox.Text ?? string.Empty).Trim();
-                if (string.IsNullOrEmpty(q)) { try { _navTyping = false; } catch (Exception ex) { Log.Warn("MainSearch", "Reset _navTyping failed", ex); } try { _searchDebounceCts?.Cancel(); } catch (Exception ex2) { Log.Warn("MainSearch", "Cancel debounce failed", ex2); } try { RunImmediateFilterAndBind(); } catch (Exception ex3) { Log.Warn("MainSearch", "RunImmediateFilterAndBind failed", ex3); } try { ShowBaselineSuggestions(); } catch (Exception ex4) { Log.Warn("MainSearch", "ShowBaselineSuggestions failed", ex4); } UpdateNavButtons(); return; }
-                _navTyping = true; RunAsyncSearchAndBind(q);
+                var q = (SearchBox?.Text ?? string.Empty).Trim();
+                if (string.IsNullOrEmpty(q))
+                {
+                    _navTyping = false;
+                    try { _searchDebounceCts?.Cancel(); } catch { }
+                    try { RunImmediateFilterAndBind(); } catch (Exception ex) { Log.Warn("MainSearch", "RunImmediateFilterAndBind failed (empty)", ex); }
+                    try { ShowBaselineSuggestions(); } catch (Exception ex2) { Log.Warn("MainSearch", "ShowBaselineSuggestions failed (empty)", ex2); }
+                    try { UpdateNavButtons(); } catch { }
+                    return;
+                }
+                if (e.Reason is AutoSuggestionBoxTextChangeReason.UserInput or AutoSuggestionBoxTextChangeReason.ProgrammaticChange)
+                {
+                    _navTyping = true;
+                    RunAsyncSearchAndBind(q);
+                }
             }
+            catch (Exception ex) { Log.Warn("MainSearch", "SearchBox_TextChanged core logic failed", ex); }
         }
-
-        private void ShowBaselineSuggestions()
-        { try { if (SearchBox == null) return; var allowed = new HashSet<string>(_allPolicies.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase); var list = BuildSuggestions(string.Empty, allowed); SearchBox.ItemsSource = list; } catch (Exception ex) { Log.Warn("MainSearch", "ShowBaselineSuggestions failed", ex); } }
 
         // XAML event proxies
         private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)

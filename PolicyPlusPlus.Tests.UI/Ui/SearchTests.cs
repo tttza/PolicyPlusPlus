@@ -21,25 +21,17 @@ public class SearchTests : IClassFixture<TestAppFixture>
     private const int StableRowTimeoutSeconds = 8;
     private const int PollShortMs = 55;
 
-    private static void SetValue(AutomationElement element, string text)
+    private static void ClearAndType(AutomationElement element, string text)
     {
-        try
-        {
-            var pattern = element.Patterns.Value.Pattern;
-            pattern.SetValue(text);
-        }
-        catch
-        {
-            element.Focus();
-            Keyboard.Press(VirtualKeyShort.CONTROL);
-            Keyboard.Press(VirtualKeyShort.KEY_A);
-            Keyboard.Release(VirtualKeyShort.KEY_A);
-            Keyboard.Release(VirtualKeyShort.CONTROL);
-            Keyboard.Press(VirtualKeyShort.DELETE);
-            Keyboard.Release(VirtualKeyShort.DELETE);
-            if (!string.IsNullOrEmpty(text)) Keyboard.Type(text);
-        }
-        Thread.Sleep(70);
+        element.Focus();
+        Keyboard.Press(VirtualKeyShort.CONTROL);
+        Keyboard.Press(VirtualKeyShort.KEY_A);
+        Keyboard.Release(VirtualKeyShort.KEY_A);
+        Keyboard.Release(VirtualKeyShort.CONTROL);
+        Keyboard.Press(VirtualKeyShort.DELETE);
+        Keyboard.Release(VirtualKeyShort.DELETE);
+        if (!string.IsNullOrEmpty(text)) Keyboard.Type(text);
+        Thread.Sleep(140); // allow TextChanged pipeline
     }
 
     private static AutomationElement FindDescendantWithRetry(AutomationElement root, string automationId, int timeoutSeconds = FindElementTimeoutSeconds)
@@ -96,21 +88,13 @@ public class SearchTests : IClassFixture<TestAppFixture>
         return latest;
     }
 
-    private static void CommitSearch()
-    {
-        Keyboard.Press(VirtualKeyShort.RETURN);
-        Keyboard.Release(VirtualKeyShort.RETURN);
-        Thread.Sleep(90);
-    }
-
     [Fact]
     public void SearchBox_FiltersPolicyList_WithBoolean()
     {
         var window = _fixture.Host.MainWindow!;
         var searchBox = FindDescendantWithRetry(window, "SearchBox");
         var policyList = FindDescendantWithRetry(window, "PolicyList");
-        SetValue(searchBox, "Boolean");
-        CommitSearch();
+        ClearAndType(searchBox, "Boolean");
         var rows = WaitForFilteredRows(policyList, "Boolean");
         Assert.True(rows.Length > 0, "Expected results for 'Boolean'");
         Assert.True(AnyRowContains(policyList, "Boolean"));
@@ -122,8 +106,7 @@ public class SearchTests : IClassFixture<TestAppFixture>
         var window = _fixture.Host.MainWindow!;
         var searchBox = FindDescendantWithRetry(window, "SearchBox");
         var policyList = FindDescendantWithRetry(window, "PolicyList");
-        SetValue(searchBox, "Nested");
-        CommitSearch();
+        ClearAndType(searchBox, "Nested");
         var rows = WaitForFilteredRows(policyList, "Nested");
         Assert.True(rows.Length > 0, "Expected results for 'Nested'");
         Assert.True(AnyRowContains(policyList, "Nested"));
@@ -136,20 +119,17 @@ public class SearchTests : IClassFixture<TestAppFixture>
         var searchBox = FindDescendantWithRetry(window, "SearchBox");
         var policyList = FindDescendantWithRetry(window, "PolicyList");
 
-        SetValue(searchBox, string.Empty);
-        CommitSearch();
+        ClearAndType(searchBox, string.Empty);
         var baselineRows = WaitForStableRowCount(policyList, minRows: 5);
         int baselineCount = baselineRows.Length;
         Assert.True(baselineCount >= 5);
 
-        SetValue(searchBox, "Enum");
-        CommitSearch();
+        ClearAndType(searchBox, "Enum");
         var filteredRows = WaitForFilteredRows(policyList, "Enum");
         Assert.True(filteredRows.Length > 0 && filteredRows.Length <= baselineCount);
         Assert.True(AnyRowContains(policyList, "Enum"));
 
-        SetValue(searchBox, string.Empty);
-        CommitSearch();
+        ClearAndType(searchBox, string.Empty);
         var restored = WaitForStableRowCount(policyList, minRows: baselineCount);
         Assert.True(restored.Length >= baselineCount);
     }
