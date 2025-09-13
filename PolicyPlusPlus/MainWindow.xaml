@@ -189,9 +189,9 @@
                             <ComboBoxItem Content="User"/>
                         </ComboBox>
                         <TextBlock Text="|" VerticalAlignment="Center"/>
-                        <CheckBox x:Name="ChkConfiguredOnly" Content="Configured only" IsChecked="{Binding ConfiguredOnly, Source={StaticResource FilterVM}, Mode=TwoWay}"/>
+                        <CheckBox x:Name="ChkConfiguredOnly" AutomationProperties.AutomationId="ConfiguredOnlyCheck" Content="Configured only" IsChecked="{Binding ConfiguredOnly, Source={StaticResource FilterVM}, Mode=TwoWay}"/>
                         <TextBlock Text="|" VerticalAlignment="Center"/>
-                        <CheckBox x:Name="ChkBookmarksOnly" Content="Bookmarks only" IsChecked="{Binding BookmarksOnly, Source={StaticResource FilterVM}, Mode=TwoWay}"/>
+                        <CheckBox x:Name="ChkBookmarksOnly" AutomationProperties.AutomationId="BookmarksOnlyCheck" Content="Bookmarks only" IsChecked="{Binding BookmarksOnly, Source={StaticResource FilterVM}, Mode=TwoWay}"/>
                         <TextBlock Text="|" VerticalAlignment="Center"/>
                         <TextBlock x:Name="PolicyCount" VerticalAlignment="Center"/>
                         <CheckBox x:Name="ChkUseTempPol" Content="Write to temp .pol" Visibility="Collapsed" Checked="ChkUseTempPol_Checked" Unchecked="ChkUseTempPol_Checked"/>
@@ -236,13 +236,13 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <Button x:Name="ClearCategoryFilterButton" Margin="0,0,0,4" Click="ClearCategoryFilter_Click" HorizontalAlignment="Stretch" IsEnabled="False" Padding="10,6" CornerRadius="6">
+                        <Button x:Name="ClearCategoryFilterButton" AutomationProperties.AutomationId="ClearCategoryFilterButton" Margin="0,0,0,4" Click="ClearCategoryFilter_Click" HorizontalAlignment="Stretch" IsEnabled="False" Padding="10,6" CornerRadius="6">
                             <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
                                 <FontIcon Glyph="&#xE8E6;"/>
                                 <TextBlock Text="Clear category filter"/>
                             </StackPanel>
                         </Button>
-                        <controls:TreeView x:Name="CategoryTree" Grid.Row="1" SelectionMode="Single" ItemInvoked="CategoryTree_ItemInvoked" SelectionChanged="CategoryTree_SelectionChanged" DoubleTapped="CategoryTree_DoubleTapped">
+                        <controls:TreeView x:Name="CategoryTree" AutomationProperties.AutomationId="CategoryTree" Grid.Row="1" SelectionMode="Single" ItemInvoked="CategoryTree_ItemInvoked" SelectionChanged="CategoryTree_SelectionChanged" DoubleTapped="CategoryTree_DoubleTapped">
                             <controls:TreeView.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Content.DisplayName}" />

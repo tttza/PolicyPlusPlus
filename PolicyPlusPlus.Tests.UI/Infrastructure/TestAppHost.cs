@@ -135,7 +135,18 @@ public sealed class TestAppHost : IDisposable
             _process.BeginErrorReadLine();
         }
         catch { }
-        App = AppAutomation.Attach(_process);
+
+        // Attach using process Id to avoid accessing Process.MainModule which can throw / be null in some runners
+        try
+        {
+            App = AppAutomation.Attach(_process.Id);
+        }
+        catch
+        {
+            Thread.Sleep(500);
+            App = AppAutomation.Attach(_process.Id); // second attempt
+        }
+
         Automation = new UIA3Automation();
 
         var timeout = TimeSpan.FromSeconds(60);
