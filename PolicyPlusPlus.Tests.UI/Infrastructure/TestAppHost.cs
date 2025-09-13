@@ -94,6 +94,9 @@ public sealed class TestAppHost : IDisposable
     public void Launch()
     {
         if (App != null) return;
+        // Create per-test temp root for app data & policy persistence isolation.
+        string tempRoot = Path.Combine(Path.GetTempPath(), "PolicyPlusUITest_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempRoot);
         var psi = new ProcessStartInfo(_exePath)
         {
             UseShellExecute = false,
@@ -103,6 +106,23 @@ public sealed class TestAppHost : IDisposable
             StandardErrorEncoding = Encoding.UTF8,
             WorkingDirectory = Path.GetDirectoryName(_exePath)!
         };
+        psi.Environment["POLICYPLUS_TEST_DATA_DIR"] = tempRoot;
+        psi.Environment["POLICYPLUS_TEST_MEMORY_POL"] = "1";
+        try
+        {
+            // Point ADMX loading to dummy minimal set for deterministic tests.
+            var solutionDir = FindSolutionDirectory();
+            var dummyDir = Path.Combine(solutionDir, "PolicyPlusPlus.Tests.UI", "TestAssets", "Admx");
+            if (Directory.Exists(dummyDir))
+            {
+                psi.Environment["POLICYPLUS_TEST_ADMX_DIR"] = dummyDir;
+            }
+        }
+        catch { }
+        // Force primary language to en-US and enable a second language fr-FR (partial, with missing strings)
+        psi.Environment["POLICYPLUS_FORCE_LANGUAGE"] = "en-US"; // custom env we will honor in settings init (if implemented)
+        psi.Environment["POLICYPLUS_FORCE_SECOND_LANGUAGE"] = "fr-FR";
+        psi.Environment["POLICYPLUS_FORCE_SECOND_ENABLED"] = "1";
         _process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start application");
         try
         {

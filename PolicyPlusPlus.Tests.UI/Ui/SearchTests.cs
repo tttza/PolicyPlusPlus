@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.Input;
 using FlaUI.Core.Tools;
@@ -10,125 +11,132 @@ using Xunit;
 
 namespace PolicyPlusPlus.Tests.UI.Ui;
 
-// Basic smoke test for search function. Further tests can expand scenarios.
 public class SearchTests : IClassFixture<TestAppFixture>
 {
     private readonly TestAppFixture _fixture;
     public SearchTests(TestAppFixture fixture) => _fixture = fixture;
 
-    [Fact]
-    public void SearchBox_FiltersPolicyList()
+    private static void ClearText()
     {
-        var window = _fixture.Host.MainWindow!;
-
-        // Find search box via automation id (poll until available)
-        var searchBox = Retry.WhileNull(
-            () => window.FindFirstDescendant(cf => cf.ByAutomationId("SearchBox")),
-            timeout: TimeSpan.FromSeconds(10)).Result
-            ?? throw new InvalidOperationException("SearchBox not found");
-
-        searchBox.Focus();
-
-        // Clear any existing text: Ctrl+A -> Delete
         Keyboard.Press(VirtualKeyShort.CONTROL);
         Keyboard.Press(VirtualKeyShort.KEY_A);
         Keyboard.Release(VirtualKeyShort.KEY_A);
         Keyboard.Release(VirtualKeyShort.CONTROL);
         Keyboard.Press(VirtualKeyShort.DELETE);
         Keyboard.Release(VirtualKeyShort.DELETE);
+    }
 
-        // Type a short query that should return results
-        Keyboard.Type("firewall");
-        Keyboard.Press(VirtualKeyShort.RETURN);
-        Keyboard.Release(VirtualKeyShort.RETURN);
+    private static AutomationElement FindDescendantWithRetry(AutomationElement root, string automationId, int timeoutSeconds = 10)
+    {
+        return Retry.WhileNull(
+            () => root.FindFirstDescendant(cf => cf.ByAutomationId(automationId)),
+            timeout: TimeSpan.FromSeconds(timeoutSeconds)
+        ).Result ?? throw new InvalidOperationException(automationId + " not found");
+    }
 
-        // Acquire PolicyList with polling
-        var policyList = Retry.WhileNull(
-            () => window.FindFirstDescendant(cf => cf.ByAutomationId("PolicyList")),
-            timeout: TimeSpan.FromSeconds(10)).Result
-            ?? throw new InvalidOperationException("PolicyList not found");
+    private static AutomationElement[] GetRows(AutomationElement list)
+        => list.FindAllDescendants(cf => cf.ByControlType(ControlType.DataItem));
 
-        // Poll rows until at least one non-blank row appears (or timeout)
-        var rows = Retry.While(
-            () => policyList.FindAllDescendants(cf => cf.ByControlType(ControlType.DataItem)),
-            r => r == null || r.Length == 0 || r.Any(x => string.IsNullOrWhiteSpace(x.Name)),
-            timeout: TimeSpan.FromSeconds(15),
-            throwOnTimeout: true).Result ?? Array.Empty<AutomationElement>();
+    private static bool RowContains(AutomationElement row, string term)
+    {
+        var lower = term.ToLowerInvariant();
+        try
+        {
+            // Check any descendant text element name
+            var texts = row.FindAllDescendants(cf => cf.ByControlType(ControlType.Text));
+            return texts.Any(t => (t.Name ?? string.Empty).ToLowerInvariant().Contains(lower));
+        }
+        catch { return false; }
+    }
 
-        Assert.True(rows.Length > 0, "Expected at least one search result row");
-        var anyBlank = rows.Any(r => string.IsNullOrWhiteSpace(r.Name));
-        Assert.False(anyBlank, "Found row with blank name");
+    private static bool AnyRowContains(AutomationElement list, string term)
+        => GetRows(list).Any(r => RowContains(r, term));
+
+    private static AutomationElement[] WaitForFilteredRows(AutomationElement list, string term, int timeoutSeconds = 20)
+    {
+        var end = DateTime.UtcNow + TimeSpan.FromSeconds(timeoutSeconds);
+        AutomationElement[] rows = Array.Empty<AutomationElement>();
+        while (DateTime.UtcNow < end)
+        {
+            rows = GetRows(list);
+            if (rows.Length > 0 && AnyRowContains(list, term)) break;
+            Thread.Sleep(100);
+        }
+        if (rows.Length == 0 || !AnyRowContains(list, term)) throw new TimeoutException("Timed out waiting for rows containing '" + term + "'.");
+        return rows;
+    }
+
+    private static AutomationElement[] WaitForStableRowCount(AutomationElement list, int minRows, int timeoutSeconds = 25)
+    {
+        var end = DateTime.UtcNow + TimeSpan.FromSeconds(timeoutSeconds);
+        AutomationElement[] latest = Array.Empty<AutomationElement>();
+        while (DateTime.UtcNow < end)
+        {
+            latest = GetRows(list);
+            if (latest.Length >= minRows) break;
+            Thread.Sleep(120);
+        }
+        if (latest.Length < minRows) throw new TimeoutException($"Timed out waiting for >= {minRows} rows (had {latest.Length}).");
+        return latest;
+    }
+
+    private static void CommitSearch() { Keyboard.Press(VirtualKeyShort.RETURN); Keyboard.Release(VirtualKeyShort.RETURN); Thread.Sleep(150); }
+
+    [Fact]
+    public void SearchBox_FiltersPolicyList_WithBoolean()
+    {
+        var window = _fixture.Host.MainWindow!;
+        var searchBox = FindDescendantWithRetry(window, "SearchBox");
+        var policyList = FindDescendantWithRetry(window, "PolicyList");
+        searchBox.Focus();
+        ClearText();
+        Keyboard.Type("Boolean");
+        CommitSearch();
+        var rows = WaitForFilteredRows(policyList, "Boolean");
+        Assert.True(rows.Length > 0, "Expected results for 'Boolean'");
+        Assert.True(AnyRowContains(policyList, "Boolean"));
+    }
+
+    [Fact]
+    public void SearchBox_FiltersPolicyList_WithNested()
+    {
+        var window = _fixture.Host.MainWindow!;
+        var searchBox = FindDescendantWithRetry(window, "SearchBox");
+        var policyList = FindDescendantWithRetry(window, "PolicyList");
+        searchBox.Focus();
+        ClearText();
+        Keyboard.Type("Nested");
+        CommitSearch();
+        var rows = WaitForFilteredRows(policyList, "Nested");
+        Assert.True(rows.Length > 0, "Expected results for 'Nested'");
+        Assert.True(AnyRowContains(policyList, "Nested"));
     }
 
     [Fact]
     public void SearchBox_ClearRestoresFullList()
     {
         var window = _fixture.Host.MainWindow!;
-
-        // Find search box via automation id (poll until available)
-        var searchBox = Retry.WhileNull(
-            () => window.FindFirstDescendant(cf => cf.ByAutomationId("SearchBox")),
-            timeout: TimeSpan.FromSeconds(10)).Result
-            ?? throw new InvalidOperationException("SearchBox not found");
-
+        var searchBox = FindDescendantWithRetry(window, "SearchBox");
+        var policyList = FindDescendantWithRetry(window, "PolicyList");
         searchBox.Focus();
 
-        // Ensure empty search (full list)
-        Keyboard.Press(VirtualKeyShort.CONTROL);
-        Keyboard.Press(VirtualKeyShort.KEY_A);
-        Keyboard.Release(VirtualKeyShort.KEY_A);
-        Keyboard.Release(VirtualKeyShort.CONTROL);
-        Keyboard.Press(VirtualKeyShort.DELETE);
-        Keyboard.Release(VirtualKeyShort.DELETE);
-        Keyboard.Press(VirtualKeyShort.RETURN); // commit empty query if needed
-        Keyboard.Release(VirtualKeyShort.RETURN);
+        ClearText();
+        CommitSearch();
+        var baselineRows = WaitForStableRowCount(policyList, minRows: 5);
+        int baselineCount = baselineRows.Length;
+        Assert.True(baselineCount >= 5);
 
-        // Acquire PolicyList with polling
-        var policyList = Retry.WhileNull(
-            () => window.FindFirstDescendant(cf => cf.ByAutomationId("PolicyList")),
-            timeout: TimeSpan.FromSeconds(10)).Result
-            ?? throw new InvalidOperationException("PolicyList not found");
+        ClearText();
+        Keyboard.Type("Enum");
+        CommitSearch();
+        var filteredRows = WaitForFilteredRows(policyList, "Enum");
+        Assert.True(filteredRows.Length > 0 && filteredRows.Length <= baselineCount);
+        Assert.True(AnyRowContains(policyList, "Enum"));
 
-        // Get the baseline row count
-        var baselineRows = Retry.While(
-            () => policyList.FindAllDescendants(cf => cf.ByControlType(ControlType.DataItem)),
-            r => r == null || r.Length == 0 || r.Any(x => string.IsNullOrWhiteSpace(x.Name)),
-            timeout: TimeSpan.FromSeconds(20),
-            throwOnTimeout: true).Result ?? Array.Empty<AutomationElement>();
-
-        Assert.True(baselineRows.Length > 0, "Expected baseline rows before filtering");
-
-        // Perform a filter search
-        Keyboard.Type("firewall");
-        Keyboard.Press(VirtualKeyShort.RETURN);
-        Keyboard.Release(VirtualKeyShort.RETURN);
-
-        var filteredRows = Retry.While(
-            () => policyList.FindAllDescendants(cf => cf.ByControlType(ControlType.DataItem)),
-            r => r == null || r.Length == 0 || r.Any(x => string.IsNullOrWhiteSpace(x.Name)),
-            timeout: TimeSpan.FromSeconds(15),
-            throwOnTimeout: true).Result ?? Array.Empty<AutomationElement>();
-
-        Assert.True(filteredRows.Length > 0, "Expected some rows after filtering");
-
-        // Clear search again
-        Keyboard.Press(VirtualKeyShort.CONTROL);
-        Keyboard.Press(VirtualKeyShort.KEY_A);
-        Keyboard.Release(VirtualKeyShort.KEY_A);
-        Keyboard.Release(VirtualKeyShort.CONTROL);
-        Keyboard.Press(VirtualKeyShort.DELETE);
-        Keyboard.Release(VirtualKeyShort.DELETE);
-        Keyboard.Press(VirtualKeyShort.RETURN);
-        Keyboard.Release(VirtualKeyShort.RETURN);
-
-        // Wait until row count returns (>= baseline)
-        var restoredRows = Retry.While(
-            () => policyList.FindAllDescendants(cf => cf.ByControlType(ControlType.DataItem)),
-            r => r == null || r.Length < baselineRows.Length || r.Any(x => string.IsNullOrWhiteSpace(x.Name)),
-            timeout: TimeSpan.FromSeconds(20),
-            throwOnTimeout: true).Result ?? Array.Empty<AutomationElement>();
-
-        Assert.True(restoredRows.Length >= baselineRows.Length, "Expected restored list size to be at least baseline size");
+        ClearText();
+        CommitSearch();
+        var restored = WaitForStableRowCount(policyList, minRows: baselineCount);
+        Assert.True(restored.Length >= baselineCount);
     }
 }
 

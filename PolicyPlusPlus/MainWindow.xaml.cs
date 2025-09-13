@@ -344,6 +344,15 @@ namespace PolicyPlusPlus
                 HookDoubleTapHandlers();
 
                 string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
+                try
+                {
+                    var testAdmx = Environment.GetEnvironmentVariable("POLICYPLUS_TEST_ADMX_DIR");
+                    if (!string.IsNullOrWhiteSpace(testAdmx) && Directory.Exists(testAdmx))
+                    {
+                        defaultPath = testAdmx; // test override
+                    }
+                }
+                catch { }
                 string lastPath = s.AdmxSourcePath ?? defaultPath;
                 if (Directory.Exists(lastPath))
                 { await LoadAdmxFolderAsync(lastPath); }

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitionResources revision="1.0" schemaVersion="1.0">
+  <displayName>Dummy Variety Resources</displayName>
+  <description>Extended dummy ADML for UI tests</description>
+  <resources>
+    <stringTable>
+      <string id="AdvancedCategory">Advanced Dummy Policies</string>
+      <string id="RootCategory">Root Category</string>
+      <string id="MidCategory">Mid Category</string>
+      <string id="LeafCategory">Leaf Category</string>
+      <string id="DummyBooleanPolicy">Boolean Policy</string>
+      <string id="DummyBooleanPolicy_Explain">Controls a boolean flag used for testing.</string>
+      <string id="DummyDecimalPolicy">Decimal Policy</string>
+      <string id="DummyDecimalPolicy_Explain">Configures a numeric value (1-100).</string>
+      <string id="DummyTextPolicy">Text Policy</string>
+      <string id="DummyTextPolicy_Explain">Allows entering normal and expandable text.</string>
+      <string id="DummyListPolicy">List Policy</string>
+      <string id="DummyListPolicy_Explain">Configures two list styles (prefixed sequential and named).</string>
+      <string id="DummyEnumPolicy">Enum Policy</string>
+      <string id="DummyEnumPolicy_Explain">Selects one of several enum values.</string>
+      <string id="DummyMultiTextPolicy">Multi-Line Text Policy</string>
+      <string id="DummyMultiTextPolicy_Explain">Stores multiple lines of text.</string>
+      <string id="DummyNestedPolicy">Nested Leaf Policy</string>
+      <string id="DummyNestedPolicy_Explain">Policy placed in a deep LeafCategory to test hierarchical category traversal.</string>
+      <string id="ModeSelect_ItemA">Mode A</string>
+      <string id="ModeSelect_ItemB">Mode B</string>
+      <string id="ModeSelect_ItemC">Mode C (Custom)</string>
+    </stringTable>
+    <presentationTable>
+      <presentation id="DummyBooleanPresentation">
+        <text name="FlagOption" />
+      </presentation>
+      <presentation id="DummyDecimalPresentation">
+        <decimalTextBox refId="NumberValue" />
+      </presentation>
+      <presentation id="DummyTextPresentation">
+        <textBox refId="TextValue" />
+        <textBox refId="ExpandableValue" />
+      </presentation>
+      <presentation id="DummyListPresentation">
+        <listBox refId="ListValues" />
+        <listBox refId="NamedList" />
+      </presentation>
+      <presentation id="DummyEnumPresentation">
+        <dropdownList refId="ModeSelect" />
+      </presentation>
+      <presentation id="DummyMultiTextPresentation">
+        <multiTextBox refId="MultiLines" />
+      </presentation>
+    </presentationTable>
+  </resources>
+</policyDefinitionResources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitionResources revision="1.0" schemaVersion="1.0">
+  <displayName>Dummy Policy Resources</displayName>
+  <description>Dummy ADML for UI tests</description>
+  <resources>
+    <stringTable>
+      <string id="DummyCategory">Dummy Category</string>
+      <string id="DummyPolicy">Enable Dummy Feature</string>
+      <string id="DummyPolicy_Explain">Enables the dummy feature for testing search.</string>
+    </stringTable>
+    <presentationTable>
+      <presentation id="DummyPolicyPresentation">
+        <text name="Unused" />
+      </presentation>
+    </presentationTable>
+  </resources>
+</policyDefinitionResources>

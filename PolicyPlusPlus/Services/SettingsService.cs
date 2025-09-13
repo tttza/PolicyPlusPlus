@@ -31,6 +31,33 @@ namespace PolicyPlusPlus.Services
         {
             try
             {
+                var testDir = Environment.GetEnvironmentVariable("POLICYPLUS_TEST_DATA_DIR");
+                if (!string.IsNullOrWhiteSpace(testDir))
+                {
+                    _baseDir = Path.GetFullPath(testDir);
+                    Directory.CreateDirectory(_baseDir);
+                    try { Directory.CreateDirectory(CacheDirectory); } catch { }
+                    // Apply forced language overrides for UI tests if provided.
+                    try
+                    {
+                        var forceLang = Environment.GetEnvironmentVariable("POLICYPLUS_FORCE_LANGUAGE");
+                        var forceSecond = Environment.GetEnvironmentVariable("POLICYPLUS_FORCE_SECOND_LANGUAGE");
+                        var forceSecondEnabled = Environment.GetEnvironmentVariable("POLICYPLUS_FORCE_SECOND_ENABLED") == "1";
+                        if (!string.IsNullOrWhiteSpace(forceLang) || !string.IsNullOrWhiteSpace(forceSecond))
+                        {
+                            var s = LoadSettings();
+                            if (!string.IsNullOrWhiteSpace(forceLang)) s.Language = forceLang;
+                            if (!string.IsNullOrWhiteSpace(forceSecond))
+                            {
+                                s.SecondLanguage = forceSecond;
+                                s.SecondLanguageEnabled = forceSecondEnabled;
+                            }
+                            SaveSettings(s);
+                        }
+                    }
+                    catch { }
+                    return;
+                }
                 bool packaged = true; try { _ = Package.Current; } catch { packaged = false; }
                 _baseDir = packaged ? ApplicationData.Current.LocalFolder.Path : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PolicyPlusPlus");
                 Directory.CreateDirectory(_baseDir);

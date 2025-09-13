@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitionResources revision="1.0" schemaVersion="1.0">
+  <displayName>Ressources vari?es factices (FR)</displayName>
+  <description>ADML partiel: certaines cha?nes manquent pour tester la d?gradation.</description>
+  <resources>
+    <stringTable>
+      <string id="AdvancedCategory">Politiques factices avanc?es</string>
+      <string id="RootCategory">Cat?gorie racine</string>
+      <string id="MidCategory">Cat?gorie interm?diaire</string>
+      <!-- LeafCategory string intentionally omitted to test fallback -->
+      <string id="DummyBooleanPolicy">Politique bool?enne</string>
+      <string id="DummyDecimalPolicy">Politique d?cimale</string>
+      <string id="DummyTextPolicy">Politique texte</string>
+      <string id="DummyListPolicy">Politique liste</string>
+      <string id="DummyEnumPolicy">Politique ?num?ration</string>
+      <!-- MultiText and Nested policy names omitted -->
+      <string id="ModeSelect_ItemA">Mode A</string>
+      <string id="ModeSelect_ItemB">Mode B</string>
+      <string id="ModeSelect_ItemC">Mode C (Personnalis?)</string>
+    </stringTable>
+    <presentationTable>
+      <presentation id="DummyBooleanPresentation">
+        <text name="FlagOption" />
+      </presentation>
+      <presentation id="DummyDecimalPresentation">
+        <decimalTextBox refId="NumberValue" />
+      </presentation>
+      <presentation id="DummyTextPresentation">
+        <textBox refId="TextValue" />
+        <textBox refId="ExpandableValue" />
+      </presentation>
+      <presentation id="DummyListPresentation">
+        <listBox refId="ListValues" />
+        <listBox refId="NamedList" />
+      </presentation>
+      <presentation id="DummyEnumPresentation">
+        <dropdownList refId="ModeSelect" />
+      </presentation>
+      <presentation id="DummyMultiTextPresentation">
+        <multiTextBox refId="MultiLines" />
+      </presentation>
+    </presentationTable>
+  </resources>
+</policyDefinitionResources>

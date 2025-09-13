@@ -16,6 +16,8 @@ namespace PolicyPlusCore.IO
         private RegistryKey? MainSourceRegKey; // The hive key, or the mounted hive file
         private string GptIniPath = string.Empty; // Path to the gpt.ini file, used to increment the version
         private bool Writable;
+        private readonly bool _testMemoryPol = Environment.GetEnvironmentVariable("POLICYPLUS_TEST_MEMORY_POL") == "1";
+        private readonly string? _testDataDir = Environment.GetEnvironmentVariable("POLICYPLUS_TEST_DATA_DIR");
 
         public PolicyLoader(PolicyLoaderSource Source, string Argument, bool IsUser)
         {
@@ -27,8 +29,25 @@ namespace PolicyPlusCore.IO
             {
                 case PolicyLoaderSource.LocalGpo:
                     {
-                        MainSourcePath = Environment.ExpandEnvironmentVariables(@"%SYSTEMROOT%\\System32\\GroupPolicy\\" + (IsUser ? "User" : "Machine") + @"\\Registry.pol");
-                        GptIniPath = Environment.ExpandEnvironmentVariables(@"%SYSTEMROOT%\\System32\\GroupPolicy\\gpt.ini");
+                        if (_testMemoryPol)
+                        {
+                            // In test mode we avoid touching real system GroupPolicy directory. Use temp path if persistence needed.
+                            if (!string.IsNullOrWhiteSpace(_testDataDir))
+                            {
+                                var kind = IsUser ? "User" : "Machine";
+                                MainSourcePath = Path.Combine(_testDataDir, kind + ".pol");
+                                GptIniPath = Path.Combine(_testDataDir, "gpt.ini");
+                            }
+                            else
+                            {
+                                MainSourcePath = string.Empty; // memory only
+                            }
+                        }
+                        else
+                        {
+                            MainSourcePath = Environment.ExpandEnvironmentVariables(@"%SYSTEMROOT%\\System32\\GroupPolicy\\" + (IsUser ? "User" : "Machine") + @"\\Registry.pol");
+                            GptIniPath = Environment.ExpandEnvironmentVariables(@"%SYSTEMROOT%\\System32\\GroupPolicy\\gpt.ini");
+                        }
                         break; // prevent fall-through
                     }
 
@@ -98,6 +117,37 @@ namespace PolicyPlusCore.IO
             // Create an IPolicySource so PolicyProcessing can work
             switch (SourceType)
             {
+                case PolicyLoaderSource.LocalGpo when _testMemoryPol:
+                    {
+                        // Pure in-memory or temp-backed PolFile without hitting real LGPO.
+                        if (string.IsNullOrEmpty(MainSourcePath))
+                        {
+                            SourceObject = new PolFile();
+                            Writable = true;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                if (File.Exists(MainSourcePath))
+                                    SourceObject = PolFile.Load(MainSourcePath);
+                                else
+                                {
+                                    Directory.CreateDirectory(Path.GetDirectoryName(MainSourcePath)!);
+                                    var pf = new PolFile();
+                                    pf.Save(MainSourcePath);
+                                    SourceObject = pf;
+                                }
+                                Writable = true;
+                            }
+                            catch
+                            {
+                                SourceObject = new PolFile();
+                                Writable = true;
+                            }
+                        }
+                        return SourceObject;
+                    }
                 case PolicyLoaderSource.LocalRegistry:
                     {
                         if (MainSourceRegKey is null)
@@ -234,6 +284,16 @@ namespace PolicyPlusCore.IO
         {
             switch (SourceType)
             {
+                case PolicyLoaderSource.LocalGpo when _testMemoryPol:
+                    {
+                        // In test mode just persist to temp file if path provided; no system refresh.
+                        if (!string.IsNullOrEmpty(MainSourcePath) && SourceObject is PolFile pf)
+                        {
+                            try { pf.Save(MainSourcePath); } catch { }
+                            return "saved to temp";
+                        }
+                        return "memory only";
+                    }
                 case PolicyLoaderSource.LocalGpo:
                     {
                         PolFile oldPol;

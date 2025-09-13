@@ -26,6 +26,7 @@ namespace PolicyPlusCore.Core
 
     public static class PolicySavePipeline
     {
+        private static readonly bool TestMemoryPol = Environment.GetEnvironmentVariable("POLICYPLUS_TEST_MEMORY_POL") == "1";
         private static void LogDebug(string msg)
         {
             try { Debug.WriteLine("[PolicySavePipeline] " + msg); } catch { }
@@ -37,6 +38,11 @@ namespace PolicyPlusCore.Core
 
         private static PolFile LoadExistingOrNew(bool isUser)
         {
+            if (TestMemoryPol)
+            {
+                // In test memory mode always start with empty pol to ensure isolation.
+                return new PolFile();
+            }
             try
             {
                 string win = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
@@ -62,23 +68,26 @@ namespace PolicyPlusCore.Core
 
             PolFile? compPol = null;
             PolFile? userPol = null;
-            try
+            if (!TestMemoryPol)
             {
-                var compSrc = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource();
-                compPol = compSrc as PolFile;
-            }
-            catch (Exception ex)
-            {
-                compPol = null; LogError("OpenSource machine failed", ex);
-            }
-            try
-            {
-                var userSrc = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-                userPol = userSrc as PolFile;
-            }
-            catch (Exception ex)
-            {
-                userPol = null; LogError("OpenSource user failed", ex);
+                try
+                {
+                    var compSrc = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource();
+                    compPol = compSrc as PolFile;
+                }
+                catch (Exception ex)
+                {
+                    compPol = null; LogError("OpenSource machine failed", ex);
+                }
+                try
+                {
+                    var userSrc = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
+                    userPol = userSrc as PolFile;
+                }
+                catch (Exception ex)
+                {
+                    userPol = null; LogError("OpenSource user failed", ex);
+                }
             }
 
             if (compPol == null) compPol = LoadExistingOrNew(isUser: false);

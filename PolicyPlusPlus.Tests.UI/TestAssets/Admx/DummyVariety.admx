@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitions revision="1.0" schemaVersion="1.0">
+  <policyNamespaces>
+    <target prefix="dvar" namespace="PolicyPlus.DummyVariety" />
+  </policyNamespaces>
+  <resources minRequiredRevision="1.0" />
+  <categories>
+    <category name="AdvancedCategory" displayName="$(string.AdvancedCategory)" />
+    <category name="RootCategory" displayName="$(string.RootCategory)" />
+    <category name="MidCategory" displayName="$(string.MidCategory)">
+      <parentCategory ref="RootCategory" />
+    </category>
+    <category name="LeafCategory" displayName="$(string.LeafCategory)">
+      <parentCategory ref="MidCategory" />
+    </category>
+  </categories>
+  <supportedOn>
+    <definitions>
+      <definition name="SUPPORTED_Generic" displayName="$(string.AdvancedCategory)">
+        <or>
+          <reference ref="dvar:GenericProduct" />
+        </or>
+      </definition>
+    </definitions>
+    <products>
+      <product name="GenericProduct" displayName="$(string.AdvancedCategory)"> </product>
+    </products>
+  </supportedOn>
+  <policies>
+    <policy name="DummyBooleanPolicy" class="Both" displayName="$(string.DummyBooleanPolicy)" explainText="$(string.DummyBooleanPolicy_Explain)" key="Software\Policies\PolicyPlusDummy\Boolean" valueName="Enabled" presentation="$(presentation.DummyBooleanPresentation)">
+      <parentCategory ref="AdvancedCategory" />
+      <supportedOn ref="dvar:SUPPORTED_Generic" />
+      <elements>
+        <boolean id="FlagOption" valueName="Flag">
+          <trueValue><decimal value="1" /></trueValue>
+          <falseValue><delete /></falseValue>
+        </boolean>
+      </elements>
+    </policy>
+    <policy name="DummyDecimalPolicy" class="Both" displayName="$(string.DummyDecimalPolicy)" explainText="$(string.DummyDecimalPolicy_Explain)" key="Software\Policies\PolicyPlusDummy\Number" valueName="State" presentation="$(presentation.DummyDecimalPresentation)">
+      <parentCategory ref="AdvancedCategory" />
+      <supportedOn ref="dvar:SUPPORTED_Generic" />
+      <elements>
+        <decimal id="NumberValue" valueName="NumberValue" minValue="1" maxValue="100" />
+      </elements>
+    </policy>
+    <policy name="DummyTextPolicy" class="Both" displayName="$(string.DummyTextPolicy)" explainText="$(string.DummyTextPolicy_Explain)" key="Software\Policies\PolicyPlusDummy\Text" valueName="Enabled" presentation="$(presentation.DummyTextPresentation)">
+      <parentCategory ref="AdvancedCategory" />
+      <supportedOn ref="dvar:SUPPORTED_Generic" />
+      <elements>
+        <text id="TextValue" valueName="TextValue" maxLength="1024" required="true" />
+        <text id="ExpandableValue" valueName="ExpandableValue" expandable="true" />
+      </elements>
+    </policy>
+    <policy name="DummyListPolicy" class="Both" displayName="$(string.DummyListPolicy)" explainText="$(string.DummyListPolicy_Explain)" key="Software\Policies\PolicyPlusDummy\Lists" valueName="Enabled" presentation="$(presentation.DummyListPresentation)">
+      <parentCategory ref="AdvancedCategory" />
+      <supportedOn ref="dvar:SUPPORTED_Generic" />
+      <elements>
+        <list id="ListValues" valuePrefix="Item" />
+        <list id="NamedList" explicitValue="true" />
+      </elements>
+    </policy>
+    <policy name="DummyEnumPolicy" class="Both" displayName="$(string.DummyEnumPolicy)" explainText="$(string.DummyEnumPolicy_Explain)" key="Software\Policies\PolicyPlusDummy\Enum" valueName="Enabled" presentation="$(presentation.DummyEnumPresentation)">
+      <parentCategory ref="AdvancedCategory" />
+      <supportedOn ref="dvar:SUPPORTED_Generic" />
+      <elements>
+        <enum id="ModeSelect" valueName="Mode">
+          <item displayName="$(string.ModeSelect_ItemA)">
+            <value><decimal value="1" /></value>
+          </item>
+          <item displayName="$(string.ModeSelect_ItemB)">
+            <value><decimal value="2" /></value>
+          </item>
+          <item displayName="$(string.ModeSelect_ItemC)">
+            <value><string>Custom</string></value>
+          </item>
+        </enum>
+      </elements>
+    </policy>
+    <policy name="DummyMultiTextPolicy" class="Both" displayName="$(string.DummyMultiTextPolicy)" explainText="$(string.DummyMultiTextPolicy_Explain)" key="Software\Policies\PolicyPlusDummy\Multiline" valueName="Enabled" presentation="$(presentation.DummyMultiTextPresentation)">
+      <parentCategory ref="AdvancedCategory" />
+      <supportedOn ref="dvar:SUPPORTED_Generic" />
+      <elements>
+        <multiText id="MultiLines" valueName="Lines" />
+      </elements>
+    </policy>
+    <policy name="DummyNestedPolicy" class="Both" displayName="$(string.DummyNestedPolicy)" explainText="$(string.DummyNestedPolicy_Explain)" key="Software\Policies\PolicyPlusDummy\Nested" valueName="Enabled">
+      <parentCategory ref="LeafCategory" />
+      <supportedOn ref="dvar:SUPPORTED_Generic" />
+    </policy>
+  </policies>
+</policyDefinitions>

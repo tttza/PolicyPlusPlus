@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitions revision="1.0" schemaVersion="1.0">
+  <policyNamespaces>
+    <target prefix="dummy" namespace="PolicyPlus.Dummy" />
+    <using prefix="windows" namespace="Microsoft.Policies.Windows" />
+  </policyNamespaces>
+  <resources minRequiredRevision="1.0" />
+  <categories>
+    <category name="DummyCategory" displayName="$(string.DummyCategory)" />
+  </categories>
+  <policies>
+    <policy name="DummyPolicy" class="Both" displayName="$(string.DummyPolicy)" explainText="$(string.DummyPolicy_Explain)" key="Software\Policies\PolicyPlusDummy" valueName="Enabled">
+      <parentCategory ref="DummyCategory" />
+      <supportedOn ref="windows:SUPPORTED_Win7" />
+      <elements>
+        <boolean id="EnableFlag" valueName="EnableFlag" />
+      </elements>
+    </policy>
+  </policies>
+  <supportedOn>
+    <definitions>
+      <definition name="SUPPORTED_Win7" displayName="$(string.DummyCategory)">
+        <or>
+          <reference ref="windows:Win7" />
+        </or>
+      </definition>
+    </definitions>
+    <products>
+      <product name="Win7" displayName="$(string.DummyCategory)"> </product>
+    </products>
+  </supportedOn>
+</policyDefinitions>
