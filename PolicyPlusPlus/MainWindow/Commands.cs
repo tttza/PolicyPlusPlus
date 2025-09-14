@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.System; // for VirtualKey
 
 namespace PolicyPlusPlus
 {
@@ -64,6 +65,21 @@ namespace PolicyPlusPlus
             {
                 if (PolicyList?.SelectedItem is Models.PolicyListRow row && row.Policy != null)
                 { BookmarkService.Instance.Toggle(row.Policy.UniqueID); RebindConsideringAsync(SearchBox?.Text ?? string.Empty); }
+            }
+            catch { }
+            args.Handled = true;
+        }
+
+        private async void EditSelectedAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            try
+            {
+                if (PolicyList?.SelectedItem is Models.PolicyListRow row && row.Policy != null)
+                {
+                    await OpenEditDialogForPolicyAsync(row.Policy, ensureFront: true);
+                    args.Handled = true;
+                    return;
+                }
             }
             catch { }
             args.Handled = true;
@@ -255,6 +271,22 @@ namespace PolicyPlusPlus
                 WindowHelpers.BringToFront(win);
             }
             catch { }
+        }
+
+        private async void PolicyList_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.Enter)
+            {
+                try
+                {
+                    if (PolicyList?.SelectedItem is Models.PolicyListRow row && row.Policy != null)
+                    {
+                        await OpenEditDialogForPolicyAsync(row.Policy, ensureFront: true);
+                        e.Handled = true;
+                    }
+                }
+                catch { }
+            }
         }
     }
 }

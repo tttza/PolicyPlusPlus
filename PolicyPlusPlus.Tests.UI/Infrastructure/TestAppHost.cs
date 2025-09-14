@@ -102,6 +102,19 @@ public sealed class TestAppHost : IDisposable
         if (App != null) return;
         _testDataDirectory = _forcedTestDataDir ?? Path.Combine(Path.GetTempPath(), "PolicyPlusUITest_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testDataDirectory);
+
+        // Pre-create settings.json enabling CustomPol so saves use custom .pol instead of elevation host.
+        try
+        {
+            var compPath = Path.Combine(_testDataDirectory, "custom_machine.pol");
+            var userPath = Path.Combine(_testDataDirectory, "custom_user.pol");
+            var settingsPath = Path.Combine(_testDataDirectory, "settings.json");
+            // Use raw JSON to avoid needing shared model reference.
+            var json = "{\"CustomPol\":{\"EnableComputer\":true,\"EnableUser\":true,\"ComputerPath\":\"" + compPath.Replace("\\", "\\\\") + "\",\"UserPath\":\"" + userPath.Replace("\\", "\\\\") + "\",\"Active\":true}}";
+            File.WriteAllText(settingsPath, json, Encoding.UTF8);
+        }
+        catch { }
+
         var psi = new ProcessStartInfo(_exePath)
         {
             UseShellExecute = false,

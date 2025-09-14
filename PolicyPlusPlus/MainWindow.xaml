@@ -39,6 +39,7 @@
                 <KeyboardAccelerator Key="D" Modifiers="Control" Invoked="ToggleDetailsAccelerator_Invoked"/>
                 <KeyboardAccelerator Key="F5" Invoked="RefreshAccelerator_Invoked"/>
                 <KeyboardAccelerator Key="B" Modifiers="Control" Invoked="ToggleBookmarkAccelerator_Invoked"/>
+                <KeyboardAccelerator Key="Enter" Invoked="EditSelectedAccelerator_Invoked"/>
             </Grid.KeyboardAccelerators>
             <Grid.Resources>
                 <converters:ScaleConverter x:Key="ScaleConverter"/>
@@ -110,7 +111,7 @@
                         </controls:MenuBarItem>
                         <controls:MenuBarItem Title="Options">
                             <MenuFlyoutItem Text="Language..." Click="BtnLanguage_Click" />
-                            <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Write to temp .pol" IsChecked="{Binding IsChecked, ElementName=ChkUseTempPol, Mode=TwoWay}" Click="ToggleTempPolMenu_Click" Visibility="Collapsed" />
+                            <ToggleMenuFlyoutItem x:Name="ToggleTempPolMenu" Text="Hide empty categories" IsChecked="{Binding HideEmptyCategories, Source={StaticResource FilterVM}, Mode=TwoWay}" Visibility="Collapsed" />
                             <ToggleMenuFlyoutItem x:Name="ToggleHideEmptyMenu" Text="Hide empty categories" IsChecked="{Binding HideEmptyCategories, Source={StaticResource FilterVM}, Mode=TwoWay}" />
                             <ToggleMenuFlyoutItem x:Name="ToggleLimitUnfilteredMenu" Text="Limit unfiltered to 1000" IsChecked="{Binding LimitUnfilteredTo1000, Source={StaticResource FilterVM}, Mode=TwoWay}" />
                         </controls:MenuBarItem>
@@ -273,6 +274,7 @@
                                           SelectionChanged="PolicyList_SelectionChanged"
                                           DoubleTapped="PolicyList_DoubleTapped"
                                           RightTapped="PolicyList_RightTapped"
+                                          KeyDown="PolicyList_KeyDown"
                                           CanUserSortColumns="True"
                                           CanUserResizeColumns="True"
                                           CanUserReorderColumns="True"
