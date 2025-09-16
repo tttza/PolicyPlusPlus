@@ -27,13 +27,90 @@ namespace PolicyPlusPlus.Windows
         {
             this.InitializeComponent();
             this.Loaded += QuickEditGridControl_Loaded;
+            // Ensure we receive Tab even if inner controls mark it handled
+            AddHandler(UIElement.KeyDownEvent, (KeyEventHandler)OnAnyKeyDown, true);
         }
+
+        private void OnAnyKeyDown(object sender, KeyRoutedEventArgs e) => RootGrid_KeyDown(sender, e);
 
         private void QuickEditGridControl_Loaded(object sender, RoutedEventArgs e)
         {
             if (_measured) return;
             _measured = true;
             try { AdjustOptionColumnsToContent(); } catch { }
+        }
+
+        private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key != global::Windows.System.VirtualKey.Tab) return;
+            var focus = FocusManager.GetFocusedElement() as FrameworkElement; if (focus == null) return;
+            var sequence = BuildGlobalFocusSequence();
+            if (sequence.Count == 0) return;
+            int currentIndex = sequence.IndexOf(focus);
+            if (currentIndex < 0) return;
+            bool shift = (global::Windows.UI.Core.CoreWindow.GetForCurrentThread().GetKeyState(global::Windows.System.VirtualKey.Shift) & global::Windows.UI.Core.CoreVirtualKeyStates.Down) != 0;
+            e.Handled = true;
+            int nextIndex = shift ? currentIndex - 1 : currentIndex + 1;
+            if (nextIndex < 0) { e.Handled = false; return; }
+            if (nextIndex >= sequence.Count) { e.Handled = false; return; }
+            var target = sequence[nextIndex];
+            target.Focus(FocusState.Programmatic);
+            try { target.StartBringIntoView(); } catch { }
+        }
+
+        private List<FrameworkElement> BuildGlobalFocusSequence()
+        {
+            var list = new List<FrameworkElement>();
+            var seen = new HashSet<FrameworkElement>();
+            try
+            {
+                foreach (var fe in FindDescendants(this).OfType<FrameworkElement>())
+                {
+                    var tag = fe.Tag as string; if (tag == null) continue;
+                    QuickEditRow? row = fe.DataContext as QuickEditRow;
+                    if (row == null && fe.DataContext is OptionElementVM)
+                    {
+                        // climb to find row container
+                        DependencyObject? cur = fe.Parent; int guard = 0;
+                        while (cur != null && guard < 50)
+                        {
+                            if (cur is FrameworkElement rfe && rfe.DataContext is QuickEditRow qr) { row = qr; break; }
+                            cur = VisualTreeHelper.GetParent(cur); guard++;
+                        }
+                    }
+                    if (row == null) continue;
+                    bool add = false;
+                    switch (tag)
+                    {
+                        case "UserStateCombo": add = true; break;
+                        case "UserOption": if (row.UserState == QuickEditState.Enabled || row.UserEnabledForOptions) add = true; break;
+                        case "ComputerStateCombo": add = true; break;
+                        case "ComputerOption": if (row.ComputerState == QuickEditState.Enabled || row.ComputerEnabledForOptions) add = true; break;
+                    }
+                    if (add && fe.Visibility == Visibility.Visible && (fe as Control)?.IsEnabled != false)
+                    {
+                        if (seen.Add(fe)) list.Add(fe);
+                    }
+                }
+            }
+            catch { }
+            return list;
+        }
+
+        private static IEnumerable<DependencyObject> FindDescendants(DependencyObject root)
+        {
+            var queue = new Queue<DependencyObject>(); queue.Enqueue(root);
+            while (queue.Count > 0)
+            {
+                var node = queue.Dequeue();
+                int count = VisualTreeHelper.GetChildrenCount(node);
+                for (int i = 0; i < count; i++)
+                {
+                    var child = VisualTreeHelper.GetChild(node, i);
+                    queue.Enqueue(child);
+                    yield return child;
+                }
+            }
         }
 
         private void NameText_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
@@ -71,7 +148,7 @@ namespace PolicyPlusPlus.Windows
                     {
                         var child = VisualTreeHelper.GetChild(cur, i);
                         stack.Push(child);
-                        if (child is ItemsControl ic && ic.ItemsSource != null && ic.Parent is ScrollViewer sv && sv.Parent is Grid g)
+                        if (child is ItemsControl ic && ic.ItemsSource != null && ic.Parent is ScrollViewer sv && sv.Parent is Grid)
                         {
                             var panel = ic.ItemsPanelRoot as FrameworkElement; if (panel != null)
                             {
@@ -94,7 +171,6 @@ namespace PolicyPlusPlus.Windows
 
         private static string BuildKey(QuickEditRow row, OptionElementVM elem, string suffix) => $"{row.Policy.UniqueID}:{elem.Id}:{suffix}";
 
-        // Legacy single-element handlers kept (could be removed later)
         private void UserList_Click(object sender, RoutedEventArgs e) { }
         private void ComputerList_Click(object sender, RoutedEventArgs e) { }
         private void UserMulti_Click(object sender, RoutedEventArgs e) { }
@@ -106,7 +182,7 @@ namespace PolicyPlusPlus.Windows
             {
                 if (FindParentRow(sender, out var row) && row != null && elem.IsList)
                 {
-                    var r = row!; // assert non-null
+                    var r = row!;
                     var key = BuildKey(r, elem, "UserList");
                     if (ListEditorWindow.TryActivateExisting(key)) return;
                     var win = new ListEditorWindow();
@@ -156,7 +232,7 @@ namespace PolicyPlusPlus.Windows
             {
                 if (FindParentRow(sender, out var row) && row != null && elem.IsMultiText)
                 {
-                    var r = row; // remove null-forgiving operator; already checked
+                    var r = row;
                     var key = BuildKey(r, elem, "UserMulti");
                     if (ListEditorWindow.TryActivateExisting(key)) return;
                     var win = new ListEditorWindow();
@@ -174,7 +250,7 @@ namespace PolicyPlusPlus.Windows
             {
                 if (FindParentRow(sender, out var row) && row != null && elem.IsMultiText)
                 {
-                    var r = row!; // ensure non-null
+                    var r = row!;
                     var key = BuildKey(r, elem, "ComputerMulti");
                     if (ListEditorWindow.TryActivateExisting(key)) return;
                     var win = new ListEditorWindow();

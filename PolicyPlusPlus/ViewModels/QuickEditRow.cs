@@ -293,7 +293,7 @@ namespace PolicyPlusPlus.ViewModels
                             var s = Convert.ToString(val) ?? string.Empty;
                             if (string.IsNullOrWhiteSpace(s))
                             {
-                                // Abort queuing pending change for this scope due to missing required input
+                                // Missing required value: abort queuing until user supplies it.
                                 return;
                             }
                         }
