@@ -43,12 +43,13 @@ namespace PolicyPlusPlus.Windows
             saveAccel.Invoked += async (a, b) => { if (_saveButton?.IsEnabled == true && !_isSaving) { await SaveAsync(); b.Handled = true; } };
             RootShell?.KeyboardAccelerators.Add(saveAccel);
             try { App.ScaleChanged += (_, __) => ScheduleSize(); } catch { }
-            // Subscribe to global source refresh so we stay in sync when other windows save/apply changes
-            try { MainWindow.PolicySourcesRefreshed += MainWindow_PolicySourcesRefreshed; } catch { }
+            try { EventHub.PolicySourcesRefreshed += OnPolicySourcesRefreshed; } catch { }
+            try { EventHub.PolicyChangeQueued += OnPolicyChangeQueued; } catch { }
             Closed += (s, e) =>
             {
                 try { PendingChangesService.Instance.Pending.CollectionChanged -= Pending_CollectionChanged; } catch { }
-                try { MainWindow.PolicySourcesRefreshed -= MainWindow_PolicySourcesRefreshed; } catch { }
+                try { EventHub.PolicySourcesRefreshed -= OnPolicySourcesRefreshed; } catch { }
+                try { EventHub.PolicyChangeQueued -= OnPolicyChangeQueued; } catch { }
                 // Close any edit windows opened from here
                 foreach (var win in _editWindows.Values.ToList())
                 {
@@ -64,23 +65,19 @@ namespace PolicyPlusPlus.Windows
             };
         }
 
-        // When main window reloads policy sources, capture fresh references and rebuild row states
-        private void MainWindow_PolicySourcesRefreshed(object? sender, EventArgs e)
+        private void OnPolicySourcesRefreshed(IReadOnlyCollection<string>? ids)
         {
             try
             {
-                var main = App.Window as MainWindow;
-                if (main == null || _bundle == null || _grid == null) return;
-                // Pull fresh sources via reflection (keeps existing access pattern isolated here)
-                var compField = typeof(MainWindow).GetField("_compSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                var userField = typeof(MainWindow).GetField("_userSource", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                _compSource = compField?.GetValue(main) as IPolicySource;
-                _userSource = userField?.GetValue(main) as IPolicySource;
-                // Refresh each row from the new sources (do not trigger pending queue)
-                foreach (var row in _grid.Rows)
+                if (_bundle == null || _grid == null) return;
+                if (ids == null || ids.Count == 0)
                 {
-                    try { RefreshRowFromSources(row); } catch { }
+                    foreach (var row in _grid.Rows) RefreshRowFromSources(row);
+                    return;
                 }
+                var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
+                foreach (var row in _grid.Rows)
+                    if (set.Contains(row.Policy.UniqueID)) RefreshRowFromSources(row);
             }
             catch { }
         }
@@ -278,9 +275,15 @@ namespace PolicyPlusPlus.Windows
                 if (ok)
                 {
                     PendingChangesService.Instance.Applied(relevant.ToArray());
-                    try { SettingsService.Instance.SaveHistory(PendingChangesService.Instance.History.ToList()); } catch { }
                     SetStatus(relevant.Count == 1 ? "Saved 1 change." : $"Saved {relevant.Count} changes.");
                     try { mgr.Refresh(); } catch { }
+                    try
+                    {
+                        var affected = relevant.Select(p => p.PolicyId).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                        EventHub.PublishPolicySourcesRefreshed(affected);
+                        EventHub.PublishPendingAppliedOrDiscarded(affected);
+                    }
+                    catch { }
                 }
                 else SetStatus(string.IsNullOrEmpty(error) ? "Save failed." : $"Save failed: {error}");
             }
@@ -327,6 +330,19 @@ namespace PolicyPlusPlus.Windows
                     ? allVisible.Where(p => bookmarkIds.Contains(p.UniqueID, System.StringComparer.OrdinalIgnoreCase))
                     : allVisible;
             return result.Distinct().OrderBy(p => p.DisplayName).Take(cap);
+        }
+
+        private void OnPolicyChangeQueued(string policyId, string scope, PolicyState state, Dictionary<string, object>? options)
+        {
+            try
+            {
+                if (_grid == null) return;
+                var row = _grid.Rows.FirstOrDefault(r => string.Equals(r.Policy.UniqueID, policyId, StringComparison.OrdinalIgnoreCase));
+                if (row == null) return;
+                row.ApplyExternal(scope, state, options);
+                UpdateUnsavedIndicator();
+            }
+            catch { }
         }
     }
 }

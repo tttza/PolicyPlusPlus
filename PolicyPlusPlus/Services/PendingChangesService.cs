@@ -80,6 +80,7 @@ namespace PolicyPlusPlus.Services
             var pid = change.PolicyId ?? string.Empty;
             var scope = change.Scope ?? string.Empty;
             var existing = Pending.FirstOrDefault(p => string.Equals(p?.PolicyId ?? string.Empty, pid, StringComparison.OrdinalIgnoreCase) && string.Equals(p?.Scope ?? string.Empty, scope, StringComparison.OrdinalIgnoreCase));
+            bool isNew = existing == null;
             if (existing != null)
             {
                 existing.Action = change.Action;
@@ -104,19 +105,32 @@ namespace PolicyPlusPlus.Services
                 Log.Info("PendingChanges", $"Added pending policy id={pid} scope={scope} action={change.Action}");
             }
             UpdateDirtyFlag();
+            try
+            {
+                // Treat update as an added delta so listeners refresh row; removed set empty.
+                EventHub.PublishPendingQueueDelta(new[] { pid }, Array.Empty<string>());
+            }
+            catch { }
         }
 
         // Discard: just remove pending entries
         public void Discard(params PendingChange[] changes)
         {
             if (changes == null || changes.Length == 0) return;
+            var removedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var c in changes)
             {
                 if (c == null) continue;
                 Pending.Remove(c);
+                removedIds.Add(c.PolicyId);
                 Log.Info("PendingChanges", $"Discarded policy id={c.PolicyId} scope={c.Scope}");
             }
             UpdateDirtyFlag();
+            if (removedIds.Count > 0)
+            {
+                try { EventHub.PublishPendingQueueDelta(Array.Empty<string>(), removedIds); } catch { }
+                try { EventHub.PublishPendingAppliedOrDiscarded(removedIds); } catch { }
+            }
         }
 
         private void TrimHistoryIfNeeded()
@@ -138,11 +152,13 @@ namespace PolicyPlusPlus.Services
             Log.Info("PendingChanges", $"History add policy id={record.PolicyId} scope={record.Scope} action={record.Action} result={record.Result}");
             TrimHistoryIfNeeded();
             try { SettingsService.Instance.SaveHistory(History.ToList()); } catch (Exception ex) { Log.Warn("PendingChanges", "SaveHistory failed", ex); }
+            try { EventHub.PublishHistoryChanged(); } catch { }
         }
 
         public void Applied(params PendingChange[] changes)
         {
             if (changes == null || changes.Length == 0) return;
+            var appliedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var c in changes)
             {
                 if (c == null) continue;
@@ -161,9 +177,15 @@ namespace PolicyPlusPlus.Services
                 };
                 AddHistory(rec);
                 Pending.Remove(c);
+                appliedIds.Add(c.PolicyId);
                 Log.Info("PendingChanges", $"Applied policy id={c.PolicyId} scope={c.Scope} action={c.Action} state={c.DesiredState}");
             }
             UpdateDirtyFlag();
+            if (appliedIds.Count > 0)
+            {
+                try { EventHub.PublishPendingQueueDelta(Array.Empty<string>(), appliedIds); } catch { }
+                try { EventHub.PublishPendingAppliedOrDiscarded(appliedIds); } catch { }
+            }
         }
 
         public void DiscardAll()
@@ -171,9 +193,15 @@ namespace PolicyPlusPlus.Services
             var count = Pending.Count;
             if (count == 0) return;
             var all = Pending.ToArray();
+            var removedIds = new HashSet<string>(all.Select(p => p.PolicyId), StringComparer.OrdinalIgnoreCase);
             foreach (var c in all) Pending.Remove(c);
             Log.Info("PendingChanges", $"DiscardAll removed={count}");
             UpdateDirtyFlag();
+            if (removedIds.Count > 0)
+            {
+                try { EventHub.PublishPendingQueueDelta(Array.Empty<string>(), removedIds); } catch { }
+                try { EventHub.PublishPendingAppliedOrDiscarded(removedIds); } catch { }
+            }
         }
     }
 }

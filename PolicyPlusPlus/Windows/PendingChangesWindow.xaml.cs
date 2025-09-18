@@ -30,28 +30,31 @@ namespace PolicyPlusPlus.Windows
             _elevation = elevation;
             InitializeComponent();
             Title = "Pending changes";
-
-            // Centralized common window init
             ChildWindowCommon.Initialize(this, 900, 640, ApplyThemeResources);
-
             BtnClose.Click += (s, e) => this.Close();
             BtnApplySelected.Click += BtnApplySelected_Click;
             BtnDiscardSelected.Click += BtnDiscardSelected_Click;
             BtnClearFilters.Click += (s, e) => { if (SearchBox != null) SearchBox.Text = string.Empty; if (ScopeFilter != null) ScopeFilter.SelectedIndex = 0; if (OperationFilter != null) OperationFilter.SelectedIndex = 0; if (HistoryTimeRange != null) HistoryTimeRange.SelectedIndex = 0; if (HistoryType != null) HistoryType.SelectedIndex = 0; if (HistorySearch != null) HistorySearch.Text = string.Empty; RefreshViews(); };
-
             if (RootShell != null)
                 RootShell.Loaded += (s, e) => { RefreshViews(); PendingChangesWindow_Loaded(s, e); };
-
             PendingList.DoubleTapped += (s, e) => Pending_ContextView_Click(s, e);
-
             var main = App.Window as MainWindow;
-            if (main != null)
-            {
-                main.Saved += (s, e) => { ShowLocalInfo("Saved."); RefreshViews(); };
-            }
-
+            if (main != null) { main.Saved += (s, e) => { ShowLocalInfo("Saved."); RefreshViews(); }; }
             try { SubscribeCollectionChanges(); } catch { }
+            try { EventHub.PendingAppliedOrDiscarded += OnPendingAppliedOrDiscarded; } catch { }
+            try { EventHub.PendingQueueChanged += OnPendingQueueChanged; } catch { }
+            try { EventHub.HistoryChanged += OnHistoryChanged; } catch { }
+            Closed += (s, e) =>
+            {
+                try { EventHub.PendingAppliedOrDiscarded -= OnPendingAppliedOrDiscarded; } catch { }
+                try { EventHub.PendingQueueChanged -= OnPendingQueueChanged; } catch { }
+                try { EventHub.HistoryChanged -= OnHistoryChanged; } catch { }
+            };
         }
+
+        private void OnPendingAppliedOrDiscarded(IReadOnlyCollection<string> ids) { try { RefreshViews(); } catch { } }
+        private void OnPendingQueueChanged(IReadOnlyCollection<string> add, IReadOnlyCollection<string> rem) { try { RefreshViews(); } catch { } }
+        private void OnHistoryChanged() { try { RefreshViews(); } catch { } }
 
         public void SelectHistoryTab()
         {
@@ -327,6 +330,13 @@ namespace PolicyPlusPlus.Windows
                     RefreshViews();
                     ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
                     NotifyApplied(appliedList.Count);
+                    try
+                    {
+                        var affected = appliedList.Select(p => p.PolicyId).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                        EventHub.PublishPolicySourcesRefreshed(affected);
+                        EventHub.PublishPendingAppliedOrDiscarded(affected);
+                    }
+                    catch { }
                 }
                 else if (!string.IsNullOrEmpty(error)) ShowLocalInfo("Save failed: " + error);
             }

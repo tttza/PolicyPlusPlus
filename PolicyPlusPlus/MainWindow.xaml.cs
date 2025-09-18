@@ -29,8 +29,6 @@ namespace PolicyPlusPlus
     public sealed partial class MainWindow : Window
     {
         public event EventHandler? Saved;
-        // Raised whenever Local GPO policy sources are reloaded (after save/apply operations)
-        public static event EventHandler? PolicySourcesRefreshed;
 
         private bool _hideEmptyCategories = true;
         private bool _showDetails = true;
@@ -413,7 +411,7 @@ namespace PolicyPlusPlus
         {
             try
             {
-                PendingChangesWindow.ChangesAppliedOrDiscarded += (_, __) => { UpdateUnsavedIndicator(); RefreshList(); PersistHistory(); };
+                PendingChangesWindow.ChangesAppliedOrDiscarded += (_, __) => { UpdateUnsavedIndicator(); RebindConsideringAsync(SearchBox?.Text ?? string.Empty); PersistHistory(); };
                 PendingChangesService.Instance.Pending.CollectionChanged += Pending_CollectionChanged;
                 PendingChangesService.Instance.History.CollectionChanged += (_, __) => { PersistHistory(); };
                 UpdateUnsavedIndicator();
@@ -1024,7 +1022,6 @@ namespace PolicyPlusPlus
                             RefreshLocalSources();
                             ShowInfo(".reg imported to Local GPO.");
                         }
-                        RefreshList();
                         RefreshVisibleRows();
                     }
                     finally { SetBusy(false); }
@@ -1037,11 +1034,7 @@ namespace PolicyPlusPlus
             }
         }
 
-        // Provide no-op if listeners previously expected event
-        private void RaisePolicySourcesRefreshed() { }
-
-        // Refresh current sources via manager and notify listeners
-        public void RefreshLocalSources()
+        private void RefreshLocalSources()
         {
             try
             {
@@ -1050,10 +1043,28 @@ namespace PolicyPlusPlus
                 _userSource = PolicySourceManager.Instance.UserSource;
             }
             catch { }
-            try { PolicySourcesRefreshed?.Invoke(this, EventArgs.Empty); } catch { }
+            try
+            {
+                if (PolicyList != null && PolicyList.ItemsSource is System.Collections.IEnumerable visSeq)
+                {
+                    var ids = visSeq
+                        .OfType<PolicyListRow>()
+                        .Select(r => r?.Policy?.UniqueID)
+                        .Where(id => !string.IsNullOrEmpty(id))
+                        .Select(id => id!)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .Take(2000)
+                        .ToList();
+                    if (ids.Count > 0)
+                    {
+                        EventHub.PublishPolicySourcesRefreshed(ids);
+                        return;
+                    }
+                }
+                EventHub.PublishPolicySourcesRefreshed(null);
+            }
+            catch { EventHub.PublishPolicySourcesRefreshed(null); }
         }
-
-        private void RefreshList() { try { RebindConsideringAsync(SearchBox?.Text ?? string.Empty); } catch { } }
 
         private FilterViewModel? FilterVM => (ScaleHost?.Resources?["FilterVM"] as FilterViewModel) ?? (RootGrid?.Resources?["FilterVM"] as FilterViewModel); // include ScaleHost resources (actual location)
         private void ObserveFilterOptions()

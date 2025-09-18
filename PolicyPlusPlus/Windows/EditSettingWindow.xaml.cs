@@ -832,6 +832,7 @@ namespace PolicyPlusPlus.Windows
             {
                 var scope = (_currentSection == AdmxPolicySection.User) ? "User" : "Computer";
                 SavedDetail?.Invoke(this, (scope, desired, options));
+                try { EventHub.PublishPolicyChangeQueued(_policy.UniqueID, scope, desired, options); } catch { }
             }
             catch { }
         }

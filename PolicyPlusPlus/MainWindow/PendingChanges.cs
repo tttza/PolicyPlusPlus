@@ -27,18 +27,24 @@ namespace PolicyPlusPlus
                 {
                     SetBusy(true, "Saving...");
                     var (ok, err) = await SavePendingAsync(pending);
-
                     if (ok)
                     {
                         PendingChangesService.Instance.Applied(pending);
                         PolicySourceManager.Instance.Refresh();
-                        _compSource = PolicySourceManager.Instance.CompSource; // sync caches after refresh
+                        _compSource = PolicySourceManager.Instance.CompSource;
                         _userSource = PolicySourceManager.Instance.UserSource;
+                        try
+                        {
+                            var affected = pending.Select(p => p.PolicyId).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                            EventHub.PublishPolicySourcesRefreshed(affected);
+                            EventHub.PublishPendingAppliedOrDiscarded(affected);
+                        }
+                        catch { }
                         RefreshVisibleRows();
                         UpdateUnsavedIndicator();
                         ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
                         ShowInfo("Saved.", Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success);
-                        try { Saved?.Invoke(this, EventArgs.Empty); } catch (Exception ex) { Log.Warn("MainSave", "Saved event failed", ex); }
+                        try { Saved?.Invoke(this, EventArgs.Empty); } catch { }
                     }
                     else
                     {
@@ -46,10 +52,7 @@ namespace PolicyPlusPlus
                     }
                 }
             }
-            finally
-            {
-                try { SetBusy(false); } catch (Exception ex) { Log.Warn("MainSave", "SetBusy(false) failed", ex); }
-            }
+            finally { try { SetBusy(false); } catch { } }
         }
     }
 }
