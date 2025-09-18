@@ -55,6 +55,12 @@ namespace PolicyPlusPlus.Windows
                     try { win.Close(); } catch { }
                 }
                 _editWindows.Clear();
+                // Close any list / multi-text editor windows opened from here
+                foreach (var child in _childEditors.ToList())
+                {
+                    try { child.Close(); } catch { }
+                }
+                _childEditors.Clear();
             };
         }
 
