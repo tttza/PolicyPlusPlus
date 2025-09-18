@@ -1,8 +1,10 @@
-using PolicyPlusModTests.TestHelpers;
+using PolicyPlusModTests.Testing;
+using PolicyPlusCore.Core; // PolicyProcessing + ADMX
+using PolicyPlusCore.Admx;
 using System.Collections.Generic;
 using Xunit;
 
-namespace PolicyPlusModTests
+namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
 {
     public class DecimalAndMultiTextTests
     {
@@ -29,10 +31,10 @@ namespace PolicyPlusModTests
             };
             var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:DecDword", DisplayName = "Dec DWord" };
 
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "Dec", 123u } });
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "Dec", 123u } });
             PolAssert.HasDwordValue(polFile, raw.RegistryKey, raw.RegistryValue, 123u);
 
-            var states = PolicyProcessing.GetPolicyOptionStates(polFile, policy);
+            var states = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(polFile, policy);
             Assert.Equal(123u, (uint)states["Dec"]);
         }
 
@@ -59,10 +61,10 @@ namespace PolicyPlusModTests
             };
             var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:DecText", DisplayName = "Dec Text" };
 
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "Dec", 456u } });
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "Dec", 456u } });
             PolAssert.HasStringValue(polFile, raw.RegistryKey, raw.RegistryValue, "456");
 
-            var states = PolicyProcessing.GetPolicyOptionStates(polFile, policy);
+            var states = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(polFile, policy);
             Assert.Equal(456u, (uint)states["Dec"]);
         }
 
@@ -89,11 +91,10 @@ namespace PolicyPlusModTests
             };
             var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:DecTextInvalid", DisplayName = "Dec Text Invalid" };
 
-            // write invalid numeric as text
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "Dec", "notANumber" } });
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "Dec", "notANumber" } });
             PolAssert.HasStringValue(polFile, raw.RegistryKey, raw.RegistryValue, "notANumber");
 
-            var states = PolicyProcessing.GetPolicyOptionStates(polFile, policy);
+            var states = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(polFile, policy);
             Assert.Equal(0u, (uint)states["Dec"]);
         }
 
@@ -120,7 +121,7 @@ namespace PolicyPlusModTests
             var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:Multi", DisplayName = "Multi" };
 
             IEnumerable<string> lines = new List<string> { "x", "y" };
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "Multi", lines } });
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "Multi", lines } });
             PolAssert.HasMultiStringValue(polFile, raw.RegistryKey, raw.RegistryValue, lines);
         }
     }

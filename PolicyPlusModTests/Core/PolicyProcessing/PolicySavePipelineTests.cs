@@ -4,7 +4,7 @@ using System.IO;
 
 using Xunit;
 
-namespace PolicyPlusModTests
+namespace PolicyPlusModTests.Core.PolicyProcessing
 {
     public class PolicySavePipelineTests
     {

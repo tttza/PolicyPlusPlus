@@ -2,7 +2,7 @@ using PolicyPlusPlus.Converters;
 using System;
 using Xunit;
 
-namespace PolicyPlusModTests.WinUI3
+namespace PolicyPlusModTests.WinUI3.Converters
 {
     public class ConvertersTests
     {

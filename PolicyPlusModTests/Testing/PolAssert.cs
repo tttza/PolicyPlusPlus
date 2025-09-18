@@ -3,7 +3,7 @@ using System.Linq;
 
 using Xunit;
 
-namespace PolicyPlusModTests.TestHelpers
+namespace PolicyPlusModTests.Testing
 {
     // Assertion helpers for POL file verification
     public static class PolAssert

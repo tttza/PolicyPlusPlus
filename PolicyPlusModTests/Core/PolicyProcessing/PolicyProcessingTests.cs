@@ -1,8 +1,10 @@
-using PolicyPlusModTests.TestHelpers;
+using PolicyPlusModTests.Testing;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.Admx;
 using System.Collections.Generic;
 using Xunit;
 
-namespace PolicyPlusModTests
+namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
 {
     public class PolicyProcessingTests
     {
@@ -14,7 +16,7 @@ namespace PolicyPlusModTests
         {
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateSimpleTogglePolicy();
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object>());
+            PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object>());
             PolAssert.HasDwordValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, 1U);
         }
 
@@ -26,9 +28,9 @@ namespace PolicyPlusModTests
         {
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateSimpleTogglePolicy();
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object>());
+            PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object>());
             PolAssert.HasDwordValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, 1U);
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Disabled, new Dictionary<string, object>());
+            PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Disabled, new Dictionary<string, object>());
             PolAssert.NotContains(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue);
         }
 
@@ -40,9 +42,9 @@ namespace PolicyPlusModTests
         {
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateSimpleTogglePolicy();
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object>());
+            PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object>());
             PolAssert.HasDwordValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, 1U);
-            PolicyProcessing.ForgetPolicy(polFile, policy);
+            PolicyPlusCore.Core.PolicyProcessing.ForgetPolicy(polFile, policy);
             PolAssert.NotContains(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue);
         }
     }

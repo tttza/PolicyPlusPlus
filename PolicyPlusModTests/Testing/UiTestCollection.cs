@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace PolicyPlusModTests.TestHelpers
+namespace PolicyPlusModTests.Testing
 {
     [CollectionDefinition(Name)]
     public class UiTestCollection : ICollectionFixture<UiTestFixture>

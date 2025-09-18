@@ -2,7 +2,7 @@ using System.IO;
 
 using Xunit;
 
-namespace PolicyPlusModTests.WinUI3
+namespace PolicyPlusModTests.WinUI3.ImportExport
 {
     public class ImportRegDialogPreviewTests
     {

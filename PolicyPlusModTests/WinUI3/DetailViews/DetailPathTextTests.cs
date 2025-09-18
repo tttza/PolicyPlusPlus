@@ -1,7 +1,7 @@
 using PolicyPlusPlus.ViewModels;
 using Xunit;
 
-namespace PolicyPlusModTests.WinUI3
+namespace PolicyPlusModTests.WinUI3.DetailViews
 {
     public class DetailPathTextTests
     {

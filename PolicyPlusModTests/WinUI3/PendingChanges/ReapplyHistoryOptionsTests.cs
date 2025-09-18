@@ -1,11 +1,11 @@
-using PolicyPlusModTests.TestHelpers;
+using PolicyPlusModTests.Testing;
 using PolicyPlusPlus.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
-namespace PolicyPlusModTests.WinUI3
+namespace PolicyPlusModTests.WinUI3.PendingChanges
 {
     // Tests for ensuring that options recorded in HistoryRecord are correctly reapplied.
     public class ReapplyHistoryOptionsTests

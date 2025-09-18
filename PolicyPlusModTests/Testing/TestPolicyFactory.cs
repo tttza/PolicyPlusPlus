@@ -1,6 +1,7 @@
 using System.Collections.Generic;
+using PolicyPlusCore.Core; // For PresentationElement types and PolicyProcessing
 
-namespace PolicyPlusModTests.TestHelpers
+namespace PolicyPlusModTests.Testing
 {
     // Helper factory for building test policies to reduce duplication in test classes
     public static class TestPolicyFactory
@@ -56,7 +57,7 @@ namespace PolicyPlusModTests.TestHelpers
                             ID = "TextElem",
                             ElementType = "textBox",
                             Label = "Text Label",
-                            DefaultValue = ""
+                            DefaultValue = string.Empty
                         }
                     }
                 }

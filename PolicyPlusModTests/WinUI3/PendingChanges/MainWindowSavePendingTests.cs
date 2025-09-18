@@ -1,15 +1,16 @@
+using PolicyPlusCore.Admx; // ADMX models
+using PolicyPlusCore.Core; // PolicyState enum if needed
 using PolicyPlusPlus.Services;
 using System.Collections.Generic;
 using Xunit;
 
-namespace PolicyPlusModTests.WinUI3
+namespace PolicyPlusModTests.WinUI3.PendingChanges
 {
     public class MainWindowSavePendingTests
     {
         [Fact(DisplayName = "MainWindow SavePendingAsync builds base64 for both scopes when needed")]
         public void SavePending_BuildsBase64_ForBothScopes()
         {
-            // Build bundle with user & machine policies
             var compPol = new PolicyPlusPolicy
             {
                 UniqueID = "MACHINE:T",
@@ -30,7 +31,6 @@ namespace PolicyPlusModTests.WinUI3
                 new PendingChange { PolicyId = userPol.UniqueID, Scope = "User", DesiredState = PolicyState.Disabled, Options = new Dictionary<string, object>() },
             };
 
-            // Call non-UI save pipeline directly instead of new MainWindow()
             var req = new List<PolicyChangeRequest>
             {
                 new PolicyChangeRequest { PolicyId = compPol.UniqueID, Scope = PolicyTargetScope.Machine, DesiredState = PolicyState.Enabled, Options = new Dictionary<string, object>() },

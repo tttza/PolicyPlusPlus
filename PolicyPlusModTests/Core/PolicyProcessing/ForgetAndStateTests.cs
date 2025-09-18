@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using PolicyPlusCore.Core; // core models
+using PolicyPlusCore.Admx; // ADMX models
 using Xunit;
 
-namespace PolicyPlusModTests
+namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
 {
     public class ForgetAndStateTests
     {
@@ -28,10 +30,10 @@ namespace PolicyPlusModTests
             };
             var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:List", DisplayName = "List" };
 
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "ListElem", new List<string> { "A", "B" } } });
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "ListElem", new List<string> { "A", "B" } } });
             Assert.True(polFile.GetValueNames("Software\\PolicyPlusTest").Count > 0);
 
-            PolicyProcessing.ForgetPolicy(polFile, policy);
+            global::PolicyPlusCore.Core.PolicyProcessing.ForgetPolicy(polFile, policy);
             Assert.Empty(polFile.GetValueNames("Software\\PolicyPlusTest"));
         }
 
@@ -63,7 +65,7 @@ namespace PolicyPlusModTests
             var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:Bool", DisplayName = "Bool" };
 
             polFile.SetValue(raw.RegistryKey, raw.RegistryValue, 1U, Microsoft.Win32.RegistryValueKind.DWord);
-            var state = PolicyProcessing.GetPolicyState(polFile, policy);
+            var state = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyState(polFile, policy);
             Assert.Equal(PolicyState.Enabled, state);
         }
     }

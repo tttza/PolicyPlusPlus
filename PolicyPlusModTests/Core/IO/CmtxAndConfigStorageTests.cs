@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using Xunit;
 
-namespace PolicyPlusModTests
+namespace PolicyPlusModTests.Core.IO
 {
     public class CmtxAndConfigStorageTests
     {

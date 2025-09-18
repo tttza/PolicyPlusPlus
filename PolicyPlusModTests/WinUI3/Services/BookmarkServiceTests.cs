@@ -1,7 +1,7 @@
 using PolicyPlusPlus.Services;
 using Xunit;
 
-namespace PolicyPlusModTests.Services
+namespace PolicyPlusModTests.WinUI3.Services
 {
     public class BookmarkServiceTests
     {

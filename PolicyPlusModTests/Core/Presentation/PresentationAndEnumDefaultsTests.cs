@@ -1,8 +1,11 @@
 using PolicyPlusModTests.TestHelpers; // PolAssert
+using PolicyPlusModTests.Testing;
+using PolicyPlusCore.Core; // core models
+using PolicyPlusCore.Admx; // ADMX models
 using System.Collections.Generic;
 using Xunit;
 
-namespace PolicyPlusModTests
+namespace PolicyPlusModTests.Core.Presentation
 {
     /// <summary>
     /// Tests for presentation-driven defaults and enum handling.
@@ -12,15 +15,7 @@ namespace PolicyPlusModTests
     {
         private static AdmxFile DummyAdmx() => new AdmxFile { SourceFile = "dummy.admx" };
 
-        private static PolicyPlusPolicy BuildPolicy(AdmxPolicy raw, string idSuffix, string displayName)
-        {
-            return new PolicyPlusPolicy
-            {
-                RawPolicy = raw,
-                UniqueID = $"MACHINE:{idSuffix}",
-                DisplayName = displayName
-            };
-        }
+        private static PolicyPlusPolicy BuildPolicy(AdmxPolicy raw, string idSuffix, string displayName) => new PolicyPlusPolicy { RawPolicy = raw, UniqueID = $"MACHINE:{idSuffix}", DisplayName = displayName };
 
         [Fact(DisplayName = "Enum element stores underlying numeric value but reports index state")]
         public void EnumElement_NonSequential_IndexReported_NumericStored()
@@ -50,12 +45,12 @@ namespace PolicyPlusModTests
             var polFile = new PolFile();
 
             // Act
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "EnumElem", 1 } });
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "EnumElem", 1 } });
 
             // Assert registry underlying numeric value stored
             PolAssert.HasDwordValue(polFile, raw.RegistryKey, raw.RegistryValue, 20u);
             // Assert option state reports index
-            var optStates = PolicyProcessing.GetPolicyOptionStates(polFile, policy);
+            var optStates = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(polFile, policy);
             Assert.Equal(1, (int)optStates["EnumElem"]);
         }
 
@@ -79,7 +74,7 @@ namespace PolicyPlusModTests
                 DefinedIn = DummyAdmx()
             };
             var policy = BuildPolicy(raw, "BoolDefault", "Bool Default");
-            policy.Presentation = new Presentation
+            policy.Presentation = new global::PolicyPlusCore.Core.Presentation
             {
                 Elements = new List<PresentationElement>
                 {
@@ -128,7 +123,7 @@ namespace PolicyPlusModTests
                 DefinedIn = DummyAdmx()
             };
             var policy = BuildPolicy(raw, "DecDefault", "Dec Default");
-            policy.Presentation = new Presentation
+            policy.Presentation = new global::PolicyPlusCore.Core.Presentation
             {
                 Elements = new List<PresentationElement>
                 {
@@ -175,7 +170,7 @@ namespace PolicyPlusModTests
                 DefinedIn = DummyAdmx()
             };
             var policy = BuildPolicy(raw, "TxtDefault", "Txt Default");
-            policy.Presentation = new Presentation
+            policy.Presentation = new global::PolicyPlusCore.Core.Presentation
             {
                 Elements = new List<PresentationElement>
                 {

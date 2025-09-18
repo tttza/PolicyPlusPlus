@@ -2,7 +2,7 @@ using PolicyPlusPlus.Services;
 using System.Collections.Generic;
 using Xunit;
 
-namespace PolicyPlusModTests.WinUI3
+namespace PolicyPlusModTests.WinUI3.PendingChanges
 {
     public class PendingChangesWindowSaveFlowTests
     {

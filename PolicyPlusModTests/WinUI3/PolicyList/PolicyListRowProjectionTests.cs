@@ -2,7 +2,7 @@ using PolicyPlusPlus.Models;
 using PolicyPlusPlus.Services;
 using Xunit;
 
-namespace PolicyPlusModTests.WinUI3
+namespace PolicyPlusModTests.WinUI3.PolicyList
 {
     public class PolicyListRowProjectionTests
     {

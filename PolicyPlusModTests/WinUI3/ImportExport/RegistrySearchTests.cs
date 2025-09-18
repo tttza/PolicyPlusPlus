@@ -1,8 +1,8 @@
-using PolicyPlusModTests.TestHelpers;
+using PolicyPlusModTests.Testing;
 using PolicyPlusPlus.Dialogs;
 using Xunit;
 
-namespace PolicyPlusModTests.WinUI3
+namespace PolicyPlusModTests.WinUI3.ImportExport
 {
     public class RegistrySearchTests
     {

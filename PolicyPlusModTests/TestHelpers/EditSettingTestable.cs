@@ -1,6 +1,7 @@
-using System;
+using PolicyPlusModTests.Testing;
+using PolicyPlusCore.Core; // PolicyProcessing + presentation types
 using System.Collections.Generic;
-using System.Linq;
+using Xunit;
 
 namespace PolicyPlusModTests.TestHelpers
 {
@@ -23,7 +24,7 @@ namespace PolicyPlusModTests.TestHelpers
         public void SetTestContext(PolicyPlusPolicy policy, AdmxPolicySection section, IPolicySource policySource)
         {
             _policy = policy;
-            _section = section; // section not used yet but kept for parity
+            _section = section; // unused but kept for parity
             _policySource = policySource;
         }
 
@@ -45,7 +46,6 @@ namespace PolicyPlusModTests.TestHelpers
                     PolicyProcessing.SetPolicyState(_policySource, _policy, PolicyState.Disabled, new Dictionary<string, object>());
                     break;
                 default:
-                    // NotConfigured => ForgetPolicy semantics (tests using this helper immediately switch to Enabled)
                     break;
             }
         }
@@ -53,14 +53,12 @@ namespace PolicyPlusModTests.TestHelpers
         private void ApplyEnabled()
         {
             var optionValues = new Dictionary<string, object>();
-
-            // Apply presentation defaults only for the element types covered by tests.
             var presentation = _policy.Presentation;
             if (presentation != null)
             {
-                foreach (var elem in _policy.RawPolicy.Elements ?? Enumerable.Empty<PolicyElement>())
+                foreach (var elem in _policy.RawPolicy.Elements ?? new List<PolicyElement>())
                 {
-                    var pres = presentation.Elements.FirstOrDefault(p => string.Equals(p.ID, elem.ID, StringComparison.OrdinalIgnoreCase));
+                    var pres = presentation.Elements.Find(p => string.Equals(p.ID, elem.ID, System.StringComparison.OrdinalIgnoreCase));
                     if (pres == null) continue;
                     switch (elem.ElementType)
                     {
@@ -73,19 +71,15 @@ namespace PolicyPlusModTests.TestHelpers
                                 optionValues[elem.ID] = nb.DefaultValue;
                             break;
                         case "text":
-                            if (pres is TextBoxPresentationElement tb && tb.DefaultValue is { Length: > 0 })
+                            if (pres is TextBoxPresentationElement tb && !string.IsNullOrEmpty(tb.DefaultValue))
                                 optionValues[elem.ID] = tb.DefaultValue!;
                             break;
                     }
                 }
             }
-
             PolicyProcessing.SetPolicyState(_policySource, _policy, PolicyState.Enabled, optionValues);
         }
 
-        public class RadioStub
-        {
-            public bool Checked { get; set; }
-        }
+        public class RadioStub { public bool Checked { get; set; } }
     }
 }

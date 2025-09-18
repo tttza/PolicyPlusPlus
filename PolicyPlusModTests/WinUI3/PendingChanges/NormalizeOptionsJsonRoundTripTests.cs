@@ -1,4 +1,4 @@
-using PolicyPlusModTests.TestHelpers;
+using PolicyPlusModTests.Testing;
 using PolicyPlusPlus.Services;
 using System;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text.Json;
 using Xunit;
 
-namespace PolicyPlusModTests.WinUI3
+namespace PolicyPlusModTests.WinUI3.PendingChanges
 {
     // Validates that after serializing History to JSON and deserializing back, option types are normalized for reapply.
     public class NormalizeOptionsJsonRoundTripTests

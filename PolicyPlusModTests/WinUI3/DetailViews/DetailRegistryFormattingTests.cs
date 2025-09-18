@@ -1,10 +1,10 @@
 using Microsoft.Win32;
-using PolicyPlusModTests.TestHelpers;
+using PolicyPlusModTests.Testing;
 using PolicyPlusPlus.ViewModels;
 using System.Collections.Generic;
 using Xunit;
 
-namespace PolicyPlusModTests.WinUI3
+namespace PolicyPlusModTests.WinUI3.DetailViews
 {
     public class DetailRegistryFormattingTests
     {
