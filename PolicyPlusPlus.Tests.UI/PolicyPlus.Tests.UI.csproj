@@ -27,4 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\PolicyPlusPlus\PolicyPlusPlus.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\SharedTest\AdmxTestHelper.cs" Link="Shared\AdmxTestHelper.cs" />
+  </ItemGroup>
 </Project>

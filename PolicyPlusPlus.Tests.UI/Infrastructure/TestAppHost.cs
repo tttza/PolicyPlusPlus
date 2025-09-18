@@ -97,6 +97,47 @@ public sealed class TestAppHost : IDisposable
         return null;
     }
 
+    private static string? ResolveAdmxTestDir(string solutionDir)
+    {
+        // Environment override (already validated elsewhere in app startup). Do not sanitize here beyond existence check.
+        try
+        {
+            var env = Environment.GetEnvironmentVariable("POLICYPLUS_TEST_ADMX_DIR");
+            if (!string.IsNullOrWhiteSpace(env) && Directory.Exists(env) && Directory.EnumerateFiles(env, "*.admx", SearchOption.TopDirectoryOnly).Any())
+                return env;
+        }
+        catch { }
+
+        // Preferred shared location at repo root
+        string shared = Path.Combine(solutionDir, "TestAssets", "Admx");
+        if (Directory.Exists(shared) && Directory.EnumerateFiles(shared, "*.admx", SearchOption.TopDirectoryOnly).Any())
+            return shared;
+
+        // Legacy UI test path
+        string legacy = Path.Combine(solutionDir, "PolicyPlusPlus.Tests.UI", "TestAssets", "Admx");
+        if (Directory.Exists(legacy) && Directory.EnumerateFiles(legacy, "*.admx", SearchOption.TopDirectoryOnly).Any())
+            return legacy;
+
+        // Fallback: shallow scan (depth 3) for any directory ending with Admx containing .admx files
+        try
+        {
+            var dirs = Directory.EnumerateDirectories(solutionDir, "Admx", SearchOption.AllDirectories)
+                .Where(p => p.Count(c => c == Path.DirectorySeparatorChar) - solutionDir.Count(c => c == Path.DirectorySeparatorChar) <= 6) // crude depth guard
+                .Take(20);
+            foreach (var d in dirs)
+            {
+                try
+                {
+                    if (Directory.EnumerateFiles(d, "*.admx", SearchOption.TopDirectoryOnly).Any())
+                        return d;
+                }
+                catch { }
+            }
+        }
+        catch { }
+        return null;
+    }
+
     public void Launch()
     {
         if (App != null) return;
@@ -109,7 +150,6 @@ public sealed class TestAppHost : IDisposable
             var compPath = Path.Combine(_testDataDirectory, "custom_machine.pol");
             var userPath = Path.Combine(_testDataDirectory, "custom_user.pol");
             var settingsPath = Path.Combine(_testDataDirectory, "settings.json");
-            // Use raw JSON to avoid needing shared model reference.
             var json = "{\"CustomPol\":{\"EnableComputer\":true,\"EnableUser\":true,\"ComputerPath\":\"" + compPath.Replace("\\", "\\\\") + "\",\"UserPath\":\"" + userPath.Replace("\\", "\\\\") + "\",\"Active\":true}}";
             File.WriteAllText(settingsPath, json, Encoding.UTF8);
         }
@@ -129,10 +169,10 @@ public sealed class TestAppHost : IDisposable
         try
         {
             var solutionDir = FindSolutionDirectory();
-            var dummyDir = Path.Combine(solutionDir, "PolicyPlusPlus.Tests.UI", "TestAssets", "Admx");
-            if (Directory.Exists(dummyDir))
+            var resolved = ResolveAdmxTestDir(solutionDir);
+            if (!string.IsNullOrEmpty(resolved))
             {
-                psi.Environment["POLICYPLUS_TEST_ADMX_DIR"] = dummyDir;
+                psi.Environment["POLICYPLUS_TEST_ADMX_DIR"] = resolved;
             }
         }
         catch { }

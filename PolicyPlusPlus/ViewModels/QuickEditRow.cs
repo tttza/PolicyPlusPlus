@@ -20,19 +20,18 @@ namespace PolicyPlusPlus.ViewModels
         // Suppress queuing pending changes while constructing / loading from sources
         private bool _initializing;
 
-        // New: collection of all option elements (multiple supported)
+        // Collection of all option elements (supports multiple per type)
         public List<OptionElementVM> OptionElements { get; } = new();
 
         // Adopt full state from another row (after saving / external refresh) without enqueuing changes
         internal void AdoptState(QuickEditRow other)
         {
             if (other == null || !string.Equals(other.Policy.UniqueID, Policy.UniqueID, StringComparison.OrdinalIgnoreCase)) return;
-            _initializing = true; // suppress QueuePending during bulk copy
+            _initializing = true;
             try
             {
                 _userState = other._userState; OnChanged(nameof(UserState));
                 _computerState = other._computerState; OnChanged(nameof(ComputerState));
-                // Adopt option values element-wise
                 foreach (var elem in OptionElements
                 )
                 {
@@ -94,7 +93,6 @@ namespace PolicyPlusPlus.ViewModels
         private QuickEditState _userState; public QuickEditState UserState { get => _userState; set { if (_userState != value) { _userState = value; OnChanged(nameof(UserState)); if (!_initializing) QueuePending("User"); UpdateEnablement(); } } }
         private QuickEditState _computerState; public QuickEditState ComputerState { get => _computerState; set { if (_computerState != value) { _computerState = value; OnChanged(nameof(ComputerState)); if (!_initializing) QueuePending("Computer"); UpdateEnablement(); } } }
 
-        // Backwards compatibility helpers (first element per type)
         private OptionElementVM? FirstOf(OptionElementType t) => OptionElements.FirstOrDefault(e => e.Type == t);
         public bool HasEnumElement => FirstOf(OptionElementType.Enum) != null;
         public bool HasListElement => FirstOf(OptionElementType.List) != null;
@@ -103,7 +101,6 @@ namespace PolicyPlusPlus.ViewModels
         public bool HasDecimalElement => FirstOf(OptionElementType.Decimal) != null;
         public bool HasMultiTextElement => FirstOf(OptionElementType.MultiText) != null;
 
-        // Legacy single-element exposure removed: callers should migrate as needed (keep minimal compatibility surfaces if necessary)
         public List<string> EnumChoices => FirstOf(OptionElementType.Enum)?.Choices ?? new();
         public int UserEnumIndex { get => FirstOf(OptionElementType.Enum)?.UserEnumIndex ?? -1; set { var e = FirstOf(OptionElementType.Enum); if (e != null) e.UserEnumIndex = value; } }
         public int ComputerEnumIndex { get => FirstOf(OptionElementType.Enum)?.ComputerEnumIndex ?? -1; set { var e = FirstOf(OptionElementType.Enum); if (e != null) e.ComputerEnumIndex = value; } }
@@ -234,10 +231,9 @@ namespace PolicyPlusPlus.ViewModels
                 }
             }
 
-            // Load existing states and option values
             LoadInitialStates();
             foreach (var vm in OptionElements) vm.EnsureDefaultsAfterLoad();
-            _initializing = false; // from now on, user modifications create pending changes
+            _initializing = false;
         }
 
         private void UpdateEnablement()
@@ -276,7 +272,7 @@ namespace PolicyPlusPlus.ViewModels
 
         internal void QueuePending(string scope)
         {
-            if (_initializing) return; // suppress during initial load
+            if (_initializing) return;
             try
             {
                 bool isUser = scope.Equals("User", StringComparison.OrdinalIgnoreCase);
@@ -365,25 +361,44 @@ namespace PolicyPlusPlus.ViewModels
             return Convert.ToString(v) ?? string.Empty;
         }
 
-        public void ReplaceList(bool isUser, List<string> newItems)
+        public bool ReplaceList(string elementId, bool isUser, List<string> newItems)
         {
-            var first = FirstOf(OptionElementType.List); if (first != null) first.ReplaceList(isUser, newItems);
+            if (string.IsNullOrWhiteSpace(elementId)) return false;
+            var vm = OptionElements.FirstOrDefault(e => e.Type == OptionElementType.List && !e.ProvidesNames && string.Equals(e.Id, elementId, StringComparison.OrdinalIgnoreCase));
+            if (vm == null) return false;
+            vm.ReplaceList(isUser, newItems);
             RefreshListSummaries();
             if (isUser && UserState == QuickEditState.Enabled) QueuePending("User");
             if (!isUser && ComputerState == QuickEditState.Enabled) QueuePending("Computer");
+            return true;
         }
-        public void ReplaceMultiText(bool isUser, List<string> newItems)
+        public bool ReplaceNamedList(string elementId, bool isUser, List<KeyValuePair<string, string>> newItems)
         {
-            var first = FirstOf(OptionElementType.MultiText); if (first != null) first.ReplaceMultiText(isUser, newItems);
+            if (string.IsNullOrWhiteSpace(elementId)) return false;
+            var vm = OptionElements.FirstOrDefault(e => e.Type == OptionElementType.List && e.ProvidesNames && string.Equals(e.Id, elementId, StringComparison.OrdinalIgnoreCase));
+            if (vm == null) return false;
+            vm.ReplaceNamedList(isUser, newItems);
             RefreshListSummaries();
             if (isUser && UserState == QuickEditState.Enabled) QueuePending("User");
             if (!isUser && ComputerState == QuickEditState.Enabled) QueuePending("Computer");
+            return true;
+        }
+        public bool ReplaceMultiText(string elementId, bool isUser, List<string> newItems)
+        {
+            if (string.IsNullOrWhiteSpace(elementId)) return false;
+            var vm = OptionElements.FirstOrDefault(e => e.Type == OptionElementType.MultiText && string.Equals(e.Id, elementId, StringComparison.OrdinalIgnoreCase));
+            if (vm == null) return false;
+            vm.ReplaceMultiText(isUser, newItems);
+            RefreshListSummaries();
+            if (isUser && UserState == QuickEditState.Enabled) QueuePending("User");
+            if (!isUser && ComputerState == QuickEditState.Enabled) QueuePending("Computer");
+            return true;
         }
 
         public void ApplyExternal(string scope, PolicyState desired, Dictionary<string, object>? options)
         {
             bool isUser = scope.Equals("User", StringComparison.OrdinalIgnoreCase);
-            _initializing = true; // prevent queueing while we synchronize
+            _initializing = true;
             try
             {
                 var newState = desired switch { PolicyState.Enabled => QuickEditState.Enabled, PolicyState.Disabled => QuickEditState.Disabled, _ => QuickEditState.NotConfigured };

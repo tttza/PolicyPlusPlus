@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <SharedTestAssetsDir>$(MSBuildThisFileDirectory)TestAssets\</SharedTestAssetsDir>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <None Include="$(SharedTestAssetsDir)**\*"
+          Link="%(RecursiveDir)%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
