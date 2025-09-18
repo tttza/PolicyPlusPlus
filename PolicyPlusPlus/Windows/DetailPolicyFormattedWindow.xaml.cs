@@ -114,11 +114,19 @@ namespace PolicyPlusPlus.Windows
         {
             try
             {
+                var normalized = NormalizeLineEndings(text ?? string.Empty);
                 var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-                dp.SetText(text ?? string.Empty);
+                dp.SetText(normalized);
                 Clipboard.SetContent(dp);
             }
             catch (Exception ex) { Log.Debug("DetailPolicyFmt", $"clipboard copy failed: {ex.Message}"); }
+        }
+
+        private static string NormalizeLineEndings(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return string.Empty;
+            s = s.Replace("\r\n", "\n").Replace("\r", "\n");
+            return s.Replace("\n", "\r\n");
         }
 
         public void Initialize(PolicyPlusPolicy policy, AdmxBundle bundle, IPolicySource compSource, IPolicySource userSource, AdmxPolicySection section)
