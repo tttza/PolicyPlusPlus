@@ -23,6 +23,7 @@ using PolicyPlusPlus.ViewModels;
 using PolicyPlusPlus.Windows;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
+using System.Globalization;
 
 namespace PolicyPlusPlus
 {
@@ -1661,7 +1662,7 @@ namespace PolicyPlusPlus
                     if (cb.IsChecked == true)
                     {
                         PolicySourceManager.Instance.Switch(PolicySourceDescriptor.TempPol());
-                    }
+                      }
                     else if (PolicySourceManager.Instance.Mode == PolicySourceMode.TempPol)
                     {
                         PolicySourceManager.Instance.Switch(PolicySourceDescriptor.LocalGpo());
@@ -1673,6 +1674,80 @@ namespace PolicyPlusPlus
             catch
             {
                 ShowInfo("Temp POL toggle failed", InfoBarSeverity.Error);
+            }
+        }
+
+        private async void BtnLanguage_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var settings = SettingsService.Instance.LoadSettings();
+                string currentLang = settings.Language ?? CultureInfo.CurrentUICulture.Name;
+                string? admxPathCandidate = settings.AdmxSourcePath; // may be null
+                string admxPath = !string.IsNullOrWhiteSpace(admxPathCandidate) && Directory.Exists(admxPathCandidate)
+                    ? admxPathCandidate
+                    : Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
+                var dlg = new LanguageOptionsDialog();
+                if (Content is FrameworkElement fe)
+                    dlg.XamlRoot = fe.XamlRoot;
+                dlg.Initialize(admxPath, currentLang);
+                var res = await dlg.ShowAsync();
+                if (res != ContentDialogResult.Primary)
+                    return;
+
+                // Determine changes
+                string? newPrimary = dlg.SelectedLanguage;
+                bool primaryChanged = false;
+                if (!string.IsNullOrWhiteSpace(newPrimary) && !string.Equals(newPrimary, settings.Language, StringComparison.OrdinalIgnoreCase))
+                {
+                    SettingsService.Instance.UpdateLanguage(newPrimary);
+                    primaryChanged = true;
+                }
+                // Even if unchanged, ensure settings reflects selection when previously null.
+                else if (string.IsNullOrWhiteSpace(settings.Language) && !string.IsNullOrWhiteSpace(newPrimary))
+                {
+                    SettingsService.Instance.UpdateLanguage(newPrimary);
+                    primaryChanged = true;
+                }
+
+                bool beforeSecondEnabled = settings.SecondLanguageEnabled ?? false;
+                string beforeSecond = settings.SecondLanguage ?? string.Empty;
+                bool afterSecondEnabled = dlg.SecondLanguageEnabled;
+                string? afterSecond = dlg.SelectedSecondLanguage;
+                bool secondEnabledChanged = beforeSecondEnabled != afterSecondEnabled;
+                bool secondLangChanged = afterSecondEnabled && !string.IsNullOrEmpty(afterSecond) && !string.Equals(beforeSecond, afterSecond, StringComparison.OrdinalIgnoreCase);
+
+                SettingsService.Instance.UpdateSecondLanguageEnabled(afterSecondEnabled);
+                if (afterSecondEnabled && !string.IsNullOrEmpty(afterSecond))
+                {
+                    SettingsService.Instance.UpdateSecondLanguage(afterSecond);
+                }
+
+                if (primaryChanged || secondEnabledChanged || secondLangChanged)
+                {
+                    var updated = SettingsService.Instance.LoadSettings();
+                    string? reloadPathCandidate = updated.AdmxSourcePath;
+                    string reloadPath = !string.IsNullOrWhiteSpace(reloadPathCandidate) && Directory.Exists(reloadPathCandidate)
+                        ? reloadPathCandidate
+                        : admxPath;
+                    if (Directory.Exists(reloadPath))
+                    {
+                        await LoadAdmxFolderAsync(reloadPath);
+                        ApplySecondLanguageVisibilityToViewMenu();
+                        UpdateColumnVisibilityFromFlags();
+                    }
+                }
+                else
+                {
+                    // No structural changes; still refresh in case only second language visibility toggled off
+                    ApplySecondLanguageVisibilityToViewMenu();
+                    UpdateColumnVisibilityFromFlags();
+                    RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowInfo("Failed to apply language: " + ex.Message, InfoBarSeverity.Error);
             }
         }
     }

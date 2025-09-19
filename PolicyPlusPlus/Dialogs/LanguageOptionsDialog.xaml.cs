@@ -26,6 +26,26 @@ namespace PolicyPlusPlus.Dialogs
             SecondLanguageSelector.IsEnabled = SecondLangEnabled.IsChecked == true;
         }
 
+        private static string? TryResolvePrefix(string requested, DirectoryInfo[] dirs)
+        {
+            if (string.IsNullOrWhiteSpace(requested))
+                return null;
+            // exact
+            var exact = dirs.FirstOrDefault(d => d.Name.Equals(requested, System.StringComparison.OrdinalIgnoreCase));
+            if (exact != null)
+                return exact.Name;
+            // prefix before '-'
+            var prefix = requested.Split('-')[0];
+            var prefMatch = dirs.FirstOrDefault(d => d.Name.StartsWith(prefix + "-", System.StringComparison.OrdinalIgnoreCase));
+            if (prefMatch != null)
+                return prefMatch.Name;
+            // startswith requested (e.g. user saved short, directories long, or vice versa)
+            var starts = dirs.FirstOrDefault(d => d.Name.StartsWith(requested, System.StringComparison.OrdinalIgnoreCase));
+            if (starts != null)
+                return starts.Name;
+            return null;
+        }
+
         public void Initialize(string admxFolderPath, string? currentLanguage)
         {
             LanguageSelector.Items.Clear();
@@ -37,7 +57,7 @@ namespace PolicyPlusPlus.Dialogs
                 .Select(d => new DirectoryInfo(d))
                 .Where(di => di.EnumerateFiles("*.adml", SearchOption.TopDirectoryOnly).Any())
                 .OrderBy(di => di.Name, System.StringComparer.InvariantCultureIgnoreCase)
-                .ToList();
+                .ToArray();
             ComboBoxItem? toSelect = null;
             ComboBoxItem? secondDefault = null;
             foreach (var di in dirs)
@@ -56,18 +76,46 @@ namespace PolicyPlusPlus.Dialogs
                 LanguageSelector.Items.Add(item);
                 var item2 = new ComboBoxItem { Content = display, Tag = code };
                 SecondLanguageSelector.Items.Add(item2);
-                if (
-                    !string.IsNullOrEmpty(currentLanguage)
-                    && code.Equals(currentLanguage, System.StringComparison.OrdinalIgnoreCase)
-                )
+                if (!string.IsNullOrEmpty(currentLanguage) && code.Equals(currentLanguage, System.StringComparison.OrdinalIgnoreCase))
                     toSelect = item;
                 if (code.Equals("en-US", System.StringComparison.OrdinalIgnoreCase))
                     secondDefault = item2;
             }
+
+            // Attempt prefix resolution if direct exact not found
+            if (toSelect == null && !string.IsNullOrEmpty(currentLanguage))
+            {
+                var resolved = TryResolvePrefix(currentLanguage, dirs);
+                if (!string.IsNullOrEmpty(resolved))
+                {
+                    foreach (ComboBoxItem cbi in LanguageSelector.Items)
+                    {
+                        if ((cbi.Tag?.ToString() ?? "").Equals(resolved, System.StringComparison.OrdinalIgnoreCase))
+                        {
+                            toSelect = cbi;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // If still not found, add placeholder so user sees their saved (now-missing) code instead of silently switching
+            if (toSelect == null && !string.IsNullOrEmpty(currentLanguage))
+            {
+                var placeholder = new ComboBoxItem
+                {
+                    Content = currentLanguage + " (missing)",
+                    Tag = currentLanguage,
+                };
+                LanguageSelector.Items.Insert(0, placeholder);
+                toSelect = placeholder;
+            }
+
             if (toSelect != null)
                 LanguageSelector.SelectedItem = toSelect;
             else if (LanguageSelector.Items.Count > 0)
                 LanguageSelector.SelectedIndex = 0;
+
             if (secondDefault != null)
                 SecondLanguageSelector.SelectedItem = secondDefault;
             else if (SecondLanguageSelector.Items.Count > 0)
@@ -79,26 +127,46 @@ namespace PolicyPlusPlus.Dialogs
             SecondLanguageSelector.IsEnabled = SecondLangEnabled.IsChecked == true;
             if (!string.IsNullOrEmpty(s.SecondLanguage))
             {
+                ComboBoxItem? secondSelect = null;
                 foreach (ComboBoxItem cbi in SecondLanguageSelector.Items)
                 {
-                    if (
-                        (cbi.Tag?.ToString() ?? "").Equals(
-                            s.SecondLanguage,
-                            System.StringComparison.OrdinalIgnoreCase
-                        )
-                    )
+                    if ((cbi.Tag?.ToString() ?? "").Equals(s.SecondLanguage, System.StringComparison.OrdinalIgnoreCase))
                     {
-                        SecondLanguageSelector.SelectedItem = cbi;
+                        secondSelect = cbi;
                         break;
                     }
                 }
+                if (secondSelect == null)
+                {
+                    // Try prefix resolution for second language as well
+                    var secondResolved = TryResolvePrefix(s.SecondLanguage, dirs);
+                    if (!string.IsNullOrEmpty(secondResolved))
+                    {
+                        foreach (ComboBoxItem cbi in SecondLanguageSelector.Items)
+                        {
+                            if ((cbi.Tag?.ToString() ?? "").Equals(secondResolved, System.StringComparison.OrdinalIgnoreCase))
+                            {
+                                secondSelect = cbi;
+                                break;
+                            }
+                        }
+                    }
+                    if (secondSelect == null)
+                    {
+                        var missingSecond = new ComboBoxItem
+                        {
+                            Content = s.SecondLanguage + " (missing)",
+                            Tag = s.SecondLanguage,
+                        };
+                        SecondLanguageSelector.Items.Insert(0, missingSecond);
+                        secondSelect = missingSecond;
+                    }
+                }
+                SecondLanguageSelector.SelectedItem = secondSelect;
             }
         }
 
-        private void LanguageOptionsDialog_PrimaryButtonClick(
-            ContentDialog sender,
-            ContentDialogButtonClickEventArgs args
-        )
+        private void LanguageOptionsDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
         {
             var sel = LanguageSelector.SelectedItem as ComboBoxItem;
             SelectedLanguage = sel?.Tag?.ToString();
