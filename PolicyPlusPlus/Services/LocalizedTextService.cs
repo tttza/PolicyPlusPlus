@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using PolicyPlusCore.Admx;
@@ -33,7 +34,6 @@ namespace PolicyPlusPlus.Services
                         if (File.Exists(candidate))
                             return AdmlFile.Load(candidate);
 
-                        // Try exact (case-insensitive) folder match
                         foreach (
                             var sub in Directory.Exists(dir)
                                 ? Directory.EnumerateDirectories(dir)
@@ -90,7 +90,6 @@ namespace PolicyPlusPlus.Services
                 );
                 if (File.Exists(candidate))
                     return AdmlFile.Load(candidate);
-                // Try culture-near folders
                 var langPrefix = lang.Split('-')[0];
                 foreach (
                     var sub in Directory.Exists(dir)
@@ -114,14 +113,68 @@ namespace PolicyPlusPlus.Services
             return null;
         }
 
-        public static bool HasAdml(PolicyPlusPolicy p, string lang)
+        private static string[] GetFallbackLanguages(string requested)
+        {
+            var ui = CultureInfo.CurrentUICulture?.Name ?? string.Empty;
+            // Ordered preference sequence.
+            string[] baseList = [requested, ui, "en-US", "en"];
+            return baseList
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        private static AdmlFile? LoadAdmlWithFallback(string admxPath, string requested)
+        {
+            foreach (var lang in GetFallbackLanguages(requested))
+            {
+                var adml = LoadAdml(admxPath, lang);
+                if (adml != null)
+                    return adml;
+            }
+            return null;
+        }
+
+        private static AdmlFile? LoadAdmlForPrefixWithFallback(
+            string admxPath,
+            string requested,
+            string prefix
+        )
+        {
+            foreach (var lang in GetFallbackLanguages(requested))
+            {
+                var adml = LoadAdmlForPrefix(admxPath, lang, prefix) ?? LoadAdml(admxPath, lang);
+                if (adml != null)
+                    return adml;
+            }
+            return null;
+        }
+
+        private static AdmlFile? LoadCore(string admxPath, string lang, bool useFallback) =>
+            useFallback ? LoadAdmlWithFallback(admxPath, lang) : LoadAdml(admxPath, lang);
+
+        private static AdmlFile? LoadCoreForPrefix(
+            string admxPath,
+            string lang,
+            string prefix,
+            bool useFallback
+        ) =>
+            useFallback
+                ? LoadAdmlForPrefixWithFallback(admxPath, lang, prefix)
+                : (LoadAdmlForPrefix(admxPath, lang, prefix) ?? LoadAdml(admxPath, lang));
+
+        public static bool HasAdml(PolicyPlusPolicy p, string lang) =>
+            HasAdml(p, lang, useFallback: true);
+
+        public static bool HasAdml(PolicyPlusPolicy p, string lang, bool useFallback)
         {
             try
             {
                 var src = p?.RawPolicy?.DefinedIn?.SourceFile ?? string.Empty;
                 if (string.IsNullOrEmpty(src))
                     return false;
-                return LoadAdml(src, lang) != null;
+                return LoadCore(src, lang, useFallback) != null;
             }
             catch
             {
@@ -129,18 +182,27 @@ namespace PolicyPlusPlus.Services
             }
         }
 
-        public static string ResolveString(string? displayCode, AdmxFile admx, string lang)
+        public static string ResolveString(string? displayCode, AdmxFile admx, string lang) =>
+            ResolveString(displayCode, admx, lang, useFallback: true);
+
+        public static string ResolveString(
+            string? displayCode,
+            AdmxFile admx,
+            string lang,
+            bool useFallback
+        )
         {
             if (string.IsNullOrEmpty(displayCode))
                 return string.Empty;
 
             string id = displayCode;
             AdmlFile? adml = null;
+            var src = admx?.SourceFile ?? string.Empty;
 
             if (displayCode.StartsWith("$(string.", StringComparison.Ordinal))
             {
                 id = displayCode.Substring(9, displayCode.Length - 10);
-                adml = LoadAdml(admx?.SourceFile ?? string.Empty, lang);
+                adml = LoadCore(src, lang, useFallback);
             }
             else if (displayCode.Contains(":"))
             {
@@ -148,12 +210,12 @@ namespace PolicyPlusPlus.Services
                 var prefix = parts[0];
                 id = parts[1];
                 adml =
-                    LoadAdmlForPrefix(admx?.SourceFile ?? string.Empty, lang, prefix)
-                    ?? LoadAdml(admx?.SourceFile ?? string.Empty, lang);
+                    LoadCoreForPrefix(src, lang, prefix, useFallback)
+                    ?? LoadCore(src, lang, useFallback);
             }
             else
             {
-                adml = LoadAdml(admx?.SourceFile ?? string.Empty, lang);
+                adml = LoadCore(src, lang, useFallback);
             }
 
             if (
@@ -163,20 +225,22 @@ namespace PolicyPlusPlus.Services
             )
                 return val!;
 
-            // Fallback: if original was a literal (not $(string.)), return it unchanged
             if (!displayCode.StartsWith("$(string.", StringComparison.Ordinal))
                 return displayCode;
             return string.Empty;
         }
 
-        public static string GetPolicyNameIn(PolicyPlusPolicy p, string lang)
+        public static string GetPolicyNameIn(PolicyPlusPolicy p, string lang) =>
+            GetPolicyNameIn(p, lang, useFallback: true);
+
+        public static string GetPolicyNameIn(PolicyPlusPolicy p, string lang, bool useFallback)
         {
             try
             {
                 var raw = p?.RawPolicy;
                 if (raw is null)
                     return string.Empty;
-                return ResolveString(raw.DisplayCode, raw.DefinedIn, lang);
+                return ResolveString(raw.DisplayCode, raw.DefinedIn, lang, useFallback);
             }
             catch
             {
@@ -184,14 +248,17 @@ namespace PolicyPlusPlus.Services
             }
         }
 
-        public static string GetCategoryNameIn(PolicyPlusCategory c, string lang)
+        public static string GetCategoryNameIn(PolicyPlusCategory c, string lang) =>
+            GetCategoryNameIn(c, lang, useFallback: true);
+
+        public static string GetCategoryNameIn(PolicyPlusCategory c, string lang, bool useFallback)
         {
             try
             {
                 var raw = c?.RawCategory;
                 if (raw is null)
                     return string.Empty;
-                return ResolveString(raw.DisplayCode, raw.DefinedIn, lang);
+                return ResolveString(raw.DisplayCode, raw.DefinedIn, lang, useFallback);
             }
             catch
             {
@@ -199,14 +266,21 @@ namespace PolicyPlusPlus.Services
             }
         }
 
-        public static string GetPolicyExplanationIn(PolicyPlusPolicy p, string lang)
+        public static string GetPolicyExplanationIn(PolicyPlusPolicy p, string lang) =>
+            GetPolicyExplanationIn(p, lang, useFallback: true);
+
+        public static string GetPolicyExplanationIn(
+            PolicyPlusPolicy p,
+            string lang,
+            bool useFallback
+        )
         {
             try
             {
                 var raw = p?.RawPolicy;
                 if (raw is null)
                     return string.Empty;
-                return ResolveString(raw.ExplainCode, raw.DefinedIn, lang);
+                return ResolveString(raw.ExplainCode, raw.DefinedIn, lang, useFallback);
             }
             catch
             {
@@ -214,14 +288,21 @@ namespace PolicyPlusPlus.Services
             }
         }
 
-        public static string GetSupportedDisplayIn(PolicyPlusPolicy p, string lang)
+        public static string GetSupportedDisplayIn(PolicyPlusPolicy p, string lang) =>
+            GetSupportedDisplayIn(p, lang, useFallback: true);
+
+        public static string GetSupportedDisplayIn(
+            PolicyPlusPolicy p,
+            string lang,
+            bool useFallback
+        )
         {
             try
             {
                 var raw = p?.RawPolicy;
                 if (raw is null)
                     return string.Empty;
-                return ResolveString(raw.SupportedCode, raw.DefinedIn, lang);
+                return ResolveString(raw.SupportedCode, raw.DefinedIn, lang, useFallback);
             }
             catch
             {
@@ -229,7 +310,14 @@ namespace PolicyPlusPlus.Services
             }
         }
 
-        public static Presentation? GetPresentationIn(PolicyPlusPolicy p, string lang)
+        public static Presentation? GetPresentationIn(PolicyPlusPolicy p, string lang) =>
+            GetPresentationIn(p, lang, useFallback: true);
+
+        public static Presentation? GetPresentationIn(
+            PolicyPlusPolicy p,
+            string lang,
+            bool useFallback
+        )
         {
             try
             {
@@ -237,17 +325,15 @@ namespace PolicyPlusPlus.Services
                 if (raw == null)
                     return null;
                 var src = raw.DefinedIn != null ? raw.DefinedIn.SourceFile : string.Empty;
-                var adml = LoadAdml(src, lang);
+                var adml = LoadCore(src, lang, useFallback);
                 if (adml?.PresentationTable == null || adml.PresentationTable.Count == 0)
                     return null;
 
-                // Primary key: PresentationID from ADMX
                 var presId = raw.PresentationID;
                 if (!string.IsNullOrEmpty(presId))
                 {
                     if (adml.PresentationTable.TryGetValue(presId, out var presExact))
                         return presExact;
-                    // Case-insensitive match
                     var ci = adml.PresentationTable.FirstOrDefault(kv =>
                         string.Equals(kv.Key, presId, StringComparison.OrdinalIgnoreCase)
                     );
@@ -255,7 +341,6 @@ namespace PolicyPlusPlus.Services
                         return ci.Value;
                 }
 
-                // Secondary: current presentation name
                 var currentName = p.Presentation?.Name;
                 if (!string.IsNullOrEmpty(currentName))
                 {

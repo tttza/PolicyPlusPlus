@@ -267,7 +267,7 @@ namespace PolicyPlusPlus.Models
                     stack.Push(cur.DisplayName);
                 cur = cur.Parent;
             }
-            return string.Join(" / ", stack); // delimiter
+            return string.Join(" / ", stack);
         }
 
         private PolicyListRow(
@@ -372,7 +372,8 @@ namespace PolicyPlusPlus.Models
                 if (!(s.SecondLanguageEnabled ?? false))
                     return string.Empty;
                 var lang = s.SecondLanguage ?? "en-US";
-                return LocalizedTextService.GetPolicyNameIn(p, lang);
+                // Second language must not fallback; missing entries stay empty.
+                return LocalizedTextService.GetPolicyNameIn(p, lang, useFallback: false);
             }
             catch
             {
@@ -386,7 +387,7 @@ namespace PolicyPlusPlus.Models
             IPolicySource? user
         )
         {
-            string categoryName = p.Category?.DisplayName ?? string.Empty; // immediate
+            string categoryName = p.Category?.DisplayName ?? string.Empty;
             string topCategoryName = ComputeTopCategory(p.Category);
             string fullPath = ComputeFullPath(p.Category);
             string appliesText = AppliesOf(p);
