@@ -1,3 +1,4 @@
+using System.Globalization;
 using PolicyPlusCore.Core;
 
 namespace PolicyPlusCore.Admx
@@ -109,11 +110,117 @@ namespace PolicyPlusCore.Admx
                 }
             }
 
+            // OS UI culture fallback (full name then its base) before en-US/en.
+            if (!File.Exists(admlPath))
+            {
+                try
+                {
+                    var osFull = CultureInfo.CurrentUICulture.Name; // e.g. ja-JP
+                    if (
+                        !string.IsNullOrEmpty(osFull)
+                        && !osFull.Equals(LanguageCode, StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        string osFullPath = Path.ChangeExtension(
+                            AdmxPath.Replace(fileTitle, osFull + @"\" + fileTitle),
+                            "adml"
+                        );
+                        if (File.Exists(osFullPath))
+                            admlPath = osFullPath;
+                    }
+                }
+                catch { }
+            }
+            if (!File.Exists(admlPath))
+            {
+                try
+                {
+                    var osBase = CultureInfo.CurrentUICulture.Name.Split('-')[0];
+                    var specifiedBase = LanguageCode.Split('-')[0];
+                    if (
+                        !string.IsNullOrEmpty(osBase)
+                        && !osBase.Equals(specifiedBase, StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        var admxDir = Path.GetDirectoryName(AdmxPath);
+                        if (!string.IsNullOrEmpty(admxDir))
+                        {
+                            foreach (var sub in Directory.EnumerateDirectories(admxDir))
+                            {
+                                var title = Path.GetFileName(sub);
+                                if ((title.Split('-')[0] ?? "") == osBase)
+                                {
+                                    var baseCandidate = Path.ChangeExtension(
+                                        Path.Combine(sub, fileTitle),
+                                        "adml"
+                                    );
+                                    if (File.Exists(baseCandidate))
+                                    {
+                                        admlPath = baseCandidate;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+
             if (!File.Exists(admlPath))
                 admlPath = Path.ChangeExtension(
                     AdmxPath.Replace(fileTitle, @"en-US\" + fileTitle),
                     "adml"
                 );
+
+            // Additional fallback: plain 'en' folder (some distributions may ship this)
+            if (!File.Exists(admlPath))
+            {
+                try
+                {
+                    var rootDir = Path.GetDirectoryName(AdmxPath);
+                    if (!string.IsNullOrEmpty(rootDir))
+                    {
+                        var enDir = Path.Combine(rootDir, "en");
+                        if (Directory.Exists(enDir))
+                        {
+                            var enCandidate = Path.ChangeExtension(
+                                Path.Combine(enDir, fileTitle),
+                                "adml"
+                            );
+                            if (File.Exists(enCandidate))
+                                admlPath = enCandidate;
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            if (!File.Exists(admlPath))
+            {
+                // Last resort: scan any subfolder for a matching .adml regardless of culture to avoid losing the policy definitions entirely.
+                try
+                {
+                    var rootDir = Path.GetDirectoryName(AdmxPath);
+                    if (!string.IsNullOrEmpty(rootDir))
+                    {
+                        foreach (var sub in Directory.EnumerateDirectories(rootDir))
+                        {
+                            var candidate = Path.ChangeExtension(
+                                Path.Combine(sub, fileTitle),
+                                "adml"
+                            );
+                            if (File.Exists(candidate))
+                            {
+                                admlPath = candidate;
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+
             if (!File.Exists(admlPath))
                 return new AdmxLoadFailure(AdmxLoadFailType.NoAdml, AdmxPath);
             // Load the ADML

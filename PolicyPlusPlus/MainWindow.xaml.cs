@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -16,6 +17,7 @@ using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
 using PolicyPlusCore.Utilities;
 using PolicyPlusPlus.Dialogs;
+using PolicyPlusPlus.Logging;
 using PolicyPlusPlus.Models;
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Utils;
@@ -23,7 +25,6 @@ using PolicyPlusPlus.ViewModels;
 using PolicyPlusPlus.Windows;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
-using System.Globalization;
 
 namespace PolicyPlusPlus
 {
@@ -887,13 +888,15 @@ namespace PolicyPlusPlus
                         string DescLower
                     )
                 >? searchIndexByIdLocal = null;
+                List<AdmxLoadFailure>? failuresLocal = null; // capture detailed failures
 
                 await System.Threading.Tasks.Task.Run(() =>
                 {
                     var b = new AdmxBundle();
                     var fails = b.LoadFolder(path, langPref);
+                    failuresLocal = fails.ToList();
                     newBundle = b;
-                    failureCount = fails.Count();
+                    failureCount = failuresLocal.Count;
                     allLocal = b.Policies.Values.ToList();
                     totalGroupsLocal = allLocal
                         .GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
@@ -939,9 +942,191 @@ namespace PolicyPlusPlus
                     }
                 });
 
+                // Log detailed failures (if any)
+                if (failuresLocal != null && failuresLocal.Count > 0)
+                {
+                    foreach (var f in failuresLocal)
+                    {
+                        Log.Warn(
+                            "ADMXLoad",
+                            $"Failure ({f.FailType}) {f.AdmxPath}: {f.Info}".TrimEnd()
+                        );
+                    }
+                }
+
                 _bundle = newBundle;
                 _allPolicies = allLocal ?? new List<PolicyPlusPolicy>();
                 _totalGroupCount = totalGroupsLocal;
+
+                // Attempt secondary bundle loads (en-US, en) to fill missing strings when primary ADML not present.
+                try
+                {
+                    bool needFill = _allPolicies.Any(p => string.IsNullOrWhiteSpace(p.DisplayName));
+                    if (needFill)
+                    {
+                        var fallbackLangsOrdered = new List<string>();
+                        if (!string.Equals(langPref, "en-US", StringComparison.OrdinalIgnoreCase))
+                            fallbackLangsOrdered.Add("en-US");
+                        if (!string.Equals(langPref, "en", StringComparison.OrdinalIgnoreCase))
+                            fallbackLangsOrdered.Add("en");
+                        foreach (var fb in fallbackLangsOrdered)
+                        {
+                            var fbBundle = new AdmxBundle();
+                            try
+                            {
+                                var fbFails = fbBundle.LoadFolder(path, fb); // we only need strings
+                                foreach (var ff in fbFails)
+                                    Log.Warn(
+                                        "ADMXLoadFallback",
+                                        $"Fallback load ({fb}) failure {ff.FailType} {ff.AdmxPath}: {ff.Info}".TrimEnd()
+                                    );
+                            }
+                            catch
+                            {
+                                continue;
+                            }
+                            foreach (var p in _allPolicies)
+                            {
+                                if (!string.IsNullOrWhiteSpace(p.DisplayName))
+                                    continue;
+                                if (!fbBundle.Policies.TryGetValue(p.UniqueID, out var fbPol))
+                                    continue;
+                                if (!string.IsNullOrWhiteSpace(fbPol.DisplayName))
+                                    p.DisplayName = fbPol.DisplayName;
+                                if (
+                                    string.IsNullOrWhiteSpace(p.DisplayExplanation)
+                                    && !string.IsNullOrWhiteSpace(fbPol.DisplayExplanation)
+                                )
+                                    p.DisplayExplanation = fbPol.DisplayExplanation;
+                                if (
+                                    p.SupportedOn != null
+                                    && fbPol.SupportedOn != null
+                                    && string.IsNullOrWhiteSpace(p.SupportedOn.DisplayName)
+                                    && !string.IsNullOrWhiteSpace(fbPol.SupportedOn.DisplayName)
+                                )
+                                    p.SupportedOn.DisplayName = fbPol.SupportedOn.DisplayName;
+                            }
+                            if (!_allPolicies.Any(x => string.IsNullOrWhiteSpace(x.DisplayName)))
+                                break;
+                        }
+                    }
+                }
+                catch { }
+
+                // Fill missing localized strings using fallback languages so policies remain visible.
+                try
+                {
+                    var fallbackLangs = new[]
+                    {
+                        langPref,
+                        CultureInfo.CurrentUICulture.Name,
+                        "en-US",
+                        "en",
+                    }
+                        .Where(l => !string.IsNullOrWhiteSpace(l))
+                        .Select(l => l.Trim())
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToArray();
+                    bool anyChanged = false;
+                    foreach (var p in _allPolicies)
+                    {
+                        bool missingName = string.IsNullOrWhiteSpace(p.DisplayName);
+                        bool missingExplain = string.IsNullOrWhiteSpace(p.DisplayExplanation);
+                        bool missingSupported =
+                            p.SupportedOn != null
+                            && string.IsNullOrWhiteSpace(p.SupportedOn.DisplayName);
+                        if (!(missingName || missingExplain || missingSupported))
+                            continue;
+                        foreach (var fl in fallbackLangs)
+                        {
+                            if (missingName)
+                            {
+                                var name = LocalizedTextService.GetPolicyNameIn(
+                                    p,
+                                    fl,
+                                    useFallback: true
+                                );
+                                if (!string.IsNullOrWhiteSpace(name))
+                                {
+                                    p.DisplayName = name;
+                                    missingName = false;
+                                    anyChanged = true;
+                                }
+                            }
+                            if (missingExplain)
+                            {
+                                var exTxt = LocalizedTextService.GetPolicyExplanationIn(
+                                    p,
+                                    fl,
+                                    useFallback: true
+                                );
+                                if (!string.IsNullOrWhiteSpace(exTxt))
+                                {
+                                    p.DisplayExplanation = exTxt;
+                                    missingExplain = false;
+                                    anyChanged = true;
+                                }
+                            }
+                            if (missingSupported && p.SupportedOn != null)
+                            {
+                                var sup = LocalizedTextService.GetSupportedDisplayIn(
+                                    p,
+                                    fl,
+                                    useFallback: true
+                                );
+                                if (!string.IsNullOrWhiteSpace(sup))
+                                {
+                                    p.SupportedOn.DisplayName = sup;
+                                    missingSupported = false;
+                                    anyChanged = true;
+                                }
+                            }
+                            if (!(missingName || missingExplain || missingSupported))
+                                break;
+                        }
+                        if (string.IsNullOrWhiteSpace(p.DisplayName))
+                        {
+                            p.DisplayName = p.UniqueID; // ensure visibility
+                            anyChanged = true;
+                        }
+                    }
+                    if (anyChanged)
+                    {
+                        try
+                        {
+                            searchIndexLocal = _allPolicies
+                                .Select(pp =>
+                                    (
+                                        Policy: pp,
+                                        NameLower: SearchText.Normalize(pp.DisplayName),
+                                        SecondLower: useSecond
+                                            ? SearchText.Normalize(
+                                                LocalizedTextService.GetPolicyNameIn(pp, secondLang)
+                                            )
+                                            : string.Empty,
+                                        IdLower: SearchText.Normalize(pp.UniqueID),
+                                        DescLower: SearchText.Normalize(pp.DisplayExplanation)
+                                    )
+                                )
+                                .ToList();
+                            searchIndexByIdLocal = new Dictionary<
+                                string,
+                                (
+                                    PolicyPlusPolicy Policy,
+                                    string NameLower,
+                                    string SecondLower,
+                                    string IdLower,
+                                    string DescLower
+                                )
+                            >(StringComparer.OrdinalIgnoreCase);
+                            foreach (var e in searchIndexLocal)
+                                searchIndexByIdLocal[e.Policy.UniqueID] = e;
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+
                 RegistryReferenceCache.Clear();
                 _descIndexBuilt = false; // force rebuild or load from cache for description index
 
@@ -996,10 +1181,33 @@ namespace PolicyPlusPlus
                 BuildCategoryTreeAsync();
 
                 if (failureCount > 0)
-                    ShowInfo(
-                        $"ADMX load completed with {failureCount} issue(s).",
-                        InfoBarSeverity.Warning
-                    );
+                {
+                    // Summarize failure types for user
+                    try
+                    {
+                        var groups = failuresLocal!
+                            .GroupBy(f => f.FailType)
+                            .Select(g => $"{g.Key}:{g.Count()}")
+                            .ToList();
+                        string detail = string.Join(", ", groups);
+                        var firstFew = failuresLocal!
+                            .Take(4)
+                            .Select(f => Path.GetFileName(f.AdmxPath) + "(" + f.FailType + ")")
+                            .ToList();
+                        string sample = string.Join("; ", firstFew);
+                        ShowInfo(
+                            $"ADMX load completed with {failureCount} issue(s) [{detail}] e.g. {sample}.",
+                            InfoBarSeverity.Warning
+                        );
+                    }
+                    catch
+                    {
+                        ShowInfo(
+                            $"ADMX load completed with {failureCount} issue(s).",
+                            InfoBarSeverity.Warning
+                        );
+                    }
+                }
                 else
                     ShowInfo($"ADMX loaded ({langPref}).");
 
@@ -1662,7 +1870,7 @@ namespace PolicyPlusPlus
                     if (cb.IsChecked == true)
                     {
                         PolicySourceManager.Instance.Switch(PolicySourceDescriptor.TempPol());
-                      }
+                    }
                     else if (PolicySourceManager.Instance.Mode == PolicySourceMode.TempPol)
                     {
                         PolicySourceManager.Instance.Switch(PolicySourceDescriptor.LocalGpo());
@@ -1684,9 +1892,11 @@ namespace PolicyPlusPlus
                 var settings = SettingsService.Instance.LoadSettings();
                 string currentLang = settings.Language ?? CultureInfo.CurrentUICulture.Name;
                 string? admxPathCandidate = settings.AdmxSourcePath; // may be null
-                string admxPath = !string.IsNullOrWhiteSpace(admxPathCandidate) && Directory.Exists(admxPathCandidate)
-                    ? admxPathCandidate
-                    : Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
+                string admxPath =
+                    !string.IsNullOrWhiteSpace(admxPathCandidate)
+                    && Directory.Exists(admxPathCandidate)
+                        ? admxPathCandidate
+                        : Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
                 var dlg = new LanguageOptionsDialog();
                 if (Content is FrameworkElement fe)
                     dlg.XamlRoot = fe.XamlRoot;
@@ -1698,13 +1908,23 @@ namespace PolicyPlusPlus
                 // Determine changes
                 string? newPrimary = dlg.SelectedLanguage;
                 bool primaryChanged = false;
-                if (!string.IsNullOrWhiteSpace(newPrimary) && !string.Equals(newPrimary, settings.Language, StringComparison.OrdinalIgnoreCase))
+                if (
+                    !string.IsNullOrWhiteSpace(newPrimary)
+                    && !string.Equals(
+                        newPrimary,
+                        settings.Language,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
                 {
                     SettingsService.Instance.UpdateLanguage(newPrimary);
                     primaryChanged = true;
                 }
                 // Even if unchanged, ensure settings reflects selection when previously null.
-                else if (string.IsNullOrWhiteSpace(settings.Language) && !string.IsNullOrWhiteSpace(newPrimary))
+                else if (
+                    string.IsNullOrWhiteSpace(settings.Language)
+                    && !string.IsNullOrWhiteSpace(newPrimary)
+                )
                 {
                     SettingsService.Instance.UpdateLanguage(newPrimary);
                     primaryChanged = true;
@@ -1715,7 +1935,14 @@ namespace PolicyPlusPlus
                 bool afterSecondEnabled = dlg.SecondLanguageEnabled;
                 string? afterSecond = dlg.SelectedSecondLanguage;
                 bool secondEnabledChanged = beforeSecondEnabled != afterSecondEnabled;
-                bool secondLangChanged = afterSecondEnabled && !string.IsNullOrEmpty(afterSecond) && !string.Equals(beforeSecond, afterSecond, StringComparison.OrdinalIgnoreCase);
+                bool secondLangChanged =
+                    afterSecondEnabled
+                    && !string.IsNullOrEmpty(afterSecond)
+                    && !string.Equals(
+                        beforeSecond,
+                        afterSecond,
+                        StringComparison.OrdinalIgnoreCase
+                    );
 
                 SettingsService.Instance.UpdateSecondLanguageEnabled(afterSecondEnabled);
                 if (afterSecondEnabled && !string.IsNullOrEmpty(afterSecond))
@@ -1727,9 +1954,11 @@ namespace PolicyPlusPlus
                 {
                     var updated = SettingsService.Instance.LoadSettings();
                     string? reloadPathCandidate = updated.AdmxSourcePath;
-                    string reloadPath = !string.IsNullOrWhiteSpace(reloadPathCandidate) && Directory.Exists(reloadPathCandidate)
-                        ? reloadPathCandidate
-                        : admxPath;
+                    string reloadPath =
+                        !string.IsNullOrWhiteSpace(reloadPathCandidate)
+                        && Directory.Exists(reloadPathCandidate)
+                            ? reloadPathCandidate
+                            : admxPath;
                     if (Directory.Exists(reloadPath))
                     {
                         await LoadAdmxFolderAsync(reloadPath);
