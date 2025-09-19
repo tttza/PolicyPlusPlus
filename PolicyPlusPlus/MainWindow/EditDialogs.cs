@@ -35,18 +35,12 @@ namespace PolicyPlusPlus
         // Ensures _compSource/_userSource reflect the active PolicySourceManager mode without forcing a switch back to Local GPO.
         private void EnsureSourcesForEdit()
         {
-            var mgr = PolicySourceManager.Instance;
-            if (mgr.Mode == PolicySourceMode.CustomPol || mgr.Mode == PolicySourceMode.TempPol)
+            var ctx = PolicySourceAccessor.Acquire();
+            _compSource = ctx.Comp;
+            _userSource = ctx.User;
+            if (ctx.FallbackUsed && ctx.Mode != PolicySourceMode.CustomPol && ctx.Mode != PolicySourceMode.TempPol)
             {
-                _compSource = mgr.CompSource;
-                _userSource = mgr.UserSource;
-                return;
-            }
-            if (_compSource == null || _userSource == null)
-            {
-                try { mgr.Switch(PolicySourceDescriptor.LocalGpo()); } catch { }
-                _compSource = mgr.CompSource;
-                _userSource = mgr.UserSource;
+                try { PolicyPlusPlus.Logging.Log.Warn("Edit", "Fallback sources used when opening edit window"); } catch { }
             }
         }
 

@@ -321,28 +321,18 @@ namespace PolicyPlusPlus
             ordered = primary != null ? (descSort ? seq.OrderByDescending(primary).ThenBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList() : seq.OrderBy(primary).ThenBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList()) : seq.OrderBy(p => p.DisplayName).ThenBy(p => p.UniqueID).ToList();
             if (decision.Limit.HasValue && ordered.Count > decision.Limit.Value) ordered = ordered.Take(decision.Limit.Value).ToList();
             _visiblePolicies = ordered.ToList();
+
             bool computeStatesNow = !_navTyping || _visiblePolicies.Count <= LargeResultThreshold;
-            // Always ensure sources once so edit dialog has correct backing sources even if we defer row state computation.
-            try { if (_compSource == null || _userSource == null) EnsureLocalSources(); } catch { }
-            if (computeStatesNow)
-            {
-                try { EnsureLocalSources(); } catch { }
-            }
-            // In CustomPol mode we must always pass non-null sources to rows so that opening the edit dialog immediately reflects actual state.
-            // This avoids the initial Not Configured issue when large result sets defer state computation.
-            var mgr = PolicySourceManager.Instance;
-            bool forceProvideSources = false;
-            try { forceProvideSources = mgr.Mode == PolicySourceMode.CustomPol; } catch { }
-            if (forceProvideSources)
-            {
-                // synchronize backing fields with manager (in case EnsureLocalSources did not switch in this mode)
-                if (_compSource == null) _compSource = mgr.CompSource;
-                if (_userSource == null) _userSource = mgr.UserSource;
-            }
+
+            // Centralized source acquisition; never silently downgrades custom/temp to local.
+            var srcCtx = PolicySourceAccessor.Acquire();
+            _compSource = srcCtx.Comp; _userSource = srcCtx.User; // keep backing fields current
+            bool forceProvideSources = srcCtx.Mode == PolicySourceMode.CustomPol; // always expose for edit immediacy
 
             _rowByPolicyId.Clear();
-            var compSrc = (computeStatesNow || forceProvideSources) ? _compSource : null; 
+            var compSrc = (computeStatesNow || forceProvideSources) ? _compSource : null;
             var userSrc = (computeStatesNow || forceProvideSources) ? _userSource : null;
+
             var rows = new List<object>();
             try
             {
@@ -350,6 +340,7 @@ namespace PolicyPlusPlus
                     foreach (var child in _selectedCategory.Children.OrderBy(c => c.DisplayName)) rows.Add(PolicyListRow.FromCategory(child));
             }
             catch (Exception ex) { Log.Warn("MainFilter", "Subcategory header bind failed", ex); }
+
             rows.AddRange(ordered.Select(p => (object)PolicyListRow.FromPolicy(p, compSrc, userSrc)));
             foreach (var obj in rows) if (obj is PolicyListRow r && r.Policy != null) _rowByPolicyId[r.Policy.UniqueID] = r;
             PolicyList.ItemsSource = rows; PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies"; TryRestoreSelectionAsync(rows); MaybePushCurrentState();
