@@ -108,6 +108,8 @@ namespace PolicyPlusPlus.Services
                 )
             );
             bool isNew = existing == null;
+            Dictionary<string, object>? effectiveOptionsClone;
+            PolicyState effectiveState;
             if (existing != null)
             {
                 existing.Action = change.Action;
@@ -117,6 +119,8 @@ namespace PolicyPlusPlus.Services
                 existing.Options = CloneOptions(change.Options);
                 existing.PolicyName = change.PolicyName;
                 existing.CreatedAt = DateTime.Now;
+                effectiveOptionsClone = CloneOptions(existing.Options);
+                effectiveState = existing.DesiredState;
                 var idx = Pending.IndexOf(existing);
                 if (idx >= 0)
                 {
@@ -131,6 +135,8 @@ namespace PolicyPlusPlus.Services
             else
             {
                 change.Options = CloneOptions(change.Options);
+                effectiveOptionsClone = CloneOptions(change.Options);
+                effectiveState = change.DesiredState;
                 Pending.Add(change);
                 Log.Info(
                     "PendingChanges",
@@ -140,8 +146,13 @@ namespace PolicyPlusPlus.Services
             UpdateDirtyFlag();
             try
             {
-                // Treat update as an added delta so listeners refresh row; removed set empty.
                 EventHub.PublishPendingQueueDelta(new[] { pid }, Array.Empty<string>());
+            }
+            catch { }
+            // Broadcast fine-grained change for live UI sync (QuickEdit <-> EditSetting)
+            try
+            {
+                EventHub.PublishPolicyChangeQueued(pid, scope, effectiveState, effectiveOptionsClone);
             }
             catch { }
         }

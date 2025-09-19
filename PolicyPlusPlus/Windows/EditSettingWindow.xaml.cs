@@ -43,6 +43,11 @@ namespace PolicyPlusPlus.Windows
             PolicyState State,
             Dictionary<string, object>? Options
         )>? SavedDetail; // added
+        public event EventHandler<(
+            string Scope,
+            PolicyState State,
+            Dictionary<string, object>? Options
+        )>? LiveChanged; // fires on in-place modifications before saving
 
         private static readonly Regex UrlRegex = new Regex(
             @"(https?://[^\s]+)",
@@ -53,6 +58,7 @@ namespace PolicyPlusPlus.Windows
         private ToggleButton? _secondLangToggle;
 
         private PolicyState _lastLoadedState = PolicyState.Unknown; // track last loaded state to know when enabling fresh
+        private bool _suppressLiveChange; // suppress LiveChanged during initialization / overlay
 
         public EditSettingWindow()
         {
@@ -100,6 +106,9 @@ namespace PolicyPlusPlus.Windows
             ApplyBtn.Click += ApplyBtn_Click;
             OkBtn.Click += OkBtn_Click;
             CancelBtn.Click += (s, e) => Close();
+
+            try { EventHub.PolicyChangeQueued += OnExternalPolicyChangeQueued; } catch { }
+            Closed += (s, e) => { try { EventHub.PolicyChangeQueued -= OnExternalPolicyChangeQueued; } catch { } };
         }
 
         // Overlay current QuickEditRow (unsaved) values into this window (both scopes).
@@ -117,6 +126,7 @@ namespace PolicyPlusPlus.Windows
                 return;
             try
             {
+                _suppressLiveChange = true;
                 void ApplyScope(bool isUser)
                 {
                     _currentSection = isUser ? AdmxPolicySection.User : AdmxPolicySection.Machine;
@@ -137,7 +147,6 @@ namespace PolicyPlusPlus.Windows
                     if (state != QuickEditState.Enabled)
                         return;
 
-                    // Map each option element dynamically (new multi-element model)
                     foreach (var opt in row.OptionElements)
                     {
                         if (!_elementControls.TryGetValue(opt.Id, out var ctrl) || ctrl == null)
@@ -206,6 +215,11 @@ namespace PolicyPlusPlus.Windows
                 }
             }
             catch { }
+            finally
+            {
+                _suppressLiveChange = false;
+                RaiseLiveChanged();
+            }
         }
 
         private void SecondLangToggle_Checked(object sender, RoutedEventArgs e)
@@ -224,7 +238,6 @@ namespace PolicyPlusPlus.Windows
                 string lang = s.SecondLanguage ?? "en-US";
                 bool useSecond = _useSecondLanguage && enabled;
 
-                // Title and explanation
                 if (useSecond)
                 {
                     SettingTitle.Text = LocalizedTextService.GetPolicyNameIn(_policy, lang);
@@ -236,7 +249,6 @@ namespace PolicyPlusPlus.Windows
                     SetExplanationText(_policy.DisplayExplanation ?? string.Empty);
                 }
 
-                // Supported on
                 if (useSecond)
                 {
                     var sup = LocalizedTextService.GetSupportedDisplayIn(_policy, lang);
@@ -251,7 +263,6 @@ namespace PolicyPlusPlus.Windows
                         : _policy.SupportedOn.DisplayName;
                 }
 
-                // Update tooltip to reflect current language code
                 try
                 {
                     if (_secondLangToggle != null)
@@ -264,7 +275,6 @@ namespace PolicyPlusPlus.Windows
                 }
                 catch { }
 
-                // Rebuild option labels/controls for second language when toggled
                 if (_policy.RawPolicy.Elements != null)
                 {
                     var pres = useSecond
@@ -411,8 +421,6 @@ namespace PolicyPlusPlus.Windows
                 : policy.SupportedOn.DisplayName;
             SetExplanationText(policy.DisplayExplanation ?? string.Empty);
 
-            // Determine initial section selection. If the policy supports both and the Computer scope is already configured,
-            // prefer Computer regardless of the requested section.
             var initialSection = section;
             try
             {
@@ -437,6 +445,7 @@ namespace PolicyPlusPlus.Windows
             LoadStateFromSource();
             ApplyPendingOverlayFromQueue();
             StateRadio_Checked(this, null!);
+            RaiseLiveChanged();
 
             WindowHelpers.BringToFront(this);
             var tmr = this.DispatcherQueue.CreateTimer();
@@ -467,7 +476,6 @@ namespace PolicyPlusPlus.Windows
                 if (change == null)
                     return;
 
-                // Apply desired state
                 if (change.DesiredState == PolicyState.Enabled)
                 {
                     OptEnabled.IsChecked = true;
@@ -481,7 +489,6 @@ namespace PolicyPlusPlus.Windows
                     OptNotConfigured.IsChecked = true;
                 }
 
-                // Apply option values if any
                 if (change.Options != null)
                     ApplyOptionsToControls(change.Options);
             }
@@ -604,23 +611,23 @@ namespace PolicyPlusPlus.Windows
 
         private void BuildElements()
         {
+            _suppressLiveChange = true;
             _elementControls.Clear();
             OptionsPanel.Children.Clear();
             if (_policy.RawPolicy.Elements is null || _policy.Presentation is null)
             {
+                _suppressLiveChange = false;
                 return;
             }
 
-            // Decide language context
             var settings = SettingsService.Instance.LoadSettings();
             bool useSecond = _useSecondLanguage && (settings.SecondLanguageEnabled ?? false);
             string lang = useSecond
                 ? (settings.SecondLanguage ?? "en-US")
                 : (settings.Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name);
 
-            // Choose presentation (localized when available)
             Presentation presentationToUse = _policy.Presentation;
-            Presentation? originalPresentation = _policy.Presentation; // keep reference
+            Presentation? originalPresentation = _policy.Presentation;
             try
             {
                 if (useSecond)
@@ -628,7 +635,6 @@ namespace PolicyPlusPlus.Windows
                     var lp = LocalizedTextService.GetPresentationIn(_policy, lang);
                     if (lp != null)
                     {
-                        // Merge missing numeric defaults: some localized ADMLs omit defaultValue so it becomes 0.
                         try
                         {
                             foreach (var locElem in lp.Elements)
@@ -651,7 +657,7 @@ namespace PolicyPlusPlus.Windows
                                         ) as NumericBoxPresentationElement;
                                     if (baseElem != null && baseElem.DefaultValue > 0)
                                     {
-                                        nbLoc.DefaultValue = baseElem.DefaultValue; // copy over intended default (e.g., 1400)
+                                        nbLoc.DefaultValue = baseElem.DefaultValue;
                                     }
                                 }
                             }
@@ -698,7 +704,6 @@ namespace PolicyPlusPlus.Windows
                     {
                         var p = (NumericBoxPresentationElement)pres;
                         var e = (DecimalPolicyElement)elemDict[pres.ID];
-                        // Always use NumberBox; show spin buttons so it is visually distinct from TextBox
                         var nb = new NumberBox
                         {
                             Minimum = e.Minimum,
@@ -712,6 +717,7 @@ namespace PolicyPlusPlus.Windows
                             nb.SmallChange = 1; // sensible default
                         control = nb;
                         label = ResolvePresString(pres, p.Label);
+                        nb.ValueChanged += (_, __) => RaiseLiveChanged();
                         break;
                     }
                     case "textBox":
@@ -725,6 +731,7 @@ namespace PolicyPlusPlus.Windows
                         };
                         control = tb;
                         label = ResolvePresString(pres, p.Label);
+                        tb.TextChanged += (_, __) => RaiseLiveChanged();
                         break;
                     }
                     case "checkBox":
@@ -734,6 +741,8 @@ namespace PolicyPlusPlus.Windows
                         var cb = new CheckBox { Content = text, IsChecked = p.DefaultState };
                         control = cb;
                         label = string.Empty;
+                        cb.Checked += (_, __) => RaiseLiveChanged();
+                        cb.Unchecked += (_, __) => RaiseLiveChanged();
                         break;
                     }
                     case "comboBox":
@@ -741,7 +750,6 @@ namespace PolicyPlusPlus.Windows
                         var p = (ComboBoxPresentationElement)pres;
                         var e = (TextPolicyElement)elemDict[pres.ID];
                         var acb = new AutoSuggestBox { Text = p.DefaultText ?? string.Empty };
-                        // Suggestions may be in ADML; attempt to resolve each if they look like IDs
                         var list = new List<string>();
                         foreach (var s in p.Suggestions)
                         {
@@ -755,6 +763,7 @@ namespace PolicyPlusPlus.Windows
                         acb.ItemsSource = list;
                         control = acb;
                         label = ResolvePresString(pres, p.Label);
+                        acb.TextChanged += (_, __) => RaiseLiveChanged();
                         break;
                     }
                     case "dropdownList":
@@ -806,6 +815,7 @@ namespace PolicyPlusPlus.Windows
                             if (cb.SelectedIndex < 0 && cb.Items.Count > 0)
                                 cb.SelectedIndex = selectedIdx;
                         };
+                        cb.SelectionChanged += (_, __) => RaiseLiveChanged();
                         control = cb;
                         break;
                     }
@@ -840,6 +850,7 @@ namespace PolicyPlusPlus.Windows
                                 btn.Tag = win.Result;
                                 if (win.CountText != null)
                                     btn.Content = win.CountText;
+                                RaiseLiveChanged();
                             };
                             win.Activate();
                             WindowHelpers.BringToFront(win);
@@ -873,6 +884,7 @@ namespace PolicyPlusPlus.Windows
                         };
                         control = tb;
                         label = ResolvePresString(pres, p.Label);
+                        tb.TextChanged += (_, __) => RaiseLiveChanged();
                         break;
                     }
                 }
@@ -892,6 +904,7 @@ namespace PolicyPlusPlus.Windows
                     _elementControls[pres.ID] = control;
                 }
             }
+            _suppressLiveChange = false;
         }
 
         private void LoadStateFromSource()
@@ -952,7 +965,6 @@ namespace PolicyPlusPlus.Windows
                     }
                 }
 
-                // Not Enabled OR no stored value: presentation defaults
                 if (elem.ElementType == "decimal" && ctrl is NumberBox nb2)
                 {
                     var def = GetDecimalDefault(elem.ID);
@@ -969,9 +981,7 @@ namespace PolicyPlusPlus.Windows
                 }
                 else if (elem is BooleanPolicyElement && ctrl is CheckBox ch2)
                 {
-                    // BuildElements already applied the presentation default; nothing further if already set.
-                    // (We keep this branch for symmetry and potential future logic.)
-                    _ = ch2; // no-op
+                    _ = ch2;
                 }
             }
 
@@ -1042,7 +1052,7 @@ namespace PolicyPlusPlus.Windows
                     if (value < de.Minimum)
                         value = de.Minimum;
                     if (value > de.Maximum)
-                        value = de.Maximum; // fixed typo
+                        value = de.Maximum;
                     return (uint)Math.Round(value);
                 }
             }
@@ -1164,30 +1174,16 @@ namespace PolicyPlusPlus.Windows
 
             try
             {
-                // If a PendingChangesWindow is open, refresh it proactively
-                if (App.Window is MainWindow main)
-                {
-                    foreach (
-                        var field in typeof(App).GetFields(
-                            System.Reflection.BindingFlags.NonPublic
-                                | System.Reflection.BindingFlags.Static
-                        )
-                    )
-                    {
-                        // no direct list, but we can find a window by type among current windows is not straightforward in WinUI
-                    }
-                }
-            }
-            catch { }
-
-            Saved?.Invoke(this, EventArgs.Empty);
-            try
-            {
-                var scope = (_currentSection == AdmxPolicySection.User) ? "User" : "Computer";
-                SavedDetail?.Invoke(this, (scope, desired, options));
+                Saved?.Invoke(this, EventArgs.Empty);
                 try
                 {
-                    EventHub.PublishPolicyChangeQueued(_policy.UniqueID, scope, desired, options);
+                    var scope = (_currentSection == AdmxPolicySection.User) ? "User" : "Computer";
+                    SavedDetail?.Invoke(this, (scope, desired, options));
+                    try
+                    {
+                        EventHub.PublishPolicyChangeQueued(_policy.UniqueID, scope, desired, options);
+                    }
+                    catch { }
                 }
                 catch { }
             }
@@ -1212,7 +1208,6 @@ namespace PolicyPlusPlus.Windows
                 }
 
                 var longSb = new StringBuilder();
-                // Omit policy name and scope per request
                 longSb.AppendLine("Registry values:");
                 foreach (var kv in PolicyProcessing.GetReferencedRegistryValues(_policy))
                 {
@@ -1244,25 +1239,20 @@ namespace PolicyPlusPlus.Windows
                 return s;
             if (v is bool b)
                 return b ? "true" : "false";
-
-            // Common list and map shapes coming from CollectOptions
             if (v is IEnumerable<string> strList)
                 return string.Join(", ", strList);
             if (v is IEnumerable<KeyValuePair<string, string>> kvList)
                 return string.Join(", ", kvList.Select(kv => kv.Key + "=" + kv.Value));
-
             if (v is Array arr)
             {
                 var items = arr.Cast<object>().Select(o => Convert.ToString(o) ?? string.Empty);
                 return string.Join(", ", items);
             }
-
             if (v is System.Collections.IEnumerable en && v is not string)
             {
                 var items = en.Cast<object>().Select(FormatOpt);
                 return string.Join(", ", items);
             }
-
             return Convert.ToString(v) ?? string.Empty;
         }
 
@@ -1272,7 +1262,18 @@ namespace PolicyPlusPlus.Windows
                 SectionSelector.SelectedIndex == 1
                     ? AdmxPolicySection.User
                     : AdmxPolicySection.Machine;
-            LoadStateFromSource();
+            _suppressLiveChange = true;
+            try
+            {
+                LoadStateFromSource();
+                // Overlay pending (unsaved) changes for the newly selected scope
+                ApplyPendingOverlayFromQueue();
+            }
+            finally
+            {
+                _suppressLiveChange = false;
+            }
+            RaiseLiveChanged();
         }
 
         private void StateRadio_Checked(object sender, RoutedEventArgs e)
@@ -1280,7 +1281,6 @@ namespace PolicyPlusPlus.Windows
             bool enableOptions = OptEnabled.IsChecked == true;
             ToggleChildrenEnabled(OptionsPanel, enableOptions);
 
-            // If user just switched to Enabled from a non-enabled state, populate default values for decimal boxes that have not been set yet.
             if (enableOptions && _lastLoadedState != PolicyState.Enabled)
             {
                 try
@@ -1290,7 +1290,7 @@ namespace PolicyPlusPlus.Windows
                     foreach (var elem in _policy.RawPolicy.Elements ?? new List<PolicyElement>())
                     {
                         if (existing.ContainsKey(elem.ID))
-                            continue; // already had a value
+                            continue;
                         if (_elementControls.TryGetValue(elem.ID, out var ctrl))
                         {
                             if (elem.ElementType == "decimal" && ctrl is NumberBox nb)
@@ -1313,6 +1313,7 @@ namespace PolicyPlusPlus.Windows
                 }
                 catch { }
             }
+            RaiseLiveChanged();
         }
 
         private static void ToggleChildrenEnabled(Panel panel, bool enabled)
@@ -1357,7 +1358,6 @@ namespace PolicyPlusPlus.Windows
 
         private void ApplyBtn_Click(object sender, RoutedEventArgs e)
         {
-            // Validate required text elements when enabling
             if (OptEnabled.IsChecked == true && !ValidateRequiredElements())
             {
                 try
@@ -1493,6 +1493,64 @@ namespace PolicyPlusPlus.Windows
                 Log.Warn("EditSetting", "ValidateRequiredElements failed", ex);
             }
             return true;
+        }
+
+        private void RaiseLiveChanged()
+        {
+            if (_suppressLiveChange)
+                return;
+            try
+            {
+                var scope = (_currentSection == AdmxPolicySection.User) ? "User" : "Computer";
+                PolicyState state = PolicyState.NotConfigured;
+                if (OptEnabled.IsChecked == true)
+                    state = PolicyState.Enabled;
+                else if (OptDisabled.IsChecked == true)
+                    state = PolicyState.Disabled;
+                Dictionary<string, object>? options = null;
+                if (state == PolicyState.Enabled)
+                    options = CollectOptions();
+                LiveChanged?.Invoke(this, (scope, state, options));
+            }
+            catch { }
+        }
+
+        private void OnExternalPolicyChangeQueued(string policyId, string scope, PolicyState state, Dictionary<string, object>? options)
+        {
+            try
+            {
+                if (_policy == null)
+                    return;
+                if (!string.Equals(policyId, _policy.UniqueID, StringComparison.OrdinalIgnoreCase))
+                    return;
+                bool isUser = string.Equals(scope, "User", StringComparison.OrdinalIgnoreCase);
+                bool isComputer = string.Equals(scope, "Computer", StringComparison.OrdinalIgnoreCase);
+                if (!isUser && !isComputer)
+                    return;
+                var targetSection = isUser ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+                _suppressLiveChange = true;
+                try
+                {
+                    if (_currentSection == targetSection)
+                    {
+                        if (state == PolicyState.Enabled)
+                            OptEnabled.IsChecked = true;
+                        else if (state == PolicyState.Disabled)
+                            OptDisabled.IsChecked = true;
+                        else
+                            OptNotConfigured.IsChecked = true;
+                        StateRadio_Checked(this, new RoutedEventArgs());
+                        if (state == PolicyState.Enabled && options != null)
+                            ApplyOptionsToControls(options);
+                    }
+                }
+                finally
+                {
+                    _suppressLiveChange = false;
+                    RaiseLiveChanged();
+                }
+            }
+            catch { }
         }
     }
 }

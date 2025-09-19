@@ -157,6 +157,18 @@ namespace PolicyPlusPlus.Windows
                 _grid.Rows.Clear();
                 foreach (var p in policies)
                     _grid.Rows.Add(new QuickEditRow(p, bundle, comp, user));
+                // Apply pending overlay right after creation so pre-existing queued list / other option changes appear.
+                if (_compSource != null && _userSource != null)
+                {
+                    foreach (var r in _grid.Rows)
+                    {
+                        try
+                        {
+                            EffectivePolicyStateService.Instance.ApplyEffectiveToRow(r, _compSource, _userSource);
+                        }
+                        catch { }
+                    }
+                }
                 try
                 {
                     if (_grid.Columns != null)
@@ -193,17 +205,12 @@ namespace PolicyPlusPlus.Windows
                 return;
             }
             var row = _grid?.Rows.FirstOrDefault(r =>
-                r.Policy.UniqueID.Equals(policyId, System.StringComparison.OrdinalIgnoreCase)
+                string.Equals(r.Policy.UniqueID, policyId, StringComparison.OrdinalIgnoreCase)
             );
             var policy = row?.Policy;
             if (policy == null || _compSource == null || _userSource == null)
                 return;
 
-            // Decide initial section with priority:
-            // 1. Pending change scope (Computer preferred when both pending)
-            // 2. Configured state in Computer
-            // 3. Configured state in User
-            // 4. Default to Computer (Machine)
             AdmxPolicySection initialSection;
             if (policy.RawPolicy.Section == AdmxPolicySection.Both)
             {
@@ -271,11 +278,14 @@ namespace PolicyPlusPlus.Windows
                 null,
                 null
             );
-            // Overlay current (possibly unsaved) QuickEdit row values
             try
             {
                 if (row != null)
+                {
+                    // ensure row reflects effective state first
+                    EffectivePolicyStateService.Instance.ApplyEffectiveToRow(row, _compSource, _userSource);
                     win.OverlayFromQuickEdit(row);
+                }
             }
             catch { }
             win.Saved += (_, __) =>
@@ -296,6 +306,19 @@ namespace PolicyPlusPlus.Windows
                     }
                 }
                 catch { }
+            };
+            win.LiveChanged += (_, detail) =>
+            {
+                try
+                {
+                    if (row == null)
+                        return;
+                    row.ApplyExternal(detail.Scope, detail.State, detail.Options);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn("QuickEdit", "LiveChanged propagation failed", ex);
+                }
             };
             win.Closed += (_, __) =>
             {
@@ -361,9 +384,8 @@ namespace PolicyPlusPlus.Windows
                 return;
             try
             {
-                // Recreate a temp row to read fresh state then adopt silently
-                var fresh = new QuickEditRow(row.Policy, _bundle!, _compSource, _userSource);
-                row.AdoptState(fresh);
+                // Instead of raw source only, apply effective state (base + pending overlay)
+                EffectivePolicyStateService.Instance.ApplyEffectiveToRow(row, _compSource, _userSource);
             }
             catch (Exception ex)
             {
