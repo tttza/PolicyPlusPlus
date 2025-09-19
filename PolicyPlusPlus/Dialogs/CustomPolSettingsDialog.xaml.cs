@@ -233,5 +233,27 @@ namespace PolicyPlusPlus.Dialogs
             }
             catch { }
         }
+
+        private void ComputerPathBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (ComputerPathBox == null)
+                return;
+            var text = ComputerPathBox.Text;
+            if (string.IsNullOrWhiteSpace(text) || text == "(not set)")
+                ComputerPolPath = null;
+            else
+                ComputerPolPath = text.Trim();
+        }
+
+        private void UserPathBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (UserPathBox == null)
+                return;
+            var text = UserPathBox.Text;
+            if (string.IsNullOrWhiteSpace(text) || text == "(not set)")
+                UserPolPath = null;
+            else
+                UserPolPath = text.Trim();
+        }
     }
 }

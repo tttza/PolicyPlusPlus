@@ -57,10 +57,13 @@
       <TextBox
         Grid.Column="1"
         x:Name="ComputerPathBox"
-        IsReadOnly="True"
         Text="(not set)"
-        MinWidth="560"
         Margin="0,0,2,0"
+        TextChanged="ComputerPathBox_TextChanged"
+        ScrollViewer.HorizontalScrollBarVisibility="Auto"
+        TextWrapping="NoWrap"
+        Padding="8,2,8,10"
+        MinHeight="34"
       />
       <Button
         Grid.Column="2"
@@ -99,10 +102,13 @@
       <TextBox
         Grid.Column="1"
         x:Name="UserPathBox"
-        IsReadOnly="True"
         Text="(not set)"
-        MinWidth="560"
         Margin="0,0,2,0"
+        TextChanged="UserPathBox_TextChanged"
+        ScrollViewer.HorizontalScrollBarVisibility="Auto"
+        TextWrapping="NoWrap"
+        Padding="8,2,8,10"
+        MinHeight="34"
       />
       <Button
         Grid.Column="2"
