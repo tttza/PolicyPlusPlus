@@ -122,7 +122,7 @@ namespace PolicyPlusPlus
         private void TryRestoreSelectionAsync(System.Collections.Generic.IList<object> items)
         {
             if (PolicyList == null) return;
-            if (string.IsNullOrEmpty(_savedSelectedPolicyId)) { SetDetails(null); RestoreScrollPosition(); return; }
+            if (string.IsNullOrEmpty(_savedSelectedPolicyId)) { /* no selected policy to restore */ RestoreScrollPosition(); return; }
 
             _ = DispatcherQueue.TryEnqueue(async () =>
             {
@@ -166,7 +166,7 @@ namespace PolicyPlusPlus
                     }
                     else
                     {
-                        SetDetails(null);
+                        // No matching item; just restore scroll position
                         RestoreScrollPosition();
                     }
                 }

@@ -32,22 +32,10 @@ namespace PolicyPlusPlus
             return new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, section == AdmxPolicySection.User);
         }
 
-        // Ensures _compSource/_userSource reflect the active PolicySourceManager mode without forcing a switch back to Local GPO.
-        private void EnsureSourcesForEdit()
-        {
-            var ctx = PolicySourceAccessor.Acquire();
-            _compSource = ctx.Comp;
-            _userSource = ctx.User;
-            if (ctx.FallbackUsed && ctx.Mode != PolicySourceMode.CustomPol && ctx.Mode != PolicySourceMode.TempPol)
-            {
-                try { PolicyPlusPlus.Logging.Log.Warn("Edit", "Fallback sources used when opening edit window"); } catch { }
-            }
-        }
-
         private async Task OpenEditDialogForPolicyAsync(PolicyPlusPolicy representative, bool ensureFront = false)
         {
             if (_bundle is null) return;
-            EnsureSourcesForEdit();
+            var ctx = PolicySourceAccessor.Acquire();
 
             var displayName = representative.DisplayName;
             _nameGroups.TryGetValue(displayName, out var groupList);
@@ -70,7 +58,7 @@ namespace PolicyPlusPlus
             var win = new EditSettingWindow();
             win.Initialize(targetPolicy,
                 initialSection,
-                _bundle!, _compSource!, _userSource!,
+                _bundle!, ctx.Comp, ctx.User,
                 compLoader, userLoader,
                 _compComments, _userComments);
             win.Saved += (s, e) => MarkDirty();
@@ -87,7 +75,7 @@ namespace PolicyPlusPlus
         public async Task OpenEditDialogForPolicyIdAsync(string policyId, bool ensureFront)
         {
             if (_bundle == null) return;
-            EnsureSourcesForEdit();
+            var ctx = PolicySourceAccessor.Acquire();
             PolicyPlusPolicy? representative = _allPolicies.FirstOrDefault(p => p.UniqueID == policyId);
             if (representative == null)
             {
@@ -100,7 +88,7 @@ namespace PolicyPlusPlus
         public async Task OpenEditDialogForPolicyIdAsync(string policyId, AdmxPolicySection preferredSection, bool ensureFront)
         {
             if (_bundle == null) return;
-            EnsureSourcesForEdit();
+            var ctx = PolicySourceAccessor.Acquire();
 
             if (!_bundle.Policies.TryGetValue(policyId, out var policy))
             {
@@ -112,7 +100,7 @@ namespace PolicyPlusPlus
             var userLoader = CreateLoaderFor(AdmxPolicySection.User);
 
             var win = new EditSettingWindow();
-            win.Initialize(policy, preferredSection, _bundle!, _compSource!, _userSource!, compLoader, userLoader, _compComments, _userComments);
+            win.Initialize(policy, preferredSection, _bundle!, ctx.Comp, ctx.User, compLoader, userLoader, _compComments, _userComments);
             win.Saved += (s, e) => MarkDirty();
             win.Activate();
             WindowHelpers.BringToFront(win);

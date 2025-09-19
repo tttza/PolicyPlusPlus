@@ -31,8 +31,6 @@ namespace PolicyPlusPlus
                     {
                         PendingChangesService.Instance.Applied(pending);
                         PolicySourceManager.Instance.Refresh();
-                        _compSource = PolicySourceManager.Instance.CompSource;
-                        _userSource = PolicySourceManager.Instance.UserSource;
                         try
                         {
                             var affected = pending.Select(p => p.PolicyId).Distinct(StringComparer.OrdinalIgnoreCase).ToList();

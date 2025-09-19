@@ -131,37 +131,6 @@ namespace PolicyPlusPlus
             return -1000;
         }
 
-        private List<string> BuildSuggestions(string q, HashSet<string> allowed)
-        {
-            var qLower = SearchText.Normalize(q);
-            var bestByName = new Dictionary<string, (int score, string name)>(StringComparer.OrdinalIgnoreCase);
-            bool smallSubset = allowed.Count > 0 && allowed.Count < (_allPolicies.Count / 2);
-            void Consider((PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower) e)
-            {
-                if (!allowed.Contains(e.Policy.UniqueID)) return;
-                int score = 0;
-                if (!string.IsNullOrEmpty(qLower))
-                {
-                    int nameScore = ScoreMatch(e.NameLower, qLower);
-                    int secondScore = string.IsNullOrEmpty(e.SecondLower) ? -1000 : ScoreMatch(e.SecondLower, qLower);
-                    int idScore = ScoreMatch(e.IdLower, qLower);
-                    int descScore = _searchInDescription ? ScoreMatch(e.DescLower, qLower) : -1000;
-                    if (nameScore <= -1000 && secondScore <= -1000 && idScore <= -1000 && descScore <= -1000) return;
-                    score += Math.Max(0, Math.Max(nameScore, secondScore)) * 3;
-                    score += Math.Max(0, idScore) * 2;
-                    score += Math.Max(0, descScore);
-                }
-                score += SearchRankingService.GetBoost(e.Policy.UniqueID);
-                var name = e.Policy.DisplayName ?? string.Empty; if (string.IsNullOrEmpty(name)) name = e.Policy.UniqueID;
-                if (bestByName.TryGetValue(name, out var cur)) { if (score > cur.score) bestByName[name] = (score, name); }
-                else bestByName[name] = (score, name);
-            }
-            if (smallSubset) foreach (var id in allowed) if (_searchIndexById.TryGetValue(id, out var entry)) Consider(entry); else foreach (var e in _searchIndex) Consider(e);
-            if (bestByName.Count == 0 && string.IsNullOrEmpty(qLower))
-            { foreach (var id in allowed) if (_searchIndexById.TryGetValue(id, out var e)) { int score = SearchRankingService.GetBoost(id); var name = e.Policy.DisplayName ?? string.Empty; if (bestByName.TryGetValue(name, out var cur)) { if (score > cur.score) bestByName[name] = (score, name); } else bestByName[name] = (score, name); } }
-            return bestByName.Values.OrderByDescending(v => v.score).ThenBy(v => v.name, StringComparer.InvariantCultureIgnoreCase).Take(10).Select(v => v.name).ToList();
-        }
-
         private void SearchClearBtn_Tapped(object sender, TappedRoutedEventArgs e)
         { try { _navTyping = false; if (SearchBox != null) SearchBox.Text = string.Empty; UpdateSearchClearButtonVisibility(); RunAsyncFilterAndBind(); UpdateNavButtons(); e.Handled = true; } catch (Exception ex) { Log.Warn("MainSearch", "SearchClearBtn_Tapped failed", ex); } }
 

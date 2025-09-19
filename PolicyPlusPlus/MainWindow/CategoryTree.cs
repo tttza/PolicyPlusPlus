@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using PolicyPlusCore.Core;
+using PolicyPlusPlus.Services; // for PolicySourceAccessor
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -138,7 +139,6 @@ namespace PolicyPlusPlus
             return null;
         }
 
-        // Background-friendly category building
         private sealed class CatNodeData
         {
             public required PolicyPlusCategory Cat { get; init; }
@@ -373,8 +373,8 @@ namespace PolicyPlusPlus
         {
             try
             {
-                EnsureLocalSources();
-                return ViewModels.CategoryVisibilityEvaluator.IsCategoryVisible(cat, _allPolicies, _appliesFilter, _configuredOnly, _compSource, _userSource);
+                var ctx = PolicySourceAccessor.Acquire();
+                return ViewModels.CategoryVisibilityEvaluator.IsCategoryVisible(cat, _allPolicies, _appliesFilter, _configuredOnly, ctx.Comp, ctx.User);
             }
             catch { return true; }
         }

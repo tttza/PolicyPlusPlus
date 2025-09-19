@@ -70,8 +70,6 @@ namespace PolicyPlusPlus
                     {
                         // Restore previous non-custom mode.
                         RestorePreviousMode();
-                        _compSource = PolicySourceManager.Instance.CompSource;
-                        _userSource = PolicySourceManager.Instance.UserSource;
                         RefreshVisibleRows();
                         return;
                     }
@@ -182,26 +180,23 @@ namespace PolicyPlusPlus
 
             if (!desired)
             {
-                if (vm.Active) vm.Active = false; // triggers restore via state changed
+                if (vm.Active) vm.Active = false;
                 else
                 {
                     RestorePreviousMode();
-                    _compSource = PolicySourceManager.Instance.CompSource; _userSource = PolicySourceManager.Instance.UserSource;
                     RefreshVisibleRows();
                 }
                 return;
             }
 
-            // desired == true
             if (!IsCustomPolConfigured(vm))
             {
-                // Keep toggle visually checked for now; will revert if user cancels.
                 PromptConfigureCustomPol(vm);
                 return;
             }
 
             if (!vm.Active)
-                vm.Active = true; // state change handler will switch sources
+                vm.Active = true;
             else
                 SwitchToCustomPol();
         }
@@ -268,8 +263,6 @@ namespace PolicyPlusPlus
                 string? compPath = vm.EnableComputer ? vm.ComputerPath : null;
                 string? userPath = vm.EnableUser ? vm.UserPath : null;
                 if (!PolicySourceManager.Instance.SwitchCustomPolFlexible(compPath, userPath, allowSingle: true)) return;
-                _compSource = PolicySourceManager.Instance.CompSource;
-                _userSource = PolicySourceManager.Instance.UserSource;
                 var sb = GetSearchBox(); RebindConsideringAsync(sb?.Text ?? string.Empty);
                 if (notify) UpdateSourceStatusUnified();
             }

@@ -43,8 +43,6 @@ namespace PolicyPlusPlus
         private int _totalGroupCount = 0;
         private AdmxPolicySection _appliesFilter = AdmxPolicySection.Both;
         private PolicyPlusCategory? _selectedCategory = null;
-        private IPolicySource? _compSource;
-        private IPolicySource? _userSource;
         private bool _configuredOnly = false;
         private bool _limitUnfilteredTo1000 = true;
         private bool _bookmarksOnly = false; // persisted flag (moved from Filtering.cs usage)
@@ -52,8 +50,6 @@ namespace PolicyPlusPlus
 
         // Exposed for internal consumers instead of reflection (read-only to preserve invariants)
         internal AdmxBundle? Bundle => _bundle;
-        internal IPolicySource? CompSource => _compSource;
-        internal IPolicySource? UserSource => _userSource;
 
         // Map of visible policy id -> row for fast partial updates
         private readonly Dictionary<string, PolicyListRow> _rowByPolicyId = new(StringComparer.OrdinalIgnoreCase);
@@ -100,7 +96,7 @@ namespace PolicyPlusPlus
             this.InitializeComponent();
             try { ObserveSearchOptions(); } catch { }
             try { TryHookCustomPolVm(); } catch { }
-            try { PolicySourceManager.Instance.SourcesChanged += (_, __) => { _compSource = PolicySourceManager.Instance.CompSource; _userSource = PolicySourceManager.Instance.UserSource; RefreshVisibleRows(); var li = RootGrid?.FindName("SourceStatusText") as TextBlock; if (li != null) li.Text = SourceStatusFormatter.FormatStatus(); }; } catch { }
+            try { PolicySourceManager.Instance.SourcesChanged += (_, __) => { RefreshVisibleRows(); var li = RootGrid?.FindName("SourceStatusText") as TextBlock; if (li != null) li.Text = SourceStatusFormatter.FormatStatus(); }; } catch { }
             HookPendingQueue();
             TryInitCustomTitleBar();
             RootGrid.Loaded += (s, e) =>
@@ -467,11 +463,12 @@ namespace PolicyPlusPlus
         {
             try
             {
+                var ctx = PolicySourceAccessor.Acquire();
                 foreach (var id in ids)
                 {
                     if (_rowByPolicyId.TryGetValue(id, out var row))
                     {
-                        row.RefreshStateFromSourcesAndPending(_compSource, _userSource);
+                        row.RefreshStateFromSourcesAndPending(ctx.Comp, ctx.User);
                     }
                 }
             }
@@ -482,13 +479,14 @@ namespace PolicyPlusPlus
         {
             try
             {
+                var ctx = PolicySourceAccessor.Acquire();
                 if (PolicyList?.ItemsSource is System.Collections.IEnumerable seq)
                 {
                     foreach (var it in seq)
                     {
                         if (it is PolicyListRow row)
                         {
-                            row.RefreshStateFromSourcesAndPending(_compSource, _userSource);
+                            row.RefreshStateFromSourcesAndPending(ctx.Comp, ctx.User);
                         }
                     }
                 }
@@ -675,49 +673,7 @@ namespace PolicyPlusPlus
             UpdateNavButtons();
         }
 
-        private void EnsureLocalSources()
-        {
-            try
-            {
-                var mode = PolicySourceManager.Instance.Mode;
-                if (mode == PolicySourceMode.CustomPol || mode == PolicySourceMode.TempPol)
-                {
-                    _compSource = PolicySourceManager.Instance.CompSource;
-                    _userSource = PolicySourceManager.Instance.UserSource;
-                    return;
-                }
-                PolicySourceManager.Instance.Switch(PolicySourceDescriptor.LocalGpo());
-                _compSource = PolicySourceManager.Instance.CompSource;
-                _userSource = PolicySourceManager.Instance.UserSource;
-                var li = GetLoaderInfo(); if (li != null) li.Text = SourceStatusFormatter.FormatStatus();
-            }
-            catch { }
-        }
-
         private void EnsureTempPolPaths() { /* legacy no-op: creation handled inside PolicySourceManager */ }
-
-        private void EnsureLocalSourcesUsingTemp()
-        {
-            try
-            {
-                if (PolicySourceManager.Instance.Mode != PolicySourceMode.TempPol)
-                {
-                    EnsureLocalSources();
-                    return;
-                }
-                if (PolicySourceManager.Instance.Mode == PolicySourceMode.CustomPol)
-                {
-                    _compSource = PolicySourceManager.Instance.CompSource;
-                    _userSource = PolicySourceManager.Instance.UserSource;
-                    return;
-                }
-                PolicySourceManager.Instance.Switch(PolicySourceDescriptor.TempPol());
-                _compSource = PolicySourceManager.Instance.CompSource;
-                _userSource = PolicySourceManager.Instance.UserSource;
-                var li3 = GetLoaderInfo(); if (li3 != null) li3.Text = SourceStatusFormatter.FormatStatus();
-            }
-            catch { }
-        }
 
         private void PolicyList_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
@@ -749,8 +705,9 @@ namespace PolicyPlusPlus
         {
             var row = PolicyList?.SelectedItem as PolicyListRow; var p = row?.Policy; if (p is null || _bundle is null) return;
             try { SearchRankingService.RecordUsage(p.UniqueID); } catch { }
+            var ctx = PolicySourceAccessor.Acquire();
             var win = new DetailPolicyFormattedWindow();
-            win.Initialize(p, _bundle, _compSource ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource(), _userSource ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource(), p.RawPolicy.Section);
+            win.Initialize(p, _bundle, ctx.Comp, ctx.User, p.RawPolicy.Section);
             win.Activate();
         }
 
@@ -999,7 +956,6 @@ namespace PolicyPlusPlus
                                 machinePolNew.Apply(existingComp);
                                 existingComp.Save(compPath);
                             }
-                            EnsureLocalSourcesUsingTemp();
                             ShowInfo(".reg imported to temp POLs (User/Machine).", InfoBarSeverity.Success);
                         }
                         else
@@ -1039,8 +995,6 @@ namespace PolicyPlusPlus
             try
             {
                 PolicySourceManager.Instance.Refresh();
-                _compSource = PolicySourceManager.Instance.CompSource;
-                _userSource = PolicySourceManager.Instance.UserSource;
             }
             catch { }
             try
@@ -1198,8 +1152,6 @@ namespace PolicyPlusPlus
                     {
                         PolicySourceManager.Instance.Switch(PolicySourceDescriptor.LocalGpo());
                     }
-                    _compSource = PolicySourceManager.Instance.CompSource;
-                    _userSource = PolicySourceManager.Instance.UserSource;
                     UpdateSourceStatusUnified();
                     RefreshVisibleRows();
                 }

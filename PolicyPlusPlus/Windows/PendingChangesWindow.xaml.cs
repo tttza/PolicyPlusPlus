@@ -241,19 +241,17 @@ namespace PolicyPlusPlus.Windows
         {
             if ((sender as FrameworkElement)?.DataContext is not PendingChange c)
             {
-                // fallback to selected item if context is missing
                 c = (PendingList?.SelectedItem as PendingChange)!;
                 if (c == null) return;
             }
 
             if (App.Window is not MainWindow main) return;
             var bundle = main.Bundle;
-            var compSrc = main.CompSource;
-            var userSrc = main.UserSource;
+            var ctx = PolicySourceAccessor.Acquire();
             if (bundle == null || !bundle.Policies.TryGetValue(c.PolicyId, out var pol)) return;
             var section = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? AdmxPolicySection.User : AdmxPolicySection.Machine;
             var dlg = new DetailPolicyFormattedWindow();
-            dlg.Initialize(pol, bundle, compSrc ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource(), userSrc ?? new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource(), section);
+            dlg.Initialize(pol, bundle, ctx.Comp, ctx.User, section);
             dlg.Activate();
         }
 

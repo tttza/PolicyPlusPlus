@@ -90,8 +90,6 @@ namespace PolicyPlusPlus
             try
             {
                 PolicySourceManager.Instance.Switch(PolicySourceDescriptor.LocalGpo());
-                _compSource = PolicySourceManager.Instance.CompSource;
-                _userSource = PolicySourceManager.Instance.UserSource;
                 UpdateSourceStatusUnified();
                 RefreshVisibleRows();
                 ShowInfo("Local GPO loaded.");
@@ -138,8 +136,20 @@ namespace PolicyPlusPlus
 
         private void ContextCopyRegExport_Click(object sender, RoutedEventArgs e)
         {
-            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p == null) return; var section = p.RawPolicy.Section switch { AdmxPolicySection.User => AdmxPolicySection.User, AdmxPolicySection.Machine => AdmxPolicySection.Machine, _ => (_appliesFilter == AdmxPolicySection.User ? AdmxPolicySection.User : AdmxPolicySection.Machine) }; var src = section == AdmxPolicySection.User ? _userSource : _compSource; if (src == null) { var loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, section == AdmxPolicySection.User); src = loader.OpenSource(); }
-            var text = RegistryViewFormatter.BuildRegExport(p, src, section) ?? string.Empty; var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy }; dp.SetText(text); Clipboard.SetContent(dp); ShowInfo("Copied .reg export to clipboard.");
+            var p = GetContextMenuPolicy(sender) ?? (PolicyList?.SelectedItem as Models.PolicyListRow)?.Policy; if (p == null) return;
+            var section = p.RawPolicy.Section switch
+            {
+                AdmxPolicySection.User => AdmxPolicySection.User,
+                AdmxPolicySection.Machine => AdmxPolicySection.Machine,
+                _ => (_appliesFilter == AdmxPolicySection.User ? AdmxPolicySection.User : AdmxPolicySection.Machine)
+            };
+            var ctx = PolicySourceAccessor.Acquire();
+            var src = section == AdmxPolicySection.User ? ctx.User : ctx.Comp;
+            var text = RegistryViewFormatter.BuildRegExport(p, src, section) ?? string.Empty;
+            var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
+            dp.SetText(text);
+            Clipboard.SetContent(dp);
+            ShowInfo("Copied .reg export to clipboard.");
         }
 
         private void BtnPendingChanges_Click(object sender, RoutedEventArgs e)
@@ -179,8 +189,6 @@ namespace PolicyPlusPlus
                 {
                     PolicySourceManager.Instance.Switch(PolicySourceDescriptor.LocalGpo());
                 }
-                _compSource = PolicySourceManager.Instance.CompSource;
-                _userSource = PolicySourceManager.Instance.UserSource;
                 UpdateSourceStatusUnified();
                 RefreshVisibleRows();
             }
@@ -224,16 +232,15 @@ namespace PolicyPlusPlus
                 var bookmarkIds = BookmarkService.Instance.ActiveIds;
                 if (bookmarkIds == null || !bookmarkIds.Any())
                 {
-                    // Inform user that Quick Edit requires at least one bookmark.
                     ShowInfo("Add at least one bookmark to use Quick Edit.");
                     return;
                 }
                 var set = new HashSet<string>(bookmarkIds, System.StringComparer.OrdinalIgnoreCase);
                 var policies = _allPolicies.Where(p => set.Contains(p.UniqueID)).ToList();
                 if (policies.Count == 0) return;
-                EnsureLocalSources();
+                var ctx = PolicySourceAccessor.Acquire();
                 var win = new Windows.QuickEditWindow();
-                win.Initialize(_bundle, _compSource, _userSource, policies);
+                win.Initialize(_bundle, ctx.Comp, ctx.User, policies);
                 win.Activate();
                 try { Utils.WindowHelpers.BringToFront(win); } catch { }
             }
@@ -287,6 +294,15 @@ namespace PolicyPlusPlus
                 }
                 catch { }
             }
+        }
+
+        private void PolicyList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                UpdateDetailsFromSelection();
+            }
+            catch { }
         }
     }
 }
