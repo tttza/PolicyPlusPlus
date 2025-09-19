@@ -893,6 +893,17 @@ namespace PolicyPlusPlus
                 await System.Threading.Tasks.Task.Run(() =>
                 {
                     var b = new AdmxBundle();
+                    try
+                    {
+                        bool allowPrimaryFallback = true;
+                        try
+                        {
+                            allowPrimaryFallback = settings.PrimaryLanguageFallbackEnabled ?? true;
+                        }
+                        catch { }
+                        b.EnableLanguageFallback = allowPrimaryFallback; // propagate user preference
+                    }
+                    catch { }
                     var fails = b.LoadFolder(path, langPref);
                     failuresLocal = fails.ToList();
                     newBundle = b;
@@ -962,7 +973,13 @@ namespace PolicyPlusPlus
                 try
                 {
                     bool needFill = _allPolicies.Any(p => string.IsNullOrWhiteSpace(p.DisplayName));
-                    if (needFill)
+                    bool allowPrimaryFallback = true;
+                    try
+                    {
+                        allowPrimaryFallback = settings.PrimaryLanguageFallbackEnabled ?? true;
+                    }
+                    catch { }
+                    if (needFill && allowPrimaryFallback)
                     {
                         var fallbackLangsOrdered = new List<string>();
                         if (!string.Equals(langPref, "en-US", StringComparison.OrdinalIgnoreCase))
@@ -971,7 +988,7 @@ namespace PolicyPlusPlus
                             fallbackLangsOrdered.Add("en");
                         foreach (var fb in fallbackLangsOrdered)
                         {
-                            var fbBundle = new AdmxBundle();
+                            var fbBundle = new AdmxBundle { EnableLanguageFallback = false };
                             try
                             {
                                 var fbFails = fbBundle.LoadFolder(path, fb); // we only need strings
@@ -1016,113 +1033,129 @@ namespace PolicyPlusPlus
                 // Fill missing localized strings using fallback languages so policies remain visible.
                 try
                 {
-                    var fallbackLangs = new[]
+                    var settingsForFallback = settings; // already loaded at method start
+                    bool allowPrimaryFallback = true;
+                    try
                     {
-                        langPref,
-                        CultureInfo.CurrentUICulture.Name,
-                        "en-US",
-                        "en",
+                        allowPrimaryFallback =
+                            settingsForFallback.PrimaryLanguageFallbackEnabled ?? true;
                     }
-                        .Where(l => !string.IsNullOrWhiteSpace(l))
-                        .Select(l => l.Trim())
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToArray();
-                    bool anyChanged = false;
-                    foreach (var p in _allPolicies)
+                    catch { }
+                    if (allowPrimaryFallback)
                     {
-                        bool missingName = string.IsNullOrWhiteSpace(p.DisplayName);
-                        bool missingExplain = string.IsNullOrWhiteSpace(p.DisplayExplanation);
-                        bool missingSupported =
-                            p.SupportedOn != null
-                            && string.IsNullOrWhiteSpace(p.SupportedOn.DisplayName);
-                        if (!(missingName || missingExplain || missingSupported))
-                            continue;
-                        foreach (var fl in fallbackLangs)
+                        var fallbackLangs = new[]
                         {
-                            if (missingName)
-                            {
-                                var name = LocalizedTextService.GetPolicyNameIn(
-                                    p,
-                                    fl,
-                                    useFallback: true
-                                );
-                                if (!string.IsNullOrWhiteSpace(name))
-                                {
-                                    p.DisplayName = name;
-                                    missingName = false;
-                                    anyChanged = true;
-                                }
-                            }
-                            if (missingExplain)
-                            {
-                                var exTxt = LocalizedTextService.GetPolicyExplanationIn(
-                                    p,
-                                    fl,
-                                    useFallback: true
-                                );
-                                if (!string.IsNullOrWhiteSpace(exTxt))
-                                {
-                                    p.DisplayExplanation = exTxt;
-                                    missingExplain = false;
-                                    anyChanged = true;
-                                }
-                            }
-                            if (missingSupported && p.SupportedOn != null)
-                            {
-                                var sup = LocalizedTextService.GetSupportedDisplayIn(
-                                    p,
-                                    fl,
-                                    useFallback: true
-                                );
-                                if (!string.IsNullOrWhiteSpace(sup))
-                                {
-                                    p.SupportedOn.DisplayName = sup;
-                                    missingSupported = false;
-                                    anyChanged = true;
-                                }
-                            }
+                            langPref,
+                            CultureInfo.CurrentUICulture.Name,
+                            "en-US",
+                            "en",
+                        }
+                            .Where(l => !string.IsNullOrWhiteSpace(l))
+                            .Select(l => l.Trim())
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .ToArray();
+                        bool anyChanged = false;
+                        foreach (var p in _allPolicies)
+                        {
+                            bool missingName = string.IsNullOrWhiteSpace(p.DisplayName);
+                            bool missingExplain = string.IsNullOrWhiteSpace(p.DisplayExplanation);
+                            bool missingSupported =
+                                p.SupportedOn != null
+                                && string.IsNullOrWhiteSpace(p.SupportedOn.DisplayName);
                             if (!(missingName || missingExplain || missingSupported))
-                                break;
+                                continue;
+                            foreach (var fl in fallbackLangs)
+                            {
+                                if (missingName)
+                                {
+                                    var name = LocalizedTextService.GetPolicyNameIn(
+                                        p,
+                                        fl,
+                                        useFallback: true
+                                    );
+                                    if (!string.IsNullOrWhiteSpace(name))
+                                    {
+                                        p.DisplayName = name;
+                                        missingName = false;
+                                        anyChanged = true;
+                                    }
+                                }
+                                if (missingExplain)
+                                {
+                                    var exTxt = LocalizedTextService.GetPolicyExplanationIn(
+                                        p,
+                                        fl,
+                                        useFallback: true
+                                    );
+                                    if (!string.IsNullOrWhiteSpace(exTxt))
+                                    {
+                                        p.DisplayExplanation = exTxt;
+                                        missingExplain = false;
+                                        anyChanged = true;
+                                    }
+                                }
+                                if (missingSupported && p.SupportedOn != null)
+                                {
+                                    var sup = LocalizedTextService.GetSupportedDisplayIn(
+                                        p,
+                                        fl,
+                                        useFallback: true
+                                    );
+                                    if (!string.IsNullOrWhiteSpace(sup))
+                                    {
+                                        p.SupportedOn.DisplayName = sup;
+                                        missingSupported = false;
+                                        anyChanged = true;
+                                    }
+                                }
+                                if (!(missingName || missingExplain || missingSupported))
+                                    break;
+                            }
+                            if (!allowPrimaryFallback && string.IsNullOrWhiteSpace(p.DisplayName))
+                                continue;
+                            if (string.IsNullOrWhiteSpace(p.DisplayName))
+                            {
+                                p.DisplayName = p.UniqueID;
+                                anyChanged = true;
+                            }
                         }
-                        if (string.IsNullOrWhiteSpace(p.DisplayName))
+                        if (anyChanged)
                         {
-                            p.DisplayName = p.UniqueID; // ensure visibility
-                            anyChanged = true;
-                        }
-                    }
-                    if (anyChanged)
-                    {
-                        try
-                        {
-                            searchIndexLocal = _allPolicies
-                                .Select(pp =>
-                                    (
-                                        Policy: pp,
-                                        NameLower: SearchText.Normalize(pp.DisplayName),
-                                        SecondLower: useSecond
-                                            ? SearchText.Normalize(
-                                                LocalizedTextService.GetPolicyNameIn(pp, secondLang)
-                                            )
-                                            : string.Empty,
-                                        IdLower: SearchText.Normalize(pp.UniqueID),
-                                        DescLower: SearchText.Normalize(pp.DisplayExplanation)
+                            try
+                            {
+                                searchIndexLocal = _allPolicies
+                                    .Select(pp =>
+                                        (
+                                            Policy: pp,
+                                            NameLower: SearchText.Normalize(pp.DisplayName),
+                                            SecondLower: useSecond
+                                                ? SearchText.Normalize(
+                                                    LocalizedTextService.GetPolicyNameIn(
+                                                        pp,
+                                                        secondLang
+                                                    )
+                                                )
+                                                : string.Empty,
+                                            IdLower: SearchText.Normalize(pp.UniqueID),
+                                            DescLower: SearchText.Normalize(pp.DisplayExplanation)
+                                        )
                                     )
-                                )
-                                .ToList();
-                            searchIndexByIdLocal = new Dictionary<
-                                string,
-                                (
-                                    PolicyPlusPolicy Policy,
-                                    string NameLower,
-                                    string SecondLower,
-                                    string IdLower,
-                                    string DescLower
-                                )
-                            >(StringComparer.OrdinalIgnoreCase);
-                            foreach (var e in searchIndexLocal)
-                                searchIndexByIdLocal[e.Policy.UniqueID] = e;
+                                    .ToList();
+                                searchIndexByIdLocal = new Dictionary<
+                                    string,
+                                    (
+                                        PolicyPlusPolicy Policy,
+                                        string NameLower,
+                                        string SecondLower,
+                                        string IdLower,
+                                        string DescLower
+                                    )
+                                >(StringComparer.OrdinalIgnoreCase);
+                                foreach (var e in searchIndexLocal)
+                                    searchIndexByIdLocal[e.Policy.UniqueID] = e;
+                            }
+                            catch { }
                         }
-                        catch { }
                     }
                 }
                 catch { }
@@ -1891,6 +1924,7 @@ namespace PolicyPlusPlus
             {
                 var settings = SettingsService.Instance.LoadSettings();
                 string currentLang = settings.Language ?? CultureInfo.CurrentUICulture.Name;
+                bool fallbackBefore = settings.PrimaryLanguageFallbackEnabled ?? true; // capture prior fallback state
                 string? admxPathCandidate = settings.AdmxSourcePath; // may be null
                 string admxPath =
                     !string.IsNullOrWhiteSpace(admxPathCandidate)
@@ -1944,13 +1978,17 @@ namespace PolicyPlusPlus
                         StringComparison.OrdinalIgnoreCase
                     );
 
+                // Fallback preference (updated inside dialog already via SettingsService)
+                bool fallbackAfter = dlg.PrimaryFallbackEnabledValue; // dialog property reflects user choice
+                bool fallbackChanged = fallbackBefore != fallbackAfter;
+
                 SettingsService.Instance.UpdateSecondLanguageEnabled(afterSecondEnabled);
                 if (afterSecondEnabled && !string.IsNullOrEmpty(afterSecond))
                 {
                     SettingsService.Instance.UpdateSecondLanguage(afterSecond);
                 }
 
-                if (primaryChanged || secondEnabledChanged || secondLangChanged)
+                if (primaryChanged || secondEnabledChanged || secondLangChanged || fallbackChanged)
                 {
                     var updated = SettingsService.Instance.LoadSettings();
                     string? reloadPathCandidate = updated.AdmxSourcePath;

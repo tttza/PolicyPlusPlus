@@ -11,12 +11,19 @@
 >
   <StackPanel Spacing="12">
     <TextBlock Text="Choose display language for ADMX policy text." />
-    <ComboBox x:Name="LanguageSelector" Width="240" />
+    <ComboBox x:Name="PrimaryLanguageSelector" Width="240" />
+    <CheckBox
+      x:Name="PrimaryFallbackEnabled"
+      Content="Enable fallback for primary language (OS / en / else)"
+    />
     <StackPanel Spacing="8">
-      <CheckBox x:Name="SecondLangEnabled" Content="Enable 2nd language (for alternate texts)" />
+      <CheckBox
+        x:Name="SecondLanguageEnabledChk"
+        Content="Enable 2nd language (for alternate texts)"
+      />
       <StackPanel Orientation="Horizontal" Spacing="8">
         <TextBlock Text="2nd Language:" VerticalAlignment="Center" />
-        <ComboBox x:Name="SecondLanguageSelector" Width="200" IsEnabled="False" />
+        <ComboBox x:Name="SecondLanguageSelectorBox" Width="200" IsEnabled="False" />
       </StackPanel>
     </StackPanel>
   </StackPanel>

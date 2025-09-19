@@ -546,6 +546,9 @@ namespace PolicyPlusPlus.Services
                 s.CustomPolCompPath = null;
                 s.CustomPolUserPath = null;
             });
+
+        public void UpdatePrimaryLanguageFallback(bool enabled) =>
+            Update(s => s.PrimaryLanguageFallbackEnabled = enabled);
     }
 
     public partial class AppSettings
@@ -575,6 +578,7 @@ namespace PolicyPlusPlus.Services
         public string? CustomPolCompPath { get; set; }
         public string? CustomPolUserPath { get; set; }
         public CustomPolSettings? CustomPol { get; set; }
+        public bool? PrimaryLanguageFallbackEnabled { get; set; }
     }
 
     public class CustomPolSettings

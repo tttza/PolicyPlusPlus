@@ -9,38 +9,53 @@ namespace PolicyPlusPlus.Dialogs
 {
     public sealed partial class LanguageOptionsDialog : ContentDialog
     {
+        // Accessors (avoid relying on generated field visibility)
+        private ComboBox PrimaryLanguageSelectorControl =>
+            (ComboBox)FindName("PrimaryLanguageSelector");
+        private CheckBox PrimaryFallbackEnabledControl =>
+            (CheckBox)FindName("PrimaryFallbackEnabled");
+        private CheckBox SecondLanguageEnabledChkControl =>
+            (CheckBox)FindName("SecondLanguageEnabledChk");
+        private ComboBox SecondLanguageSelectorBoxControl =>
+            (ComboBox)FindName("SecondLanguageSelectorBox");
+
         public string? SelectedLanguage { get; private set; }
         public bool SecondLanguageEnabled { get; private set; }
         public string? SelectedSecondLanguage { get; private set; }
+        public bool PrimaryFallbackEnabledValue { get; private set; }
 
         public LanguageOptionsDialog()
         {
             InitializeComponent();
             this.PrimaryButtonClick += LanguageOptionsDialog_PrimaryButtonClick;
-            SecondLangEnabled.Checked += SecondLangEnabled_Checked;
-            SecondLangEnabled.Unchecked += SecondLangEnabled_Checked;
+            SecondLanguageEnabledChkControl.Checked += SecondLangChanged;
+            SecondLanguageEnabledChkControl.Unchecked += SecondLangChanged;
         }
 
-        private void SecondLangEnabled_Checked(object sender, RoutedEventArgs e)
+        private void SecondLangChanged(object sender, RoutedEventArgs e)
         {
-            SecondLanguageSelector.IsEnabled = SecondLangEnabled.IsChecked == true;
+            SecondLanguageSelectorBoxControl.IsEnabled =
+                SecondLanguageEnabledChkControl.IsChecked == true;
         }
 
         private static string? TryResolvePrefix(string requested, DirectoryInfo[] dirs)
         {
             if (string.IsNullOrWhiteSpace(requested))
                 return null;
-            // exact
-            var exact = dirs.FirstOrDefault(d => d.Name.Equals(requested, System.StringComparison.OrdinalIgnoreCase));
+            var exact = dirs.FirstOrDefault(d =>
+                d.Name.Equals(requested, System.StringComparison.OrdinalIgnoreCase)
+            );
             if (exact != null)
                 return exact.Name;
-            // prefix before '-'
             var prefix = requested.Split('-')[0];
-            var prefMatch = dirs.FirstOrDefault(d => d.Name.StartsWith(prefix + "-", System.StringComparison.OrdinalIgnoreCase));
+            var prefMatch = dirs.FirstOrDefault(d =>
+                d.Name.StartsWith(prefix + "-", System.StringComparison.OrdinalIgnoreCase)
+            );
             if (prefMatch != null)
                 return prefMatch.Name;
-            // startswith requested (e.g. user saved short, directories long, or vice versa)
-            var starts = dirs.FirstOrDefault(d => d.Name.StartsWith(requested, System.StringComparison.OrdinalIgnoreCase));
+            var starts = dirs.FirstOrDefault(d =>
+                d.Name.StartsWith(requested, System.StringComparison.OrdinalIgnoreCase)
+            );
             if (starts != null)
                 return starts.Name;
             return null;
@@ -48,8 +63,8 @@ namespace PolicyPlusPlus.Dialogs
 
         public void Initialize(string admxFolderPath, string? currentLanguage)
         {
-            LanguageSelector.Items.Clear();
-            SecondLanguageSelector.Items.Clear();
+            PrimaryLanguageSelectorControl.Items.Clear();
+            SecondLanguageSelectorBoxControl.Items.Clear();
             if (!Directory.Exists(admxFolderPath))
                 return;
             var dirs = Directory
@@ -62,7 +77,7 @@ namespace PolicyPlusPlus.Dialogs
             ComboBoxItem? secondDefault = null;
             foreach (var di in dirs)
             {
-                string code = di.Name; // e.g., en-US
+                string code = di.Name;
                 string display;
                 try
                 {
@@ -73,24 +88,30 @@ namespace PolicyPlusPlus.Dialogs
                     display = code;
                 }
                 var item = new ComboBoxItem { Content = display, Tag = code };
-                LanguageSelector.Items.Add(item);
+                PrimaryLanguageSelectorControl.Items.Add(item);
                 var item2 = new ComboBoxItem { Content = display, Tag = code };
-                SecondLanguageSelector.Items.Add(item2);
-                if (!string.IsNullOrEmpty(currentLanguage) && code.Equals(currentLanguage, System.StringComparison.OrdinalIgnoreCase))
+                SecondLanguageSelectorBoxControl.Items.Add(item2);
+                if (
+                    !string.IsNullOrEmpty(currentLanguage)
+                    && code.Equals(currentLanguage, System.StringComparison.OrdinalIgnoreCase)
+                )
                     toSelect = item;
                 if (code.Equals("en-US", System.StringComparison.OrdinalIgnoreCase))
                     secondDefault = item2;
             }
-
-            // Attempt prefix resolution if direct exact not found
             if (toSelect == null && !string.IsNullOrEmpty(currentLanguage))
             {
                 var resolved = TryResolvePrefix(currentLanguage, dirs);
                 if (!string.IsNullOrEmpty(resolved))
                 {
-                    foreach (ComboBoxItem cbi in LanguageSelector.Items)
+                    foreach (ComboBoxItem cbi in PrimaryLanguageSelectorControl.Items)
                     {
-                        if ((cbi.Tag?.ToString() ?? "").Equals(resolved, System.StringComparison.OrdinalIgnoreCase))
+                        if (
+                            (cbi.Tag?.ToString() ?? "").Equals(
+                                resolved,
+                                System.StringComparison.OrdinalIgnoreCase
+                            )
+                        )
                         {
                             toSelect = cbi;
                             break;
@@ -98,8 +119,6 @@ namespace PolicyPlusPlus.Dialogs
                     }
                 }
             }
-
-            // If still not found, add placeholder so user sees their saved (now-missing) code instead of silently switching
             if (toSelect == null && !string.IsNullOrEmpty(currentLanguage))
             {
                 var placeholder = new ComboBoxItem
@@ -107,30 +126,41 @@ namespace PolicyPlusPlus.Dialogs
                     Content = currentLanguage + " (missing)",
                     Tag = currentLanguage,
                 };
-                LanguageSelector.Items.Insert(0, placeholder);
+                PrimaryLanguageSelectorControl.Items.Insert(0, placeholder);
                 toSelect = placeholder;
             }
-
             if (toSelect != null)
-                LanguageSelector.SelectedItem = toSelect;
-            else if (LanguageSelector.Items.Count > 0)
-                LanguageSelector.SelectedIndex = 0;
-
+                PrimaryLanguageSelectorControl.SelectedItem = toSelect;
+            else if (PrimaryLanguageSelectorControl.Items.Count > 0)
+                PrimaryLanguageSelectorControl.SelectedIndex = 0;
             if (secondDefault != null)
-                SecondLanguageSelector.SelectedItem = secondDefault;
-            else if (SecondLanguageSelector.Items.Count > 0)
-                SecondLanguageSelector.SelectedIndex = 0;
+                SecondLanguageSelectorBoxControl.SelectedItem = secondDefault;
+            else if (SecondLanguageSelectorBoxControl.Items.Count > 0)
+                SecondLanguageSelectorBoxControl.SelectedIndex = 0;
 
-            // Load saved second language state
             var s = SettingsService.Instance.LoadSettings();
-            SecondLangEnabled.IsChecked = s.SecondLanguageEnabled ?? false;
-            SecondLanguageSelector.IsEnabled = SecondLangEnabled.IsChecked == true;
+            SecondLanguageEnabledChkControl.IsChecked = s.SecondLanguageEnabled ?? false;
+            SecondLanguageSelectorBoxControl.IsEnabled =
+                SecondLanguageEnabledChkControl.IsChecked == true;
+            bool fallbackPref = true;
+            try
+            {
+                fallbackPref = s.PrimaryLanguageFallbackEnabled ?? true;
+            }
+            catch { }
+            PrimaryFallbackEnabledControl.IsChecked = fallbackPref;
+
             if (!string.IsNullOrEmpty(s.SecondLanguage))
             {
                 ComboBoxItem? secondSelect = null;
-                foreach (ComboBoxItem cbi in SecondLanguageSelector.Items)
+                foreach (ComboBoxItem cbi in SecondLanguageSelectorBoxControl.Items)
                 {
-                    if ((cbi.Tag?.ToString() ?? "").Equals(s.SecondLanguage, System.StringComparison.OrdinalIgnoreCase))
+                    if (
+                        (cbi.Tag?.ToString() ?? "").Equals(
+                            s.SecondLanguage,
+                            System.StringComparison.OrdinalIgnoreCase
+                        )
+                    )
                     {
                         secondSelect = cbi;
                         break;
@@ -138,13 +168,17 @@ namespace PolicyPlusPlus.Dialogs
                 }
                 if (secondSelect == null)
                 {
-                    // Try prefix resolution for second language as well
                     var secondResolved = TryResolvePrefix(s.SecondLanguage, dirs);
                     if (!string.IsNullOrEmpty(secondResolved))
                     {
-                        foreach (ComboBoxItem cbi in SecondLanguageSelector.Items)
+                        foreach (ComboBoxItem cbi in SecondLanguageSelectorBoxControl.Items)
                         {
-                            if ((cbi.Tag?.ToString() ?? "").Equals(secondResolved, System.StringComparison.OrdinalIgnoreCase))
+                            if (
+                                (cbi.Tag?.ToString() ?? "").Equals(
+                                    secondResolved,
+                                    System.StringComparison.OrdinalIgnoreCase
+                                )
+                            )
                             {
                                 secondSelect = cbi;
                                 break;
@@ -158,21 +192,30 @@ namespace PolicyPlusPlus.Dialogs
                             Content = s.SecondLanguage + " (missing)",
                             Tag = s.SecondLanguage,
                         };
-                        SecondLanguageSelector.Items.Insert(0, missingSecond);
+                        SecondLanguageSelectorBoxControl.Items.Insert(0, missingSecond);
                         secondSelect = missingSecond;
                     }
                 }
-                SecondLanguageSelector.SelectedItem = secondSelect;
+                SecondLanguageSelectorBoxControl.SelectedItem = secondSelect;
             }
         }
 
-        private void LanguageOptionsDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        private void LanguageOptionsDialog_PrimaryButtonClick(
+            ContentDialog sender,
+            ContentDialogButtonClickEventArgs args
+        )
         {
-            var sel = LanguageSelector.SelectedItem as ComboBoxItem;
+            var sel = PrimaryLanguageSelectorControl.SelectedItem as ComboBoxItem;
             SelectedLanguage = sel?.Tag?.ToString();
-            SecondLanguageEnabled = SecondLangEnabled.IsChecked == true;
-            var sel2 = SecondLanguageSelector.SelectedItem as ComboBoxItem;
+            SecondLanguageEnabled = SecondLanguageEnabledChkControl.IsChecked == true;
+            var sel2 = SecondLanguageSelectorBoxControl.SelectedItem as ComboBoxItem;
             SelectedSecondLanguage = sel2?.Tag?.ToString();
+            PrimaryFallbackEnabledValue = PrimaryFallbackEnabledControl.IsChecked == true;
+            try
+            {
+                SettingsService.Instance.UpdatePrimaryLanguageFallback(PrimaryFallbackEnabledValue);
+            }
+            catch { }
         }
     }
 }
