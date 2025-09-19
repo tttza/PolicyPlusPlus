@@ -35,7 +35,7 @@ namespace PolicyPlusPlus
         private GridLength? _savedDetailRowHeight;
         private GridLength? _savedSplitterRowHeight;
 
-        private PolicyLoader? _loader;
+
         private AdmxBundle? _bundle;
         private List<PolicyPlusPolicy> _allPolicies = new();
         private List<PolicyPlusPolicy> _visiblePolicies = new();

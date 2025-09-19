@@ -21,7 +21,6 @@ namespace PolicyPlusPlus
             var mode = PolicySourceManager.Instance.Mode;
             if (mode == PolicySourceMode.TempPol)
             {
-                // TempPol paths managed inside manager; open fresh source via manager for isolation.
                 return new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, section == AdmxPolicySection.User);
             }
             if (mode == PolicySourceMode.CustomPol)
@@ -33,15 +32,28 @@ namespace PolicyPlusPlus
             return new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, section == AdmxPolicySection.User);
         }
 
+        // Ensures _compSource/_userSource reflect the active PolicySourceManager mode without forcing a switch back to Local GPO.
+        private void EnsureSourcesForEdit()
+        {
+            var mgr = PolicySourceManager.Instance;
+            if (mgr.Mode == PolicySourceMode.CustomPol || mgr.Mode == PolicySourceMode.TempPol)
+            {
+                _compSource = mgr.CompSource;
+                _userSource = mgr.UserSource;
+                return;
+            }
+            if (_compSource == null || _userSource == null)
+            {
+                try { mgr.Switch(PolicySourceDescriptor.LocalGpo()); } catch { }
+                _compSource = mgr.CompSource;
+                _userSource = mgr.UserSource;
+            }
+        }
+
         private async Task OpenEditDialogForPolicyAsync(PolicyPlusPolicy representative, bool ensureFront = false)
         {
             if (_bundle is null) return;
-            if (_compSource is null || _userSource is null || _loader is null)
-            {
-                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-                _compSource = _loader.OpenSource();
-                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-            }
+            EnsureSourcesForEdit();
 
             var displayName = representative.DisplayName;
             _nameGroups.TryGetValue(displayName, out var groupList);
@@ -81,6 +93,7 @@ namespace PolicyPlusPlus
         public async Task OpenEditDialogForPolicyIdAsync(string policyId, bool ensureFront)
         {
             if (_bundle == null) return;
+            EnsureSourcesForEdit();
             PolicyPlusPolicy? representative = _allPolicies.FirstOrDefault(p => p.UniqueID == policyId);
             if (representative == null)
             {
@@ -93,12 +106,7 @@ namespace PolicyPlusPlus
         public async Task OpenEditDialogForPolicyIdAsync(string policyId, AdmxPolicySection preferredSection, bool ensureFront)
         {
             if (_bundle == null) return;
-            if (_compSource is null || _userSource is null || _loader is null)
-            {
-                _loader = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false);
-                _compSource = _loader.OpenSource();
-                _userSource = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
-            }
+            EnsureSourcesForEdit();
 
             if (!_bundle.Policies.TryGetValue(policyId, out var policy))
             {

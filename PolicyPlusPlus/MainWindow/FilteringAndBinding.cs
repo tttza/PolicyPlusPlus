@@ -322,9 +322,27 @@ namespace PolicyPlusPlus
             if (decision.Limit.HasValue && ordered.Count > decision.Limit.Value) ordered = ordered.Take(decision.Limit.Value).ToList();
             _visiblePolicies = ordered.ToList();
             bool computeStatesNow = !_navTyping || _visiblePolicies.Count <= LargeResultThreshold;
-            if (computeStatesNow) { try { EnsureLocalSources(); } catch { } }
+            // Always ensure sources once so edit dialog has correct backing sources even if we defer row state computation.
+            try { if (_compSource == null || _userSource == null) EnsureLocalSources(); } catch { }
+            if (computeStatesNow)
+            {
+                try { EnsureLocalSources(); } catch { }
+            }
+            // In CustomPol mode we must always pass non-null sources to rows so that opening the edit dialog immediately reflects actual state.
+            // This avoids the initial Not Configured issue when large result sets defer state computation.
+            var mgr = PolicySourceManager.Instance;
+            bool forceProvideSources = false;
+            try { forceProvideSources = mgr.Mode == PolicySourceMode.CustomPol; } catch { }
+            if (forceProvideSources)
+            {
+                // synchronize backing fields with manager (in case EnsureLocalSources did not switch in this mode)
+                if (_compSource == null) _compSource = mgr.CompSource;
+                if (_userSource == null) _userSource = mgr.UserSource;
+            }
+
             _rowByPolicyId.Clear();
-            var compSrc = computeStatesNow ? _compSource : null; var userSrc = computeStatesNow ? _userSource : null;
+            var compSrc = (computeStatesNow || forceProvideSources) ? _compSource : null; 
+            var userSrc = (computeStatesNow || forceProvideSources) ? _userSource : null;
             var rows = new List<object>();
             try
             {
