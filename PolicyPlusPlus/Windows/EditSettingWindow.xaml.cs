@@ -77,22 +77,7 @@ namespace PolicyPlusPlus.Windows
                     {
                         _secondLangToggle.Checked += SecondLangToggle_Checked;
                         _secondLangToggle.Unchecked += SecondLangToggle_Checked;
-                        try
-                        {
-                            var st = SettingsService.Instance.LoadSettings();
-                            bool enabled = st.SecondLanguageEnabled ?? false;
-                            _secondLangToggle.Visibility = enabled
-                                ? Visibility.Visible
-                                : Visibility.Collapsed;
-                            string code = st.SecondLanguage ?? "en-US";
-                            ToolTipService.SetToolTip(
-                                _secondLangToggle,
-                                enabled
-                                    ? $"Toggle 2nd language ({code})"
-                                    : "2nd language disabled in preferences"
-                            );
-                        }
-                        catch { }
+                        UpdateSecondLangToggle();
                     }
                 }
                 catch { }
@@ -107,8 +92,56 @@ namespace PolicyPlusPlus.Windows
             OkBtn.Click += OkBtn_Click;
             CancelBtn.Click += (s, e) => Close();
 
-            try { EventHub.PolicyChangeQueued += OnExternalPolicyChangeQueued; } catch { }
-            Closed += (s, e) => { try { EventHub.PolicyChangeQueued -= OnExternalPolicyChangeQueued; } catch { } };
+            try
+            {
+                EventHub.PolicyChangeQueued += OnExternalPolicyChangeQueued;
+            }
+            catch { }
+            Closed += (s, e) =>
+            {
+                try
+                {
+                    EventHub.PolicyChangeQueued -= OnExternalPolicyChangeQueued;
+                }
+                catch { }
+            };
+        }
+
+        // Centralized toggle state logic so initial state reflects ADML availability before first click.
+        private void UpdateSecondLangToggle()
+        {
+            try
+            {
+                if (_secondLangToggle == null)
+                    return;
+                var st = SettingsService.Instance.LoadSettings();
+                bool prefEnabled = st.SecondLanguageEnabled ?? false;
+                string lang = st.SecondLanguage ?? "en-US";
+                bool hasAdml =
+                    prefEnabled && _policy != null && LocalizedTextService.HasAdml(_policy, lang);
+
+                _secondLangToggle.Visibility = prefEnabled
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+                _secondLangToggle.IsEnabled = hasAdml;
+                ToolTipService.SetToolTip(
+                    _secondLangToggle,
+                    prefEnabled
+                        ? (
+                            hasAdml
+                                ? $"Toggle 2nd language ({lang})"
+                                : $"{lang} language resources not found"
+                        )
+                        : "2nd language disabled in preferences"
+                );
+                if (!hasAdml)
+                {
+                    // Ensure off when resources missing
+                    _useSecondLanguage = false;
+                    _secondLangToggle.IsChecked = false;
+                }
+            }
+            catch { }
         }
 
         // Overlay current QuickEditRow (unsaved) values into this window (both scopes).
@@ -131,9 +164,7 @@ namespace PolicyPlusPlus.Windows
                 {
                     _currentSection = isUser ? AdmxPolicySection.User : AdmxPolicySection.Machine;
                     if (SectionSelector != null)
-                    {
-                        SectionSelector.SelectedIndex = isUser ? 1 : 0; // 0=Computer,1=User
-                    }
+                        SectionSelector.SelectedIndex = isUser ? 1 : 0;
                     LoadStateFromSource();
                     StateRadio_Checked(this, new RoutedEventArgs());
                     var state = isUser ? row.UserState : row.ComputerState;
@@ -233,14 +264,22 @@ namespace PolicyPlusPlus.Windows
         {
             try
             {
+                if (_policy == null)
+                    return;
+
+                // Always ensure toggle reflects current availability before changing texts
+                UpdateSecondLangToggle();
+
                 var s = SettingsService.Instance.LoadSettings();
-                bool enabled = s.SecondLanguageEnabled ?? false;
                 string lang = s.SecondLanguage ?? "en-US";
-                bool useSecond = _useSecondLanguage && enabled;
+                bool prefEnabled = s.SecondLanguageEnabled ?? false;
+                bool hasAdml = prefEnabled && LocalizedTextService.HasAdml(_policy, lang);
+                bool useSecond = _useSecondLanguage && hasAdml;
 
                 if (useSecond)
                 {
-                    SettingTitle.Text = LocalizedTextService.GetPolicyNameIn(_policy, lang);
+                    var nameSecond = LocalizedTextService.GetPolicyNameIn(_policy, lang);
+                    SettingTitle.Text = nameSecond;
                     SetExplanationText(LocalizedTextService.GetPolicyExplanationIn(_policy, lang));
                 }
                 else
@@ -258,22 +297,9 @@ namespace PolicyPlusPlus.Windows
                 }
                 else
                 {
-                    SupportedBox.Text = _policy.SupportedOn is null
-                        ? string.Empty
-                        : _policy.SupportedOn.DisplayName;
+                    var supObj = _policy.SupportedOn;
+                    SupportedBox.Text = supObj != null ? supObj.DisplayName : string.Empty;
                 }
-
-                try
-                {
-                    if (_secondLangToggle != null)
-                        ToolTipService.SetToolTip(
-                            _secondLangToggle,
-                            enabled
-                                ? $"Toggle 2nd language ({lang})"
-                                : "2nd language disabled in preferences"
-                        );
-                }
-                catch { }
 
                 if (_policy.RawPolicy.Elements != null)
                 {
@@ -287,7 +313,7 @@ namespace PolicyPlusPlus.Windows
                         BuildElements();
                         LoadStateFromSource();
                         StateRadio_Checked(this, null!);
-                        _policy.Presentation = original; // restore
+                        _policy.Presentation = original;
                     }
                     else
                     {
@@ -421,6 +447,12 @@ namespace PolicyPlusPlus.Windows
                 : policy.SupportedOn.DisplayName;
             SetExplanationText(policy.DisplayExplanation ?? string.Empty);
 
+            try
+            {
+                UpdateSecondLangToggle();
+            }
+            catch { }
+
             var initialSection = section;
             try
             {
@@ -430,9 +462,7 @@ namespace PolicyPlusPlus.Windows
                     bool compConfigured =
                         compState == PolicyState.Enabled || compState == PolicyState.Disabled;
                     if (compConfigured)
-                    {
                         initialSection = AdmxPolicySection.Machine;
-                    }
                 }
             }
             catch { }
@@ -449,14 +479,14 @@ namespace PolicyPlusPlus.Windows
 
             WindowHelpers.BringToFront(this);
             var tmr = this.DispatcherQueue.CreateTimer();
-            tmr.Interval = System.TimeSpan.FromMilliseconds(180);
+            tmr.Interval = TimeSpan.FromMilliseconds(180);
             tmr.IsRepeating = false;
             tmr.Tick += (s, e) =>
             {
                 try
                 {
                     WindowHelpers.BringToFront(this);
-                    this.Activate();
+                    Activate();
                 }
                 catch { }
             };
@@ -1181,7 +1211,12 @@ namespace PolicyPlusPlus.Windows
                     SavedDetail?.Invoke(this, (scope, desired, options));
                     try
                     {
-                        EventHub.PublishPolicyChangeQueued(_policy.UniqueID, scope, desired, options);
+                        EventHub.PublishPolicyChangeQueued(
+                            _policy.UniqueID,
+                            scope,
+                            desired,
+                            options
+                        );
                     }
                     catch { }
                 }
@@ -1515,7 +1550,12 @@ namespace PolicyPlusPlus.Windows
             catch { }
         }
 
-        private void OnExternalPolicyChangeQueued(string policyId, string scope, PolicyState state, Dictionary<string, object>? options)
+        private void OnExternalPolicyChangeQueued(
+            string policyId,
+            string scope,
+            PolicyState state,
+            Dictionary<string, object>? options
+        )
         {
             try
             {
@@ -1524,7 +1564,11 @@ namespace PolicyPlusPlus.Windows
                 if (!string.Equals(policyId, _policy.UniqueID, StringComparison.OrdinalIgnoreCase))
                     return;
                 bool isUser = string.Equals(scope, "User", StringComparison.OrdinalIgnoreCase);
-                bool isComputer = string.Equals(scope, "Computer", StringComparison.OrdinalIgnoreCase);
+                bool isComputer = string.Equals(
+                    scope,
+                    "Computer",
+                    StringComparison.OrdinalIgnoreCase
+                );
                 if (!isUser && !isComputer)
                     return;
                 var targetSection = isUser ? AdmxPolicySection.User : AdmxPolicySection.Machine;

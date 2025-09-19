@@ -301,21 +301,27 @@ namespace PolicyPlusPlus.Windows
             if (_policy == null)
                 return;
             var s = SettingsService.Instance.LoadSettings();
-            bool enabled = s.SecondLanguageEnabled ?? false;
+            bool prefEnabled = s.SecondLanguageEnabled ?? false;
             string lang = s.SecondLanguage ?? "en-US";
+            bool hasAdml = prefEnabled && LocalizedTextService.HasAdml(_policy, lang);
 
             if (_langToggle != null)
             {
-                _langToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                _langToggle.Visibility = prefEnabled ? Visibility.Visible : Visibility.Collapsed;
+                _langToggle.IsEnabled = hasAdml;
                 ToolTipService.SetToolTip(
                     _langToggle,
-                    enabled
-                        ? $"Toggle 2nd language ({lang})"
+                    prefEnabled
+                        ? (
+                            hasAdml
+                                ? $"Toggle 2nd language ({lang})"
+                                : $"{lang} language resources not found"
+                        )
                         : "2nd language disabled in preferences"
                 );
             }
 
-            bool useSecond = enabled && _useSecondLanguage;
+            bool useSecond = hasAdml && _useSecondLanguage;
             NameBox.Text = useSecond
                 ? LocalizedTextService.GetPolicyNameIn(_policy, lang)
                 : _policy.DisplayName;

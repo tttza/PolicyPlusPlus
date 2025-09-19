@@ -114,6 +114,21 @@ namespace PolicyPlusPlus.Services
             return null;
         }
 
+        public static bool HasAdml(PolicyPlusPolicy p, string lang)
+        {
+            try
+            {
+                var src = p?.RawPolicy?.DefinedIn?.SourceFile ?? string.Empty;
+                if (string.IsNullOrEmpty(src))
+                    return false;
+                return LoadAdml(src, lang) != null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public static string ResolveString(string? displayCode, AdmxFile admx, string lang)
         {
             if (string.IsNullOrEmpty(displayCode))
