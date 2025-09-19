@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text.Json; // added for JsonElement handling
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
+using System.Threading; // added for SemaphoreSlim
 
 namespace PolicyPlusPlus.Windows
 {
@@ -22,6 +23,7 @@ namespace PolicyPlusPlus.Windows
         private List<PendingChange> _pendingView = new();
         private List<HistoryRecord> _historyView = new();
         private IElevationService _elevation;
+        private readonly SemaphoreSlim _applyGate = new(1, 1); // serialize apply/reapply operations
 
         public PendingChangesWindow() : this(new ElevationServiceAdapter()) { }
 
@@ -265,25 +267,6 @@ namespace PolicyPlusPlus.Windows
             }
         }
 
-        private void History_ContextCopyName_Click(object sender, RoutedEventArgs e)
-        {
-            if ((sender as FrameworkElement)?.DataContext is HistoryRecord h)
-            {
-                var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-                dp.SetText(h.PolicyName ?? string.Empty);
-                Clipboard.SetContent(dp);
-            }
-        }
-
-        private void History_ContextCopyRegPath_Click(object sender, RoutedEventArgs e)
-        {
-            if ((sender as FrameworkElement)?.DataContext is HistoryRecord h)
-            {
-                var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-                dp.SetText(h.Details ?? string.Empty);
-                Clipboard.SetContent(dp);
-            }
-        }
 
         private void SearchBox_TextChanged(object sender, AutoSuggestBoxTextChangedEventArgs e)
         {
@@ -311,6 +294,7 @@ namespace PolicyPlusPlus.Windows
         private async Task ApplySelectedAsync(IEnumerable<PendingChange> items)
         {
             if (items == null) return;
+            await _applyGate.WaitAsync();
             SetSaving(true);
             try
             {
@@ -338,7 +322,7 @@ namespace PolicyPlusPlus.Windows
                 }
                 else if (!string.IsNullOrEmpty(error)) ShowLocalInfo("Save failed: " + error);
             }
-            finally { SetSaving(false); }
+            finally { SetSaving(false); _applyGate.Release(); }
         }
 
         private void NotifyApplied(int count)
@@ -364,9 +348,10 @@ namespace PolicyPlusPlus.Windows
         private async Task ExecuteReapplyAsync(HistoryRecord h)
         {
             if (h == null || string.IsNullOrEmpty(h.PolicyId)) return;
-            if (App.Window is not MainWindow main) return;
+            await _applyGate.WaitAsync();
+            if (App.Window is not MainWindow main) { _applyGate.Release(); return; }
             var bundle = main.Bundle;
-            if (bundle == null || !bundle.Policies.TryGetValue(h.PolicyId, out var pol)) return;
+            if (bundle == null || !bundle.Policies.TryGetValue(h.PolicyId, out var pol)) { _applyGate.Release(); return; }
             var normalizedOptions = NormalizeOptions(h.Options);
             var pending = new PendingChange
             {
@@ -407,27 +392,27 @@ namespace PolicyPlusPlus.Windows
                 }
                 else ShowLocalInfo(string.IsNullOrEmpty(error) ? "Reapply failed." : "Reapply failed: " + error);
             }
-            finally { SetSaving(false); }
+            finally { SetSaving(false); _applyGate.Release(); }
         }
 
-        // Legacy sync wrapper kept for minimal impact (unused internally now)
-        private void ExecuteReapply(HistoryRecord h) => _ = ExecuteReapplyAsync(h);
-
-        private void History_ContextReapply_Click(object sender, RoutedEventArgs e)
+        private async void History_ContextReapply_Click(object sender, RoutedEventArgs e)
         {
             if ((sender as FrameworkElement)?.DataContext is HistoryRecord h)
             {
-                ExecuteReapply(h);
+                await ExecuteReapplyAsync(h);
             }
         }
 
-        private void BtnReapplySelected_Click(object sender, RoutedEventArgs e)
+        private async void BtnReapplySelected_Click(object sender, RoutedEventArgs e)
         {
             var items = HistoryList?.SelectedItems;
             if (items == null || items.Count == 0) return;
             for (int i = 0; i < items.Count; i++)
             {
-                if (items[i] is HistoryRecord h) ExecuteReapply(h);
+                if (items[i] is HistoryRecord h)
+                {
+                    await ExecuteReapplyAsync(h); // sequential to enforce ordering
+                }
             }
         }
 

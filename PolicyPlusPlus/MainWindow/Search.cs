@@ -59,7 +59,25 @@ namespace PolicyPlusPlus
         }
 
         private void ShowBaselineSuggestions()
-        { try { if (SearchBox == null) return; var allowed = new HashSet<string>(_allPolicies.Select(p => p.UniqueID), StringComparer.OrdinalIgnoreCase); var list = BuildSuggestions(string.Empty, allowed); SearchBox.ItemsSource = list; } catch (Exception ex) { Log.Warn("MainSearch", "ShowBaselineSuggestions failed", ex); } }
+        {
+            try
+            {
+                // Build baseline (empty query) suggestions limited to currently loaded policies.
+                if (SearchBox == null)
+                    return;
+
+                var allowed = new HashSet<string>(
+                    _allPolicies.Select(p => p.UniqueID),
+                    StringComparer.OrdinalIgnoreCase);
+
+                var list = BuildSuggestions(string.Empty, allowed);
+                SearchBox.ItemsSource = list;
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("MainSearch", "ShowBaselineSuggestions failed", ex);
+            }
+        }
 
         // Description index prebuild logic remains unchanged below
         private void StartPrebuildDescIndex()
