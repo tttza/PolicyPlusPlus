@@ -10,7 +10,9 @@ namespace PolicyPlusCore.IO
         {
             try
             {
-                ConfigKey = RegistryKey.OpenBaseKey(RegistryBase, RegistryView.Default).CreateSubKey(Subkey);
+                ConfigKey = RegistryKey
+                    .OpenBaseKey(RegistryBase, RegistryView.Default)
+                    .CreateSubKey(Subkey);
             }
             catch (Exception)
             {

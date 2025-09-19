@@ -1,6 +1,6 @@
+using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using System;
 using Windows.Foundation;
 
 namespace PolicyPlusPlus.Utils
@@ -9,7 +9,8 @@ namespace PolicyPlusPlus.Utils
     {
         public static void Attach(Window window, FrameworkElement host, FrameworkElement innerRoot)
         {
-            if (host == null || innerRoot == null) return;
+            if (host == null || innerRoot == null)
+                return;
 
             // Keep alignment predictable
             innerRoot.HorizontalAlignment = HorizontalAlignment.Left;
@@ -35,7 +36,13 @@ namespace PolicyPlusPlus.Utils
             {
                 try
                 {
-                    if (host.Tag is string s && (s.Contains("AllowAutoSize", StringComparison.OrdinalIgnoreCase) || s.Contains("AllowAutoHeight", StringComparison.OrdinalIgnoreCase)))
+                    if (
+                        host.Tag is string s
+                        && (
+                            s.Contains("AllowAutoSize", StringComparison.OrdinalIgnoreCase)
+                            || s.Contains("AllowAutoHeight", StringComparison.OrdinalIgnoreCase)
+                        )
+                    )
                         return true;
                 }
                 catch { }
@@ -56,13 +63,17 @@ namespace PolicyPlusPlus.Utils
 
                     if (auto)
                     {
-                        if (!double.IsNaN(innerRoot.Width)) innerRoot.Width = double.NaN;
-                        if (!double.IsNaN(innerRoot.Height)) innerRoot.Height = double.NaN;
+                        if (!double.IsNaN(innerRoot.Width))
+                            innerRoot.Width = double.NaN;
+                        if (!double.IsNaN(innerRoot.Height))
+                            innerRoot.Height = double.NaN;
                     }
                     else
                     {
-                        if (w > 0) innerRoot.Width = Math.Ceiling(w / scale);
-                        if (h > 0) innerRoot.Height = Math.Ceiling(h / scale);
+                        if (w > 0)
+                            innerRoot.Width = Math.Ceiling(w / scale);
+                        if (h > 0)
+                            innerRoot.Height = Math.Ceiling(h / scale);
                     }
 
                     if (w > 0 && h > 0)
@@ -86,8 +97,16 @@ namespace PolicyPlusPlus.Utils
 
             window.Closed += (s, e) =>
             {
-                try { host.SizeChanged -= sizeHandler; } catch { }
-                try { App.ScaleChanged -= scaleHandler; } catch { }
+                try
+                {
+                    host.SizeChanged -= sizeHandler;
+                }
+                catch { }
+                try
+                {
+                    App.ScaleChanged -= scaleHandler;
+                }
+                catch { }
             };
         }
     }

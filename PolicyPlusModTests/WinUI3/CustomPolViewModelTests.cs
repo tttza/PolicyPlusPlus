@@ -12,7 +12,10 @@ namespace PolicyPlusModTests.WinUI3
             var s = SettingsService.Instance.LoadSettings();
             var vm = new CustomPolViewModel(SettingsService.Instance, s.CustomPol);
             vm.EnableComputer = true;
-            vm.ComputerPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "cpol_vm_test.pol");
+            vm.ComputerPath = System.IO.Path.Combine(
+                System.IO.Path.GetTempPath(),
+                "cpol_vm_test.pol"
+            );
             vm.Active = true;
             Assert.True(vm.IsDirty);
             vm.Commit();
@@ -27,8 +30,16 @@ namespace PolicyPlusModTests.WinUI3
         {
             var s = SettingsService.Instance.LoadSettings();
             var vm = new CustomPolViewModel(SettingsService.Instance, s.CustomPol);
-            vm.EnableComputer = true; vm.ComputerPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "cpol_vm_test2.pol"); vm.Active = true; vm.Commit();
-            vm.EnableComputer = false; vm.EnableUser = false; vm.Active = false;
+            vm.EnableComputer = true;
+            vm.ComputerPath = System.IO.Path.Combine(
+                System.IO.Path.GetTempPath(),
+                "cpol_vm_test2.pol"
+            );
+            vm.Active = true;
+            vm.Commit();
+            vm.EnableComputer = false;
+            vm.EnableUser = false;
+            vm.Active = false;
             Assert.True(vm.IsDirty);
             vm.Commit();
             var after = SettingsService.Instance.LoadSettings();

@@ -1,6 +1,6 @@
-using PolicyPlusPlus.Services;
 using System;
 using System.IO;
+using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
@@ -9,7 +9,8 @@ namespace PolicyPlusModTests.WinUI3
     [Collection("PolicySourceManagerSerial")]
     public class PolicySourceManagerTests
     {
-        private readonly IPolicySourceManager _mgr = PolicySourceManager.Instance as IPolicySourceManager;
+        private readonly IPolicySourceManager _mgr =
+            PolicySourceManager.Instance as IPolicySourceManager;
 
         [Fact(DisplayName = "Switch to LocalGpo sets mode")]
         public void Switch_LocalGpo_SetsMode()
@@ -32,7 +33,11 @@ namespace PolicyPlusModTests.WinUI3
         [Fact(DisplayName = "Switch to CustomPol creates files and loads sources")]
         public void Switch_CustomPol_CreatesAndLoads()
         {
-            var baseDir = Path.Combine(Path.GetTempPath(), "PolicyPlusTests", Guid.NewGuid().ToString("N"));
+            var baseDir = Path.Combine(
+                Path.GetTempPath(),
+                "PolicyPlusTests",
+                Guid.NewGuid().ToString("N")
+            );
             Directory.CreateDirectory(baseDir);
             var compPath = Path.Combine(baseDir, "machine.pol");
             var userPath = Path.Combine(baseDir, "user.pol");
@@ -51,7 +56,11 @@ namespace PolicyPlusModTests.WinUI3
         [Fact(DisplayName = "Switch CustomPol invalid when path missing")]
         public void Switch_CustomPol_InvalidMissingPath()
         {
-            var baseDir = Path.Combine(Path.GetTempPath(), "PolicyPlusTests", Guid.NewGuid().ToString("N"));
+            var baseDir = Path.Combine(
+                Path.GetTempPath(),
+                "PolicyPlusTests",
+                Guid.NewGuid().ToString("N")
+            );
             Directory.CreateDirectory(baseDir);
             var compPath = Path.Combine(baseDir, "machine.pol");
             var userPath = Path.Combine(baseDir, "user.pol");

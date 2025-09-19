@@ -1,13 +1,13 @@
+using System.Diagnostics;
 using PolicyPlusCore.Admx;
 using PolicyPlusCore.IO;
-using System.Diagnostics;
 
 namespace PolicyPlusCore.Core
 {
     public enum PolicyTargetScope
     {
         Machine,
-        User
+        User,
     }
 
     public sealed class PolicyChangeRequest
@@ -26,14 +26,27 @@ namespace PolicyPlusCore.Core
 
     public static class PolicySavePipeline
     {
-        private static readonly bool TestMemoryPol = Environment.GetEnvironmentVariable("POLICYPLUS_TEST_MEMORY_POL") == "1";
+        private static readonly bool TestMemoryPol =
+            Environment.GetEnvironmentVariable("POLICYPLUS_TEST_MEMORY_POL") == "1";
+
         private static void LogDebug(string msg)
         {
-            try { Debug.WriteLine("[PolicySavePipeline] " + msg); } catch { }
+            try
+            {
+                Debug.WriteLine("[PolicySavePipeline] " + msg);
+            }
+            catch { }
         }
+
         private static void LogError(string msg, Exception ex)
         {
-            try { Debug.WriteLine($"[PolicySavePipeline] ERROR {msg} :: {ex.GetType().Name} {ex.Message}"); } catch { }
+            try
+            {
+                Debug.WriteLine(
+                    $"[PolicySavePipeline] ERROR {msg} :: {ex.GetType().Name} {ex.Message}"
+                );
+            }
+            catch { }
         }
 
         private static PolFile LoadExistingOrNew(bool isUser)
@@ -61,10 +74,15 @@ namespace PolicyPlusCore.Core
         }
 
         // Build updated Local GPO POL buffers by applying the requested changes in-memory
-        public static PolicySaveBuffers BuildLocalGpoBuffers(AdmxBundle bundle, IEnumerable<PolicyChangeRequest> changes)
+        public static PolicySaveBuffers BuildLocalGpoBuffers(
+            AdmxBundle bundle,
+            IEnumerable<PolicyChangeRequest> changes
+        )
         {
-            if (bundle == null) throw new ArgumentNullException(nameof(bundle));
-            if (changes == null) throw new ArgumentNullException(nameof(changes));
+            if (bundle == null)
+                throw new ArgumentNullException(nameof(bundle));
+            if (changes == null)
+                throw new ArgumentNullException(nameof(changes));
 
             PolFile? compPol = null;
             PolFile? userPol = null;
@@ -72,41 +90,66 @@ namespace PolicyPlusCore.Core
             {
                 try
                 {
-                    var compSrc = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, false).OpenSource();
+                    var compSrc = new PolicyLoader(
+                        PolicyLoaderSource.LocalGpo,
+                        string.Empty,
+                        false
+                    ).OpenSource();
                     compPol = compSrc as PolFile;
                 }
                 catch (Exception ex)
                 {
-                    compPol = null; LogError("OpenSource machine failed", ex);
+                    compPol = null;
+                    LogError("OpenSource machine failed", ex);
                 }
                 try
                 {
-                    var userSrc = new PolicyLoader(PolicyLoaderSource.LocalGpo, string.Empty, true).OpenSource();
+                    var userSrc = new PolicyLoader(
+                        PolicyLoaderSource.LocalGpo,
+                        string.Empty,
+                        true
+                    ).OpenSource();
                     userPol = userSrc as PolFile;
                 }
                 catch (Exception ex)
                 {
-                    userPol = null; LogError("OpenSource user failed", ex);
+                    userPol = null;
+                    LogError("OpenSource user failed", ex);
                 }
             }
 
-            if (compPol == null) compPol = LoadExistingOrNew(isUser: false);
-            if (userPol == null) userPol = LoadExistingOrNew(isUser: true);
+            if (compPol == null)
+                compPol = LoadExistingOrNew(isUser: false);
+            if (userPol == null)
+                userPol = LoadExistingOrNew(isUser: true);
 
             foreach (var c in changes)
             {
-                if (c == null || string.IsNullOrEmpty(c.PolicyId)) continue;
-                if (!bundle.Policies.TryGetValue(c.PolicyId, out var pol)) continue;
+                if (c == null || string.IsNullOrEmpty(c.PolicyId))
+                    continue;
+                if (!bundle.Policies.TryGetValue(c.PolicyId, out var pol))
+                    continue;
                 IPolicySource? target = c.Scope == PolicyTargetScope.User ? userPol : compPol;
-                if (target == null) continue;
+                if (target == null)
+                    continue;
                 PolicyProcessing.ForgetPolicy(target, pol);
                 if (c.DesiredState == PolicyState.Enabled)
                 {
-                    PolicyProcessing.SetPolicyState(target, pol, PolicyState.Enabled, c.Options ?? new Dictionary<string, object>());
+                    PolicyProcessing.SetPolicyState(
+                        target,
+                        pol,
+                        PolicyState.Enabled,
+                        c.Options ?? new Dictionary<string, object>()
+                    );
                 }
                 else if (c.DesiredState == PolicyState.Disabled)
                 {
-                    PolicyProcessing.SetPolicyState(target, pol, PolicyState.Disabled, new Dictionary<string, object>());
+                    PolicyProcessing.SetPolicyState(
+                        target,
+                        pol,
+                        PolicyState.Disabled,
+                        new Dictionary<string, object>()
+                    );
                 }
                 else
                 {
@@ -121,7 +164,10 @@ namespace PolicyPlusCore.Core
                 try
                 {
                     using var ms = new MemoryStream();
-                    using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true)) { compPol.Save(bw); }
+                    using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true))
+                    {
+                        compPol.Save(bw);
+                    }
                     compBytes = ms.ToArray();
                 }
                 catch (Exception ex)
@@ -134,7 +180,10 @@ namespace PolicyPlusCore.Core
                 try
                 {
                     using var ms = new MemoryStream();
-                    using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true)) { userPol.Save(bw); }
+                    using (var bw = new BinaryWriter(ms, System.Text.Encoding.Unicode, true))
+                    {
+                        userPol.Save(bw);
+                    }
                     userBytes = ms.ToArray();
                 }
                 catch (Exception ex)
@@ -146,11 +195,18 @@ namespace PolicyPlusCore.Core
             return new PolicySaveBuffers { MachinePolBytes = compBytes, UserPolBytes = userBytes };
         }
 
-        public static (string? machineBase64, string? userBase64) BuildLocalGpoBase64(AdmxBundle bundle, IEnumerable<PolicyChangeRequest> changes)
+        public static (string? machineBase64, string? userBase64) BuildLocalGpoBase64(
+            AdmxBundle bundle,
+            IEnumerable<PolicyChangeRequest> changes
+        )
         {
             var buffers = BuildLocalGpoBuffers(bundle, changes);
-            string? m = buffers.MachinePolBytes != null ? Convert.ToBase64String(buffers.MachinePolBytes) : null;
-            string? u = buffers.UserPolBytes != null ? Convert.ToBase64String(buffers.UserPolBytes) : null;
+            string? m =
+                buffers.MachinePolBytes != null
+                    ? Convert.ToBase64String(buffers.MachinePolBytes)
+                    : null;
+            string? u =
+                buffers.UserPolBytes != null ? Convert.ToBase64String(buffers.UserPolBytes) : null;
             return (m, u);
         }
     }

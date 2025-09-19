@@ -1,9 +1,9 @@
+using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using PolicyPlusCore.IO;
 using PolicyPlusCore.Utilities;
 using PolicyPlusPlus.Services;
-using System;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 
@@ -20,7 +20,11 @@ namespace PolicyPlusPlus.Dialogs
             this.PrimaryButtonClick += ImportRegDialog_PrimaryButtonClick;
             if (OnlyPoliciesSwitch != null)
             {
-                OnlyPoliciesSwitch.Toggled += (_, __) => { RebuildParsedFromOriginal(); RefreshPreview(); };
+                OnlyPoliciesSwitch.Toggled += (_, __) =>
+                {
+                    RebuildParsedFromOriginal();
+                    RefreshPreview();
+                };
             }
         }
 
@@ -37,12 +41,18 @@ namespace PolicyPlusPlus.Dialogs
             }
         }
 
-        private void ImportRegDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        private void ImportRegDialog_PrimaryButtonClick(
+            ContentDialog sender,
+            ContentDialogButtonClickEventArgs args
+        )
         {
             if (ParsedReg is null)
             {
                 if (!TryLoad(RegPath.Text))
-                { args.Cancel = true; return; }
+                {
+                    args.Cancel = true;
+                    return;
+                }
             }
             else
             {
@@ -53,7 +63,8 @@ namespace PolicyPlusPlus.Dialogs
 
         private bool TryLoad(string? path)
         {
-            if (string.IsNullOrWhiteSpace(path)) return false;
+            if (string.IsNullOrWhiteSpace(path))
+                return false;
             try
             {
                 _originalReg = RegFile.Load(path, "");
@@ -63,7 +74,10 @@ namespace PolicyPlusPlus.Dialogs
             }
             catch
             {
-                _originalReg = null; ParsedReg = null; PreviewBox.Text = string.Empty; return false;
+                _originalReg = null;
+                ParsedReg = null;
+                PreviewBox.Text = string.Empty;
+                return false;
             }
         }
 
@@ -71,7 +85,8 @@ namespace PolicyPlusPlus.Dialogs
         {
             if (_originalReg == null)
             {
-                ParsedReg = null; return;
+                ParsedReg = null;
+                return;
             }
             try
             {
@@ -89,12 +104,19 @@ namespace PolicyPlusPlus.Dialogs
 
         private void RefreshPreview()
         {
-            if (ParsedReg == null) { PreviewBox.Text = string.Empty; return; }
+            if (ParsedReg == null)
+            {
+                PreviewBox.Text = string.Empty;
+                return;
+            }
             try
             {
                 PreviewBox.Text = RegPreviewBuilder.BuildPreview(ParsedReg, maxPerHive: 500);
             }
-            catch { PreviewBox.Text = string.Empty; }
+            catch
+            {
+                PreviewBox.Text = string.Empty;
+            }
         }
     }
 }

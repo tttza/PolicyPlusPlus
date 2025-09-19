@@ -1,6 +1,6 @@
+using System.Collections.Generic;
 using PolicyPlusPlus.Models;
 using PolicyPlusPlus.Services;
-using System.Collections.Generic;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.PolicyList
@@ -19,8 +19,8 @@ namespace PolicyPlusModTests.WinUI3.PolicyList
                     RegistryValue = "V",
                     Section = AdmxPolicySection.User,
                     AffectedValues = new PolicyRegistryList(),
-                    DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
-                }
+                    DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
+                },
             };
             var comp = new PolicyPlusPolicy
             {
@@ -32,8 +32,8 @@ namespace PolicyPlusModTests.WinUI3.PolicyList
                     RegistryValue = "V",
                     Section = AdmxPolicySection.Machine,
                     AffectedValues = new PolicyRegistryList(),
-                    DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
-                }
+                    DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
+                },
             };
             return (user, comp);
         }
@@ -42,9 +42,20 @@ namespace PolicyPlusModTests.WinUI3.PolicyList
         public void Group_Reflects_Actual_Mixed()
         {
             var (userPol, compPol) = MakePair();
-            var comp = new PolFile(); var user = new PolFile();
-            PolicyProcessing.SetPolicyState(comp, compPol, PolicyState.Enabled, new Dictionary<string, object>());
-            PolicyProcessing.SetPolicyState(user, userPol, PolicyState.Disabled, new Dictionary<string, object>());
+            var comp = new PolFile();
+            var user = new PolFile();
+            PolicyProcessing.SetPolicyState(
+                comp,
+                compPol,
+                PolicyState.Enabled,
+                new Dictionary<string, object>()
+            );
+            PolicyProcessing.SetPolicyState(
+                user,
+                userPol,
+                PolicyState.Disabled,
+                new Dictionary<string, object>()
+            );
 
             PendingChangesService.Instance.Pending.Clear();
             var row = PolicyListRow.FromGroup(compPol, new[] { userPol, compPol }, comp, user);
@@ -58,27 +69,60 @@ namespace PolicyPlusModTests.WinUI3.PolicyList
         public void Group_Pending_Overrides_TargetedVariant()
         {
             var (userPol, compPol) = MakePair();
-            var comp = new PolFile(); var user = new PolFile();
-            PolicyProcessing.SetPolicyState(comp, compPol, PolicyState.Disabled, new Dictionary<string, object>());
-            PolicyProcessing.SetPolicyState(user, userPol, PolicyState.Disabled, new Dictionary<string, object>());
+            var comp = new PolFile();
+            var user = new PolFile();
+            PolicyProcessing.SetPolicyState(
+                comp,
+                compPol,
+                PolicyState.Disabled,
+                new Dictionary<string, object>()
+            );
+            PolicyProcessing.SetPolicyState(
+                user,
+                userPol,
+                PolicyState.Disabled,
+                new Dictionary<string, object>()
+            );
 
             PendingChangesService.Instance.Pending.Clear();
-            PendingChangesService.Instance.Add(new PendingChange { PolicyId = compPol.UniqueID, Scope = "Computer", DesiredState = PolicyState.Enabled });
+            PendingChangesService.Instance.Add(
+                new PendingChange
+                {
+                    PolicyId = compPol.UniqueID,
+                    Scope = "Computer",
+                    DesiredState = PolicyState.Enabled,
+                }
+            );
 
             var row = PolicyListRow.FromGroup(compPol, new[] { userPol, compPol }, comp, user);
             Assert.Equal("Enabled", row.ComputerStateText);
             Assert.Equal("Disabled", row.UserStateText);
         }
 
-        [Fact(DisplayName = "FromGroup pending NotConfigured clears glyph overriding actual configured state")]
+        [Fact(
+            DisplayName = "FromGroup pending NotConfigured clears glyph overriding actual configured state"
+        )]
         public void Group_Pending_NotConfigured_ClearsGlyph()
         {
             var (userPol, compPol) = MakePair();
-            var comp = new PolFile(); var user = new PolFile();
-            PolicyProcessing.SetPolicyState(user, userPol, PolicyState.Enabled, new Dictionary<string, object>());
+            var comp = new PolFile();
+            var user = new PolFile();
+            PolicyProcessing.SetPolicyState(
+                user,
+                userPol,
+                PolicyState.Enabled,
+                new Dictionary<string, object>()
+            );
 
             PendingChangesService.Instance.Pending.Clear();
-            PendingChangesService.Instance.Add(new PendingChange { PolicyId = userPol.UniqueID, Scope = "User", DesiredState = PolicyState.NotConfigured });
+            PendingChangesService.Instance.Add(
+                new PendingChange
+                {
+                    PolicyId = userPol.UniqueID,
+                    Scope = "User",
+                    DesiredState = PolicyState.NotConfigured,
+                }
+            );
 
             var row = PolicyListRow.FromGroup(compPol, new[] { userPol, compPol }, comp, user);
             Assert.Equal("Not configured", row.UserStateText);

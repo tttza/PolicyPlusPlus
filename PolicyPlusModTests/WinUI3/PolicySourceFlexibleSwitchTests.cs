@@ -1,6 +1,6 @@
-using PolicyPlusPlus.Services;
 using System;
 using System.IO;
+using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
@@ -10,11 +10,17 @@ namespace PolicyPlusModTests.WinUI3
     {
         private readonly IPolicySourceManager _mgr = PolicySourceManager.Instance;
 
-        [Fact(DisplayName = "Flexible custom switch with only computer path generates user placeholder")]
+        [Fact(
+            DisplayName = "Flexible custom switch with only computer path generates user placeholder"
+        )]
         public void SwitchCustom_ComputerOnly_Completes()
         {
             _mgr.Switch(PolicySourceDescriptor.LocalGpo());
-            var baseDir = Path.Combine(Path.GetTempPath(), "PolicyPlusFlexTests", Guid.NewGuid().ToString("N"));
+            var baseDir = Path.Combine(
+                Path.GetTempPath(),
+                "PolicyPlusFlexTests",
+                Guid.NewGuid().ToString("N")
+            );
             Directory.CreateDirectory(baseDir);
             var comp = Path.Combine(baseDir, "machine.pol");
             // Let manager create file; do not pre-create empty invalid POL.
@@ -25,11 +31,17 @@ namespace PolicyPlusModTests.WinUI3
             Assert.True(File.Exists(_mgr.CustomUserPath));
         }
 
-        [Fact(DisplayName = "Flexible custom switch with only user path generates computer placeholder")]
+        [Fact(
+            DisplayName = "Flexible custom switch with only user path generates computer placeholder"
+        )]
         public void SwitchCustom_UserOnly_Completes()
         {
             _mgr.Switch(PolicySourceDescriptor.LocalGpo());
-            var baseDir = Path.Combine(Path.GetTempPath(), "PolicyPlusFlexTests", Guid.NewGuid().ToString("N"));
+            var baseDir = Path.Combine(
+                Path.GetTempPath(),
+                "PolicyPlusFlexTests",
+                Guid.NewGuid().ToString("N")
+            );
             Directory.CreateDirectory(baseDir);
             var user = Path.Combine(baseDir, "user.pol");
             var ok = _mgr.SwitchCustomPolFlexible(null, user, allowSingle: true);

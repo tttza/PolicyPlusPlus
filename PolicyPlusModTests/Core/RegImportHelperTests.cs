@@ -1,35 +1,67 @@
+using System.Linq;
 using Microsoft.Win32;
 using PolicyPlusPlus.Services;
-using System.Linq;
 using Xunit;
 
 namespace PolicyPlusModTests.Core
 {
     public class RegImportHelperTests
     {
-        [Fact(DisplayName = "FilterToPolicyKeysInPlace keeps only policy roots and preserves others when off")]
+        [Fact(
+            DisplayName = "FilterToPolicyKeysInPlace keeps only policy roots and preserves others when off"
+        )]
         public void Filter_PolicyRoots()
         {
             var reg = new RegFile();
             reg.SetPrefix(string.Empty);
             // Policy key
-            reg.Keys.Add(new RegFile.RegFileKey
-            {
-                Name = "HKEY_LOCAL_MACHINE\\Software\\Policies\\SamplePolicy",
-                Values = { new RegFile.RegFileValue { Name = "Val1", Kind = RegistryValueKind.DWord, Data = 1u } }
-            });
+            reg.Keys.Add(
+                new RegFile.RegFileKey
+                {
+                    Name = "HKEY_LOCAL_MACHINE\\Software\\Policies\\SamplePolicy",
+                    Values =
+                    {
+                        new RegFile.RegFileValue
+                        {
+                            Name = "Val1",
+                            Kind = RegistryValueKind.DWord,
+                            Data = 1u,
+                        },
+                    },
+                }
+            );
             // Non-policy key should be removed
-            reg.Keys.Add(new RegFile.RegFileKey
-            {
-                Name = "HKEY_LOCAL_MACHINE\\Software\\RandomVendor\\Setting",
-                Values = { new RegFile.RegFileValue { Name = "X", Kind = RegistryValueKind.String, Data = "abc" } }
-            });
+            reg.Keys.Add(
+                new RegFile.RegFileKey
+                {
+                    Name = "HKEY_LOCAL_MACHINE\\Software\\RandomVendor\\Setting",
+                    Values =
+                    {
+                        new RegFile.RegFileValue
+                        {
+                            Name = "X",
+                            Kind = RegistryValueKind.String,
+                            Data = "abc",
+                        },
+                    },
+                }
+            );
             // Similar prefix but boundary test (software\policiesX) should be removed
-            reg.Keys.Add(new RegFile.RegFileKey
-            {
-                Name = "HKEY_LOCAL_MACHINE\\Software\\PoliciesExtra\\ShouldGo",
-                Values = { new RegFile.RegFileValue { Name = "Y", Kind = RegistryValueKind.String, Data = "abc" } }
-            });
+            reg.Keys.Add(
+                new RegFile.RegFileKey
+                {
+                    Name = "HKEY_LOCAL_MACHINE\\Software\\PoliciesExtra\\ShouldGo",
+                    Values =
+                    {
+                        new RegFile.RegFileValue
+                        {
+                            Name = "Y",
+                            Kind = RegistryValueKind.String,
+                            Data = "abc",
+                        },
+                    },
+                }
+            );
 
             RegImportHelper.FilterToPolicyKeysInPlace(reg);
 
@@ -42,11 +74,21 @@ namespace PolicyPlusModTests.Core
         public void Clone_IsDeep()
         {
             var original = new RegFile();
-            original.Keys.Add(new RegFile.RegFileKey
-            {
-                Name = "HKEY_CURRENT_USER\\Software\\Policies\\DeepCopyTest",
-                Values = { new RegFile.RegFileValue { Name = "A", Kind = RegistryValueKind.DWord, Data = 5u } }
-            });
+            original.Keys.Add(
+                new RegFile.RegFileKey
+                {
+                    Name = "HKEY_CURRENT_USER\\Software\\Policies\\DeepCopyTest",
+                    Values =
+                    {
+                        new RegFile.RegFileValue
+                        {
+                            Name = "A",
+                            Kind = RegistryValueKind.DWord,
+                            Data = 5u,
+                        },
+                    },
+                }
+            );
             var copy = RegImportHelper.Clone(original);
             RegImportHelper.FilterToPolicyKeysInPlace(copy);
 

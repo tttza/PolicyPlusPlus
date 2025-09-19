@@ -61,6 +61,6 @@ namespace PolicyPlusCore.Core
     public class MultiTextPresentationElement : PresentationElement // <multiTextBox>
     {
         public string Label = string.Empty; // Inner text
-                                            // Undocumented, but never appears to have any other parameters
+        // Undocumented, but never appears to have any other parameters
     }
 }

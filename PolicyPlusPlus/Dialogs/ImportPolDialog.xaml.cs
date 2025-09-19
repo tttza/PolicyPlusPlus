@@ -1,9 +1,9 @@
+using System;
+using System.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using PolicyPlusCore.IO;
 using PolicyPlusPlus.Logging; // logging
-using System;
-using System.Text;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 
@@ -12,6 +12,7 @@ namespace PolicyPlusPlus.Dialogs
     public sealed partial class ImportPolDialog : ContentDialog
     {
         public PolFile? Pol { get; private set; }
+
         public ImportPolDialog()
         {
             InitializeComponent();
@@ -52,7 +53,10 @@ namespace PolicyPlusPlus.Dialogs
             }
         }
 
-        private void ImportPolDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        private void ImportPolDialog_PrimaryButtonClick(
+            ContentDialog sender,
+            ContentDialogButtonClickEventArgs args
+        )
         {
             if (Pol is null)
                 args.Cancel = true;

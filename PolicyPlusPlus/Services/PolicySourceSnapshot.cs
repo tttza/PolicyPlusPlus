@@ -1,8 +1,6 @@
-using Microsoft.Win32;
-
-using PolicyPlusCore.IO;
-
 using System;
+using Microsoft.Win32;
+using PolicyPlusCore.IO;
 
 namespace PolicyPlusPlus.Services
 {
@@ -20,7 +18,8 @@ namespace PolicyPlusPlus.Services
                     try
                     {
                         using var key = root.OpenSubKey(policyRoot, false);
-                        if (key == null) continue;
+                        if (key == null)
+                            continue;
                         CopyKeyRecursive(key, policyRoot, pol);
                     }
                     catch { }
@@ -55,7 +54,8 @@ namespace PolicyPlusPlus.Services
                 try
                 {
                     using var key = root.OpenSubKey(policyRoot, false);
-                    if (key == null) continue;
+                    if (key == null)
+                        continue;
                     CopyKeyRecursiveToReg(key, hiveName + "\\" + policyRoot, reg);
                 }
                 catch { }
@@ -71,17 +71,36 @@ namespace PolicyPlusPlus.Services
                     try
                     {
                         var kind = key.GetValueKind(name);
-                        var data = key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                        var data = key.GetValue(
+                            name,
+                            null,
+                            RegistryValueOptions.DoNotExpandEnvironmentNames
+                        );
                         switch (kind)
                         {
                             case RegistryValueKind.DWord:
-                                pol.SetValue(path, name, Convert.ToUInt32(data ?? 0), RegistryValueKind.DWord);
+                                pol.SetValue(
+                                    path,
+                                    name,
+                                    Convert.ToUInt32(data ?? 0),
+                                    RegistryValueKind.DWord
+                                );
                                 break;
                             case RegistryValueKind.QWord:
-                                pol.SetValue(path, name, Convert.ToUInt64(data ?? 0UL), RegistryValueKind.QWord);
+                                pol.SetValue(
+                                    path,
+                                    name,
+                                    Convert.ToUInt64(data ?? 0UL),
+                                    RegistryValueKind.QWord
+                                );
                                 break;
                             case RegistryValueKind.MultiString:
-                                pol.SetValue(path, name, (data as string[]) ?? Array.Empty<string>(), RegistryValueKind.MultiString);
+                                pol.SetValue(
+                                    path,
+                                    name,
+                                    (data as string[]) ?? Array.Empty<string>(),
+                                    RegistryValueKind.MultiString
+                                );
                                 break;
                             default:
                                 pol.SetValue(path, name, data ?? string.Empty, kind);
@@ -116,17 +135,36 @@ namespace PolicyPlusPlus.Services
                     try
                     {
                         var kind = key.GetValueKind(name);
-                        var data = key.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                        var data = key.GetValue(
+                            name,
+                            null,
+                            RegistryValueOptions.DoNotExpandEnvironmentNames
+                        );
                         switch (kind)
                         {
                             case RegistryValueKind.DWord:
-                                reg.SetValue(fullPath, name, Convert.ToUInt32(data ?? 0), RegistryValueKind.DWord);
+                                reg.SetValue(
+                                    fullPath,
+                                    name,
+                                    Convert.ToUInt32(data ?? 0),
+                                    RegistryValueKind.DWord
+                                );
                                 break;
                             case RegistryValueKind.QWord:
-                                reg.SetValue(fullPath, name, Convert.ToUInt64(data ?? 0UL), RegistryValueKind.QWord);
+                                reg.SetValue(
+                                    fullPath,
+                                    name,
+                                    Convert.ToUInt64(data ?? 0UL),
+                                    RegistryValueKind.QWord
+                                );
                                 break;
                             case RegistryValueKind.MultiString:
-                                reg.SetValue(fullPath, name, (data as string[]) ?? Array.Empty<string>(), RegistryValueKind.MultiString);
+                                reg.SetValue(
+                                    fullPath,
+                                    name,
+                                    (data as string[]) ?? Array.Empty<string>(),
+                                    RegistryValueKind.MultiString
+                                );
                                 break;
                             default:
                                 reg.SetValue(fullPath, name, data ?? string.Empty, kind);

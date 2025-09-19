@@ -1,11 +1,11 @@
-using Microsoft.UI.Xaml.Controls;
-using PolicyPlusCore.Admx;
-using PolicyPlusCore.Core;
-using PolicyPlusCore.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.UI.Xaml.Controls;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
 using Windows.ApplicationModel.DataTransfer;
 
 namespace PolicyPlusPlus.Dialogs
@@ -24,13 +24,20 @@ namespace PolicyPlusPlus.Dialogs
             this.PrimaryButtonClick += DetailPolicyFormattedDialog_PrimaryButtonClick;
         }
 
-        public void Initialize(PolicyPlusPolicy policy, AdmxBundle bundle, IPolicySource compSource, IPolicySource userSource, AdmxPolicySection section)
+        public void Initialize(
+            PolicyPlusPolicy policy,
+            AdmxBundle bundle,
+            IPolicySource compSource,
+            IPolicySource userSource,
+            AdmxPolicySection section
+        )
         {
             _policy = policy;
             _bundle = bundle;
             _compSource = compSource;
             _userSource = userSource;
-            _currentSection = section == AdmxPolicySection.Both ? AdmxPolicySection.Machine : section;
+            _currentSection =
+                section == AdmxPolicySection.Both ? AdmxPolicySection.Machine : section;
             TitleText.Text = policy.DisplayName;
 
             SectionSelector.SelectedIndex = _currentSection == AdmxPolicySection.Machine ? 0 : 1;
@@ -38,7 +45,10 @@ namespace PolicyPlusPlus.Dialogs
             RefreshOutput();
         }
 
-        private void DetailPolicyFormattedDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        private void DetailPolicyFormattedDialog_PrimaryButtonClick(
+            ContentDialog sender,
+            ContentDialogButtonClickEventArgs args
+        )
         {
             var data = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
             data.SetText(OutputBox.Text ?? string.Empty);
@@ -47,7 +57,10 @@ namespace PolicyPlusPlus.Dialogs
 
         private void SectionSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            _currentSection = SectionSelector.SelectedIndex == 0 ? AdmxPolicySection.Machine : AdmxPolicySection.User;
+            _currentSection =
+                SectionSelector.SelectedIndex == 0
+                    ? AdmxPolicySection.Machine
+                    : AdmxPolicySection.User;
             RefreshOutput();
         }
 
@@ -79,12 +92,14 @@ namespace PolicyPlusPlus.Dialogs
 
             // Path
             sb.AppendLine("Path:");
-            sb.AppendLine(_policy.RawPolicy.Section switch
-            {
-                AdmxPolicySection.Machine => "  Computer Configuration",
-                AdmxPolicySection.User => "  User Configuration",
-                _ => "  Computer/User Configuration"
-            });
+            sb.AppendLine(
+                _policy.RawPolicy.Section switch
+                {
+                    AdmxPolicySection.Machine => "  Computer Configuration",
+                    AdmxPolicySection.User => "  User Configuration",
+                    _ => "  Computer/User Configuration",
+                }
+            );
             sb.AppendLine("    + Administrative Templates");
             if (_policy.Category != null)
             {
@@ -99,7 +114,7 @@ namespace PolicyPlusPlus.Dialogs
             {
                 AdmxPolicySection.Machine => "Computer",
                 AdmxPolicySection.User => "User",
-                _ => "Both"
+                _ => "Both",
             };
             sb.AppendLine($"Applies to: {applies}");
             if (_policy.SupportedOn != null)
@@ -159,7 +174,9 @@ namespace PolicyPlusPlus.Dialogs
             return sb.ToString();
         }
 
-        private IEnumerable<(string label, string value)> FormatOptions(Dictionary<string, object> options)
+        private IEnumerable<(string label, string value)> FormatOptions(
+            Dictionary<string, object> options
+        )
         {
             if (_policy.Presentation?.Elements == null || _policy.RawPolicy.Elements == null)
                 yield break;
@@ -170,23 +187,28 @@ namespace PolicyPlusPlus.Dialogs
                     continue; // label-only
                 if (!options.TryGetValue(pres.ID, out var val))
                     continue;
-                string label = pres switch
-                {
-                    CheckBoxPresentationElement cb => cb.Text,
-                    TextBoxPresentationElement tb => tb.Label,
-                    NumericBoxPresentationElement nb => nb.Label,
-                    ComboBoxPresentationElement cbx => cbx.Label,
-                    DropDownPresentationElement dd => dd.Label,
-                    ListPresentationElement lp => lp.Label,
-                    MultiTextPresentationElement mt => mt.Label,
-                    _ => pres.ID
-                } ?? pres.ID;
+                string label =
+                    pres switch
+                    {
+                        CheckBoxPresentationElement cb => cb.Text,
+                        TextBoxPresentationElement tb => tb.Label,
+                        NumericBoxPresentationElement nb => nb.Label,
+                        ComboBoxPresentationElement cbx => cbx.Label,
+                        DropDownPresentationElement dd => dd.Label,
+                        ListPresentationElement lp => lp.Label,
+                        MultiTextPresentationElement mt => mt.Label,
+                        _ => pres.ID,
+                    } ?? pres.ID;
                 string text = FormatOptionValue(pres, elemDict, val);
                 yield return (label, text);
             }
         }
 
-        private string FormatOptionValue(PresentationElement pres, Dictionary<string, PolicyElement> elemDict, object val)
+        private string FormatOptionValue(
+            PresentationElement pres,
+            Dictionary<string, PolicyElement> elemDict,
+            object val
+        )
         {
             switch (pres.ElementType)
             {
@@ -198,29 +220,39 @@ namespace PolicyPlusPlus.Dialogs
                 case "checkBox":
                     return (val is bool b && b) ? "True" : "False";
                 case "dropdownList":
-                    {
-                        if (!(val is int idx)) return Convert.ToString(val) ?? string.Empty;
-                        if (!elemDict.TryGetValue(pres.ID, out var pe) || pe is not EnumPolicyElement ee) return idx.ToString();
-                        if (idx < 0 || idx >= ee.Items.Count) return idx.ToString();
-                        var disp = _bundle.ResolveString(ee.Items[idx].DisplayCode, _policy.RawPolicy.DefinedIn);
-                        return string.IsNullOrWhiteSpace(disp) ? idx.ToString() : disp;
-                    }
+                {
+                    if (!(val is int idx))
+                        return Convert.ToString(val) ?? string.Empty;
+                    if (
+                        !elemDict.TryGetValue(pres.ID, out var pe) || pe is not EnumPolicyElement ee
+                    )
+                        return idx.ToString();
+                    if (idx < 0 || idx >= ee.Items.Count)
+                        return idx.ToString();
+                    var disp = _bundle.ResolveString(
+                        ee.Items[idx].DisplayCode,
+                        _policy.RawPolicy.DefinedIn
+                    );
+                    return string.IsNullOrWhiteSpace(disp) ? idx.ToString() : disp;
+                }
                 case "listBox":
-                    {
-                        if (val is List<string> ls)
-                            return $"{ls.Count} item(s): " + string.Join(", ", ls);
-                        if (val is List<KeyValuePair<string, string>> kvp)
-                            return $"{kvp.Count} pair(s): " + string.Join(", ", kvp.Select(p => $"{p.Key}={p.Value}"));
-                        if (val is Dictionary<string, string> dict)
-                            return $"{dict.Count} pair(s): " + string.Join(", ", dict.Select(p => $"{p.Key}={p.Value}"));
-                        return Convert.ToString(val) ?? string.Empty;
-                    }
+                {
+                    if (val is List<string> ls)
+                        return $"{ls.Count} item(s): " + string.Join(", ", ls);
+                    if (val is List<KeyValuePair<string, string>> kvp)
+                        return $"{kvp.Count} pair(s): "
+                            + string.Join(", ", kvp.Select(p => $"{p.Key}={p.Value}"));
+                    if (val is Dictionary<string, string> dict)
+                        return $"{dict.Count} pair(s): "
+                            + string.Join(", ", dict.Select(p => $"{p.Key}={p.Value}"));
+                    return Convert.ToString(val) ?? string.Empty;
+                }
                 case "multiTextBox":
-                    {
-                        if (val is string[] arr)
-                            return string.Join(" | ", arr);
-                        return Convert.ToString(val) ?? string.Empty;
-                    }
+                {
+                    if (val is string[] arr)
+                        return string.Join(" | ", arr);
+                    return Convert.ToString(val) ?? string.Empty;
+                }
             }
             return Convert.ToString(val) ?? string.Empty;
         }
@@ -239,7 +271,8 @@ namespace PolicyPlusPlus.Dialogs
 
         private static (string typeName, string dataText) GetTypeAndDataText(object? data)
         {
-            if (data is null) return ("(not set)", "");
+            if (data is null)
+                return ("(not set)", "");
             switch (data)
             {
                 case uint u:
@@ -259,9 +292,14 @@ namespace PolicyPlusPlus.Dialogs
 
         private static IEnumerable<string> SplitMultiline(string s)
         {
-            if (string.IsNullOrEmpty(s)) { yield return string.Empty; yield break; }
+            if (string.IsNullOrEmpty(s))
+            {
+                yield return string.Empty;
+                yield break;
+            }
             var parts = s.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-            foreach (var p in parts) yield return p;
+            foreach (var p in parts)
+                yield return p;
         }
 
         private static string RootForSection(AdmxPolicySection section)
@@ -294,7 +332,8 @@ namespace PolicyPlusPlus.Dialogs
                     continue;
                 }
                 var data = src.GetValue(kv.Key, kv.Value);
-                if (data is null) continue;
+                if (data is null)
+                    continue;
                 sb.AppendLine(FormatRegValue(kv.Value, data));
             }
             return sb.ToString();
@@ -323,7 +362,8 @@ namespace PolicyPlusPlus.Dialogs
             return $"\"{name}\"=hex:{string.Join(",", (byte[])PolFile.ObjectToBytes(data, Microsoft.Win32.RegistryValueKind.Binary))}";
         }
 
-        private static string EscapeRegString(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        private static string EscapeRegString(string s) =>
+            s.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
         private static string EncodeMultiString(string[] lines)
         {
@@ -332,9 +372,11 @@ namespace PolicyPlusPlus.Dialogs
             {
                 var b = Encoding.Unicode.GetBytes(line);
                 bytes.AddRange(b);
-                bytes.Add(0); bytes.Add(0);
+                bytes.Add(0);
+                bytes.Add(0);
             }
-            bytes.Add(0); bytes.Add(0); // double-null
+            bytes.Add(0);
+            bytes.Add(0); // double-null
             return string.Join(",", bytes.Select(b => b.ToString("x2")));
         }
     }

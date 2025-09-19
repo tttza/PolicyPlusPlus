@@ -1,13 +1,19 @@
-using PolicyPlusPlus.Services;
 using System;
 using System.Collections.Generic;
+using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.Navigation
 {
     public class ViewNavigationEndToEndTests
     {
-        private static (AdmxBundle bundle, PolicyPlusCategory catA, PolicyPlusCategory catB, PolicyPlusPolicy polA, PolicyPlusPolicy polB) BuildBundle()
+        private static (
+            AdmxBundle bundle,
+            PolicyPlusCategory catA,
+            PolicyPlusCategory catB,
+            PolicyPlusPolicy polA,
+            PolicyPlusPolicy polB
+        ) BuildBundle()
         {
             var catA = new PolicyPlusCategory { UniqueID = "CAT:A", DisplayName = "A" };
             var catB = new PolicyPlusCategory { UniqueID = "CAT:B", DisplayName = "B" };
@@ -19,30 +25,48 @@ namespace PolicyPlusModTests.WinUI3.Navigation
                 UniqueID = "MACHINE:PA",
                 DisplayName = "PA",
                 Category = catA,
-                RawPolicy = new AdmxPolicy { RegistryKey = "HKLM\\Software", RegistryValue = "V", Section = AdmxPolicySection.Machine, AffectedValues = new PolicyRegistryList(), DefinedIn = new AdmxFile { SourceFile = "d.admx" } }
+                RawPolicy = new AdmxPolicy
+                {
+                    RegistryKey = "HKLM\\Software",
+                    RegistryValue = "V",
+                    Section = AdmxPolicySection.Machine,
+                    AffectedValues = new PolicyRegistryList(),
+                    DefinedIn = new AdmxFile { SourceFile = "d.admx" },
+                },
             };
             var polB = new PolicyPlusPolicy
             {
                 UniqueID = "USER:PB",
                 DisplayName = "PB",
                 Category = catB,
-                RawPolicy = new AdmxPolicy { RegistryKey = "HKCU\\Software", RegistryValue = "V", Section = AdmxPolicySection.User, AffectedValues = new PolicyRegistryList(), DefinedIn = new AdmxFile { SourceFile = "d.admx" } }
+                RawPolicy = new AdmxPolicy
+                {
+                    RegistryKey = "HKCU\\Software",
+                    RegistryValue = "V",
+                    Section = AdmxPolicySection.User,
+                    AffectedValues = new PolicyRegistryList(),
+                    DefinedIn = new AdmxFile { SourceFile = "d.admx" },
+                },
             };
             catA.Policies = new List<PolicyPlusPolicy> { polA };
             catB.Policies = new List<PolicyPlusPolicy> { polB };
 
             var bundle = new AdmxBundle
             {
-                Categories = new Dictionary<string, PolicyPlusCategory>(StringComparer.OrdinalIgnoreCase)
+                Categories = new Dictionary<string, PolicyPlusCategory>(
+                    StringComparer.OrdinalIgnoreCase
+                )
                 {
                     { catA.UniqueID, catA },
-                    { catB.UniqueID, catB }
+                    { catB.UniqueID, catB },
                 },
-                Policies = new Dictionary<string, PolicyPlusPolicy>(StringComparer.OrdinalIgnoreCase)
+                Policies = new Dictionary<string, PolicyPlusPolicy>(
+                    StringComparer.OrdinalIgnoreCase
+                )
                 {
                     { polA.UniqueID, polA },
-                    { polB.UniqueID, polB }
-                }
+                    { polB.UniqueID, polB },
+                },
             };
             return (bundle, catA, catB, polA, polB);
         }
@@ -56,11 +80,17 @@ namespace PolicyPlusModTests.WinUI3.Navigation
             var (bundle, catA, catB, _, _) = BuildBundle();
 
             // Baseline state (no category)
-            ViewNavigationService.Instance.Push(ViewState.Create(null, string.Empty, AdmxPolicySection.Both, false));
+            ViewNavigationService.Instance.Push(
+                ViewState.Create(null, string.Empty, AdmxPolicySection.Both, false)
+            );
             // Navigate to A
-            ViewNavigationService.Instance.Push(ViewState.Create(catA.UniqueID, string.Empty, AdmxPolicySection.Both, false));
+            ViewNavigationService.Instance.Push(
+                ViewState.Create(catA.UniqueID, string.Empty, AdmxPolicySection.Both, false)
+            );
             // Navigate to B
-            ViewNavigationService.Instance.Push(ViewState.Create(catB.UniqueID, string.Empty, AdmxPolicySection.Both, false));
+            ViewNavigationService.Instance.Push(
+                ViewState.Create(catB.UniqueID, string.Empty, AdmxPolicySection.Both, false)
+            );
 
             // Back should return to A
             var s1 = ViewNavigationService.Instance.GoBack();

@@ -1,147 +1,376 @@
 <UserControl
-    x:Class="PolicyPlusPlus.Windows.QuickEditGridControl"
-    x:Name="RootControl"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:conv="using:PolicyPlusPlus.Converters"
-    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
-    xmlns:vm="using:PolicyPlusPlus.ViewModels">
-    <UserControl.Resources>
-        <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
-        <conv:QuickEditStateToIndexConverter x:Key="StateIndex" />
-        <conv:HeaderGlyphConverter x:Key="HeaderGlyph" />
-        <conv:QuickEditStateToBrushConverter x:Key="StateBrush" />
-    </UserControl.Resources>
-    <Grid KeyDown="RootGrid_KeyDown">
-        <ScrollViewer IsTabStop="False" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-            <StackPanel>
-                <!-- Header row -->
-                <Grid Height="40" Background="{ThemeResource LayerFillColorDefaultBrush}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="{Binding Columns.Name, ElementName=RootControl}" MinWidth="300" />
-                        <ColumnDefinition Width="4" />
-                        <ColumnDefinition Width="{Binding Columns.Id, ElementName=RootControl}" MinWidth="140" />
-                        <ColumnDefinition Width="4" />
-                        <ColumnDefinition Width="{Binding Columns.UserState, ElementName=RootControl}" MinWidth="150" />
-                        <ColumnDefinition Width="4" />
-                        <ColumnDefinition Width="260"/>
-                        <ColumnDefinition Width="4" />
-                        <ColumnDefinition Width="{Binding Columns.ComputerState, ElementName=RootControl}" MinWidth="150" />
-                        <ColumnDefinition Width="4" />
-                        <ColumnDefinition Width="260"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Name" VerticalAlignment="Center" Margin="6,0" />
-                    <Thumb Grid.Column="1" Tag="Name" DragDelta="ResizeThumb_DragDelta" Background="Transparent" Opacity="0.001" />
-                    <TextBlock Grid.Column="2" Text="ID" VerticalAlignment="Center" Margin="6,0" />
-                    <Thumb Grid.Column="3" Tag="Id" DragDelta="ResizeThumb_DragDelta" Background="Transparent" Opacity="0.001" />
-                    <TextBlock Grid.Column="4" Text="User State" VerticalAlignment="Center" Margin="6,0" />
-                    <Thumb Grid.Column="5" Tag="UserState" DragDelta="ResizeThumb_DragDelta" Background="Transparent" Opacity="0.001" />
-                    <TextBlock Grid.Column="6" Text="User Options" VerticalAlignment="Center" Margin="6,0" />
-                    <Thumb Grid.Column="7" Tag="UserOptions" DragDelta="ResizeThumb_DragDelta" Background="Transparent" Opacity="0.001" />
-                    <TextBlock Grid.Column="8" Text="Computer State" VerticalAlignment="Center" Margin="6,0" />
-                    <Thumb Grid.Column="9" Tag="ComputerState" DragDelta="ResizeThumb_DragDelta" Background="Transparent" Opacity="0.001" />
-                    <TextBlock Grid.Column="10" Text="Computer Options" VerticalAlignment="Center" Margin="6,0" />
+  x:Class="PolicyPlusPlus.Windows.QuickEditGridControl"
+  x:Name="RootControl"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:conv="using:PolicyPlusPlus.Converters"
+  xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+  xmlns:vm="using:PolicyPlusPlus.ViewModels"
+>
+  <UserControl.Resources>
+    <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    <conv:QuickEditStateToIndexConverter x:Key="StateIndex" />
+    <conv:HeaderGlyphConverter x:Key="HeaderGlyph" />
+    <conv:QuickEditStateToBrushConverter x:Key="StateBrush" />
+  </UserControl.Resources>
+  <Grid KeyDown="RootGrid_KeyDown">
+    <ScrollViewer
+      IsTabStop="False"
+      HorizontalScrollBarVisibility="Auto"
+      VerticalScrollBarVisibility="Disabled"
+    >
+      <StackPanel>
+        <!-- Header row -->
+        <Grid Height="40" Background="{ThemeResource LayerFillColorDefaultBrush}">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition
+              Width="{Binding Columns.Name, ElementName=RootControl}"
+              MinWidth="300"
+            />
+            <ColumnDefinition Width="4" />
+            <ColumnDefinition
+              Width="{Binding Columns.Id, ElementName=RootControl}"
+              MinWidth="140"
+            />
+            <ColumnDefinition Width="4" />
+            <ColumnDefinition
+              Width="{Binding Columns.UserState, ElementName=RootControl}"
+              MinWidth="150"
+            />
+            <ColumnDefinition Width="4" />
+            <ColumnDefinition Width="260" />
+            <ColumnDefinition Width="4" />
+            <ColumnDefinition
+              Width="{Binding Columns.ComputerState, ElementName=RootControl}"
+              MinWidth="150"
+            />
+            <ColumnDefinition Width="4" />
+            <ColumnDefinition Width="260" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Grid.Column="0" Text="Name" VerticalAlignment="Center" Margin="6,0" />
+          <Thumb
+            Grid.Column="1"
+            Tag="Name"
+            DragDelta="ResizeThumb_DragDelta"
+            Background="Transparent"
+            Opacity="0.001"
+          />
+          <TextBlock Grid.Column="2" Text="ID" VerticalAlignment="Center" Margin="6,0" />
+          <Thumb
+            Grid.Column="3"
+            Tag="Id"
+            DragDelta="ResizeThumb_DragDelta"
+            Background="Transparent"
+            Opacity="0.001"
+          />
+          <TextBlock Grid.Column="4" Text="User State" VerticalAlignment="Center" Margin="6,0" />
+          <Thumb
+            Grid.Column="5"
+            Tag="UserState"
+            DragDelta="ResizeThumb_DragDelta"
+            Background="Transparent"
+            Opacity="0.001"
+          />
+          <TextBlock Grid.Column="6" Text="User Options" VerticalAlignment="Center" Margin="6,0" />
+          <Thumb
+            Grid.Column="7"
+            Tag="UserOptions"
+            DragDelta="ResizeThumb_DragDelta"
+            Background="Transparent"
+            Opacity="0.001"
+          />
+          <TextBlock
+            Grid.Column="8"
+            Text="Computer State"
+            VerticalAlignment="Center"
+            Margin="6,0"
+          />
+          <Thumb
+            Grid.Column="9"
+            Tag="ComputerState"
+            DragDelta="ResizeThumb_DragDelta"
+            Background="Transparent"
+            Opacity="0.001"
+          />
+          <TextBlock
+            Grid.Column="10"
+            Text="Computer Options"
+            VerticalAlignment="Center"
+            Margin="6,0"
+          />
+        </Grid>
+        <!-- Body -->
+        <ScrollViewer
+          IsTabStop="False"
+          VerticalScrollBarVisibility="Auto"
+          HorizontalScrollMode="Disabled"
+          HorizontalScrollBarVisibility="Hidden"
+          MaxHeight="600"
+        >
+          <ItemsControl ItemsSource="{x:Bind Rows, Mode=OneWay}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:QuickEditRow">
+                <Grid MinHeight="42" Padding="0,2,0,2">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition
+                      Width="{Binding Columns.Name, ElementName=RootControl}"
+                      MinWidth="300"
+                    />
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition
+                      Width="{Binding Columns.Id, ElementName=RootControl}"
+                      MinWidth="140"
+                    />
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition
+                      Width="{Binding Columns.UserState, ElementName=RootControl}"
+                      MinWidth="150"
+                    />
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="260" />
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition
+                      Width="{Binding Columns.ComputerState, ElementName=RootControl}"
+                      MinWidth="150"
+                    />
+                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="260" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock
+                    Grid.Column="0"
+                    Text="{Binding Policy.DisplayName}"
+                    TextTrimming="CharacterEllipsis"
+                    VerticalAlignment="Center"
+                    Margin="4,0"
+                    IsTabStop="False"
+                  />
+                  <TextBlock
+                    Grid.Column="2"
+                    Text="{Binding IdTail}"
+                    TextTrimming="CharacterEllipsis"
+                    VerticalAlignment="Center"
+                    Margin="4,0"
+                    IsTabStop="False"
+                  />
+                  <!-- User State (centered) -->
+                  <Border
+                    Grid.Column="4"
+                    Background="{Binding UserState, Converter={StaticResource StateBrush}}"
+                    CornerRadius="4"
+                    Padding="4,2"
+                    Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}"
+                    VerticalAlignment="Stretch"
+                    HorizontalAlignment="Center"
+                  >
+                    <Grid VerticalAlignment="Center">
+                      <ComboBox
+                        Tag="UserStateCombo"
+                        Width="150"
+                        SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}"
+                      >
+                        <ComboBoxItem Content="Not Configured" />
+                        <ComboBoxItem Content="Enabled" />
+                        <ComboBoxItem Content="Disabled" />
+                      </ComboBox>
+                    </Grid>
+                  </Border>
+                  <!-- User Options -->
+                  <ItemsControl
+                    Grid.Column="6"
+                    IsTabStop="False"
+                    ItemsSource="{Binding OptionElements}"
+                    Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}"
+                    IsEnabled="{Binding UserEnabledForOptions}"
+                  >
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <StackPanel Orientation="Vertical" Spacing="4" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:OptionElementVM">
+                        <StackPanel
+                          Orientation="Vertical"
+                          Spacing="2"
+                          ToolTipService.ToolTip="{x:Bind Id}"
+                          HorizontalAlignment="Left"
+                        >
+                          <ComboBox
+                            Tag="UserOption"
+                            Width="210"
+                            MinWidth="120"
+                            Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}"
+                            SelectedIndex="{x:Bind UserEnumIndex, Mode=TwoWay}"
+                            ItemsSource="{x:Bind Choices}"
+                          />
+                          <CheckBox
+                            Tag="UserOption"
+                            Visibility="{x:Bind IsBoolean, Converter={StaticResource BoolToVisibility}}"
+                            IsChecked="{x:Bind UserBool, Mode=TwoWay}"
+                            Padding="4,0"
+                            Content="{x:Bind DisplayName}"
+                          />
+                          <TextBox
+                            Tag="UserOption"
+                            MinWidth="150"
+                            Width="210"
+                            Visibility="{x:Bind IsPlainText, Converter={StaticResource BoolToVisibility}}"
+                            Text="{x:Bind UserText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            MaxLength="{x:Bind TextMaxLength}"
+                          />
+                          <AutoSuggestBox
+                            Tag="UserOption"
+                            MinWidth="150"
+                            Width="210"
+                            Visibility="{x:Bind IsSuggestText, Converter={StaticResource BoolToVisibility}}"
+                            Text="{x:Bind UserText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            ItemsSource="{x:Bind Suggestions}"
+                          />
+                          <NumberBox
+                            Tag="UserOption"
+                            Width="110"
+                            Visibility="{x:Bind IsDecimal, Converter={StaticResource BoolToVisibility}}"
+                            Value="{x:Bind UserNumberDouble, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            SpinButtonPlacementMode="Compact"
+                            Minimum="{x:Bind DecimalMinDouble}"
+                            Maximum="{x:Bind DecimalMaxDouble}"
+                            SmallChange="{x:Bind DecimalIncrementDouble}"
+                          />
+                          <Button
+                            Tag="UserOption"
+                            MinWidth="96"
+                            Width="110"
+                            Visibility="{x:Bind IsList, Converter={StaticResource BoolToVisibility}}"
+                            Content="{x:Bind UserListSummary, Mode=OneWay}"
+                            Click="UserListDynamic_Click"
+                          />
+                          <Button
+                            Tag="UserOption"
+                            MinWidth="96"
+                            Width="110"
+                            Visibility="{x:Bind IsMultiText, Converter={StaticResource BoolToVisibility}}"
+                            Content="{x:Bind UserMultiTextSummary, Mode=OneWay}"
+                            Click="UserMultiDynamic_Click"
+                          />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <!-- Computer State (centered) -->
+                  <Border
+                    Grid.Column="8"
+                    Background="{Binding ComputerState, Converter={StaticResource StateBrush}}"
+                    CornerRadius="4"
+                    Padding="4,2"
+                    Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}"
+                    VerticalAlignment="Stretch"
+                    HorizontalAlignment="Center"
+                  >
+                    <Grid VerticalAlignment="Center">
+                      <ComboBox
+                        Tag="ComputerStateCombo"
+                        Width="150"
+                        SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}"
+                      >
+                        <ComboBoxItem Content="Not Configured" />
+                        <ComboBoxItem Content="Enabled" />
+                        <ComboBoxItem Content="Disabled" />
+                      </ComboBox>
+                    </Grid>
+                  </Border>
+                  <!-- Computer Options -->
+                  <ItemsControl
+                    Grid.Column="10"
+                    IsTabStop="False"
+                    ItemsSource="{Binding OptionElements}"
+                    Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}"
+                    IsEnabled="{Binding ComputerEnabledForOptions}"
+                  >
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <StackPanel Orientation="Vertical" Spacing="4" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:OptionElementVM">
+                        <StackPanel
+                          Orientation="Vertical"
+                          Spacing="2"
+                          ToolTipService.ToolTip="{x:Bind Id}"
+                          HorizontalAlignment="Left"
+                        >
+                          <ComboBox
+                            Tag="ComputerOption"
+                            Width="210"
+                            MinWidth="120"
+                            Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}"
+                            SelectedIndex="{x:Bind ComputerEnumIndex, Mode=TwoWay}"
+                            ItemsSource="{x:Bind Choices}"
+                          />
+                          <CheckBox
+                            Tag="ComputerOption"
+                            Visibility="{x:Bind IsBoolean, Converter={StaticResource BoolToVisibility}}"
+                            IsChecked="{x:Bind ComputerBool, Mode=TwoWay}"
+                            Padding="4,0"
+                            Content="{x:Bind DisplayName}"
+                          />
+                          <TextBox
+                            Tag="ComputerOption"
+                            MinWidth="150"
+                            Width="210"
+                            Visibility="{x:Bind IsPlainText, Converter={StaticResource BoolToVisibility}}"
+                            Text="{x:Bind ComputerText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            MaxLength="{x:Bind TextMaxLength}"
+                          />
+                          <AutoSuggestBox
+                            Tag="ComputerOption"
+                            MinWidth="150"
+                            Width="210"
+                            Visibility="{x:Bind IsSuggestText, Converter={StaticResource BoolToVisibility}}"
+                            Text="{x:Bind ComputerText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            ItemsSource="{x:Bind Suggestions}"
+                          />
+                          <NumberBox
+                            Tag="ComputerOption"
+                            Width="110"
+                            Visibility="{x:Bind IsDecimal, Converter={StaticResource BoolToVisibility}}"
+                            Value="{x:Bind ComputerNumberDouble, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            SpinButtonPlacementMode="Compact"
+                            Minimum="{x:Bind DecimalMinDouble}"
+                            Maximum="{x:Bind DecimalMaxDouble}"
+                            SmallChange="{x:Bind DecimalIncrementDouble}"
+                          />
+                          <Button
+                            Tag="ComputerOption"
+                            MinWidth="96"
+                            Width="110"
+                            Visibility="{x:Bind IsList, Converter={StaticResource BoolToVisibility}}"
+                            Content="{x:Bind ComputerListSummary, Mode=OneWay}"
+                            Click="ComputerListDynamic_Click"
+                          />
+                          <Button
+                            Tag="ComputerOption"
+                            MinWidth="96"
+                            Width="110"
+                            Visibility="{x:Bind IsMultiText, Converter={StaticResource BoolToVisibility}}"
+                            Content="{x:Bind ComputerMultiTextSummary, Mode=OneWay}"
+                            Click="ComputerMultiDynamic_Click"
+                          />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
                 </Grid>
-
-                <!-- Body -->
-                <ScrollViewer IsTabStop="False" VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Hidden" MaxHeight="600">
-                    <ItemsControl ItemsSource="{x:Bind Rows, Mode=OneWay}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:QuickEditRow">
-                                <Grid MinHeight="42" Padding="0,2,0,2">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="{Binding Columns.Name, ElementName=RootControl}" MinWidth="300" />
-                                        <ColumnDefinition Width="4" />
-                                        <ColumnDefinition Width="{Binding Columns.Id, ElementName=RootControl}" MinWidth="140" />
-                                        <ColumnDefinition Width="4" />
-                                        <ColumnDefinition Width="{Binding Columns.UserState, ElementName=RootControl}" MinWidth="150" />
-                                        <ColumnDefinition Width="4" />
-                                        <ColumnDefinition Width="260"/>
-                                        <ColumnDefinition Width="4" />
-                                        <ColumnDefinition Width="{Binding Columns.ComputerState, ElementName=RootControl}" MinWidth="150" />
-                                        <ColumnDefinition Width="4" />
-                                        <ColumnDefinition Width="260"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0" Text="{Binding Policy.DisplayName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" IsTabStop="False" />
-                                    <TextBlock Grid.Column="2" Text="{Binding IdTail}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="4,0" IsTabStop="False" />
-
-                                    <!-- User State (centered) -->
-                                    <Border Grid.Column="4" Background="{Binding UserState, Converter={StaticResource StateBrush}}" CornerRadius="4" Padding="4,2" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" VerticalAlignment="Stretch" HorizontalAlignment="Center">
-                                        <Grid VerticalAlignment="Center">
-                                            <ComboBox Tag="UserStateCombo" Width="150" SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}">
-                                                <ComboBoxItem Content="Not Configured" />
-                                                <ComboBoxItem Content="Enabled" />
-                                                <ComboBoxItem Content="Disabled" />
-                                            </ComboBox>
-                                        </Grid>
-                                    </Border>
-
-                                    <!-- User Options -->
-                                    <ItemsControl Grid.Column="6" IsTabStop="False" ItemsSource="{Binding OptionElements}" Visibility="{Binding SupportsUser, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding UserEnabledForOptions}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <StackPanel Orientation="Vertical" Spacing="4" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate x:DataType="vm:OptionElementVM">
-                                                <StackPanel Orientation="Vertical" Spacing="2" ToolTipService.ToolTip="{x:Bind Id}" HorizontalAlignment="Left">
-                                                    <ComboBox Tag="UserOption" Width="210" MinWidth="120" Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{x:Bind UserEnumIndex, Mode=TwoWay}" ItemsSource="{x:Bind Choices}" />
-                                                    <CheckBox Tag="UserOption" Visibility="{x:Bind IsBoolean, Converter={StaticResource BoolToVisibility}}" IsChecked="{x:Bind UserBool, Mode=TwoWay}" Padding="4,0" Content="{x:Bind DisplayName}" />
-                                                    <TextBox Tag="UserOption" MinWidth="150" Width="210" Visibility="{x:Bind IsPlainText, Converter={StaticResource BoolToVisibility}}" Text="{x:Bind UserText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="{x:Bind TextMaxLength}" />
-                                                    <AutoSuggestBox Tag="UserOption" MinWidth="150" Width="210" Visibility="{x:Bind IsSuggestText, Converter={StaticResource BoolToVisibility}}" Text="{x:Bind UserText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ItemsSource="{x:Bind Suggestions}" />
-                                                    <NumberBox Tag="UserOption" Width="110" Visibility="{x:Bind IsDecimal, Converter={StaticResource BoolToVisibility}}" Value="{x:Bind UserNumberDouble, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SpinButtonPlacementMode="Compact" Minimum="{x:Bind DecimalMinDouble}" Maximum="{x:Bind DecimalMaxDouble}" SmallChange="{x:Bind DecimalIncrementDouble}" />
-                                                    <Button Tag="UserOption" MinWidth="96" Width="110" Visibility="{x:Bind IsList, Converter={StaticResource BoolToVisibility}}" Content="{x:Bind UserListSummary, Mode=OneWay}" Click="UserListDynamic_Click" />
-                                                    <Button Tag="UserOption" MinWidth="96" Width="110" Visibility="{x:Bind IsMultiText, Converter={StaticResource BoolToVisibility}}" Content="{x:Bind UserMultiTextSummary, Mode=OneWay}" Click="UserMultiDynamic_Click" />
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-
-                                    <!-- Computer State (centered) -->
-                                    <Border Grid.Column="8" Background="{Binding ComputerState, Converter={StaticResource StateBrush}}" CornerRadius="4" Padding="4,2" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" VerticalAlignment="Stretch" HorizontalAlignment="Center">
-                                        <Grid VerticalAlignment="Center">
-                                            <ComboBox Tag="ComputerStateCombo" Width="150" SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}">
-                                                <ComboBoxItem Content="Not Configured" />
-                                                <ComboBoxItem Content="Enabled" />
-                                                <ComboBoxItem Content="Disabled" />
-                                            </ComboBox>
-                                        </Grid>
-                                    </Border>
-
-                                    <!-- Computer Options -->
-                                    <ItemsControl Grid.Column="10" IsTabStop="False" ItemsSource="{Binding OptionElements}" Visibility="{Binding SupportsComputer, Converter={StaticResource BoolToVisibility}}" IsEnabled="{Binding ComputerEnabledForOptions}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <StackPanel Orientation="Vertical" Spacing="4" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate x:DataType="vm:OptionElementVM">
-                                                <StackPanel Orientation="Vertical" Spacing="2" ToolTipService.ToolTip="{x:Bind Id}" HorizontalAlignment="Left">
-                                                    <ComboBox Tag="ComputerOption" Width="210" MinWidth="120" Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}" SelectedIndex="{x:Bind ComputerEnumIndex, Mode=TwoWay}" ItemsSource="{x:Bind Choices}" />
-                                                    <CheckBox Tag="ComputerOption" Visibility="{x:Bind IsBoolean, Converter={StaticResource BoolToVisibility}}" IsChecked="{x:Bind ComputerBool, Mode=TwoWay}" Padding="4,0" Content="{x:Bind DisplayName}" />
-                                                    <TextBox Tag="ComputerOption" MinWidth="150" Width="210" Visibility="{x:Bind IsPlainText, Converter={StaticResource BoolToVisibility}}" Text="{x:Bind ComputerText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="{x:Bind TextMaxLength}" />
-                                                    <AutoSuggestBox Tag="ComputerOption" MinWidth="150" Width="210" Visibility="{x:Bind IsSuggestText, Converter={StaticResource BoolToVisibility}}" Text="{x:Bind ComputerText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ItemsSource="{x:Bind Suggestions}" />
-                                                    <NumberBox Tag="ComputerOption" Width="110" Visibility="{x:Bind IsDecimal, Converter={StaticResource BoolToVisibility}}" Value="{x:Bind ComputerNumberDouble, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" SpinButtonPlacementMode="Compact" Minimum="{x:Bind DecimalMinDouble}" Maximum="{x:Bind DecimalMaxDouble}" SmallChange="{x:Bind DecimalIncrementDouble}" />
-                                                    <Button Tag="ComputerOption" MinWidth="96" Width="110" Visibility="{x:Bind IsList, Converter={StaticResource BoolToVisibility}}" Content="{x:Bind ComputerListSummary, Mode=OneWay}" Click="ComputerListDynamic_Click" />
-                                                    <Button Tag="ComputerOption" MinWidth="96" Width="110" Visibility="{x:Bind IsMultiText, Converter={StaticResource BoolToVisibility}}" Content="{x:Bind ComputerMultiTextSummary, Mode=OneWay}" Click="ComputerMultiDynamic_Click" />
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
         </ScrollViewer>
-    </Grid>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
 </UserControl>

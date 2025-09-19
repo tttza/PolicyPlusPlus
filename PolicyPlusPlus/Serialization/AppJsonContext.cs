@@ -1,42 +1,71 @@
-using PolicyPlusPlus.Services;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using PolicyPlusPlus.Services;
 
 namespace PolicyPlusPlus.Serialization
 {
     // DTOs for elevation IPC
     public sealed class HostRequestWriteLocalGpo
     {
-        [JsonPropertyName("op")] public string Op { get; set; } = "write-local-gpo";
-        [JsonPropertyName("auth")] public string? Auth { get; set; }
-        [JsonPropertyName("machinePol")] public string? MachinePol { get; set; }
-        [JsonPropertyName("userPol")] public string? UserPol { get; set; }
-        [JsonPropertyName("machineBytes")] public string? MachineBytes { get; set; }
-        [JsonPropertyName("userBytes")] public string? UserBytes { get; set; }
-        [JsonPropertyName("refresh")] public bool Refresh { get; set; }
+        [JsonPropertyName("op")]
+        public string Op { get; set; } = "write-local-gpo";
+
+        [JsonPropertyName("auth")]
+        public string? Auth { get; set; }
+
+        [JsonPropertyName("machinePol")]
+        public string? MachinePol { get; set; }
+
+        [JsonPropertyName("userPol")]
+        public string? UserPol { get; set; }
+
+        [JsonPropertyName("machineBytes")]
+        public string? MachineBytes { get; set; }
+
+        [JsonPropertyName("userBytes")]
+        public string? UserBytes { get; set; }
+
+        [JsonPropertyName("refresh")]
+        public bool Refresh { get; set; }
     }
 
     public sealed class HostRequestOpenRegedit
     {
-        [JsonPropertyName("op")] public string Op { get; set; } = "open-regedit";
-        [JsonPropertyName("auth")] public string? Auth { get; set; }
-        [JsonPropertyName("hive")] public string Hive { get; set; } = string.Empty;
-        [JsonPropertyName("subKey")] public string SubKey { get; set; } = string.Empty;
+        [JsonPropertyName("op")]
+        public string Op { get; set; } = "open-regedit";
+
+        [JsonPropertyName("auth")]
+        public string? Auth { get; set; }
+
+        [JsonPropertyName("hive")]
+        public string Hive { get; set; } = string.Empty;
+
+        [JsonPropertyName("subKey")]
+        public string SubKey { get; set; } = string.Empty;
     }
 
     public sealed class HostRequestShutdown
     {
-        [JsonPropertyName("op")] public string Op { get; set; } = "shutdown";
-        [JsonPropertyName("auth")] public string? Auth { get; set; }
+        [JsonPropertyName("op")]
+        public string Op { get; set; } = "shutdown";
+
+        [JsonPropertyName("auth")]
+        public string? Auth { get; set; }
     }
 
     public sealed class HostResponse
     {
-        [JsonPropertyName("ok")] public bool Ok { get; set; }
-        [JsonPropertyName("error")] public string? Error { get; set; }
+        [JsonPropertyName("ok")]
+        public bool Ok { get; set; }
+
+        [JsonPropertyName("error")]
+        public string? Error { get; set; }
     }
 
-    [JsonSourceGenerationOptions(WriteIndented = false, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonSourceGenerationOptions(
+        WriteIndented = false,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    )]
     [JsonSerializable(typeof(AppSettings))]
     [JsonSerializable(typeof(ColumnsOptions))]
     [JsonSerializable(typeof(ColumnState))]

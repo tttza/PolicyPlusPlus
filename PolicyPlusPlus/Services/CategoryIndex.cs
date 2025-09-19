@@ -1,8 +1,7 @@
-using PolicyPlusCore.Admx;
-using PolicyPlusCore.Core;
-
 using System;
 using System.Collections.Generic;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
 
 namespace PolicyPlusPlus.Services
 {
@@ -11,7 +10,8 @@ namespace PolicyPlusPlus.Services
         public static Dictionary<string, PolicyPlusCategory> BuildIndex(AdmxBundle bundle)
         {
             var map = new Dictionary<string, PolicyPlusCategory>(StringComparer.OrdinalIgnoreCase);
-            if (bundle == null || bundle.Categories == null) return map;
+            if (bundle == null || bundle.Categories == null)
+                return map;
             foreach (var root in bundle.Categories.Values)
             {
                 AddRecursive(root, map);
@@ -19,9 +19,13 @@ namespace PolicyPlusPlus.Services
             return map;
         }
 
-        private static void AddRecursive(PolicyPlusCategory cat, Dictionary<string, PolicyPlusCategory> map)
+        private static void AddRecursive(
+            PolicyPlusCategory cat,
+            Dictionary<string, PolicyPlusCategory> map
+        )
         {
-            if (cat == null || string.IsNullOrEmpty(cat.UniqueID)) return;
+            if (cat == null || string.IsNullOrEmpty(cat.UniqueID))
+                return;
             map[cat.UniqueID] = cat;
             if (cat.Children != null)
             {

@@ -1,25 +1,44 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using PolicyPlusPlus.Models;
 using PolicyPlusPlus.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {
-
-        private static readonly string[] DefaultColumnOrder = new[] { "Bookmark", "CatIcon", "UserIcon", "ComputerIcon", "Name", "SecondName", "Id", "Category", "TopCategory", "CategoryPath", "Applies", "Supported" };
+        private static readonly string[] DefaultColumnOrder = new[]
+        {
+            "Bookmark",
+            "CatIcon",
+            "UserIcon",
+            "ComputerIcon",
+            "Name",
+            "SecondName",
+            "Id",
+            "Category",
+            "TopCategory",
+            "CategoryPath",
+            "Applies",
+            "Supported",
+        };
 
         private void ApplyDetailsPaneVisibility()
         {
             try
             {
-                if (DetailsPane == null || DetailRow == null || DetailsSplitter == null || SplitterRow == null) return;
+                if (
+                    DetailsPane == null
+                    || DetailRow == null
+                    || DetailsSplitter == null
+                    || SplitterRow == null
+                )
+                    return;
                 // Use _showDetails which is sourced from ViewModel binding
                 if (_showDetails)
                 {
@@ -50,7 +69,13 @@ namespace PolicyPlusPlus
             try
             {
                 var s = SettingsService.Instance.LoadSettings();
-                if (!s.DetailPaneHeightStar.HasValue || PolicyDetailGrid == null || DetailRow == null || SplitterRow == null) return;
+                if (
+                    !s.DetailPaneHeightStar.HasValue
+                    || PolicyDetailGrid == null
+                    || DetailRow == null
+                    || SplitterRow == null
+                )
+                    return;
 
                 double v = s.DetailPaneHeightStar.Value;
                 // Treat values in [0,1] as ratio; legacy values (>1) as star units for DetailRow only
@@ -84,16 +109,27 @@ namespace PolicyPlusPlus
             {
                 var s = SettingsService.Instance.LoadSettings();
                 var cols = s.Columns ?? new ColumnsOptions();
-                if (ViewIdToggle != null) ViewIdToggle.IsChecked = cols.ShowId;
-                if (ViewCategoryToggle != null) ViewCategoryToggle.IsChecked = cols.ShowCategory;
-                if (ViewTopCategoryToggle != null) ViewTopCategoryToggle.IsChecked = cols.ShowTopCategory;
-                if (ViewCategoryPathToggle != null) ViewCategoryPathToggle.IsChecked = cols.ShowCategoryPath;
-                if (ViewAppliesToggle != null) ViewAppliesToggle.IsChecked = cols.ShowApplies;
-                if (ViewSupportedToggle != null) ViewSupportedToggle.IsChecked = cols.ShowSupported;
-                if (ViewUserStateToggle != null) ViewUserStateToggle.IsChecked = cols.ShowUserState;
-                if (ViewComputerStateToggle != null) ViewComputerStateToggle.IsChecked = cols.ShowComputerState;
-                if (RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt) vbt.IsChecked = cols.ShowBookmark;
-                if (ViewSecondNameToggle != null) ViewSecondNameToggle.IsChecked = cols.ShowSecondName && (s.SecondLanguageEnabled ?? false);
+                if (ViewIdToggle != null)
+                    ViewIdToggle.IsChecked = cols.ShowId;
+                if (ViewCategoryToggle != null)
+                    ViewCategoryToggle.IsChecked = cols.ShowCategory;
+                if (ViewTopCategoryToggle != null)
+                    ViewTopCategoryToggle.IsChecked = cols.ShowTopCategory;
+                if (ViewCategoryPathToggle != null)
+                    ViewCategoryPathToggle.IsChecked = cols.ShowCategoryPath;
+                if (ViewAppliesToggle != null)
+                    ViewAppliesToggle.IsChecked = cols.ShowApplies;
+                if (ViewSupportedToggle != null)
+                    ViewSupportedToggle.IsChecked = cols.ShowSupported;
+                if (ViewUserStateToggle != null)
+                    ViewUserStateToggle.IsChecked = cols.ShowUserState;
+                if (ViewComputerStateToggle != null)
+                    ViewComputerStateToggle.IsChecked = cols.ShowComputerState;
+                if (RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt)
+                    vbt.IsChecked = cols.ShowBookmark;
+                if (ViewSecondNameToggle != null)
+                    ViewSecondNameToggle.IsChecked =
+                        cols.ShowSecondName && (s.SecondLanguageEnabled ?? false);
                 ApplyColumnVisibilityFromToggles();
             }
             catch { }
@@ -103,7 +139,8 @@ namespace PolicyPlusPlus
         {
             try
             {
-                if (PolicyList == null) return;
+                if (PolicyList == null)
+                    return;
                 PolicyList.ColumnReordered -= PolicyList_ColumnReordered;
                 PolicyList.ColumnReordered += PolicyList_ColumnReordered;
                 PolicyList.LayoutUpdated -= PolicyList_LayoutUpdated;
@@ -126,17 +163,31 @@ namespace PolicyPlusPlus
         {
             try
             {
-                if (PolicyList == null) return;
-                var existing = SettingsService.Instance.LoadColumnLayout().ToDictionary(x => x.Key, StringComparer.OrdinalIgnoreCase);
+                if (PolicyList == null)
+                    return;
+                var existing = SettingsService
+                    .Instance.LoadColumnLayout()
+                    .ToDictionary(x => x.Key, StringComparer.OrdinalIgnoreCase);
                 var list = new List<ColumnState>();
                 foreach (var col in PolicyList.Columns)
                 {
                     string key = GetKeyForColumn(col);
-                    if (string.IsNullOrEmpty(key)) continue;
-                    if (col.ActualWidth <= 1) continue; // skip not fully measured
+                    if (string.IsNullOrEmpty(key))
+                        continue;
+                    if (col.ActualWidth <= 1)
+                        continue; // skip not fully measured
                     int index = col.DisplayIndex;
-                    if (!includeOrder && existing.TryGetValue(key, out var prev)) index = prev.Index;
-                    list.Add(new ColumnState { Key = key, Index = index, Width = col.ActualWidth, Visible = col.Visibility == Visibility.Visible });
+                    if (!includeOrder && existing.TryGetValue(key, out var prev))
+                        index = prev.Index;
+                    list.Add(
+                        new ColumnState
+                        {
+                            Key = key,
+                            Index = index,
+                            Width = col.ActualWidth,
+                            Visible = col.Visibility == Visibility.Visible,
+                        }
+                    );
                 }
                 if (list.Count > 0)
                     SettingsService.Instance.UpdateColumnLayout(list);
@@ -146,18 +197,30 @@ namespace PolicyPlusPlus
 
         private string GetKeyForColumn(DataGridColumn col)
         {
-            if (col == ColBookmark) return "Bookmark";
-            if (col == ColCatIcon) return "CatIcon";
-            if (col == ColUserIcon) return "UserIcon";
-            if (col == ColComputerIcon) return "ComputerIcon";
-            if (col == ColName) return "Name";
-            if (col == ColSecondName) return "SecondName";
-            if (col == ColId) return "Id";
-            if (col == ColCategory) return "Category";
-            if (col == ColTopCategory) return "TopCategory";
-            if (col == ColCategoryPath) return "CategoryPath";
-            if (col == ColApplies) return "Applies";
-            if (col == ColSupported) return "Supported";
+            if (col == ColBookmark)
+                return "Bookmark";
+            if (col == ColCatIcon)
+                return "CatIcon";
+            if (col == ColUserIcon)
+                return "UserIcon";
+            if (col == ColComputerIcon)
+                return "ComputerIcon";
+            if (col == ColName)
+                return "Name";
+            if (col == ColSecondName)
+                return "SecondName";
+            if (col == ColId)
+                return "Id";
+            if (col == ColCategory)
+                return "Category";
+            if (col == ColTopCategory)
+                return "TopCategory";
+            if (col == ColCategoryPath)
+                return "CategoryPath";
+            if (col == ColApplies)
+                return "Applies";
+            if (col == ColSupported)
+                return "Supported";
             return string.Empty;
         }
 
@@ -177,7 +240,7 @@ namespace PolicyPlusPlus
                 "CategoryPath" => ColCategoryPath,
                 "Applies" => ColApplies,
                 "Supported" => ColSupported,
-                _ => null
+                _ => null,
             };
         }
 
@@ -186,7 +249,8 @@ namespace PolicyPlusPlus
             try
             {
                 var states = SettingsService.Instance.LoadColumnLayout();
-                if (PolicyList == null) return;
+                if (PolicyList == null)
+                    return;
 
                 // No persisted layout -> apply default order (Bookmark first) and exit
                 if (states == null || states.Count == 0)
@@ -195,8 +259,13 @@ namespace PolicyPlusPlus
                     foreach (var key in DefaultColumnOrder)
                     {
                         var col = GetColumnByKey(key);
-                        if (col == null) continue;
-                        try { col.DisplayIndex = defIndex++; } catch { }
+                        if (col == null)
+                            continue;
+                        try
+                        {
+                            col.DisplayIndex = defIndex++;
+                        }
+                        catch { }
                     }
                     UpdateColumnMenuChecks();
                     return;
@@ -206,8 +275,17 @@ namespace PolicyPlusPlus
                 foreach (var st in states)
                 {
                     var col = GetColumnByKey(st.Key);
-                    if (col == null) continue;
-                    if (col == ColId || col == ColCategory || col == ColTopCategory || col == ColCategoryPath || col == ColApplies || col == ColSupported || col == ColSecondName)
+                    if (col == null)
+                        continue;
+                    if (
+                        col == ColId
+                        || col == ColCategory
+                        || col == ColTopCategory
+                        || col == ColCategoryPath
+                        || col == ColApplies
+                        || col == ColSupported
+                        || col == ColSecondName
+                    )
                         col.Visibility = st.Visible ? Visibility.Visible : Visibility.Collapsed;
                 }
 
@@ -215,31 +293,43 @@ namespace PolicyPlusPlus
                 foreach (var st in states)
                 {
                     var col = GetColumnByKey(st.Key);
-                    if (col == null) continue;
+                    if (col == null)
+                        continue;
                     if (st.Width > 0)
                     {
-                        try { col.Width = new DataGridLength(st.Width); } catch { }
+                        try
+                        {
+                            col.Width = new DataGridLength(st.Width);
+                        }
+                        catch { }
                     }
                 }
 
                 // Start with saved order
-                var orderedKeys = states.Where(s => !string.IsNullOrEmpty(s.Key))
-                                        .OrderBy(s => s.Index)
-                                        .Select(s => s.Key)
-                                        .ToList();
+                var orderedKeys = states
+                    .Where(s => !string.IsNullOrEmpty(s.Key))
+                    .OrderBy(s => s.Index)
+                    .Select(s => s.Key)
+                    .ToList();
 
                 // Append any missing columns using default order (predictable) instead of current visual order
                 foreach (var key in DefaultColumnOrder)
                 {
-                    if (!orderedKeys.Contains(key)) orderedKeys.Add(key);
+                    if (!orderedKeys.Contains(key))
+                        orderedKeys.Add(key);
                 }
 
                 int i = 0;
                 foreach (var key in orderedKeys)
                 {
                     var col = GetColumnByKey(key);
-                    if (col == null) continue;
-                    try { col.DisplayIndex = i++; } catch { }
+                    if (col == null)
+                        continue;
+                    try
+                    {
+                        col.DisplayIndex = i++;
+                    }
+                    catch { }
                 }
 
                 UpdateColumnMenuChecks();
@@ -261,8 +351,10 @@ namespace PolicyPlusPlus
                     ShowSupported = ViewSupportedToggle?.IsChecked == true,
                     ShowUserState = ViewUserStateToggle?.IsChecked == true,
                     ShowComputerState = ViewComputerStateToggle?.IsChecked == true,
-                    ShowBookmark = !(RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt) || vbt.IsChecked == true,
-                    ShowSecondName = ViewSecondNameToggle?.IsChecked == true
+                    ShowBookmark =
+                        !(RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt)
+                        || vbt.IsChecked == true,
+                    ShowSecondName = ViewSecondNameToggle?.IsChecked == true,
                 };
                 SettingsService.Instance.UpdateColumns(cols);
             }
@@ -274,21 +366,35 @@ namespace PolicyPlusPlus
             try
             {
                 // Keep menu toggles in sync with actual visibility
-                if (ViewIdToggle != null) ViewIdToggle.IsChecked = ColId?.Visibility == Visibility.Visible;
-                if (ViewCategoryToggle != null) ViewCategoryToggle.IsChecked = ColCategory?.Visibility == Visibility.Visible;
-                if (ViewTopCategoryToggle != null) ViewTopCategoryToggle.IsChecked = ColTopCategory?.Visibility == Visibility.Visible;
-                if (ViewCategoryPathToggle != null) ViewCategoryPathToggle.IsChecked = ColCategoryPath?.Visibility == Visibility.Visible;
-                if (ViewAppliesToggle != null) ViewAppliesToggle.IsChecked = ColApplies?.Visibility == Visibility.Visible;
-                if (ViewSupportedToggle != null) ViewSupportedToggle.IsChecked = ColSupported?.Visibility == Visibility.Visible;
-                if (ViewUserStateToggle != null) ViewUserStateToggle.IsChecked = ColUserIcon?.Visibility == Visibility.Visible;
-                if (ViewComputerStateToggle != null) ViewComputerStateToggle.IsChecked = ColComputerIcon?.Visibility == Visibility.Visible;
+                if (ViewIdToggle != null)
+                    ViewIdToggle.IsChecked = ColId?.Visibility == Visibility.Visible;
+                if (ViewCategoryToggle != null)
+                    ViewCategoryToggle.IsChecked = ColCategory?.Visibility == Visibility.Visible;
+                if (ViewTopCategoryToggle != null)
+                    ViewTopCategoryToggle.IsChecked =
+                        ColTopCategory?.Visibility == Visibility.Visible;
+                if (ViewCategoryPathToggle != null)
+                    ViewCategoryPathToggle.IsChecked =
+                        ColCategoryPath?.Visibility == Visibility.Visible;
+                if (ViewAppliesToggle != null)
+                    ViewAppliesToggle.IsChecked = ColApplies?.Visibility == Visibility.Visible;
+                if (ViewSupportedToggle != null)
+                    ViewSupportedToggle.IsChecked = ColSupported?.Visibility == Visibility.Visible;
+                if (ViewUserStateToggle != null)
+                    ViewUserStateToggle.IsChecked = ColUserIcon?.Visibility == Visibility.Visible;
+                if (ViewComputerStateToggle != null)
+                    ViewComputerStateToggle.IsChecked =
+                        ColComputerIcon?.Visibility == Visibility.Visible;
 
                 var s = SettingsService.Instance.LoadSettings();
                 bool enabled = s.SecondLanguageEnabled ?? false;
                 if (ViewSecondNameToggle != null)
                 {
-                    ViewSecondNameToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
-                    ViewSecondNameToggle.IsChecked = enabled && (ColSecondName?.Visibility == Visibility.Visible);
+                    ViewSecondNameToggle.Visibility = enabled
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
+                    ViewSecondNameToggle.IsChecked =
+                        enabled && (ColSecondName?.Visibility == Visibility.Visible);
                 }
             }
             catch { }
@@ -298,25 +404,64 @@ namespace PolicyPlusPlus
         {
             try
             {
-                if (ColId != null) ColId.Visibility = ViewIdToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-                if (ColCategory != null) ColCategory.Visibility = ViewCategoryToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-                if (ColTopCategory != null) ColTopCategory.Visibility = ViewTopCategoryToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-                if (ColCategoryPath != null) ColCategoryPath.Visibility = ViewCategoryPathToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-                if (ColApplies != null) ColApplies.Visibility = ViewAppliesToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-                if (ColSupported != null) ColSupported.Visibility = ViewSupportedToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-                if (ColUserIcon != null) ColUserIcon.Visibility = ViewUserStateToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-                if (ColComputerIcon != null) ColComputerIcon.Visibility = ViewComputerStateToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+                if (ColId != null)
+                    ColId.Visibility =
+                        ViewIdToggle?.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+                if (ColCategory != null)
+                    ColCategory.Visibility =
+                        ViewCategoryToggle?.IsChecked == true
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
+                if (ColTopCategory != null)
+                    ColTopCategory.Visibility =
+                        ViewTopCategoryToggle?.IsChecked == true
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
+                if (ColCategoryPath != null)
+                    ColCategoryPath.Visibility =
+                        ViewCategoryPathToggle?.IsChecked == true
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
+                if (ColApplies != null)
+                    ColApplies.Visibility =
+                        ViewAppliesToggle?.IsChecked == true
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
+                if (ColSupported != null)
+                    ColSupported.Visibility =
+                        ViewSupportedToggle?.IsChecked == true
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
+                if (ColUserIcon != null)
+                    ColUserIcon.Visibility =
+                        ViewUserStateToggle?.IsChecked == true
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
+                if (ColComputerIcon != null)
+                    ColComputerIcon.Visibility =
+                        ViewComputerStateToggle?.IsChecked == true
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
                 if (ColBookmark != null)
                 {
                     bool showBookmark = true;
-                    if (RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt && vbt.IsChecked == false) showBookmark = false;
-                    ColBookmark.Visibility = showBookmark ? Visibility.Visible : Visibility.Collapsed;
+                    if (
+                        RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt
+                        && vbt.IsChecked == false
+                    )
+                        showBookmark = false;
+                    ColBookmark.Visibility = showBookmark
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
                 }
                 if (ColSecondName != null)
                 {
                     var s = SettingsService.Instance.LoadSettings();
                     bool secondEnabled = s.SecondLanguageEnabled ?? false;
-                    ColSecondName.Visibility = (secondEnabled && (ViewSecondNameToggle?.IsChecked == true)) ? Visibility.Visible : Visibility.Collapsed;
+                    ColSecondName.Visibility =
+                        (secondEnabled && (ViewSecondNameToggle?.IsChecked == true))
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
                 }
             }
             catch { }
@@ -328,15 +473,26 @@ namespace PolicyPlusPlus
             ApplyColumnVisibilityFromToggles();
         }
 
-        private ToggleMenuFlyoutItem? FindMenu(string name) => RootGrid?.FindName(name) as ToggleMenuFlyoutItem;
+        private ToggleMenuFlyoutItem? FindMenu(string name) =>
+            RootGrid?.FindName(name) as ToggleMenuFlyoutItem;
 
         private void ApplyTheme(string pref)
         {
-            if (RootGrid == null) return;
-            var theme = pref switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default };
+            if (RootGrid == null)
+                return;
+            var theme = pref switch
+            {
+                "Light" => ElementTheme.Light,
+                "Dark" => ElementTheme.Dark,
+                _ => ElementTheme.Default,
+            };
             RootGrid.RequestedTheme = theme;
             App.SetGlobalTheme(theme);
-            try { SettingsService.Instance.UpdateTheme(pref); } catch { }
+            try
+            {
+                SettingsService.Instance.UpdateTheme(pref);
+            }
+            catch { }
 
             // Sync menu checks
             try
@@ -344,9 +500,12 @@ namespace PolicyPlusPlus
                 var system = FindMenu("ThemeSystemMenu");
                 var dark = FindMenu("ThemeDarkMenu");
                 var light = FindMenu("ThemeLightMenu");
-                if (system != null) system.IsChecked = pref.Equals("System", StringComparison.OrdinalIgnoreCase);
-                if (dark != null) dark.IsChecked = pref.Equals("Dark", StringComparison.OrdinalIgnoreCase);
-                if (light != null) light.IsChecked = pref.Equals("Light", StringComparison.OrdinalIgnoreCase);
+                if (system != null)
+                    system.IsChecked = pref.Equals("System", StringComparison.OrdinalIgnoreCase);
+                if (dark != null)
+                    dark.IsChecked = pref.Equals("Dark", StringComparison.OrdinalIgnoreCase);
+                if (light != null)
+                    light.IsChecked = pref.Equals("Light", StringComparison.OrdinalIgnoreCase);
             }
             catch { }
         }
@@ -358,9 +517,13 @@ namespace PolicyPlusPlus
                 if (sender is ToggleMenuFlyoutItem clicked)
                 {
                     // Uncheck all theme items first
-                    foreach (var id in new[] { "ThemeSystemMenu", "ThemeDarkMenu", "ThemeLightMenu" })
+                    foreach (
+                        var id in new[] { "ThemeSystemMenu", "ThemeDarkMenu", "ThemeLightMenu" }
+                    )
                     {
-                        var mi = FindMenu(id); if (mi != null) mi.IsChecked = false;
+                        var mi = FindMenu(id);
+                        if (mi != null)
+                            mi.IsChecked = false;
                     }
                     clicked.IsChecked = true;
                     var pref = clicked.Text;
@@ -373,15 +536,47 @@ namespace PolicyPlusPlus
         private void SetScaleFromString(string s, bool updateSelector, bool save)
         {
             double scale = 1.0;
-            if (!string.IsNullOrEmpty(s) && s.EndsWith("%") && double.TryParse(s.TrimEnd('%'), out var pct))
+            if (
+                !string.IsNullOrEmpty(s)
+                && s.EndsWith("%")
+                && double.TryParse(s.TrimEnd('%'), out var pct)
+            )
                 scale = Math.Max(0.5, pct / 100.0);
             App.SetGlobalScale(scale);
-            if (save) { try { SettingsService.Instance.UpdateScale(s); } catch { } }
+            if (save)
+            {
+                try
+                {
+                    SettingsService.Instance.UpdateScale(s);
+                }
+                catch { }
+            }
             try
             {
-                foreach (var id in new[] { "Scale50Menu", "Scale67Menu", "Scale75Menu", "Scale80Menu", "Scale90Menu", "Scale100Menu", "Scale110Menu", "Scale125Menu", "Scale150Menu", "Scale175Menu", "Scale200Menu" })
+                foreach (
+                    var id in new[]
+                    {
+                        "Scale50Menu",
+                        "Scale67Menu",
+                        "Scale75Menu",
+                        "Scale80Menu",
+                        "Scale90Menu",
+                        "Scale100Menu",
+                        "Scale110Menu",
+                        "Scale125Menu",
+                        "Scale150Menu",
+                        "Scale175Menu",
+                        "Scale200Menu",
+                    }
+                )
                 {
-                    var mi = FindMenu(id); if (mi != null) mi.IsChecked = string.Equals(mi.Text, s, StringComparison.OrdinalIgnoreCase);
+                    var mi = FindMenu(id);
+                    if (mi != null)
+                        mi.IsChecked = string.Equals(
+                            mi.Text,
+                            s,
+                            StringComparison.OrdinalIgnoreCase
+                        );
                 }
             }
             catch { }
@@ -394,9 +589,26 @@ namespace PolicyPlusPlus
                 if (sender is ToggleMenuFlyoutItem clicked)
                 {
                     // Uncheck all scale items
-                    foreach (var id in new[] { "Scale50Menu", "Scale67Menu", "Scale75Menu", "Scale80Menu", "Scale90Menu", "Scale100Menu", "Scale110Menu", "Scale125Menu", "Scale150Menu", "Scale175Menu", "Scale200Menu" })
+                    foreach (
+                        var id in new[]
+                        {
+                            "Scale50Menu",
+                            "Scale67Menu",
+                            "Scale75Menu",
+                            "Scale80Menu",
+                            "Scale90Menu",
+                            "Scale100Menu",
+                            "Scale110Menu",
+                            "Scale125Menu",
+                            "Scale150Menu",
+                            "Scale175Menu",
+                            "Scale200Menu",
+                        }
+                    )
                     {
-                        var mi = FindMenu(id); if (mi != null) mi.IsChecked = false;
+                        var mi = FindMenu(id);
+                        if (mi != null)
+                            mi.IsChecked = false;
                     }
                     clicked.IsChecked = true;
                     var scaleText = clicked.Text; // e.g. "125%"
@@ -415,14 +627,24 @@ namespace PolicyPlusPlus
                 string lang = s.SecondLanguage ?? "en-US";
                 if (ViewSecondNameToggle != null)
                 {
-                    ViewSecondNameToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
-                    ViewSecondNameToggle.Text = enabled ? $"2nd Language Name ({lang})" : "2nd Language Name";
-                    if (!enabled) ViewSecondNameToggle.IsChecked = false;
+                    ViewSecondNameToggle.Visibility = enabled
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
+                    ViewSecondNameToggle.Text = enabled
+                        ? $"2nd Language Name ({lang})"
+                        : "2nd Language Name";
+                    if (!enabled)
+                        ViewSecondNameToggle.IsChecked = false;
                 }
                 if (ColSecondName != null)
                 {
-                    ColSecondName.Header = enabled ? $"2nd Language Name ({lang})" : "2nd Language Name";
-                    ColSecondName.Visibility = (enabled && (ViewSecondNameToggle?.IsChecked == true)) ? Visibility.Visible : Visibility.Collapsed;
+                    ColSecondName.Header = enabled
+                        ? $"2nd Language Name ({lang})"
+                        : "2nd Language Name";
+                    ColSecondName.Visibility =
+                        (enabled && (ViewSecondNameToggle?.IsChecked == true))
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
                 }
             }
             catch { }
@@ -442,7 +664,8 @@ namespace PolicyPlusPlus
                 if (CategoryColumn != null)
                 {
                     double w = CategoryColumn.ActualWidth;
-                    if (w > 0) SettingsService.Instance.UpdateCategoryPaneWidth(w);
+                    if (w > 0)
+                        SettingsService.Instance.UpdateCategoryPaneWidth(w);
                 }
             }
             catch { }
@@ -456,7 +679,10 @@ namespace PolicyPlusPlus
                 {
                     double total = 0;
                     if (PolicyDetailGrid.RowDefinitions.Count >= 3)
-                        total = PolicyDetailGrid.RowDefinitions[0].ActualHeight + SplitterRow.ActualHeight + DetailRow.ActualHeight;
+                        total =
+                            PolicyDetailGrid.RowDefinitions[0].ActualHeight
+                            + SplitterRow.ActualHeight
+                            + DetailRow.ActualHeight;
                     else
                         total = PolicyDetailGrid.ActualHeight;
 
@@ -512,14 +738,20 @@ namespace PolicyPlusPlus
 
                 if (!string.IsNullOrEmpty(_sortColumn) && PolicyList != null)
                 {
-                    foreach (var col in PolicyList.Columns) col.SortDirection = null;
+                    foreach (var col in PolicyList.Columns)
+                        col.SortDirection = null;
                     if (_sortDirection != null)
                     {
-                        if (_sortColumn == nameof(PolicyListRow.DisplayName)) ColName.SortDirection = _sortDirection;
-                        else if (_sortColumn == nameof(PolicyListRow.ShortId)) ColId.SortDirection = _sortDirection;
-                        else if (_sortColumn == nameof(PolicyListRow.CategoryName)) ColCategory.SortDirection = _sortDirection;
-                        else if (_sortColumn == nameof(PolicyListRow.AppliesText)) ColApplies.SortDirection = _sortDirection;
-                        else if (_sortColumn == nameof(PolicyListRow.SupportedText)) ColSupported.SortDirection = _sortDirection;
+                        if (_sortColumn == nameof(PolicyListRow.DisplayName))
+                            ColName.SortDirection = _sortDirection;
+                        else if (_sortColumn == nameof(PolicyListRow.ShortId))
+                            ColId.SortDirection = _sortDirection;
+                        else if (_sortColumn == nameof(PolicyListRow.CategoryName))
+                            ColCategory.SortDirection = _sortDirection;
+                        else if (_sortColumn == nameof(PolicyListRow.AppliesText))
+                            ColApplies.SortDirection = _sortDirection;
+                        else if (_sortColumn == nameof(PolicyListRow.SupportedText))
+                            ColSupported.SortDirection = _sortDirection;
                     }
                 }
             }

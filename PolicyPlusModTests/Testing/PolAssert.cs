@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-
 using Xunit;
 
 namespace PolicyPlusModTests.Testing
@@ -16,14 +15,24 @@ namespace PolicyPlusModTests.Testing
             Assert.Equal(expected, (uint)value);
         }
 
-        public static void HasStringValue(PolFile pol, string key, string valueName, string expected)
+        public static void HasStringValue(
+            PolFile pol,
+            string key,
+            string valueName,
+            string expected
+        )
         {
             Assert.True(pol.ContainsValue(key, valueName));
             var value = pol.GetValue(key, valueName);
             Assert.Equal(expected, value as string);
         }
 
-        public static void HasMultiStringValue(PolFile pol, string key, string valueName, IEnumerable<string> expected)
+        public static void HasMultiStringValue(
+            PolFile pol,
+            string key,
+            string valueName,
+            IEnumerable<string> expected
+        )
         {
             Assert.True(pol.ContainsValue(key, valueName));
             var value = pol.GetValue(key, valueName) as string[];
@@ -31,7 +40,12 @@ namespace PolicyPlusModTests.Testing
             Assert.True(expected.SequenceEqual(value));
         }
 
-        public static void HasSequentialListValues(PolFile pol, string key, string prefix, IList<string> expected)
+        public static void HasSequentialListValues(
+            PolFile pol,
+            string key,
+            string prefix,
+            IList<string> expected
+        )
         {
             for (int i = 0; i < expected.Count; i++)
             {

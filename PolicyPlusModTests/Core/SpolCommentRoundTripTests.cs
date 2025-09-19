@@ -8,7 +8,9 @@ namespace PolicyPlusModTests.Core
     {
         private static string BuildSinglePolicySpol(SpolPolicyState state)
         {
-            return "Policy Plus Semantic Policy" + Environment.NewLine + SpolFile.GetFragment(state);
+            return "Policy Plus Semantic Policy"
+                + Environment.NewLine
+                + SpolFile.GetFragment(state);
         }
 
         private static SpolPolicyState RoundTrip(SpolPolicyState original)
@@ -31,7 +33,7 @@ namespace PolicyPlusModTests.Core
                 UniqueID = "TestPolicy",
                 Section = AdmxPolicySection.User,
                 BasicState = PolicyState.NotConfigured,
-                Comment = comment
+                Comment = comment,
             };
             var rt = RoundTrip(state);
             Assert.Equal(comment, rt.Comment);

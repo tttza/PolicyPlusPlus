@@ -16,7 +16,14 @@ namespace PolicyPlusCore.Helpers
             priv.PrivilegeCount = 1U;
             priv.LUID = luid;
             uint argReturnLength = 0U;
-            PInvoke.AdjustTokenPrivileges(thisProcToken, false, ref priv, (uint)Marshal.SizeOf(priv), nint.Zero, ref argReturnLength);
+            PInvoke.AdjustTokenPrivileges(
+                thisProcToken,
+                false,
+                ref priv,
+                (uint)Marshal.SizeOf(priv),
+                nint.Zero,
+                ref argReturnLength
+            );
             PInvoke.CloseHandle(thisProcToken);
         }
     }

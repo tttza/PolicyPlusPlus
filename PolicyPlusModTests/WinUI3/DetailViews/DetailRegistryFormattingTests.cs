@@ -1,7 +1,7 @@
+using System.Collections.Generic;
 using Microsoft.Win32;
 using PolicyPlusModTests.Testing;
 using PolicyPlusPlus.ViewModels;
-using System.Collections.Generic;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.DetailViews
@@ -20,9 +20,13 @@ namespace PolicyPlusModTests.WinUI3.DetailViews
                     RegistryValue = "V",
                     Section = section,
                     AffectedValues = new PolicyRegistryList(),
-                    DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                    DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
                 },
-                Category = new PolicyPlusCategory { DisplayName = "Cat", RawCategory = new AdmxCategory() }
+                Category = new PolicyPlusCategory
+                {
+                    DisplayName = "Cat",
+                    RawCategory = new AdmxCategory(),
+                },
             };
         }
 
@@ -33,7 +37,11 @@ namespace PolicyPlusModTests.WinUI3.DetailViews
             var p = MakeTogglePolicy("MACHINE:Toggle", AdmxPolicySection.Machine);
             comp.SetValue("Software\\PolicyPlusTest", "V", 1u, RegistryValueKind.DWord);
 
-            var formatted = RegistryViewFormatter.BuildRegistryFormatted(p, comp, AdmxPolicySection.Machine);
+            var formatted = RegistryViewFormatter.BuildRegistryFormatted(
+                p,
+                comp,
+                AdmxPolicySection.Machine
+            );
             // Accept English or Japanese (or future) localization for labels. We specifically check that a REG_DWORD type line exists.
             Assert.Contains("REG_DWORD", formatted);
             // Verify the value name is present
@@ -50,9 +58,18 @@ namespace PolicyPlusModTests.WinUI3.DetailViews
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateListPolicy();
             var items = new List<string> { "Alpha", "Beta", "Gamma" };
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "ListElem", items } });
+            PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "ListElem", items } }
+            );
 
-            var formatted = RegistryViewFormatter.BuildRegistryFormatted(policy, polFile, AdmxPolicySection.Machine);
+            var formatted = RegistryViewFormatter.BuildRegistryFormatted(
+                policy,
+                polFile,
+                AdmxPolicySection.Machine
+            );
             // Expect each generated value name (ListPrefix1, ListPrefix2, ...) and its data to appear.
             Assert.Contains("ListPrefix1", formatted);
             Assert.Contains("ListPrefix2", formatted);
@@ -61,7 +78,11 @@ namespace PolicyPlusModTests.WinUI3.DetailViews
             Assert.Contains("Beta", formatted);
             Assert.Contains("Gamma", formatted);
 
-            var reg = RegistryViewFormatter.BuildRegExport(policy, polFile, AdmxPolicySection.Machine);
+            var reg = RegistryViewFormatter.BuildRegExport(
+                policy,
+                polFile,
+                AdmxPolicySection.Machine
+            );
             Assert.Contains("\"ListPrefix1\"=\"Alpha\"", reg);
             Assert.Contains("\"ListPrefix2\"=\"Beta\"", reg);
             Assert.Contains("\"ListPrefix3\"=\"Gamma\"", reg);
@@ -73,9 +94,18 @@ namespace PolicyPlusModTests.WinUI3.DetailViews
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateMultiTextPolicy();
             var lines = new[] { "line1", "second line" };
-            PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "MultiTextElem", lines } });
+            PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "MultiTextElem", lines } }
+            );
 
-            var formatted = RegistryViewFormatter.BuildRegistryFormatted(policy, polFile, AdmxPolicySection.Machine);
+            var formatted = RegistryViewFormatter.BuildRegistryFormatted(
+                policy,
+                polFile,
+                AdmxPolicySection.Machine
+            );
             Assert.Contains("REG_MULTI_SZ", formatted);
             Assert.Contains("line1", formatted);
             Assert.Contains("second line", formatted);
@@ -86,9 +116,18 @@ namespace PolicyPlusModTests.WinUI3.DetailViews
         {
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateQwordPolicy();
-            polFile.SetValue(policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, 1234567890123456789UL, RegistryValueKind.QWord);
+            polFile.SetValue(
+                policy.RawPolicy.RegistryKey,
+                policy.RawPolicy.RegistryValue,
+                1234567890123456789UL,
+                RegistryValueKind.QWord
+            );
 
-            var formatted = RegistryViewFormatter.BuildRegistryFormatted(policy, polFile, AdmxPolicySection.Machine);
+            var formatted = RegistryViewFormatter.BuildRegistryFormatted(
+                policy,
+                polFile,
+                AdmxPolicySection.Machine
+            );
             Assert.Contains("REG_QWORD", formatted);
             Assert.Contains("1234567890123456789", formatted);
         }
@@ -99,9 +138,18 @@ namespace PolicyPlusModTests.WinUI3.DetailViews
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateBinaryPolicy();
             var data = new byte[] { 0x01, 0x02, 0x0A, 0xFF };
-            polFile.SetValue(policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, data, RegistryValueKind.Binary);
+            polFile.SetValue(
+                policy.RawPolicy.RegistryKey,
+                policy.RawPolicy.RegistryValue,
+                data,
+                RegistryValueKind.Binary
+            );
 
-            var formatted = RegistryViewFormatter.BuildRegistryFormatted(policy, polFile, AdmxPolicySection.Machine);
+            var formatted = RegistryViewFormatter.BuildRegistryFormatted(
+                policy,
+                polFile,
+                AdmxPolicySection.Machine
+            );
             Assert.Contains("REG_BINARY", formatted);
             Assert.Contains("01 02 0a ff", formatted); // lower-case hex
         }

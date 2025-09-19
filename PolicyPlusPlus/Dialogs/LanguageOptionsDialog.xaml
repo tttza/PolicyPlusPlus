@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentDialog
-    x:Class="PolicyPlusPlus.Dialogs.LanguageOptionsDialog"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Language options"
-    PrimaryButtonText="Apply"
-    CloseButtonText="Cancel"
-    DefaultButton="Primary"
-    MinWidth="460">
-    <StackPanel Spacing="12">
-        <TextBlock Text="Choose display language for ADMX policy text."/>
-        <ComboBox x:Name="LanguageSelector" Width="240"/>
-        <StackPanel Spacing="8">
-            <CheckBox x:Name="SecondLangEnabled" Content="Enable 2nd language (for alternate texts)"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="2nd Language:" VerticalAlignment="Center"/>
-                <ComboBox x:Name="SecondLanguageSelector" Width="200" IsEnabled="False"/>
-            </StackPanel>
-        </StackPanel>
+  x:Class="PolicyPlusPlus.Dialogs.LanguageOptionsDialog"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  Title="Language options"
+  PrimaryButtonText="Apply"
+  CloseButtonText="Cancel"
+  DefaultButton="Primary"
+  MinWidth="460"
+>
+  <StackPanel Spacing="12">
+    <TextBlock Text="Choose display language for ADMX policy text." />
+    <ComboBox x:Name="LanguageSelector" Width="240" />
+    <StackPanel Spacing="8">
+      <CheckBox x:Name="SecondLangEnabled" Content="Enable 2nd language (for alternate texts)" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="2nd Language:" VerticalAlignment="Center" />
+        <ComboBox x:Name="SecondLanguageSelector" Width="200" IsEnabled="False" />
+      </StackPanel>
     </StackPanel>
+  </StackPanel>
 </ContentDialog>

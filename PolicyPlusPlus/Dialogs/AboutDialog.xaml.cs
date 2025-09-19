@@ -1,6 +1,6 @@
-using Microsoft.UI.Xaml.Controls;
 using System.Linq;
 using System.Reflection;
+using Microsoft.UI.Xaml.Controls;
 
 namespace PolicyPlusPlus.Dialogs
 {
@@ -20,7 +20,8 @@ namespace PolicyPlusPlus.Dialogs
                 string ver = BuildInfo.Version;
                 var asm = typeof(App).Assembly;
                 string? commit = asm.GetCustomAttributes<AssemblyMetadataAttribute>()
-                                     .FirstOrDefault(a => a.Key == "CommitId")?.Value;
+                    .FirstOrDefault(a => a.Key == "CommitId")
+                    ?.Value;
                 AppTitle.Text = "Policy++";
                 VersionText.Text = "Version: " + ver;
                 CommitText.Text = string.IsNullOrEmpty(commit) ? string.Empty : "Commit: " + commit;

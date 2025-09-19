@@ -1,36 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Window
-    x:Class="PolicyPlusPlus.Windows.ListEditorWindow"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  x:Class="PolicyPlusPlus.Windows.ListEditorWindow"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+>
   <Grid x:Name="ScaleHost">
-    <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="12" MinWidth="480" MinHeight="360" KeyboardAcceleratorPlacementMode="Hidden">
+    <Grid
+      x:Name="RootShell"
+      Background="{ThemeResource WindowBackground}"
+      Padding="12"
+      MinWidth="480"
+      MinHeight="360"
+      KeyboardAcceleratorPlacementMode="Hidden"
+    >
       <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
       </Grid.RowDefinitions>
-
       <Grid.KeyboardAccelerators>
-        <KeyboardAccelerator Key="N" Modifiers="Control" Invoked="Accel_Add"/>
-        <KeyboardAccelerator Key="Enter" Modifiers="Control" Invoked="Accel_Ok"/>
-        <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="Accel_Close"/>
-        <KeyboardAccelerator Key="Escape" Invoked="Accel_Close"/>
+        <KeyboardAccelerator Key="N" Modifiers="Control" Invoked="Accel_Add" />
+        <KeyboardAccelerator Key="Enter" Modifiers="Control" Invoked="Accel_Ok" />
+        <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="Accel_Close" />
+        <KeyboardAccelerator Key="Escape" Invoked="Accel_Close" />
       </Grid.KeyboardAccelerators>
-
-      <TextBlock x:Name="HeaderText" Grid.Row="0" FontWeight="SemiBold"/>
-      <ListView x:Name="ListItems" Grid.Row="1" SelectionMode="None"/>
+      <TextBlock x:Name="HeaderText" Grid.Row="0" FontWeight="SemiBold" />
+      <ListView x:Name="ListItems" Grid.Row="1" SelectionMode="None" />
       <Grid Grid.Row="2">
         <Grid.ColumnDefinitions>
-          <ColumnDefinition/>
-          <ColumnDefinition Width="Auto"/>
-          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <StackPanel Orientation="Horizontal" Spacing="8">
-          <Button x:Name="AddBtn" Content="Add"/>
+          <Button x:Name="AddBtn" Content="Add" />
         </StackPanel>
-        <Button x:Name="OkBtn" Grid.Column="1" Content="OK" Style="{StaticResource PrimaryButtonStyle}"/>
-        <Button x:Name="CancelBtn" Grid.Column="2" Content="Cancel"/>
+        <Button
+          x:Name="OkBtn"
+          Grid.Column="1"
+          Content="OK"
+          Style="{StaticResource PrimaryButtonStyle}"
+        />
+        <Button x:Name="CancelBtn" Grid.Column="2" Content="Cancel" />
       </Grid>
     </Grid>
   </Grid>

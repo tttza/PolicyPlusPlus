@@ -6,19 +6,28 @@ namespace PolicyPlusCore.Admx
     {
         private Dictionary<AdmxFile, AdmlFile> SourceFiles = new Dictionary<AdmxFile, AdmlFile>();
         private Dictionary<string, AdmxFile> Namespaces = new Dictionary<string, AdmxFile>();
+
         // Temporary lists from ADMX files that haven't been integrated yet
         private List<AdmxCategory> RawCategories = new List<AdmxCategory>();
         private List<AdmxProduct> RawProducts = new List<AdmxProduct>();
         private List<AdmxPolicy> RawPolicies = new List<AdmxPolicy>();
         private List<AdmxSupportDefinition> RawSupport = new List<AdmxSupportDefinition>();
+
         // Lists that include all items, even those that are children of others
-        public Dictionary<string, PolicyPlusCategory> FlatCategories = new Dictionary<string, PolicyPlusCategory>();
-        public Dictionary<string, PolicyPlusProduct> FlatProducts = new Dictionary<string, PolicyPlusProduct>();
+        public Dictionary<string, PolicyPlusCategory> FlatCategories =
+            new Dictionary<string, PolicyPlusCategory>();
+        public Dictionary<string, PolicyPlusProduct> FlatProducts =
+            new Dictionary<string, PolicyPlusProduct>();
+
         // Lists of top-level items only
-        public Dictionary<string, PolicyPlusCategory> Categories = new Dictionary<string, PolicyPlusCategory>();
-        public Dictionary<string, PolicyPlusProduct> Products = new Dictionary<string, PolicyPlusProduct>();
-        public Dictionary<string, PolicyPlusPolicy> Policies = new Dictionary<string, PolicyPlusPolicy>();
-        public Dictionary<string, PolicyPlusSupport> SupportDefinitions = new Dictionary<string, PolicyPlusSupport>();
+        public Dictionary<string, PolicyPlusCategory> Categories =
+            new Dictionary<string, PolicyPlusCategory>();
+        public Dictionary<string, PolicyPlusProduct> Products =
+            new Dictionary<string, PolicyPlusProduct>();
+        public Dictionary<string, PolicyPlusPolicy> Policies =
+            new Dictionary<string, PolicyPlusPolicy>();
+        public Dictionary<string, PolicyPlusSupport> SupportDefinitions =
+            new Dictionary<string, PolicyPlusSupport>();
 
         public IEnumerable<AdmxLoadFailure> LoadFolder(string Path, string LanguageCode)
         {
@@ -63,20 +72,34 @@ namespace PolicyPlusCore.Admx
             }
 
             if (Namespaces.ContainsKey(admx.AdmxNamespace))
-                return new AdmxLoadFailure(AdmxLoadFailType.DuplicateNamespace, AdmxPath, admx.AdmxNamespace);
+                return new AdmxLoadFailure(
+                    AdmxLoadFailType.DuplicateNamespace,
+                    AdmxPath,
+                    admx.AdmxNamespace
+                );
             // Find the ADML file
             string fileTitle = Path.GetFileName(AdmxPath);
-            string admlPath = Path.ChangeExtension(AdmxPath.Replace(fileTitle, LanguageCode + @"\" + fileTitle), "adml");
+            string admlPath = Path.ChangeExtension(
+                AdmxPath.Replace(fileTitle, LanguageCode + @"\" + fileTitle),
+                "adml"
+            );
             if (!File.Exists(admlPath))
             {
                 string language = LanguageCode.Split('-')[0];
                 var admxDir = Path.GetDirectoryName(AdmxPath);
-                foreach (var langSubdir in string.IsNullOrEmpty(admxDir) ? Array.Empty<string>() : Directory.EnumerateDirectories(admxDir))
+                foreach (
+                    var langSubdir in string.IsNullOrEmpty(admxDir)
+                        ? Array.Empty<string>()
+                        : Directory.EnumerateDirectories(admxDir)
+                )
                 {
                     string langSubdirTitle = Path.GetFileName(langSubdir);
                     if ((langSubdirTitle.Split('-')[0] ?? "") == (language ?? ""))
                     {
-                        string similarLanguagePath = Path.ChangeExtension(AdmxPath.Replace(fileTitle, langSubdirTitle + @"\" + fileTitle), "adml");
+                        string similarLanguagePath = Path.ChangeExtension(
+                            AdmxPath.Replace(fileTitle, langSubdirTitle + @"\" + fileTitle),
+                            "adml"
+                        );
                         if (File.Exists(similarLanguagePath))
                         {
                             admlPath = similarLanguagePath;
@@ -87,7 +110,10 @@ namespace PolicyPlusCore.Admx
             }
 
             if (!File.Exists(admlPath))
-                admlPath = Path.ChangeExtension(AdmxPath.Replace(fileTitle, @"en-US\" + fileTitle), "adml");
+                admlPath = Path.ChangeExtension(
+                    AdmxPath.Replace(fileTitle, @"en-US\" + fileTitle),
+                    "adml"
+                );
             if (!File.Exists(admlPath))
                 return new AdmxLoadFailure(AdmxLoadFailType.NoAdml, AdmxPath);
             // Load the ADML
@@ -188,7 +214,10 @@ namespace PolicyPlusCore.Admx
             {
                 if (!string.IsNullOrEmpty(cat.RawCategory.ParentID))
                 {
-                    string parentCatName = ResolveRef(cat.RawCategory.ParentID, cat.RawCategory.DefinedIn);
+                    string parentCatName = ResolveRef(
+                        cat.RawCategory.ParentID,
+                        cat.RawCategory.DefinedIn
+                    );
                     var parentCat = findCatById(parentCatName);
                     if (parentCat is null)
                         continue; // In case the parent category doesn't exist
@@ -201,7 +230,10 @@ namespace PolicyPlusCore.Admx
             {
                 if (product.RawProduct.Parent is object)
                 {
-                    string parentProductId = QualifyName(product.RawProduct.Parent.ID, product.RawProduct.DefinedIn); // Child products can't be defined in other files
+                    string parentProductId = QualifyName(
+                        product.RawProduct.Parent.ID,
+                        product.RawProduct.DefinedIn
+                    ); // Child products can't be defined in other files
                     var parentProduct = findProductById(parentProductId);
                     parentProduct.Children.Add(product);
                     product.Parent = parentProduct;
@@ -212,7 +244,10 @@ namespace PolicyPlusCore.Admx
             {
                 foreach (var supEntry in sup.Elements)
                 {
-                    string targetId = ResolveRef(supEntry.RawSupportEntry.ProductID, sup.RawSupport.DefinedIn); // Support or product
+                    string targetId = ResolveRef(
+                        supEntry.RawSupportEntry.ProductID,
+                        sup.RawSupport.DefinedIn
+                    ); // Support or product
                     supEntry.Product = findProductById(targetId);
                     if (supEntry.Product is null)
                         supEntry.SupportDefinition = findSupById(targetId);
@@ -258,7 +293,12 @@ namespace PolicyPlusCore.Admx
             RawPolicies.Clear();
         }
 
-        private T? FindInTempOrFlat<T>(string UniqueID, Dictionary<string, T> TempDict, Dictionary<string, T> FlatDict) where T : class
+        private T? FindInTempOrFlat<T>(
+            string UniqueID,
+            Dictionary<string, T> TempDict,
+            Dictionary<string, T> FlatDict
+        )
+            where T : class
         {
             // Get the best available structure for an ID
             if (TempDict.ContainsKey(UniqueID))
@@ -340,7 +380,7 @@ namespace PolicyPlusCore.Admx
         NoAdml,
         BadAdmlParse,
         BadAdml,
-        DuplicateNamespace
+        DuplicateNamespace,
     }
 
     public class AdmxLoadFailure
@@ -356,9 +396,8 @@ namespace PolicyPlusCore.Admx
             this.Info = Info;
         }
 
-        public AdmxLoadFailure(AdmxLoadFailType FailType, string AdmxPath) : this(FailType, AdmxPath, "")
-        {
-        }
+        public AdmxLoadFailure(AdmxLoadFailType FailType, string AdmxPath)
+            : this(FailType, AdmxPath, "") { }
 
         public override string ToString()
         {
@@ -373,34 +412,34 @@ namespace PolicyPlusCore.Admx
             switch (FailType)
             {
                 case AdmxLoadFailType.BadAdmxParse:
-                    {
-                        return "The ADMX XML couldn't be parsed: " + Info;
-                    }
+                {
+                    return "The ADMX XML couldn't be parsed: " + Info;
+                }
 
                 case AdmxLoadFailType.BadAdmx:
-                    {
-                        return "The ADMX is invalid: " + Info;
-                    }
+                {
+                    return "The ADMX is invalid: " + Info;
+                }
 
                 case AdmxLoadFailType.NoAdml:
-                    {
-                        return "The corresponding ADML is missing";
-                    }
+                {
+                    return "The corresponding ADML is missing";
+                }
 
                 case AdmxLoadFailType.BadAdmlParse:
-                    {
-                        return "The ADML XML couldn't be parsed: " + Info;
-                    }
+                {
+                    return "The ADML XML couldn't be parsed: " + Info;
+                }
 
                 case AdmxLoadFailType.BadAdml:
-                    {
-                        return "The ADML is invalid: " + Info;
-                    }
+                {
+                    return "The ADML is invalid: " + Info;
+                }
 
                 case AdmxLoadFailType.DuplicateNamespace:
-                    {
-                        return "The " + Info + " namespace is already owned by a different ADMX file";
-                    }
+                {
+                    return "The " + Info + " namespace is already owned by a different ADMX file";
+                }
             }
 
             return string.IsNullOrEmpty(Info) ? "An unknown error occurred" : Info;

@@ -1,6 +1,6 @@
+using System;
 using Microsoft.UI.Xaml.Data;
 using PolicyPlusCore.Core;
-using System;
 
 namespace PolicyPlusPlus
 {
@@ -14,13 +14,17 @@ namespace PolicyPlusPlus
                 {
                     AdmxPolicySection.Machine => "Computer",
                     AdmxPolicySection.User => "User",
-                    _ => "Both"
+                    _ => "Both",
                 };
             }
             return string.Empty;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, string language)
-            => throw new NotImplementedException();
+        public object ConvertBack(
+            object value,
+            Type targetType,
+            object parameter,
+            string language
+        ) => throw new NotImplementedException();
     }
 }

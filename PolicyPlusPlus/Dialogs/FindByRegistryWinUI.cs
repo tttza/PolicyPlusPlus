@@ -1,8 +1,8 @@
+using System;
+using System.Linq;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.Utilities;
 using PolicyPlusPlus.Services;
-using System;
-using System.Linq;
 
 namespace PolicyPlusPlus.Dialogs
 {
@@ -18,7 +18,12 @@ namespace PolicyPlusPlus.Dialogs
             return StringMatch.WildcardOrExact(input, pattern, allowSubstring);
         }
 
-        public static bool SearchRegistry(PolicyPlusPolicy Policy, string keyName, string valName, bool allowSubstring = true)
+        public static bool SearchRegistry(
+            PolicyPlusPolicy Policy,
+            string keyName,
+            string valName,
+            bool allowSubstring = true
+        )
         {
             var keyPat = keyName ?? string.Empty;
             var valPat = valName ?? string.Empty;
@@ -31,8 +36,11 @@ namespace PolicyPlusPlus.Dialogs
             // Value-name pattern first (cheap)
             if (!string.IsNullOrEmpty(valPatNorm))
             {
-                bool anyVal = cached.ValueNamesLower.Any(v => WildcardOrExact(v, valPatNorm, allowSubstring));
-                if (!anyVal) return false; // if a value pattern is specified but none match, bail out
+                bool anyVal = cached.ValueNamesLower.Any(v =>
+                    WildcardOrExact(v, valPatNorm, allowSubstring)
+                );
+                if (!anyVal)
+                    return false; // if a value pattern is specified but none match, bail out
             }
 
             if (string.IsNullOrEmpty(keyPatNorm))
@@ -46,13 +54,15 @@ namespace PolicyPlusPlus.Dialogs
             if (pat.Contains("*") || pat.Contains("?"))
             {
                 // wildcard full-path
-                if (cached.KeyPathsLower.Any(k => WildcardMatch(k, pat))) return true;
+                if (cached.KeyPathsLower.Any(k => WildcardMatch(k, pat)))
+                    return true;
                 return false;
             }
             else if (pat.Contains(@"\\\\"))
             {
                 // rooted path prefix
-                if (cached.KeyPathsLower.Any(k => k.StartsWith(pat, StringComparison.Ordinal))) return true;
+                if (cached.KeyPathsLower.Any(k => k.StartsWith(pat, StringComparison.Ordinal)))
+                    return true;
                 return false;
             }
             else
@@ -61,14 +71,21 @@ namespace PolicyPlusPlus.Dialogs
                 foreach (var segs in cached.KeySegmentsLower)
                 {
                     bool segMatch = segs.Any(s => string.Equals(s, pat, StringComparison.Ordinal));
-                    bool subMatch = allowSubstring && segs.Any(s => s.IndexOf(pat, StringComparison.Ordinal) >= 0);
-                    if (segMatch || subMatch) return true;
+                    bool subMatch =
+                        allowSubstring
+                        && segs.Any(s => s.IndexOf(pat, StringComparison.Ordinal) >= 0);
+                    if (segMatch || subMatch)
+                        return true;
                 }
                 return false;
             }
         }
 
-        public static bool SearchRegistryValueNameOnly(PolicyPlusPolicy policy, string valueNamePattern, bool allowSubstring = true)
+        public static bool SearchRegistryValueNameOnly(
+            PolicyPlusPolicy policy,
+            string valueNamePattern,
+            bool allowSubstring = true
+        )
         {
             var pat = valueNamePattern ?? string.Empty;
             if (string.IsNullOrWhiteSpace(pat))

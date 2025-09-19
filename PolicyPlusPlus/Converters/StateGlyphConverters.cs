@@ -1,5 +1,5 @@
-using Microsoft.UI.Xaml.Data;
 using System;
+using Microsoft.UI.Xaml.Data;
 
 namespace PolicyPlusPlus.Converters
 {
@@ -13,14 +13,20 @@ namespace PolicyPlusPlus.Converters
         {
             if (value is ValueTuple<bool, bool> tup)
             {
-                if (tup.Item1) return "\uE73E"; // Accept
-                if (tup.Item2) return "\uE711"; // Block/Cancel
+                if (tup.Item1)
+                    return "\uE73E"; // Accept
+                if (tup.Item2)
+                    return "\uE711"; // Block/Cancel
                 return string.Empty;
             }
             return string.Empty;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, string language)
-            => throw new NotSupportedException();
+        public object ConvertBack(
+            object value,
+            Type targetType,
+            object parameter,
+            string language
+        ) => throw new NotSupportedException();
     }
 }

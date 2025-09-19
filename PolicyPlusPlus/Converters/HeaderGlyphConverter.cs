@@ -1,5 +1,5 @@
-using Microsoft.UI.Xaml.Data;
 using System;
+using Microsoft.UI.Xaml.Data;
 
 namespace PolicyPlusPlus.Converters
 {
@@ -8,9 +8,16 @@ namespace PolicyPlusPlus.Converters
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             var text = value as string ?? string.Empty;
-            return text.StartsWith("User", StringComparison.OrdinalIgnoreCase) ? "\uE77B" :
-                   text.StartsWith("Computer", StringComparison.OrdinalIgnoreCase) ? "\uE211" : string.Empty;
+            return text.StartsWith("User", StringComparison.OrdinalIgnoreCase) ? "\uE77B"
+                : text.StartsWith("Computer", StringComparison.OrdinalIgnoreCase) ? "\uE211"
+                : string.Empty;
         }
-        public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotSupportedException();
+
+        public object ConvertBack(
+            object value,
+            Type targetType,
+            object parameter,
+            string language
+        ) => throw new NotSupportedException();
     }
 }

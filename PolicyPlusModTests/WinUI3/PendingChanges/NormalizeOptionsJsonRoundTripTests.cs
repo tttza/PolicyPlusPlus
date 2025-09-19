@@ -1,9 +1,9 @@
-using PolicyPlusModTests.Testing;
-using PolicyPlusPlus.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using PolicyPlusModTests.Testing;
+using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.PendingChanges
@@ -11,17 +11,26 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
     // Validates that after serializing History to JSON and deserializing back, option types are normalized for reapply.
     public class NormalizeOptionsJsonRoundTripTests
     {
-        private static (PolicyPlusPolicy policy, Dictionary<string, object> opts) BuildNamedListCase()
+        private static (
+            PolicyPlusPolicy policy,
+            Dictionary<string, object> opts
+        ) BuildNamedListCase()
         {
             var pol = TestPolicyFactory.CreateNamedListPolicy("MACHINE:NormNamedList");
             var opts = new Dictionary<string, object>
             {
-                { "NamedListElem", new List<KeyValuePair<string,string>>{ new("K1","V1"), new("K2","V2") } }
+                {
+                    "NamedListElem",
+                    new List<KeyValuePair<string, string>> { new("K1", "V1"), new("K2", "V2") }
+                },
             };
             return (pol, opts);
         }
 
-        private static (PolicyPlusPolicy policy, Dictionary<string, object> opts) BuildMultiTextCase()
+        private static (
+            PolicyPlusPolicy policy,
+            Dictionary<string, object> opts
+        ) BuildMultiTextCase()
         {
             var pol = TestPolicyFactory.CreateMultiTextPolicy("MACHINE:NormMultiText");
             var opts = new Dictionary<string, object> { { "MultiTextElem", new[] { "L1", "L2" } } };
@@ -42,7 +51,10 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
             return (pol, opts);
         }
 
-        private static HistoryRecord ApplyAndRecord(PolicyPlusPolicy policy, Dictionary<string, object> opts)
+        private static HistoryRecord ApplyAndRecord(
+            PolicyPlusPolicy policy,
+            Dictionary<string, object> opts
+        )
         {
             var change = new PendingChange
             {
@@ -53,7 +65,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                 DesiredState = PolicyState.Enabled,
                 Options = opts,
                 Details = "test",
-                DetailsFull = "test full"
+                DetailsFull = "test full",
             };
             PendingChangesService.Instance.Pending.Clear();
             PendingChangesService.Instance.History.Clear();
@@ -75,22 +87,36 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
         [InlineData("Decimal")]
         public void Options_Normalize_From_Json(string kind)
         {
-            PolicyPlusPolicy pol; Dictionary<string, object> opts;
+            PolicyPlusPolicy pol;
+            Dictionary<string, object> opts;
             switch (kind)
             {
-                case "NamedList": (pol, opts) = BuildNamedListCase(); break;
-                case "MultiText": (pol, opts) = BuildMultiTextCase(); break;
-                case "Enum": (pol, opts) = BuildEnumCase(); break;
-                case "Decimal": (pol, opts) = BuildDecimalCase(); break;
-                default: throw new InvalidOperationException();
+                case "NamedList":
+                    (pol, opts) = BuildNamedListCase();
+                    break;
+                case "MultiText":
+                    (pol, opts) = BuildMultiTextCase();
+                    break;
+                case "Enum":
+                    (pol, opts) = BuildEnumCase();
+                    break;
+                case "Decimal":
+                    (pol, opts) = BuildDecimalCase();
+                    break;
+                default:
+                    throw new InvalidOperationException();
             }
             var original = ApplyAndRecord(pol, opts);
             var roundTripped = RoundTrip(original);
             // simulate reapply path normalization using reflection (internal NormalizeOptions is private)
             var windowType = typeof(PolicyPlusPlus.Windows.PendingChangesWindow);
-            var mi = windowType.GetMethod("NormalizeOptions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var mi = windowType.GetMethod(
+                "NormalizeOptions",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+            );
             Assert.NotNull(mi);
-            var normalized = (Dictionary<string, object>?)mi!.Invoke(null, new object?[] { roundTripped.Options });
+            var normalized = (Dictionary<string, object>?)
+                mi!.Invoke(null, new object?[] { roundTripped.Options });
             Assert.NotNull(normalized);
             foreach (var kv in opts)
             {

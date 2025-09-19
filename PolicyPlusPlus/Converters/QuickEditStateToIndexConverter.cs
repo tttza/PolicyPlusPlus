@@ -1,6 +1,6 @@
+using System;
 using Microsoft.UI.Xaml.Data;
 using PolicyPlusPlus.ViewModels;
-using System;
 
 namespace PolicyPlusPlus.Converters
 {
@@ -13,7 +13,7 @@ namespace PolicyPlusPlus.Converters
                 QuickEditState.NotConfigured => 0,
                 QuickEditState.Enabled => 1,
                 QuickEditState.Disabled => 2,
-                _ => 0
+                _ => 0,
             };
         }
 
@@ -24,7 +24,7 @@ namespace PolicyPlusPlus.Converters
             {
                 1 => QuickEditState.Enabled,
                 2 => QuickEditState.Disabled,
-                _ => QuickEditState.NotConfigured
+                _ => QuickEditState.NotConfigured,
             };
         }
     }

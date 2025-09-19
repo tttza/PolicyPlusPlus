@@ -1,8 +1,8 @@
-using PolicyPlusModTests.Testing;
-using PolicyPlusPlus.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using PolicyPlusModTests.Testing;
+using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.PendingChanges
@@ -27,14 +27,29 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
         private static (PolicyPlusPolicy policy, Dictionary<string, object> opts) BuildListCase()
         {
             var pol = TestPolicyFactory.CreateListPolicy("MACHINE:ReapplyList");
-            var opts = new Dictionary<string, object> { { "ListElem", new List<string> { "L1", "L2" } } };
+            var opts = new Dictionary<string, object>
+            {
+                {
+                    "ListElem",
+                    new List<string> { "L1", "L2" }
+                },
+            };
             return (pol, opts);
         }
 
-        private static (PolicyPlusPolicy policy, Dictionary<string, object> opts) BuildMultiTextCase()
+        private static (
+            PolicyPlusPolicy policy,
+            Dictionary<string, object> opts
+        ) BuildMultiTextCase()
         {
             var pol = TestPolicyFactory.CreateMultiTextPolicy("MACHINE:ReapplyMultiText");
-            var opts = new Dictionary<string, object> { { "MultiTextElem", new List<string> { "M1", "M2" } } };
+            var opts = new Dictionary<string, object>
+            {
+                {
+                    "MultiTextElem",
+                    new List<string> { "M1", "M2" }
+                },
+            };
             return (pol, opts);
         }
 
@@ -58,7 +73,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                 DesiredState = PolicyState.Enabled,
                 Options = opts,
                 Details = "test",
-                DetailsFull = "test full"
+                DetailsFull = "test full",
             };
             PendingChangesService.Instance.Pending.Clear();
             PendingChangesService.Instance.History.Clear();
@@ -74,18 +89,32 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
         [InlineData("Decimal")]
         public void History_StoresOptions_Intact(string kind)
         {
-            PolicyPlusPolicy pol; Dictionary<string, object> opts;
+            PolicyPlusPolicy pol;
+            Dictionary<string, object> opts;
             switch (kind)
             {
-                case "Text": (pol, opts) = BuildTextCase(); break;
-                case "Enum": (pol, opts) = BuildEnumCase(); break;
-                case "List": (pol, opts) = BuildListCase(); break;
-                case "MultiText": (pol, opts) = BuildMultiTextCase(); break;
-                case "Decimal": (pol, opts) = BuildDecimalCase(); break;
-                default: throw new InvalidOperationException();
+                case "Text":
+                    (pol, opts) = BuildTextCase();
+                    break;
+                case "Enum":
+                    (pol, opts) = BuildEnumCase();
+                    break;
+                case "List":
+                    (pol, opts) = BuildListCase();
+                    break;
+                case "MultiText":
+                    (pol, opts) = BuildMultiTextCase();
+                    break;
+                case "Decimal":
+                    (pol, opts) = BuildDecimalCase();
+                    break;
+                default:
+                    throw new InvalidOperationException();
             }
             ApplyAndRecord(pol, opts);
-            var h = PendingChangesService.Instance.History.FirstOrDefault(x => x.PolicyId == pol.UniqueID);
+            var h = PendingChangesService.Instance.History.FirstOrDefault(x =>
+                x.PolicyId == pol.UniqueID
+            );
             Assert.NotNull(h);
             Assert.Equal(PolicyState.Enabled, h!.DesiredState);
             foreach (var kv in opts)

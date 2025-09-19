@@ -1,8 +1,8 @@
-using PolicyPlusModTests.Testing;
-using PolicyPlusCore.Core; // core models
-using PolicyPlusCore.Admx; 
 using System.Collections.Generic;
 using System.Linq;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core; // core models
+using PolicyPlusModTests.Testing;
 using Xunit;
 
 namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
@@ -17,8 +17,18 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
         {
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateTextPolicy();
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "TextElem", "TestString" } });
-            PolAssert.HasStringValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, "TestString");
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "TextElem", "TestString" } }
+            );
+            PolAssert.HasStringValue(
+                polFile,
+                policy.RawPolicy.RegistryKey,
+                policy.RawPolicy.RegistryValue,
+                "TestString"
+            );
         }
 
         /// <summary>
@@ -30,8 +40,18 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateListPolicy();
             var values = new List<string> { "A", "B", "C" };
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "ListElem", values } });
-            PolAssert.HasSequentialListValues(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, values);
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "ListElem", values } }
+            );
+            PolAssert.HasSequentialListValues(
+                polFile,
+                policy.RawPolicy.RegistryKey,
+                policy.RawPolicy.RegistryValue,
+                values
+            );
         }
 
         /// <summary>
@@ -42,8 +62,18 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
         {
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateEnumPolicy();
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "EnumElem", 1 } });
-            PolAssert.HasDwordValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, 2U);
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "EnumElem", 1 } }
+            );
+            PolAssert.HasDwordValue(
+                polFile,
+                policy.RawPolicy.RegistryKey,
+                policy.RawPolicy.RegistryValue,
+                2U
+            );
         }
 
         /// <summary>
@@ -55,8 +85,18 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateMultiTextPolicy();
             var lines = new[] { "line1", "line2" };
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "MultiTextElem", lines } });
-            PolAssert.HasMultiStringValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, lines);
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "MultiTextElem", lines } }
+            );
+            PolAssert.HasMultiStringValue(
+                polFile,
+                policy.RawPolicy.RegistryKey,
+                policy.RawPolicy.RegistryValue,
+                lines
+            );
         }
 
         /// <summary>
@@ -68,25 +108,60 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
             var polFile = new PolFile();
             // Text
             var textPolicy = TestPolicyFactory.CreateTextPolicy();
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, textPolicy, PolicyState.Enabled, new Dictionary<string, object> { { "TextElem", "TestString" } });
-            var textStates = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(polFile, textPolicy);
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                textPolicy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "TextElem", "TestString" } }
+            );
+            var textStates = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(
+                polFile,
+                textPolicy
+            );
             Assert.Equal("TestString", textStates["TextElem"]);
             // List
             var listPolicy = TestPolicyFactory.CreateListPolicy();
             var listValues = new List<string> { "A", "B" };
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, listPolicy, PolicyState.Enabled, new Dictionary<string, object> { { "ListElem", listValues } });
-            var listStates = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(polFile, listPolicy);
-            Assert.True(listValues.All(v => ((IEnumerable<string>)listStates["ListElem"]).Contains(v)));
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                listPolicy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "ListElem", listValues } }
+            );
+            var listStates = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(
+                polFile,
+                listPolicy
+            );
+            Assert.True(
+                listValues.All(v => ((IEnumerable<string>)listStates["ListElem"]).Contains(v))
+            );
             // Enum
             var enumPolicy = TestPolicyFactory.CreateEnumPolicy();
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, enumPolicy, PolicyState.Enabled, new Dictionary<string, object> { { "EnumElem", 1 } });
-            var enumStates = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(polFile, enumPolicy);
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                enumPolicy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "EnumElem", 1 } }
+            );
+            var enumStates = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(
+                polFile,
+                enumPolicy
+            );
             Assert.Equal(1, (int)enumStates["EnumElem"]);
             // MultiText
             var multiTextPolicy = TestPolicyFactory.CreateMultiTextPolicy();
             var multiLines = new[] { "line1", "line2" };
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, multiTextPolicy, PolicyState.Enabled, new Dictionary<string, object> { { "MultiTextElem", multiLines } });
-            var multiTextStates = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(polFile, multiTextPolicy);
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                multiTextPolicy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "MultiTextElem", multiLines } }
+            );
+            var multiTextStates =
+                global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(
+                    polFile,
+                    multiTextPolicy
+                );
             Assert.True(multiLines.SequenceEqual((string[])multiTextStates["MultiTextElem"]));
         }
     }

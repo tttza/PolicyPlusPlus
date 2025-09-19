@@ -1,46 +1,73 @@
-using PolicyPlusCore.Admx;
-using PolicyPlusCore.Core;
-using PolicyPlusPlus.Logging; // logging
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus.Services
 {
     internal static class SaveChangesCoordinator
     {
-        public static async Task<(bool ok, string? error, string? compBase64, string? userBase64)> SaveAsync(
+        public static async Task<(
+            bool ok,
+            string? error,
+            string? compBase64,
+            string? userBase64
+        )> SaveAsync(
             AdmxBundle bundle,
             IEnumerable<PendingChange> changes,
             IElevationService elevation,
             TimeSpan timeout,
-            bool triggerRefresh = true)
+            bool triggerRefresh = true
+        )
         {
             string corr = Log.NewCorrelationId();
-            if (bundle == null) { Log.Error("Save", $"{corr} bundle null"); return (false, "no bundle", null, null); }
-            if (changes == null) { Log.Info("Save", $"{corr} no changes (null)"); return (true, null, null, null); }
+            if (bundle == null)
+            {
+                Log.Error("Save", $"{corr} bundle null");
+                return (false, "no bundle", null, null);
+            }
+            if (changes == null)
+            {
+                Log.Info("Save", $"{corr} no changes (null)");
+                return (true, null, null, null);
+            }
 
             var changeList = changes.ToList();
-            Log.Info("Save", $"{corr} start count={changeList.Count} timeoutMs={(int)timeout.TotalMilliseconds} refresh={triggerRefresh}");
-            if (changeList.Count == 0) return (true, null, null, null);
+            Log.Info(
+                "Save",
+                $"{corr} start count={changeList.Count} timeoutMs={(int)timeout.TotalMilliseconds} refresh={triggerRefresh}"
+            );
+            if (changeList.Count == 0)
+                return (true, null, null, null);
 
             try
             {
-                var req = changeList.Select(c => new PolicyChangeRequest
-                {
-                    PolicyId = c.PolicyId,
-                    Scope = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase) ? PolicyTargetScope.User : PolicyTargetScope.Machine,
-                    DesiredState = c.DesiredState,
-                    Options = c.Options
-                }).ToList();
+                var req = changeList
+                    .Select(c => new PolicyChangeRequest
+                    {
+                        PolicyId = c.PolicyId,
+                        Scope = string.Equals(c.Scope, "User", StringComparison.OrdinalIgnoreCase)
+                            ? PolicyTargetScope.User
+                            : PolicyTargetScope.Machine,
+                        DesiredState = c.DesiredState,
+                        Options = c.Options,
+                    })
+                    .ToList();
 
-                string? compBase64 = null; string? userBase64 = null;
+                string? compBase64 = null;
+                string? userBase64 = null;
                 try
                 {
                     var b64 = PolicySavePipeline.BuildLocalGpoBase64(bundle, req);
-                    compBase64 = b64.machineBase64; userBase64 = b64.userBase64;
-                    Log.Debug("Save", $"{corr} built payload compLen={compBase64?.Length ?? 0} userLen={userBase64?.Length ?? 0}");
+                    compBase64 = b64.machineBase64;
+                    userBase64 = b64.userBase64;
+                    Log.Debug(
+                        "Save",
+                        $"{corr} built payload compLen={compBase64?.Length ?? 0} userLen={userBase64?.Length ?? 0}"
+                    );
                 }
                 catch (Exception ex)
                 {
@@ -50,12 +77,19 @@ namespace PolicyPlusPlus.Services
 
                 try
                 {
-                    var callTask = elevation.WriteLocalGpoBytesAsync(compBase64, userBase64, triggerRefresh);
+                    var callTask = elevation.WriteLocalGpoBytesAsync(
+                        compBase64,
+                        userBase64,
+                        triggerRefresh
+                    );
                     var timeoutTask = Task.Delay(timeout);
                     var completed = await Task.WhenAny(callTask, timeoutTask).ConfigureAwait(false);
                     if (completed == timeoutTask)
                     {
-                        Log.Warn("Save", $"{corr} timeout after {(int)timeout.TotalMilliseconds}ms");
+                        Log.Warn(
+                            "Save",
+                            $"{corr} timeout after {(int)timeout.TotalMilliseconds}ms"
+                        );
                         return (false, "elevation timeout", compBase64, userBase64);
                     }
                     var res = await callTask.ConfigureAwait(false);

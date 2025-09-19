@@ -1,6 +1,6 @@
-using Microsoft.Win32;
 using System;
 using System.IO;
+using Microsoft.Win32;
 using Xunit;
 
 namespace PolicyPlusModTests.Core.IO
@@ -10,7 +10,8 @@ namespace PolicyPlusModTests.Core.IO
         [Fact]
         public void CmtxFile_Load_Parses_Prefixes_Comments_Strings()
         {
-            string xml = @"<?xml version=""1.0"" encoding=""utf-8""?>
+            string xml =
+                @"<?xml version=""1.0"" encoding=""utf-8""?>
 <policyComments xmlns=""http://www.microsoft.com/GroupPolicy/CommentDefinitions"">
   <policyNamespaces>
     <using prefix=""foo"" namespace=""http://example.com/foo"" />
@@ -39,7 +40,11 @@ namespace PolicyPlusModTests.Core.IO
             }
             finally
             {
-                try { File.Delete(path); } catch { }
+                try
+                {
+                    File.Delete(path);
+                }
+                catch { }
             }
         }
 
@@ -60,7 +65,10 @@ namespace PolicyPlusModTests.Core.IO
             {
                 try
                 {
-                    using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
+                    using var baseKey = RegistryKey.OpenBaseKey(
+                        RegistryHive.CurrentUser,
+                        RegistryView.Default
+                    );
                     baseKey.DeleteSubKeyTree(subkey, throwOnMissingSubKey: false);
                 }
                 catch { }

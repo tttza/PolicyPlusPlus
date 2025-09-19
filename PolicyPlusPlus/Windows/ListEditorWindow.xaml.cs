@@ -1,11 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Linq; // for duplicate detection
 using Microsoft.UI.Input; // added for InputKeyboardSource
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using PolicyPlusPlus.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq; // for duplicate detection
 using Windows.System; // VirtualKey
 using Windows.UI.Core; // CoreVirtualKeyStates
 
@@ -14,23 +14,38 @@ namespace PolicyPlusPlus.Windows
     public sealed partial class ListEditorWindow : Window
     {
         private static readonly Dictionary<string, ListEditorWindow> _openEditors = new();
+
         public static bool TryActivateExisting(string key)
         {
             if (_openEditors.TryGetValue(key, out var w))
             {
-                WindowHelpers.BringToFront(w); w.Activate();
+                WindowHelpers.BringToFront(w);
+                w.Activate();
                 var timer = w.DispatcherQueue.CreateTimer();
                 timer.Interval = TimeSpan.FromMilliseconds(180);
                 timer.IsRepeating = false;
-                timer.Tick += (s, e) => { try { WindowHelpers.BringToFront(w); w.Activate(); } catch { } }; timer.Start();
+                timer.Tick += (s, e) =>
+                {
+                    try
+                    {
+                        WindowHelpers.BringToFront(w);
+                        w.Activate();
+                    }
+                    catch { }
+                };
+                timer.Start();
                 return true;
             }
             return false;
         }
+
         public static void Register(string key, ListEditorWindow w)
         {
             _openEditors[key] = w;
-            w.Closed += (s, e) => { _openEditors.Remove(key); };
+            w.Closed += (s, e) =>
+            {
+                _openEditors.Remove(key);
+            };
         }
 
         private bool _userProvidesNames;
@@ -46,21 +61,57 @@ namespace PolicyPlusPlus.Windows
             // Centralized common window init
             ChildWindowCommon.Initialize(this, 560, 480, ApplyThemeResources);
 
-            AddBtn.Click += (s, e) => { var tb = AddListRow(string.Empty, string.Empty, true); tb?.Focus(FocusState.Programmatic); };
+            AddBtn.Click += (s, e) =>
+            {
+                var tb = AddListRow(string.Empty, string.Empty, true);
+                tb?.Focus(FocusState.Programmatic);
+            };
             OkBtn.Click += Ok_Click;
             CancelBtn.Click += Cancel_Click;
         }
 
         private void Accel_Add(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { var tb = AddListRow(string.Empty, string.Empty, true); tb?.Focus(FocusState.Programmatic); } catch { } args.Handled = true; }
+        {
+            try
+            {
+                var tb = AddListRow(string.Empty, string.Empty, true);
+                tb?.Focus(FocusState.Programmatic);
+            }
+            catch { }
+            args.Handled = true;
+        }
+
         private void Accel_Ok(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { Ok_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
-        private void Accel_Close(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { Close(); } catch { } args.Handled = true; }
+        {
+            try
+            {
+                Ok_Click(this, new RoutedEventArgs());
+            }
+            catch { }
+            args.Handled = true;
+        }
+
+        private void Accel_Close(
+            KeyboardAccelerator sender,
+            KeyboardAcceleratorInvokedEventArgs args
+        )
+        {
+            try
+            {
+                Close();
+            }
+            catch { }
+            args.Handled = true;
+        }
 
         private void ApplyThemeResources()
         {
-            try { if (Content is FrameworkElement fe) fe.RequestedTheme = App.CurrentTheme; } catch { }
+            try
+            {
+                if (Content is FrameworkElement fe)
+                    fe.RequestedTheme = App.CurrentTheme;
+            }
+            catch { }
         }
 
         public void BringToFront() => WindowHelpers.BringToFront(this);
@@ -75,22 +126,39 @@ namespace PolicyPlusPlus.Windows
             {
                 if (initial is List<KeyValuePair<string, string>> kvp)
                 {
-                    foreach (var p in kvp) { AddListRow(p.Key, p.Value); any = true; }
+                    foreach (var p in kvp)
+                    {
+                        AddListRow(p.Key, p.Value);
+                        any = true;
+                    }
                 }
                 else if (initial is Dictionary<string, string> dict)
                 {
-                    foreach (var kv in dict) { AddListRow(kv.Key, kv.Value); any = true; }
+                    foreach (var kv in dict)
+                    {
+                        AddListRow(kv.Key, kv.Value);
+                        any = true;
+                    }
                 }
                 else if (initial is IEnumerable<KeyValuePair<string, string>> en)
                 {
-                    foreach (var kv in en) { AddListRow(kv.Key, kv.Value); any = true; }
+                    foreach (var kv in en)
+                    {
+                        AddListRow(kv.Key, kv.Value);
+                        any = true;
+                    }
                 }
             }
             else if (initial is List<string> list)
             {
-                foreach (var s in list) { AddListRow(s, string.Empty); any = true; }
+                foreach (var s in list)
+                {
+                    AddListRow(s, string.Empty);
+                    any = true;
+                }
             }
-            if (!any) AddListRow(string.Empty, string.Empty);
+            if (!any)
+                AddListRow(string.Empty, string.Empty);
             EnsureTrailingBlankRow();
         }
 
@@ -98,20 +166,36 @@ namespace PolicyPlusPlus.Windows
         {
             try
             {
-                if (ListItems.Items.Count == 0) { AddListRow(string.Empty, string.Empty); return; }
+                if (ListItems.Items.Count == 0)
+                {
+                    AddListRow(string.Empty, string.Empty);
+                    return;
+                }
                 if (ListItems.Items[ListItems.Items.Count - 1] is Grid g)
                 {
                     if (_userProvidesNames)
                     {
-                        var keyTb = g.Children.OfType<TextBox>().FirstOrDefault(tb => (string?)tb.Tag == "k");
-                        var valTb = g.Children.OfType<TextBox>().FirstOrDefault(tb => (string?)tb.Tag == "v");
-                        if (keyTb != null && valTb != null && (!string.IsNullOrWhiteSpace(keyTb.Text) || !string.IsNullOrWhiteSpace(valTb.Text)))
+                        var keyTb = g
+                            .Children.OfType<TextBox>()
+                            .FirstOrDefault(tb => (string?)tb.Tag == "k");
+                        var valTb = g
+                            .Children.OfType<TextBox>()
+                            .FirstOrDefault(tb => (string?)tb.Tag == "v");
+                        if (
+                            keyTb != null
+                            && valTb != null
+                            && (
+                                !string.IsNullOrWhiteSpace(keyTb.Text)
+                                || !string.IsNullOrWhiteSpace(valTb.Text)
+                            )
+                        )
                             AddListRow(string.Empty, string.Empty);
                     }
                     else
                     {
                         var tb = g.Children.OfType<TextBox>().FirstOrDefault();
-                        if (tb != null && !string.IsNullOrWhiteSpace(tb.Text)) AddListRow(string.Empty, string.Empty);
+                        if (tb != null && !string.IsNullOrWhiteSpace(tb.Text))
+                            AddListRow(string.Empty, string.Empty);
                     }
                 }
             }
@@ -125,36 +209,61 @@ namespace PolicyPlusPlus.Windows
             if (_userProvidesNames)
             {
                 // key, value, delete button
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+                );
+                grid.ColumnDefinitions.Add(
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+                );
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-                var keyTb = new TextBox { Text = keyOrValue, PlaceholderText = "Key", Tag = "k" };
+                var keyTb = new TextBox
+                {
+                    Text = keyOrValue,
+                    PlaceholderText = "Key",
+                    Tag = "k",
+                };
                 Grid.SetColumn(keyTb, 0);
                 keyTb.KeyDown += TextBox_KeyDown;
                 keyTb.TextChanged += TextBox_TextChanged;
                 grid.Children.Add(keyTb);
 
-                var valTb = new TextBox { Text = valueIfNamed, PlaceholderText = "Value", Tag = "v" };
+                var valTb = new TextBox
+                {
+                    Text = valueIfNamed,
+                    PlaceholderText = "Value",
+                    Tag = "v",
+                };
                 Grid.SetColumn(valTb, 1);
                 valTb.KeyDown += TextBox_KeyDown;
                 valTb.TextChanged += TextBox_TextChanged;
                 grid.Children.Add(valTb);
 
-                var removeBtn = new Button { Content = new SymbolIcon(Symbol.Delete), MinWidth = 36, MinHeight = 36, HorizontalAlignment = HorizontalAlignment.Right, IsTabStop = false };
+                var removeBtn = new Button
+                {
+                    Content = new SymbolIcon(Symbol.Delete),
+                    MinWidth = 36,
+                    MinHeight = 36,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    IsTabStop = false,
+                };
                 ToolTipService.SetToolTip(removeBtn, "Remove");
-                removeBtn.Tag = grid; removeBtn.Click += RemoveRow_Click;
+                removeBtn.Tag = grid;
+                removeBtn.Click += RemoveRow_Click;
                 Grid.SetColumn(removeBtn, 2);
                 grid.Children.Add(removeBtn);
 
                 ListItems.Items.Add(grid);
-                if (focus) keyTb.Loaded += (s, e) => keyTb.Focus(FocusState.Programmatic);
+                if (focus)
+                    keyTb.Loaded += (s, e) => keyTb.Focus(FocusState.Programmatic);
                 return keyTb;
             }
             else
             {
                 // value only + delete button
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+                );
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
                 var tb = new TextBox { Text = keyOrValue };
@@ -163,14 +272,23 @@ namespace PolicyPlusPlus.Windows
                 tb.TextChanged += TextBox_TextChanged;
                 grid.Children.Add(tb);
 
-                var removeBtn = new Button { Content = new SymbolIcon(Symbol.Delete), MinWidth = 36, MinHeight = 36, HorizontalAlignment = HorizontalAlignment.Right, IsTabStop = false };
+                var removeBtn = new Button
+                {
+                    Content = new SymbolIcon(Symbol.Delete),
+                    MinWidth = 36,
+                    MinHeight = 36,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    IsTabStop = false,
+                };
                 ToolTipService.SetToolTip(removeBtn, "Remove");
-                removeBtn.Tag = grid; removeBtn.Click += RemoveRow_Click;
+                removeBtn.Tag = grid;
+                removeBtn.Click += RemoveRow_Click;
                 Grid.SetColumn(removeBtn, 1);
                 grid.Children.Add(removeBtn);
 
                 ListItems.Items.Add(grid);
-                if (focus) tb.Loaded += (s, e) => tb.Focus(FocusState.Programmatic);
+                if (focus)
+                    tb.Loaded += (s, e) => tb.Focus(FocusState.Programmatic);
                 return tb;
             }
         }
@@ -186,9 +304,16 @@ namespace PolicyPlusPlus.Windows
                     {
                         if (_userProvidesNames)
                         {
-                            var keyTb = row.Children.OfType<TextBox>().FirstOrDefault(x => (string?)x.Tag == "k");
-                            var valTb = row.Children.OfType<TextBox>().FirstOrDefault(x => (string?)x.Tag == "v");
-                            if ((keyTb != null && !string.IsNullOrWhiteSpace(keyTb.Text)) || (valTb != null && !string.IsNullOrWhiteSpace(valTb.Text)))
+                            var keyTb = row
+                                .Children.OfType<TextBox>()
+                                .FirstOrDefault(x => (string?)x.Tag == "k");
+                            var valTb = row
+                                .Children.OfType<TextBox>()
+                                .FirstOrDefault(x => (string?)x.Tag == "v");
+                            if (
+                                (keyTb != null && !string.IsNullOrWhiteSpace(keyTb.Text))
+                                || (valTb != null && !string.IsNullOrWhiteSpace(valTb.Text))
+                            )
                                 AddListRow(string.Empty, string.Empty);
                         }
                         else if (!string.IsNullOrWhiteSpace(tb.Text))
@@ -205,7 +330,11 @@ namespace PolicyPlusPlus.Windows
         {
             if (e.Key == VirtualKey.Tab)
             {
-                var shiftDown = (InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift) & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
+                var shiftDown =
+                    (
+                        InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift)
+                        & CoreVirtualKeyStates.Down
+                    ) == CoreVirtualKeyStates.Down;
                 if (!shiftDown && sender is TextBox tb && tb.Parent is Grid row)
                 {
                     if (_userProvidesNames && (string?)tb.Tag == "v")
@@ -215,8 +344,13 @@ namespace PolicyPlusPlus.Windows
                         bool lastRow = index == ListItems.Items.Count - 1;
                         if (lastRow)
                         {
-                            var keyTbCur = row.Children.OfType<TextBox>().FirstOrDefault(x => (string?)x.Tag == "k");
-                            if ((keyTbCur != null && !string.IsNullOrWhiteSpace(keyTbCur.Text)) || !string.IsNullOrWhiteSpace(tb.Text))
+                            var keyTbCur = row
+                                .Children.OfType<TextBox>()
+                                .FirstOrDefault(x => (string?)x.Tag == "k");
+                            if (
+                                (keyTbCur != null && !string.IsNullOrWhiteSpace(keyTbCur.Text))
+                                || !string.IsNullOrWhiteSpace(tb.Text)
+                            )
                             {
                                 AddListRow(string.Empty, string.Empty, false);
                             }
@@ -224,7 +358,9 @@ namespace PolicyPlusPlus.Windows
                         int nextIndex = Math.Min(index + 1, ListItems.Items.Count - 1);
                         if (nextIndex > index && ListItems.Items[nextIndex] is Grid nextRow)
                         {
-                            var nextKey = nextRow.Children.OfType<TextBox>().FirstOrDefault(x => (string?)x.Tag == "k");
+                            var nextKey = nextRow
+                                .Children.OfType<TextBox>()
+                                .FirstOrDefault(x => (string?)x.Tag == "k");
                             if (nextKey != null)
                             {
                                 e.Handled = true;
@@ -268,7 +404,10 @@ namespace PolicyPlusPlus.Windows
             if (sender is Button b && b.Tag is Grid row)
             {
                 ListItems.Items.Remove(row);
-                if (ListItems.Items.Count == 0) AddListRow(string.Empty, string.Empty); else EnsureTrailingBlankRow();
+                if (ListItems.Items.Count == 0)
+                    AddListRow(string.Empty, string.Empty);
+                else
+                    EnsureTrailingBlankRow();
             }
         }
 
@@ -280,13 +419,20 @@ namespace PolicyPlusPlus.Windows
                 var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var item in ListItems.Items)
                 {
-                    if (item is not Grid row) continue;
-                    var keyTb = row.Children.OfType<TextBox>().FirstOrDefault(x => (string?)x.Tag == "k");
-                    var valTb = row.Children.OfType<TextBox>().FirstOrDefault(x => (string?)x.Tag == "v");
-                    if (keyTb == null || valTb == null) continue;
+                    if (item is not Grid row)
+                        continue;
+                    var keyTb = row
+                        .Children.OfType<TextBox>()
+                        .FirstOrDefault(x => (string?)x.Tag == "k");
+                    var valTb = row
+                        .Children.OfType<TextBox>()
+                        .FirstOrDefault(x => (string?)x.Tag == "v");
+                    if (keyTb == null || valTb == null)
+                        continue;
                     var key = keyTb.Text?.Trim() ?? string.Empty;
                     var val = valTb.Text?.Trim() ?? string.Empty;
-                    if (string.IsNullOrWhiteSpace(key) && string.IsNullOrWhiteSpace(val)) continue; // ignore blank rows
+                    if (string.IsNullOrWhiteSpace(key) && string.IsNullOrWhiteSpace(val))
+                        continue; // ignore blank rows
                     if (string.IsNullOrWhiteSpace(key))
                     {
                         await ShowValidationDialog("A key is required for all non-empty rows.");
@@ -295,26 +441,34 @@ namespace PolicyPlusPlus.Windows
                     }
                     if (!seen.Add(key))
                     {
-                        await ShowValidationDialog($"Multiple entries are named \"{key}\". Remove or rename duplicates.");
-                        keyTb.Focus(FocusState.Programmatic); keyTb.SelectAll();
+                        await ShowValidationDialog(
+                            $"Multiple entries are named \"{key}\". Remove or rename duplicates."
+                        );
+                        keyTb.Focus(FocusState.Programmatic);
+                        keyTb.SelectAll();
                         return;
                     }
                     list.Add(new KeyValuePair<string, string>(key, val));
                 }
-                Result = list; CountText = $"Edit... ({list.Count})";
+                Result = list;
+                CountText = $"Edit... ({list.Count})";
             }
             else
             {
                 var list = new List<string>();
                 foreach (var item in ListItems.Items)
                 {
-                    if (item is not Grid row) continue;
+                    if (item is not Grid row)
+                        continue;
                     var tb = row.Children.OfType<TextBox>().FirstOrDefault();
-                    if (tb == null) continue;
+                    if (tb == null)
+                        continue;
                     var s = tb.Text ?? string.Empty;
-                    if (!string.IsNullOrWhiteSpace(s)) list.Add(s);
+                    if (!string.IsNullOrWhiteSpace(s))
+                        list.Add(s);
                 }
-                Result = list; CountText = $"Edit... ({list.Count})";
+                Result = list;
+                CountText = $"Edit... ({list.Count})";
             }
             Finished?.Invoke(this, true);
             this.Close();
@@ -329,13 +483,16 @@ namespace PolicyPlusPlus.Windows
                     Title = "Validation",
                     Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
                     PrimaryButtonText = "OK",
-                    XamlRoot = (Content as FrameworkElement)?.XamlRoot
+                    XamlRoot = (Content as FrameworkElement)?.XamlRoot,
                 };
                 await dlg.ShowAsync();
             }
             catch { }
         }
 
-        private void Cancel_Click(object sender, RoutedEventArgs e) { this.Close(); }
+        private void Cancel_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
     }
 }

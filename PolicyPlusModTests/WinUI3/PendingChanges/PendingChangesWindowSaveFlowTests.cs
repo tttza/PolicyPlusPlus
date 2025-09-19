@@ -1,5 +1,5 @@
-using PolicyPlusPlus.Services;
 using System.Collections.Generic;
+using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.PendingChanges
@@ -19,17 +19,20 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                     RegistryValue = "V",
                     Section = AdmxPolicySection.Machine,
                     AffectedValues = new PolicyRegistryList(),
-                    DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
-                }
+                    DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
+                },
             };
-            var bundle = new AdmxBundle { Policies = new Dictionary<string, PolicyPlusPolicy> { { pol.UniqueID, pol } } };
+            var bundle = new AdmxBundle
+            {
+                Policies = new Dictionary<string, PolicyPlusPolicy> { { pol.UniqueID, pol } },
+            };
             var change = new PendingChange
             {
                 PolicyId = pol.UniqueID,
                 PolicyName = pol.DisplayName,
                 Scope = "Computer",
                 DesiredState = PolicyState.Enabled,
-                Options = new Dictionary<string, object>()
+                Options = new Dictionary<string, object>(),
             };
 
             PendingChangesService.Instance.Pending.Clear();
@@ -38,7 +41,13 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
 
             var req = new List<PolicyChangeRequest>
             {
-                new PolicyChangeRequest { PolicyId = change.PolicyId, Scope = PolicyTargetScope.Machine, DesiredState = change.DesiredState, Options = change.Options }
+                new PolicyChangeRequest
+                {
+                    PolicyId = change.PolicyId,
+                    Scope = PolicyTargetScope.Machine,
+                    DesiredState = change.DesiredState,
+                    Options = change.Options,
+                },
             };
             var b64 = PolicySavePipeline.BuildLocalGpoBase64(bundle, req);
             Assert.False(string.IsNullOrEmpty(b64.machineBase64));

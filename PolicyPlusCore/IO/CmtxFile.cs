@@ -1,5 +1,5 @@
-using PolicyPlusCore.Utils;
 using System.Xml;
+using PolicyPlusCore.Utils;
 
 namespace PolicyPlusCore.IO
 {
@@ -27,57 +27,57 @@ namespace PolicyPlusCore.IO
                 switch (child.LocalName ?? "")
                 {
                     case "policyNamespaces":
+                    {
+                        foreach (XmlNode usingElement in child.ChildNodes)
                         {
-                            foreach (XmlNode usingElement in child.ChildNodes)
-                            {
-                                if (usingElement.LocalName != "using")
-                                    continue;
-                                var prefix = usingElement.AttributeOrNull("prefix");
-                                var ns = usingElement.AttributeOrNull("namespace");
-                                if (prefix is null || ns is null)
-                                    continue;
-                                cmtx.Prefixes.Add(prefix, ns);
-                            }
-                            break;
+                            if (usingElement.LocalName != "using")
+                                continue;
+                            var prefix = usingElement.AttributeOrNull("prefix");
+                            var ns = usingElement.AttributeOrNull("namespace");
+                            if (prefix is null || ns is null)
+                                continue;
+                            cmtx.Prefixes.Add(prefix, ns);
                         }
+                        break;
+                    }
                     case "comments":
+                    {
+                        foreach (XmlNode admTemplateElement in child.ChildNodes)
                         {
-                            foreach (XmlNode admTemplateElement in child.ChildNodes)
+                            if (admTemplateElement.LocalName != "admTemplate")
+                                continue;
+                            foreach (XmlNode commentElement in admTemplateElement.ChildNodes)
                             {
-                                if (admTemplateElement.LocalName != "admTemplate")
+                                if (commentElement.LocalName != "comment")
                                     continue;
-                                foreach (XmlNode commentElement in admTemplateElement.ChildNodes)
-                                {
-                                    if (commentElement.LocalName != "comment")
-                                        continue;
-                                    var policy = commentElement.AttributeOrNull("policyRef");
-                                    var text = commentElement.AttributeOrNull("commentText");
-                                    if (policy is null || text is null)
-                                        continue;
-                                    cmtx.Comments.Add(policy, text);
-                                }
+                                var policy = commentElement.AttributeOrNull("policyRef");
+                                var text = commentElement.AttributeOrNull("commentText");
+                                if (policy is null || text is null)
+                                    continue;
+                                cmtx.Comments.Add(policy, text);
                             }
-                            break;
                         }
+                        break;
+                    }
                     case "resources":
+                    {
+                        foreach (XmlNode stringTable in child.ChildNodes)
                         {
-                            foreach (XmlNode stringTable in child.ChildNodes)
+                            if (stringTable.LocalName != "stringTable")
+                                continue;
+                            foreach (XmlNode stringElement in stringTable.ChildNodes)
                             {
-                                if (stringTable.LocalName != "stringTable")
+                                if (stringElement.LocalName != "string")
                                     continue;
-                                foreach (XmlNode stringElement in stringTable.ChildNodes)
-                                {
-                                    if (stringElement.LocalName != "string")
-                                        continue;
-                                    var id = stringElement.AttributeOrNull("id");
-                                    if (id is null)
-                                        continue;
-                                    string text = stringElement.InnerText ?? string.Empty;
-                                    cmtx.Strings.Add(id, text);
-                                }
+                                var id = stringElement.AttributeOrNull("id");
+                                if (id is null)
+                                    continue;
+                                string text = stringElement.InnerText ?? string.Empty;
+                                cmtx.Strings.Add(id, text);
                             }
-                            break;
                         }
+                        break;
+                    }
                 }
             }
             return cmtx;
@@ -103,7 +103,10 @@ namespace PolicyPlusCore.IO
                 }
                 string resourceId = nsPart.Replace('.', '_') + "__" + policyPart + "__" + resNum;
                 cmtx.Strings.Add(resourceId, kv.Value);
-                cmtx.Comments.Add(revPrefixes[nsPart] + ":" + policyPart, "$(resource." + resourceId + ")");
+                cmtx.Comments.Add(
+                    revPrefixes[nsPart] + ":" + policyPart,
+                    "$(resource." + resourceId + ")"
+                );
                 resNum += 1;
             }
             return cmtx;
@@ -121,7 +124,11 @@ namespace PolicyPlusCore.IO
                 if (!Prefixes.TryGetValue(prefixKey, out var polNamespace))
                     continue;
                 string stringRef = comment.Value ?? string.Empty;
-                if (stringRef.Length < 13 || !stringRef.StartsWith("$(resource.") || !stringRef.EndsWith(")"))
+                if (
+                    stringRef.Length < 13
+                    || !stringRef.StartsWith("$(resource.")
+                    || !stringRef.EndsWith(")")
+                )
                     continue;
                 string stringId = stringRef.Substring(11, stringRef.Length - 12);
                 if (!Strings.TryGetValue(stringId, out var resolved))
@@ -146,7 +153,10 @@ namespace PolicyPlusCore.IO
             policyComments.SetAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
             policyComments.SetAttribute("revision", "1.0");
             policyComments.SetAttribute("schemaVersion", "1.0");
-            policyComments.SetAttribute("xmlns", "http://www.microsoft.com/GroupPolicy/CommentDefinitions");
+            policyComments.SetAttribute(
+                "xmlns",
+                "http://www.microsoft.com/GroupPolicy/CommentDefinitions"
+            );
             var policyNamespaces = xml.CreateElement("policyNamespaces");
             foreach (var prefix in Prefixes)
             {

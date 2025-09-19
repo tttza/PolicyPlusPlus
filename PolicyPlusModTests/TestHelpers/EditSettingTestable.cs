@@ -1,6 +1,6 @@
-using PolicyPlusModTests.Testing;
-using PolicyPlusCore.Core; // PolicyProcessing + presentation types
 using System.Collections.Generic;
+using PolicyPlusCore.Core; // PolicyProcessing + presentation types
+using PolicyPlusModTests.Testing;
 using Xunit;
 
 namespace PolicyPlusModTests.TestHelpers
@@ -21,7 +21,11 @@ namespace PolicyPlusModTests.TestHelpers
 
         private PolicyState _currentState = PolicyState.NotConfigured;
 
-        public void SetTestContext(PolicyPlusPolicy policy, AdmxPolicySection section, IPolicySource policySource)
+        public void SetTestContext(
+            PolicyPlusPolicy policy,
+            AdmxPolicySection section,
+            IPolicySource policySource
+        )
         {
             _policy = policy;
             _section = section; // unused but kept for parity
@@ -30,9 +34,12 @@ namespace PolicyPlusModTests.TestHelpers
 
         public void InvokeStateRadiosChanged()
         {
-            if (EnabledOption.Checked) _currentState = PolicyState.Enabled;
-            else if (DisabledOption.Checked) _currentState = PolicyState.Disabled;
-            else _currentState = PolicyState.NotConfigured;
+            if (EnabledOption.Checked)
+                _currentState = PolicyState.Enabled;
+            else if (DisabledOption.Checked)
+                _currentState = PolicyState.Disabled;
+            else
+                _currentState = PolicyState.NotConfigured;
         }
 
         public void ApplyToPolicySource_PublicForTest()
@@ -43,7 +50,12 @@ namespace PolicyPlusModTests.TestHelpers
                     ApplyEnabled();
                     break;
                 case PolicyState.Disabled:
-                    PolicyProcessing.SetPolicyState(_policySource, _policy, PolicyState.Disabled, new Dictionary<string, object>());
+                    PolicyProcessing.SetPolicyState(
+                        _policySource,
+                        _policy,
+                        PolicyState.Disabled,
+                        new Dictionary<string, object>()
+                    );
                     break;
                 default:
                     break;
@@ -58,8 +70,11 @@ namespace PolicyPlusModTests.TestHelpers
             {
                 foreach (var elem in _policy.RawPolicy.Elements ?? new List<PolicyElement>())
                 {
-                    var pres = presentation.Elements.Find(p => string.Equals(p.ID, elem.ID, System.StringComparison.OrdinalIgnoreCase));
-                    if (pres == null) continue;
+                    var pres = presentation.Elements.Find(p =>
+                        string.Equals(p.ID, elem.ID, System.StringComparison.OrdinalIgnoreCase)
+                    );
+                    if (pres == null)
+                        continue;
                     switch (elem.ElementType)
                     {
                         case "boolean":
@@ -71,15 +86,26 @@ namespace PolicyPlusModTests.TestHelpers
                                 optionValues[elem.ID] = nb.DefaultValue;
                             break;
                         case "text":
-                            if (pres is TextBoxPresentationElement tb && !string.IsNullOrEmpty(tb.DefaultValue))
+                            if (
+                                pres is TextBoxPresentationElement tb
+                                && !string.IsNullOrEmpty(tb.DefaultValue)
+                            )
                                 optionValues[elem.ID] = tb.DefaultValue!;
                             break;
                     }
                 }
             }
-            PolicyProcessing.SetPolicyState(_policySource, _policy, PolicyState.Enabled, optionValues);
+            PolicyProcessing.SetPolicyState(
+                _policySource,
+                _policy,
+                PolicyState.Enabled,
+                optionValues
+            );
         }
 
-        public class RadioStub { public bool Checked { get; set; } }
+        public class RadioStub
+        {
+            public bool Checked { get; set; }
+        }
     }
 }

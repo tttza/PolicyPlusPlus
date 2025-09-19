@@ -1,3 +1,4 @@
+using System;
 using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -5,17 +6,36 @@ using Microsoft.UI.Xaml.Input;
 using PolicyPlusPlus.Dialogs;
 using PolicyPlusPlus.Models; // for PolicyListRow
 using PolicyPlusPlus.Services;
-using System;
 
 namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {
-        private void GoBackAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { BtnBack_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+        private void GoBackAccelerator_Invoked(
+            KeyboardAccelerator sender,
+            KeyboardAcceleratorInvokedEventArgs args
+        )
+        {
+            try
+            {
+                BtnBack_Click(this, new RoutedEventArgs());
+            }
+            catch { }
+            args.Handled = true;
+        }
 
-        private void GoForwardAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { BtnForward_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+        private void GoForwardAccelerator_Invoked(
+            KeyboardAccelerator sender,
+            KeyboardAcceleratorInvokedEventArgs args
+        )
+        {
+            try
+            {
+                BtnForward_Click(this, new RoutedEventArgs());
+            }
+            catch { }
+            args.Handled = true;
+        }
 
         private void RootGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
@@ -24,9 +44,15 @@ namespace PolicyPlusPlus
                 var point = e.GetCurrentPoint(this.Content as UIElement);
                 var props = point.Properties;
                 if (props.IsXButton1Pressed)
-                { BtnBack_Click(this, new RoutedEventArgs()); e.Handled = true; }
+                {
+                    BtnBack_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
                 else if (props.IsXButton2Pressed)
-                { BtnForward_Click(this, new RoutedEventArgs()); e.Handled = true; }
+                {
+                    BtnForward_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                }
             }
             catch { }
         }
@@ -35,13 +61,23 @@ namespace PolicyPlusPlus
         {
             try
             {
-                string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
-                string admxPath = SettingsService.Instance.LoadSettings().AdmxSourcePath ?? defaultPath;
-                string currentLang = SettingsService.Instance.LoadSettings().Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
+                string defaultPath = Environment.ExpandEnvironmentVariables(
+                    @"%WINDIR%\\PolicyDefinitions"
+                );
+                string admxPath =
+                    SettingsService.Instance.LoadSettings().AdmxSourcePath ?? defaultPath;
+                string currentLang =
+                    SettingsService.Instance.LoadSettings().Language ?? System
+                        .Globalization
+                        .CultureInfo
+                        .CurrentUICulture
+                        .Name;
 
                 var dlg = new LanguageOptionsDialog();
                 if (this.Content is FrameworkElement root)
-                { dlg.XamlRoot = root.XamlRoot; }
+                {
+                    dlg.XamlRoot = root.XamlRoot;
+                }
                 dlg.Initialize(admxPath, currentLang);
                 var result = await dlg.ShowAsync();
                 if (result == ContentDialogResult.Primary)
@@ -50,26 +86,67 @@ namespace PolicyPlusPlus
                     _settingsCache = settings;
                     var chosen = (sender as MenuFlyoutItem)?.Tag as string;
                     bool langChanged = false;
-                    if (!string.IsNullOrEmpty(chosen) && !string.Equals(chosen, settings.Language, StringComparison.OrdinalIgnoreCase))
-                    { langChanged = true; try { SettingsService.Instance.UpdateLanguage(chosen!); settings.Language = chosen; } catch { } await LoadAdmxFolderAsync(admxPath); }
+                    if (
+                        !string.IsNullOrEmpty(chosen)
+                        && !string.Equals(
+                            chosen,
+                            settings.Language,
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    {
+                        langChanged = true;
+                        try
+                        {
+                            SettingsService.Instance.UpdateLanguage(chosen!);
+                            settings.Language = chosen;
+                        }
+                        catch { }
+                        await LoadAdmxFolderAsync(admxPath);
+                    }
 
                     var before = settings; // already cached
                     bool beforeEnabled = before.SecondLanguageEnabled ?? false;
                     string beforeSecond = before.SecondLanguage ?? "en-US";
                     bool afterEnabled = dlg.SecondLanguageEnabled;
                     string afterSecond = dlg.SelectedSecondLanguage ?? beforeSecond;
-                    bool secondChanged = (beforeEnabled != afterEnabled) || !string.Equals(beforeSecond, afterSecond, StringComparison.OrdinalIgnoreCase);
-                    try { SettingsService.Instance.UpdateSecondLanguageEnabled(afterEnabled); before.SecondLanguageEnabled = afterEnabled; } catch { }
-                    if (afterEnabled && !string.IsNullOrEmpty(afterSecond)) { try { SettingsService.Instance.UpdateSecondLanguage(afterSecond); before.SecondLanguage = afterSecond; } catch { } }
+                    bool secondChanged =
+                        (beforeEnabled != afterEnabled)
+                        || !string.Equals(
+                            beforeSecond,
+                            afterSecond,
+                            StringComparison.OrdinalIgnoreCase
+                        );
+                    try
+                    {
+                        SettingsService.Instance.UpdateSecondLanguageEnabled(afterEnabled);
+                        before.SecondLanguageEnabled = afterEnabled;
+                    }
+                    catch { }
+                    if (afterEnabled && !string.IsNullOrEmpty(afterSecond))
+                    {
+                        try
+                        {
+                            SettingsService.Instance.UpdateSecondLanguage(afterSecond);
+                            before.SecondLanguage = afterSecond;
+                        }
+                        catch { }
+                    }
 
                     if (secondChanged && !langChanged)
-                    { RebuildSearchIndex(); }
+                    {
+                        RebuildSearchIndex();
+                    }
                     ApplySecondLanguageVisibilityToViewMenu();
                     UpdateColumnVisibilityFromFlags();
-                    if (!langChanged) RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                    if (!langChanged)
+                        RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
                 }
             }
-            catch { ShowInfo("Unable to open Language dialog.", InfoBarSeverity.Error); }
+            catch
+            {
+                ShowInfo("Unable to open Language dialog.", InfoBarSeverity.Error);
+            }
         }
 
         private void ClearCategoryFilter_Click(object sender, RoutedEventArgs e)
@@ -95,40 +172,71 @@ namespace PolicyPlusPlus
             try
             {
                 string? key = null;
-                if (e.Column == ColName) key = nameof(PolicyListRow.DisplayName);
-                else if (e.Column == ColId) key = nameof(PolicyListRow.ShortId);
-                else if (e.Column == ColCategory) key = nameof(PolicyListRow.CategoryName);
-                else if (e.Column == ColTopCategory) key = nameof(PolicyListRow.TopCategoryName);
-                else if (e.Column == ColCategoryPath) key = nameof(PolicyListRow.CategoryFullPath);
-                else if (e.Column == ColApplies) key = nameof(PolicyListRow.AppliesText);
-                else if (e.Column == ColSupported) key = nameof(PolicyListRow.SupportedText);
-                if (string.IsNullOrEmpty(key)) return;
+                if (e.Column == ColName)
+                    key = nameof(PolicyListRow.DisplayName);
+                else if (e.Column == ColId)
+                    key = nameof(PolicyListRow.ShortId);
+                else if (e.Column == ColCategory)
+                    key = nameof(PolicyListRow.CategoryName);
+                else if (e.Column == ColTopCategory)
+                    key = nameof(PolicyListRow.TopCategoryName);
+                else if (e.Column == ColCategoryPath)
+                    key = nameof(PolicyListRow.CategoryFullPath);
+                else if (e.Column == ColApplies)
+                    key = nameof(PolicyListRow.AppliesText);
+                else if (e.Column == ColSupported)
+                    key = nameof(PolicyListRow.SupportedText);
+                if (string.IsNullOrEmpty(key))
+                    return;
 
                 if (string.Equals(_sortColumn, key, StringComparison.Ordinal))
                 {
-                    if (_sortDirection == DataGridSortDirection.Ascending) _sortDirection = DataGridSortDirection.Descending;
-                    else if (_sortDirection == DataGridSortDirection.Descending) { _sortColumn = null; _sortDirection = null; }
-                    else _sortDirection = DataGridSortDirection.Ascending;
+                    if (_sortDirection == DataGridSortDirection.Ascending)
+                        _sortDirection = DataGridSortDirection.Descending;
+                    else if (_sortDirection == DataGridSortDirection.Descending)
+                    {
+                        _sortColumn = null;
+                        _sortDirection = null;
+                    }
+                    else
+                        _sortDirection = DataGridSortDirection.Ascending;
                 }
-                else { _sortColumn = key; _sortDirection = DataGridSortDirection.Ascending; }
+                else
+                {
+                    _sortColumn = key;
+                    _sortDirection = DataGridSortDirection.Ascending;
+                }
 
                 try
                 {
-                    if (_sortColumn == null || _sortDirection == null) SettingsService.Instance.UpdateSort(null, null);
-                    else SettingsService.Instance.UpdateSort(_sortColumn, _sortDirection == DataGridSortDirection.Descending ? "Desc" : "Asc");
+                    if (_sortColumn == null || _sortDirection == null)
+                        SettingsService.Instance.UpdateSort(null, null);
+                    else
+                        SettingsService.Instance.UpdateSort(
+                            _sortColumn,
+                            _sortDirection == DataGridSortDirection.Descending ? "Desc" : "Asc"
+                        );
                 }
                 catch { }
 
-                foreach (var col in PolicyList.Columns) col.SortDirection = null;
+                foreach (var col in PolicyList.Columns)
+                    col.SortDirection = null;
                 if (_sortColumn != null && _sortDirection != null)
                 {
-                    if (_sortColumn == nameof(PolicyListRow.DisplayName)) ColName.SortDirection = _sortDirection;
-                    else if (_sortColumn == nameof(PolicyListRow.ShortId)) ColId.SortDirection = _sortDirection;
-                    else if (_sortColumn == nameof(PolicyListRow.CategoryName)) ColCategory.SortDirection = _sortDirection;
-                    else if (_sortColumn == nameof(PolicyListRow.TopCategoryName)) ColTopCategory.SortDirection = _sortDirection;
-                    else if (_sortColumn == nameof(PolicyListRow.CategoryFullPath)) ColCategoryPath.SortDirection = _sortDirection;
-                    else if (_sortColumn == nameof(PolicyListRow.AppliesText)) ColApplies.SortDirection = _sortDirection;
-                    else if (_sortColumn == nameof(PolicyListRow.SupportedText)) ColSupported.SortDirection = _sortDirection;
+                    if (_sortColumn == nameof(PolicyListRow.DisplayName))
+                        ColName.SortDirection = _sortDirection;
+                    else if (_sortColumn == nameof(PolicyListRow.ShortId))
+                        ColId.SortDirection = _sortDirection;
+                    else if (_sortColumn == nameof(PolicyListRow.CategoryName))
+                        ColCategory.SortDirection = _sortDirection;
+                    else if (_sortColumn == nameof(PolicyListRow.TopCategoryName))
+                        ColTopCategory.SortDirection = _sortDirection;
+                    else if (_sortColumn == nameof(PolicyListRow.CategoryFullPath))
+                        ColCategoryPath.SortDirection = _sortDirection;
+                    else if (_sortColumn == nameof(PolicyListRow.AppliesText))
+                        ColApplies.SortDirection = _sortDirection;
+                    else if (_sortColumn == nameof(PolicyListRow.SupportedText))
+                        ColSupported.SortDirection = _sortDirection;
                 }
 
                 RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
@@ -147,7 +255,10 @@ namespace PolicyPlusPlus
                         e.Handled = true;
                         _ = OpenEditDialogForPolicyInternalAsync(row.Policy, ensureFront: true);
                     }
-                    else if (PolicyList?.SelectedItem is PolicyListRow row2 && row2.Category is not null)
+                    else if (
+                        PolicyList?.SelectedItem is PolicyListRow row2
+                        && row2.Category is not null
+                    )
                     {
                         e.Handled = true;
                         _selectedCategory = row2.Category;

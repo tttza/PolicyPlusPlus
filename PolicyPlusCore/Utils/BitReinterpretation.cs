@@ -7,6 +7,7 @@ namespace PolicyPlusCore.Utils
     {
         [FieldOffset(0)]
         public int Signed;
+
         [FieldOffset(0)]
         public uint Unsigned;
     }
@@ -16,6 +17,7 @@ namespace PolicyPlusCore.Utils
     {
         [FieldOffset(0)]
         public long Signed;
+
         [FieldOffset(0)]
         public ulong Unsigned;
     }

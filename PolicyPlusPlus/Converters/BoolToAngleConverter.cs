@@ -1,5 +1,5 @@
-using Microsoft.UI.Xaml.Data;
 using System;
+using Microsoft.UI.Xaml.Data;
 
 namespace PolicyPlusPlus.Converters
 {
@@ -8,7 +8,8 @@ namespace PolicyPlusPlus.Converters
         // False -> 0 (right), True -> 90 (down)
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is bool b) return b ? 90.0 : 0.0;
+            if (value is bool b)
+                return b ? 90.0 : 0.0;
             return 0.0;
         }
 
@@ -19,7 +20,10 @@ namespace PolicyPlusPlus.Converters
                 double angle = System.Convert.ToDouble(value);
                 return Math.Abs(angle - 90.0) < 0.1;
             }
-            catch { return false; }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

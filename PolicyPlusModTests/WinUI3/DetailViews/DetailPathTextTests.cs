@@ -7,9 +7,23 @@ namespace PolicyPlusModTests.WinUI3.DetailViews
     {
         private static PolicyPlusPolicy MakePolicyWithCategoryChain()
         {
-            var root = new PolicyPlusCategory { DisplayName = "Root", RawCategory = new AdmxCategory() };
-            var mid = new PolicyPlusCategory { DisplayName = "Mid", RawCategory = new AdmxCategory(), Parent = root };
-            var leaf = new PolicyPlusCategory { DisplayName = "Leaf", RawCategory = new AdmxCategory(), Parent = mid };
+            var root = new PolicyPlusCategory
+            {
+                DisplayName = "Root",
+                RawCategory = new AdmxCategory(),
+            };
+            var mid = new PolicyPlusCategory
+            {
+                DisplayName = "Mid",
+                RawCategory = new AdmxCategory(),
+                Parent = root,
+            };
+            var leaf = new PolicyPlusCategory
+            {
+                DisplayName = "Leaf",
+                RawCategory = new AdmxCategory(),
+                Parent = mid,
+            };
 
             return new PolicyPlusPolicy
             {
@@ -22,8 +36,8 @@ namespace PolicyPlusModTests.WinUI3.DetailViews
                     RegistryValue = "V",
                     Section = AdmxPolicySection.Machine,
                     AffectedValues = new PolicyRegistryList(),
-                    DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
-                }
+                    DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
+                },
             };
         }
 
@@ -34,10 +48,16 @@ namespace PolicyPlusModTests.WinUI3.DetailViews
             var text = DetailPathFormatter.BuildPathText(p).Replace("\r\n", "\n");
 
             // Allow either English or Japanese (or other future) localization for the top labels
-            bool hasConfig = text.Contains("Computer Configuration") || text.Contains("コンピューターの構成") || text.ToLower().Contains("configuration");
+            bool hasConfig =
+                text.Contains("Computer Configuration")
+                || text.Contains("コンピューターの構成")
+                || text.ToLower().Contains("configuration");
             Assert.True(hasConfig, "Configuration scope label missing");
 
-            bool hasTemplates = text.Contains("Administrative Templates") || text.Contains("管理用テンプレート") || text.ToLower().Contains("template");
+            bool hasTemplates =
+                text.Contains("Administrative Templates")
+                || text.Contains("管理用テンプレート")
+                || text.ToLower().Contains("template");
             Assert.True(hasTemplates, "Administrative Templates label missing");
 
             Assert.Contains("+ Root", text);

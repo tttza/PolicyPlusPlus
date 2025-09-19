@@ -11,9 +11,17 @@ namespace PolicyPlusPlus.Services
     {
         private static string EnsureDir()
         {
-            try { SettingsService.Instance.Initialize(); } catch { }
+            try
+            {
+                SettingsService.Instance.Initialize();
+            }
+            catch { }
             var dir = SettingsService.Instance.CacheDirectory;
-            try { Directory.CreateDirectory(dir); } catch { }
+            try
+            {
+                Directory.CreateDirectory(dir);
+            }
+            catch { }
             return dir;
         }
 
@@ -22,7 +30,8 @@ namespace PolicyPlusPlus.Services
             using var sha = SHA256.Create();
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(s ?? string.Empty));
             var sb = new StringBuilder(bytes.Length * 2);
-            foreach (var b in bytes) sb.Append(b.ToString("x2"));
+            foreach (var b in bytes)
+                sb.Append(b.ToString("x2"));
             return sb.ToString();
         }
 
@@ -33,7 +42,8 @@ namespace PolicyPlusPlus.Services
                 var sb = new StringBuilder();
                 if (Directory.Exists(admxRoot))
                 {
-                    var admxFiles = Directory.EnumerateFiles(admxRoot, "*.admx", SearchOption.TopDirectoryOnly)
+                    var admxFiles = Directory
+                        .EnumerateFiles(admxRoot, "*.admx", SearchOption.TopDirectoryOnly)
                         .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
                         .ToList();
                     foreach (var f in admxFiles)
@@ -52,7 +62,8 @@ namespace PolicyPlusPlus.Services
                         var admlDir = Path.Combine(admxRoot, language);
                         if (Directory.Exists(admlDir))
                         {
-                            var admlFiles = Directory.EnumerateFiles(admlDir, "*.adml", SearchOption.TopDirectoryOnly)
+                            var admlFiles = Directory
+                                .EnumerateFiles(admlDir, "*.adml", SearchOption.TopDirectoryOnly)
                                 .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
                                 .ToList();
                             foreach (var f in admlFiles)
@@ -78,23 +89,29 @@ namespace PolicyPlusPlus.Services
             }
         }
 
-        private static string GetBaseName(string admxPath, string language, string fingerprint, int n, string kind)
+        private static string GetBaseName(
+            string admxPath,
+            string language,
+            string fingerprint,
+            int n,
+            string kind
+        )
         {
             var key = $"{admxPath}\n{language}\nN={n}\nFP={fingerprint}\nK={kind}";
             return $"ngram_{Hash(key)}";
         }
 
-        private static string GetBinPath(string baseName)
-            => Path.Combine(EnsureDir(), baseName + ".bin");
+        private static string GetBinPath(string baseName) =>
+            Path.Combine(EnsureDir(), baseName + ".bin");
 
-        private static string GetBinGzPath(string baseName)
-            => Path.Combine(EnsureDir(), baseName + ".bin.gz");
+        private static string GetBinGzPath(string baseName) =>
+            Path.Combine(EnsureDir(), baseName + ".bin.gz");
 
-        private static string GetJsonGzPath(string baseName)
-            => Path.Combine(EnsureDir(), baseName + ".json.gz");
+        private static string GetJsonGzPath(string baseName) =>
+            Path.Combine(EnsureDir(), baseName + ".json.gz");
 
-        private static string GetJsonPath(string baseName)
-            => Path.Combine(EnsureDir(), baseName + ".json");
+        private static string GetJsonPath(string baseName) =>
+            Path.Combine(EnsureDir(), baseName + ".json");
 
         // Backward path without fingerprint/kind (legacy JSON)
         private static string GetLegacyJsonPath(string admxPath, string language, int n)
@@ -108,20 +125,26 @@ namespace PolicyPlusPlus.Services
         private static bool TryLoadBinary(string path, out NGramTextIndex.NGramSnapshot? snapshot)
         {
             snapshot = null;
-            if (!File.Exists(path)) return false;
+            if (!File.Exists(path))
+                return false;
             try
             {
                 using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 using var br = new BinaryReader(fs, Encoding.UTF8, leaveOpen: false);
                 return ReadBinary(br, out snapshot);
             }
-            catch { snapshot = null; return false; }
+            catch
+            {
+                snapshot = null;
+                return false;
+            }
         }
 
         private static bool TryLoadBinaryGz(string path, out NGramTextIndex.NGramSnapshot? snapshot)
         {
             snapshot = null;
-            if (!File.Exists(path)) return false;
+            if (!File.Exists(path))
+                return false;
             try
             {
                 using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -129,7 +152,11 @@ namespace PolicyPlusPlus.Services
                 using var br = new BinaryReader(gz, Encoding.UTF8, leaveOpen: false);
                 return ReadBinary(br, out snapshot);
             }
-            catch { snapshot = null; return false; }
+            catch
+            {
+                snapshot = null;
+                return false;
+            }
         }
 
         private static bool ReadBinary(BinaryReader br, out NGramTextIndex.NGramSnapshot? snapshot)
@@ -137,15 +164,20 @@ namespace PolicyPlusPlus.Services
             snapshot = null;
             // Header
             var magic = br.ReadUInt32(); // 'NGRM' little-endian
-            if (magic != 0x4D52474E) return false; // NGRM
+            if (magic != 0x4D52474E)
+                return false; // NGRM
             byte version = br.ReadByte();
-            if (version != 1) return false;
+            if (version != 1)
+                return false;
             int n = br.ReadInt32();
             int idCount = br.ReadInt32();
             var ids = new string[idCount];
-            for (int i = 0; i < idCount; i++) ids[i] = br.ReadString();
+            for (int i = 0; i < idCount; i++)
+                ids[i] = br.ReadString();
             int gramCount = br.ReadInt32();
-            var postings = new System.Collections.Generic.Dictionary<string, string[]>(StringComparer.Ordinal);
+            var postings = new System.Collections.Generic.Dictionary<string, string[]>(
+                StringComparer.Ordinal
+            );
             for (int g = 0; g < gramCount; g++)
             {
                 string gram = br.ReadString();
@@ -166,8 +198,14 @@ namespace PolicyPlusPlus.Services
         {
             try
             {
-                if (snapshot == null) return;
-                using var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+                if (snapshot == null)
+                    return;
+                using var fs = new FileStream(
+                    path,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.Read
+                );
                 using var bw = new BinaryWriter(fs, Encoding.UTF8, leaveOpen: false);
                 WriteBinary(bw, snapshot);
             }
@@ -178,8 +216,14 @@ namespace PolicyPlusPlus.Services
         {
             try
             {
-                if (snapshot == null) return;
-                using var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+                if (snapshot == null)
+                    return;
+                using var fs = new FileStream(
+                    path,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.Read
+                );
                 using var gz = new GZipStream(fs, CompressionLevel.SmallestSize, leaveOpen: false);
                 using var bw = new BinaryWriter(gz, Encoding.UTF8, leaveOpen: false);
                 WriteBinary(bw, snapshot);
@@ -190,14 +234,20 @@ namespace PolicyPlusPlus.Services
         private static void WriteBinary(BinaryWriter bw, NGramTextIndex.NGramSnapshot snapshot)
         {
             // Build id table
-            var idSet = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var idSet = new System.Collections.Generic.HashSet<string>(
+                StringComparer.OrdinalIgnoreCase
+            );
             foreach (var kv in snapshot.Postings)
             {
-                foreach (var id in kv.Value) idSet.Add(id ?? string.Empty);
+                foreach (var id in kv.Value)
+                    idSet.Add(id ?? string.Empty);
             }
             var ids = idSet.ToArray();
-            var indexOf = new System.Collections.Generic.Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            for (int i = 0; i < ids.Length; i++) indexOf[ids[i]] = i;
+            var indexOf = new System.Collections.Generic.Dictionary<string, int>(
+                StringComparer.OrdinalIgnoreCase
+            );
+            for (int i = 0; i < ids.Length; i++)
+                indexOf[ids[i]] = i;
 
             // Header 'NGRM' ver=1
             bw.Write(0x4D52474E); // NGRM
@@ -205,7 +255,8 @@ namespace PolicyPlusPlus.Services
             bw.Write(snapshot.N);
             // IDs
             bw.Write(ids.Length);
-            foreach (var id in ids) bw.Write(id ?? string.Empty);
+            foreach (var id in ids)
+                bw.Write(id ?? string.Empty);
             // Postings
             bw.Write(snapshot.Postings.Count);
             foreach (var kv in snapshot.Postings)
@@ -224,7 +275,8 @@ namespace PolicyPlusPlus.Services
         private static bool TryLoadJsonGz(string path, out NGramTextIndex.NGramSnapshot? snapshot)
         {
             snapshot = null;
-            if (!File.Exists(path)) return false;
+            if (!File.Exists(path))
+                return false;
             try
             {
                 using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -232,10 +284,15 @@ namespace PolicyPlusPlus.Services
                 using var ms = new MemoryStream();
                 gz.CopyTo(ms);
                 var json = Encoding.UTF8.GetString(ms.ToArray());
-                snapshot = System.Text.Json.JsonSerializer.Deserialize<NGramTextIndex.NGramSnapshot>(json);
+                snapshot =
+                    System.Text.Json.JsonSerializer.Deserialize<NGramTextIndex.NGramSnapshot>(json);
                 return snapshot != null;
             }
-            catch { snapshot = null; return false; }
+            catch
+            {
+                snapshot = null;
+                return false;
+            }
         }
 
         private static void SaveJsonGz(string path, NGramTextIndex.NGramSnapshot snapshot)
@@ -243,7 +300,12 @@ namespace PolicyPlusPlus.Services
             try
             {
                 var json = System.Text.Json.JsonSerializer.Serialize(snapshot);
-                using var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+                using var fs = new FileStream(
+                    path,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.Read
+                );
                 using var gz = new GZipStream(fs, CompressionLevel.SmallestSize, leaveOpen: false);
                 var bytes = Encoding.UTF8.GetBytes(json);
                 gz.Write(bytes, 0, bytes.Length);
@@ -251,27 +313,41 @@ namespace PolicyPlusPlus.Services
             catch { }
         }
 
-        public static bool TryLoadNGramSnapshot(string admxPath, string language, string fingerprint, int n, string kind, out NGramTextIndex.NGramSnapshot? snapshot)
+        public static bool TryLoadNGramSnapshot(
+            string admxPath,
+            string language,
+            string fingerprint,
+            int n,
+            string kind,
+            out NGramTextIndex.NGramSnapshot? snapshot
+        )
         {
             snapshot = null;
             try
             {
                 var baseName = GetBaseName(admxPath, language, fingerprint, n, kind);
                 var binGz = GetBinGzPath(baseName);
-                if (TryLoadBinaryGz(binGz, out snapshot) && snapshot != null) return true;
+                if (TryLoadBinaryGz(binGz, out snapshot) && snapshot != null)
+                    return true;
 
                 var bin = GetBinPath(baseName);
-                if (TryLoadBinary(bin, out snapshot) && snapshot != null) return true;
+                if (TryLoadBinary(bin, out snapshot) && snapshot != null)
+                    return true;
 
                 var gz = GetJsonGzPath(baseName);
-                if (TryLoadJsonGz(gz, out snapshot) && snapshot != null) return true;
+                if (TryLoadJsonGz(gz, out snapshot) && snapshot != null)
+                    return true;
 
                 var json = GetJsonPath(baseName);
                 if (File.Exists(json))
                 {
                     var txt = File.ReadAllText(json);
-                    snapshot = System.Text.Json.JsonSerializer.Deserialize<NGramTextIndex.NGramSnapshot>(txt);
-                    if (snapshot != null) return true;
+                    snapshot =
+                        System.Text.Json.JsonSerializer.Deserialize<NGramTextIndex.NGramSnapshot>(
+                            txt
+                        );
+                    if (snapshot != null)
+                        return true;
                 }
 
                 // Legacy JSON
@@ -279,8 +355,12 @@ namespace PolicyPlusPlus.Services
                 if (File.Exists(legacy))
                 {
                     var txt = File.ReadAllText(legacy);
-                    snapshot = System.Text.Json.JsonSerializer.Deserialize<NGramTextIndex.NGramSnapshot>(txt);
-                    if (snapshot != null) return true;
+                    snapshot =
+                        System.Text.Json.JsonSerializer.Deserialize<NGramTextIndex.NGramSnapshot>(
+                            txt
+                        );
+                    if (snapshot != null)
+                        return true;
                 }
             }
             catch
@@ -290,13 +370,24 @@ namespace PolicyPlusPlus.Services
             return false;
         }
 
-        public static bool TryLoadNGramSnapshot(string admxPath, string language, int n, out NGramTextIndex.NGramSnapshot? snapshot)
+        public static bool TryLoadNGramSnapshot(
+            string admxPath,
+            string language,
+            int n,
+            out NGramTextIndex.NGramSnapshot? snapshot
+        )
         {
             var fp = ComputeAdmxFingerprint(admxPath, language);
             return TryLoadNGramSnapshot(admxPath, language, fp, n, "desc", out snapshot);
         }
 
-        public static void SaveNGramSnapshot(string admxPath, string language, string fingerprint, string kind, NGramTextIndex.NGramSnapshot snapshot)
+        public static void SaveNGramSnapshot(
+            string admxPath,
+            string language,
+            string fingerprint,
+            string kind,
+            NGramTextIndex.NGramSnapshot snapshot
+        )
         {
             try
             {
@@ -310,12 +401,21 @@ namespace PolicyPlusPlus.Services
             catch { }
         }
 
-        public static void SaveNGramSnapshot(string admxPath, string language, string fingerprint, NGramTextIndex.NGramSnapshot snapshot)
+        public static void SaveNGramSnapshot(
+            string admxPath,
+            string language,
+            string fingerprint,
+            NGramTextIndex.NGramSnapshot snapshot
+        )
         {
             SaveNGramSnapshot(admxPath, language, fingerprint, "desc", snapshot);
         }
 
-        public static void SaveNGramSnapshot(string admxPath, string language, NGramTextIndex.NGramSnapshot snapshot)
+        public static void SaveNGramSnapshot(
+            string admxPath,
+            string language,
+            NGramTextIndex.NGramSnapshot snapshot
+        )
         {
             var fp = ComputeAdmxFingerprint(admxPath, language);
             SaveNGramSnapshot(admxPath, language, fp, "desc", snapshot);

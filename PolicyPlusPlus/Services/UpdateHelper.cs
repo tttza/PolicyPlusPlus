@@ -12,13 +12,13 @@ namespace PolicyPlusPlus.Services
 {
     internal static class UpdateHelper
     {
-
         internal enum VelopackUpdateApplyChoice
         {
             RestartNow,
             OnExit,
-            Cancel
+            Cancel,
         }
+
 #if USE_VELOPACK
         private static UpdateManager? _updateManager;
         private static UpdateInfo? _pendingUpdates; // holds update info instance between check and apply
@@ -56,19 +56,27 @@ namespace PolicyPlusPlus.Services
         public static void InitializeIfNeeded()
         {
 #if USE_VELOPACK
-            if (_updateManager != null) return;
+            if (_updateManager != null)
+                return;
             try
             {
                 _updateManager = new UpdateManager(UpdateConfig.VelopackUpdateUrl);
             }
             catch (Exception ex)
             {
-                Log.Debug("Update", $"Velopack init probing failed: {ex.GetType().Name} {ex.Message}");
+                Log.Debug(
+                    "Update",
+                    $"Velopack init probing failed: {ex.GetType().Name} {ex.Message}"
+                );
             }
 #endif
         }
 
-        public static async Task<(bool ok, bool hasUpdate, string? message)> CheckVelopackUpdatesAsync()
+        public static async Task<(
+            bool ok,
+            bool hasUpdate,
+            string? message
+        )> CheckVelopackUpdatesAsync()
         {
 #if USE_VELOPACK
             try
@@ -83,7 +91,11 @@ namespace PolicyPlusPlus.Services
 
                 // If user selected deferred (apply-on-exit) previously, advise manual exit/restart.
                 if (_restartPending && _deferredInstall)
-                    return (true, false, "Update has been downloaded. Exit and restart the application to complete installation.");
+                    return (
+                        true,
+                        false,
+                        "Update has been downloaded. Exit and restart the application to complete installation."
+                    );
 
                 _pendingUpdates = null;
                 var updates = await _updateManager.CheckForUpdatesAsync().ConfigureAwait(false);
@@ -92,7 +104,10 @@ namespace PolicyPlusPlus.Services
 
                 try
                 {
-                    var prop = updates.GetType().GetProperty("Updates") ?? updates.GetType().GetProperty("ReleasesToApply");
+                    var prop =
+                        updates.GetType().GetProperty("Updates") ?? updates
+                            .GetType()
+                            .GetProperty("ReleasesToApply");
                     if (prop != null)
                     {
                         var list = prop.GetValue(updates) as System.Collections.ICollection;
@@ -115,7 +130,11 @@ namespace PolicyPlusPlus.Services
 #endif
         }
 
-        public static async Task<(bool ok, bool restart, string? message)> ApplyVelopackUpdatesAsync()
+        public static async Task<(
+            bool ok,
+            bool restart,
+            string? message
+        )> ApplyVelopackUpdatesAsync()
         {
 #if USE_VELOPACK
             try
@@ -126,9 +145,18 @@ namespace PolicyPlusPlus.Services
                 if (_pendingUpdates == null)
                     return (false, false, "No pending update");
                 if (_restartPending)
-                    return (true, !_deferredInstall, _deferredInstall ? "Update has been downloaded. Exit and restart the application to complete installation." : "Restart required");
+                    return (
+                        true,
+                        !_deferredInstall,
+                        _deferredInstall
+                            ? "Update has been downloaded. Exit and restart the application to complete installation."
+                            : "Restart required"
+                    );
 
-                var (ok, restartInitiated, message) = await ApplyVelopackPendingAsync(VelopackUpdateApplyChoice.RestartNow).ConfigureAwait(false);
+                var (ok, restartInitiated, message) = await ApplyVelopackPendingAsync(
+                        VelopackUpdateApplyChoice.RestartNow
+                    )
+                    .ConfigureAwait(false);
                 return (ok, restartInitiated, message);
             }
             catch (Exception ex)
@@ -141,7 +169,11 @@ namespace PolicyPlusPlus.Services
 #endif
         }
 
-        public static async Task<(bool ok, bool restart, string? message)> CheckAndApplyVelopackUpdatesAsync()
+        public static async Task<(
+            bool ok,
+            bool restart,
+            string? message
+        )> CheckAndApplyVelopackUpdatesAsync()
         {
 #if USE_VELOPACK
             var (ok, hasUpdate, message) = await CheckVelopackUpdatesAsync().ConfigureAwait(false);
@@ -158,7 +190,11 @@ namespace PolicyPlusPlus.Services
 
 #if USE_VELOPACK
         // Applies the currently pending update according to user choice.
-        public static async Task<(bool ok, bool restartInitiated, string? message)> ApplyVelopackPendingAsync(VelopackUpdateApplyChoice choice)
+        public static async Task<(
+            bool ok,
+            bool restartInitiated,
+            string? message
+        )> ApplyVelopackPendingAsync(VelopackUpdateApplyChoice choice)
         {
             try
             {
@@ -180,7 +216,11 @@ namespace PolicyPlusPlus.Services
                 if (_restartPending)
                 {
                     if (_deferredInstall)
-                        return (true, false, "Update has been downloaded. Exit and restart the application to complete installation.");
+                        return (
+                            true,
+                            false,
+                            "Update has been downloaded. Exit and restart the application to complete installation."
+                        );
                     return (true, true, "Restart required");
                 }
 
@@ -197,9 +237,12 @@ namespace PolicyPlusPlus.Services
                 }
                 else // OnExit
                 {
-                    await _updateManager.WaitExitThenApplyUpdatesAsync(updates, false, false).ConfigureAwait(false);
+                    await _updateManager
+                        .WaitExitThenApplyUpdatesAsync(updates, false, false)
+                        .ConfigureAwait(false);
                     restartInitiated = false;
-                    message = "Update will be applied on exit. Please close and restart the application.";
+                    message =
+                        "Update will be applied on exit. Please close and restart the application.";
                 }
                 _restartPending = true;
                 _deferredInstall = choice == VelopackUpdateApplyChoice.OnExit;
@@ -213,22 +256,31 @@ namespace PolicyPlusPlus.Services
         }
 #else
         // Stub so callers compile when Velopack is excluded.
-        public static Task<(bool ok, bool restartInitiated, string? message)> ApplyVelopackPendingAsync(VelopackUpdateApplyChoice choice)
-            => Task.FromResult<(bool, bool, string?)>((false, false, "Velopack not included"));
+        public static Task<(
+            bool ok,
+            bool restartInitiated,
+            string? message
+        )> ApplyVelopackPendingAsync(VelopackUpdateApplyChoice choice) =>
+            Task.FromResult<(bool, bool, string?)>((false, false, "Velopack not included"));
 #endif
 
         public static string? GetPendingUpdateNotes()
         {
 #if USE_VELOPACK
-            if (_pendingUpdates == null) return null;
+            if (_pendingUpdates == null)
+                return null;
             try
             {
                 var t = _pendingUpdates.GetType();
-                var notesProp = t.GetProperty("ReleaseNotes") ?? t.GetProperty("Changelog") ?? t.GetProperty("Notes");
+                var notesProp =
+                    t.GetProperty("ReleaseNotes")
+                    ?? t.GetProperty("Changelog")
+                    ?? t.GetProperty("Notes");
                 if (notesProp != null)
                 {
                     var val = notesProp.GetValue(_pendingUpdates) as string;
-                    if (!string.IsNullOrWhiteSpace(val)) return val;
+                    if (!string.IsNullOrWhiteSpace(val))
+                        return val;
                 }
             }
             catch { }
@@ -238,13 +290,14 @@ namespace PolicyPlusPlus.Services
 #endif
         }
 
-
         public static async Task<(bool ok, string? message)> OpenStorePageAsync()
         {
 #if USE_STORE_UPDATE
             try
             {
-                var uri = new Uri($"ms-windows-store://pdp/?ProductId={UpdateConfig.StoreProductId}");
+                var uri = new Uri(
+                    $"ms-windows-store://pdp/?ProductId={UpdateConfig.StoreProductId}"
+                );
                 bool launched = await Launcher.LaunchUriAsync(uri);
                 return launched ? (true, null) : (false, "Launch declined");
             }

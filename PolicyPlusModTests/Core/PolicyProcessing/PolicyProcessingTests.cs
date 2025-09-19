@@ -1,7 +1,7 @@
-using PolicyPlusModTests.Testing;
-using PolicyPlusCore.Core;
-using PolicyPlusCore.Admx;
 using System.Collections.Generic;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusModTests.Testing;
 using Xunit;
 
 namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
@@ -16,8 +16,18 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
         {
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateSimpleTogglePolicy();
-            PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object>());
-            PolAssert.HasDwordValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, 1U);
+            PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object>()
+            );
+            PolAssert.HasDwordValue(
+                polFile,
+                policy.RawPolicy.RegistryKey,
+                policy.RawPolicy.RegistryValue,
+                1U
+            );
         }
 
         /// <summary>
@@ -28,10 +38,29 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
         {
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateSimpleTogglePolicy();
-            PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object>());
-            PolAssert.HasDwordValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, 1U);
-            PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Disabled, new Dictionary<string, object>());
-            PolAssert.NotContains(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue);
+            PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object>()
+            );
+            PolAssert.HasDwordValue(
+                polFile,
+                policy.RawPolicy.RegistryKey,
+                policy.RawPolicy.RegistryValue,
+                1U
+            );
+            PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Disabled,
+                new Dictionary<string, object>()
+            );
+            PolAssert.NotContains(
+                polFile,
+                policy.RawPolicy.RegistryKey,
+                policy.RawPolicy.RegistryValue
+            );
         }
 
         /// <summary>
@@ -42,10 +71,24 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
         {
             var polFile = new PolFile();
             var policy = TestPolicyFactory.CreateSimpleTogglePolicy();
-            PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object>());
-            PolAssert.HasDwordValue(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue, 1U);
+            PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object>()
+            );
+            PolAssert.HasDwordValue(
+                polFile,
+                policy.RawPolicy.RegistryKey,
+                policy.RawPolicy.RegistryValue,
+                1U
+            );
             PolicyPlusCore.Core.PolicyProcessing.ForgetPolicy(polFile, policy);
-            PolAssert.NotContains(polFile, policy.RawPolicy.RegistryKey, policy.RawPolicy.RegistryValue);
+            PolAssert.NotContains(
+                polFile,
+                policy.RawPolicy.RegistryKey,
+                policy.RawPolicy.RegistryValue
+            );
         }
     }
 }

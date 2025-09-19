@@ -9,16 +9,24 @@ namespace PolicyPlusPlus.Models
             get => (GridLength)GetValue(NameWidthProperty);
             set => SetValue(NameWidthProperty, value);
         }
-        public static readonly DependencyProperty NameWidthProperty =
-            DependencyProperty.Register(nameof(NameWidth), typeof(GridLength), typeof(ColumnWidths), new PropertyMetadata(new GridLength(3, GridUnitType.Star)));
+        public static readonly DependencyProperty NameWidthProperty = DependencyProperty.Register(
+            nameof(NameWidth),
+            typeof(GridLength),
+            typeof(ColumnWidths),
+            new PropertyMetadata(new GridLength(3, GridUnitType.Star))
+        );
 
         public GridLength IdWidth
         {
             get => (GridLength)GetValue(IdWidthProperty);
             set => SetValue(IdWidthProperty, value);
         }
-        public static readonly DependencyProperty IdWidthProperty =
-            DependencyProperty.Register(nameof(IdWidth), typeof(GridLength), typeof(ColumnWidths), new PropertyMetadata(new GridLength(1.5, GridUnitType.Star)));
+        public static readonly DependencyProperty IdWidthProperty = DependencyProperty.Register(
+            nameof(IdWidth),
+            typeof(GridLength),
+            typeof(ColumnWidths),
+            new PropertyMetadata(new GridLength(1.5, GridUnitType.Star))
+        );
 
         public GridLength CategoryWidth
         {
@@ -26,7 +34,12 @@ namespace PolicyPlusPlus.Models
             set => SetValue(CategoryWidthProperty, value);
         }
         public static readonly DependencyProperty CategoryWidthProperty =
-            DependencyProperty.Register(nameof(CategoryWidth), typeof(GridLength), typeof(ColumnWidths), new PropertyMetadata(new GridLength(2, GridUnitType.Star)));
+            DependencyProperty.Register(
+                nameof(CategoryWidth),
+                typeof(GridLength),
+                typeof(ColumnWidths),
+                new PropertyMetadata(new GridLength(2, GridUnitType.Star))
+            );
 
         public GridLength AppliesWidth
         {
@@ -34,7 +47,12 @@ namespace PolicyPlusPlus.Models
             set => SetValue(AppliesWidthProperty, value);
         }
         public static readonly DependencyProperty AppliesWidthProperty =
-            DependencyProperty.Register(nameof(AppliesWidth), typeof(GridLength), typeof(ColumnWidths), new PropertyMetadata(new GridLength(1, GridUnitType.Star)));
+            DependencyProperty.Register(
+                nameof(AppliesWidth),
+                typeof(GridLength),
+                typeof(ColumnWidths),
+                new PropertyMetadata(new GridLength(1, GridUnitType.Star))
+            );
 
         public GridLength SupportedWidth
         {
@@ -42,15 +60,24 @@ namespace PolicyPlusPlus.Models
             set => SetValue(SupportedWidthProperty, value);
         }
         public static readonly DependencyProperty SupportedWidthProperty =
-            DependencyProperty.Register(nameof(SupportedWidth), typeof(GridLength), typeof(ColumnWidths), new PropertyMetadata(new GridLength(2, GridUnitType.Star)));
+            DependencyProperty.Register(
+                nameof(SupportedWidth),
+                typeof(GridLength),
+                typeof(ColumnWidths),
+                new PropertyMetadata(new GridLength(2, GridUnitType.Star))
+            );
 
         public GridLength UserWidth
         {
             get => (GridLength)GetValue(UserWidthProperty);
             set => SetValue(UserWidthProperty, value);
         }
-        public static readonly DependencyProperty UserWidthProperty =
-            DependencyProperty.Register(nameof(UserWidth), typeof(GridLength), typeof(ColumnWidths), new PropertyMetadata(new GridLength(1, GridUnitType.Star)));
+        public static readonly DependencyProperty UserWidthProperty = DependencyProperty.Register(
+            nameof(UserWidth),
+            typeof(GridLength),
+            typeof(ColumnWidths),
+            new PropertyMetadata(new GridLength(1, GridUnitType.Star))
+        );
 
         public GridLength ComputerWidth
         {
@@ -58,6 +85,11 @@ namespace PolicyPlusPlus.Models
             set => SetValue(ComputerWidthProperty, value);
         }
         public static readonly DependencyProperty ComputerWidthProperty =
-            DependencyProperty.Register(nameof(ComputerWidth), typeof(GridLength), typeof(ColumnWidths), new PropertyMetadata(new GridLength(1, GridUnitType.Star)));
+            DependencyProperty.Register(
+                nameof(ComputerWidth),
+                typeof(GridLength),
+                typeof(ColumnWidths),
+                new PropertyMetadata(new GridLength(1, GridUnitType.Star))
+            );
     }
 }

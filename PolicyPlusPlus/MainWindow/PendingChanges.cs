@@ -1,9 +1,9 @@
-using Microsoft.UI.Xaml;
-using PolicyPlusPlus.Logging; // logging
-using PolicyPlusPlus.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.UI.Xaml;
+using PolicyPlusPlus.Logging; // logging
+using PolicyPlusPlus.Services;
 
 namespace PolicyPlusPlus
 {
@@ -11,10 +11,22 @@ namespace PolicyPlusPlus
     {
         private async Task<(bool ok, string? error)> SavePendingAsync(PendingChange[] items)
         {
-            if (items == null || items.Length == 0) { Log.Debug("MainSave", "No pending items"); return (true, null); }
-            if (_bundle == null) { Log.Error("MainSave", "Bundle not loaded"); return (false, "No ADMX bundle loaded"); }
+            if (items == null || items.Length == 0)
+            {
+                Log.Debug("MainSave", "No pending items");
+                return (true, null);
+            }
+            if (_bundle == null)
+            {
+                Log.Error("MainSave", "Bundle not loaded");
+                return (false, "No ADMX bundle loaded");
+            }
             var mgr = PolicySourceManager.Instance;
-            (bool ok, string? err) result = await mgr.ApplyPendingAsync(_bundle, items, new ElevationServiceAdapter());
+            (bool ok, string? err) result = await mgr.ApplyPendingAsync(
+                _bundle,
+                items,
+                new ElevationServiceAdapter()
+            );
             return (result.ok, result.err);
         }
 
@@ -33,7 +45,10 @@ namespace PolicyPlusPlus
                         PolicySourceManager.Instance.Refresh();
                         try
                         {
-                            var affected = pending.Select(p => p.PolicyId).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                            var affected = pending
+                                .Select(p => p.PolicyId)
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .ToList();
                             EventHub.PublishPolicySourcesRefreshed(affected);
                             EventHub.PublishPendingAppliedOrDiscarded(affected);
                         }
@@ -42,15 +57,29 @@ namespace PolicyPlusPlus
                         UpdateUnsavedIndicator();
                         ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
                         ShowInfo("Saved.", Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success);
-                        try { Saved?.Invoke(this, EventArgs.Empty); } catch { }
+                        try
+                        {
+                            Saved?.Invoke(this, EventArgs.Empty);
+                        }
+                        catch { }
                     }
                     else
                     {
-                        ShowInfo("Save failed: " + (err ?? "unknown"), Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error);
+                        ShowInfo(
+                            "Save failed: " + (err ?? "unknown"),
+                            Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error
+                        );
                     }
                 }
             }
-            finally { try { SetBusy(false); } catch { } }
+            finally
+            {
+                try
+                {
+                    SetBusy(false);
+                }
+                catch { }
+            }
         }
     }
 }

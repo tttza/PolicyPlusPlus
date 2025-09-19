@@ -1,81 +1,146 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ContentDialog
-    x:Class="PolicyPlusPlus.Dialogs.CustomPolSettingsDialog"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Title="Custom POL Settings"
-    PrimaryButtonText="OK"
-    SecondaryButtonText="Cancel"
-    DefaultButton="Primary"
-    MinWidth="680"
-    PrimaryButtonClick="OnPrimaryClick">
-
-    <ContentDialog.Resources>
-        <Style x:Key="PathIconButton" TargetType="Button">
-            <Setter Property="Width" Value="24"/>
-            <Setter Property="Height" Value="24"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Margin" Value="4,0,0,0"/>
-            <Setter Property="HorizontalAlignment" Value="Center"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Background" Value="{ThemeResource LayerFillColorDefaultBrush}"/>
-            <Setter Property="BorderBrush" Value="{ThemeResource ControlStrokeColorDefaultBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="4"/>
-        </Style>
-    </ContentDialog.Resources>
-
-    <Grid x:Name="RootLayout" RowSpacing="12" Padding="4">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-
-        <TextBlock Grid.Row="0" Text="Configure custom .pol sources. You can enable only Computer, only User, or both." TextWrapping="Wrap"/>
-
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="24">
-            <CheckBox x:Name="EnableComputerCheck" Content="Enable Computer" IsChecked="True" />
-            <CheckBox x:Name="EnableUserCheck" Content="Enable User" IsChecked="True" />
-        </StackPanel>
-
-        <Grid Grid.Row="2" ColumnSpacing="4">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Computer .pol:" VerticalAlignment="Center"/>
-            <TextBox Grid.Column="1" x:Name="ComputerPathBox" IsReadOnly="True" Text="(not set)" MinWidth="560" Margin="0,0,2,0"/>
-            <Button Grid.Column="2" Style="{StaticResource PathIconButton}" Click="BrowseComp_Click" ToolTipService.ToolTip="Browse"><FontIcon Glyph="&#xE8B7;" FontSize="12"/></Button>
-            <Button Grid.Column="3" Style="{StaticResource PathIconButton}" Click="NewComp_Click" ToolTipService.ToolTip="New empty file"><FontIcon Glyph="&#xE710;" FontSize="12"/></Button>
-            <Button Grid.Column="4" Style="{StaticResource PathIconButton}" Click="ResetComp_Click" ToolTipService.ToolTip="Clear path"><FontIcon Glyph="&#xE711;" FontSize="12"/></Button>
-        </Grid>
-
-        <Grid Grid.Row="3" ColumnSpacing="4">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="140"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="User .pol:" VerticalAlignment="Center"/>
-            <TextBox Grid.Column="1" x:Name="UserPathBox" IsReadOnly="True" Text="(not set)" MinWidth="560" Margin="0,0,2,0"/>
-            <Button Grid.Column="2" Style="{StaticResource PathIconButton}" Click="BrowseUser_Click" ToolTipService.ToolTip="Browse"><FontIcon Glyph="&#xE8B7;" FontSize="12"/></Button>
-            <Button Grid.Column="3" Style="{StaticResource PathIconButton}" Click="NewUser_Click" ToolTipService.ToolTip="New empty file"><FontIcon Glyph="&#xE710;" FontSize="12"/></Button>
-            <Button Grid.Column="4" Style="{StaticResource PathIconButton}" Click="ResetUser_Click" ToolTipService.ToolTip="Clear path"><FontIcon Glyph="&#xE711;" FontSize="12"/></Button>
-        </Grid>
-
-        <CheckBox Grid.Row="4" x:Name="ActivateCheck" Content="Activate custom .pol after closing" IsChecked="True" />
-        <TextBlock Grid.Row="5" Text="'New' creates an empty file immediately. 'Reset' clears the path (and you must disable the scope or choose a new file)." FontSize="12" Opacity="0.7" TextWrapping="Wrap"/>
+  x:Class="PolicyPlusPlus.Dialogs.CustomPolSettingsDialog"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  mc:Ignorable="d"
+  Title="Custom POL Settings"
+  PrimaryButtonText="OK"
+  SecondaryButtonText="Cancel"
+  DefaultButton="Primary"
+  MinWidth="680"
+  PrimaryButtonClick="OnPrimaryClick"
+>
+  <ContentDialog.Resources>
+    <Style x:Key="PathIconButton" TargetType="Button">
+      <Setter Property="Width" Value="24" />
+      <Setter Property="Height" Value="24" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="4,0,0,0" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Background" Value="{ThemeResource LayerFillColorDefaultBrush}" />
+      <Setter Property="BorderBrush" Value="{ThemeResource ControlStrokeColorDefaultBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+    </Style>
+  </ContentDialog.Resources>
+  <Grid x:Name="RootLayout" RowSpacing="12" Padding="4">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <TextBlock
+      Grid.Row="0"
+      Text="Configure custom .pol sources. You can enable only Computer, only User, or both."
+      TextWrapping="Wrap"
+    />
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="24">
+      <CheckBox x:Name="EnableComputerCheck" Content="Enable Computer" IsChecked="True" />
+      <CheckBox x:Name="EnableUserCheck" Content="Enable User" IsChecked="True" />
+    </StackPanel>
+    <Grid Grid.Row="2" ColumnSpacing="4">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="140" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <TextBlock Grid.Column="0" Text="Computer .pol:" VerticalAlignment="Center" />
+      <TextBox
+        Grid.Column="1"
+        x:Name="ComputerPathBox"
+        IsReadOnly="True"
+        Text="(not set)"
+        MinWidth="560"
+        Margin="0,0,2,0"
+      />
+      <Button
+        Grid.Column="2"
+        Style="{StaticResource PathIconButton}"
+        Click="BrowseComp_Click"
+        ToolTipService.ToolTip="Browse"
+      >
+        <FontIcon Glyph="" FontSize="12" />
+      </Button>
+      <Button
+        Grid.Column="3"
+        Style="{StaticResource PathIconButton}"
+        Click="NewComp_Click"
+        ToolTipService.ToolTip="New empty file"
+      >
+        <FontIcon Glyph="" FontSize="12" />
+      </Button>
+      <Button
+        Grid.Column="4"
+        Style="{StaticResource PathIconButton}"
+        Click="ResetComp_Click"
+        ToolTipService.ToolTip="Clear path"
+      >
+        <FontIcon Glyph="" FontSize="12" />
+      </Button>
     </Grid>
+    <Grid Grid.Row="3" ColumnSpacing="4">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="140" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <TextBlock Grid.Column="0" Text="User .pol:" VerticalAlignment="Center" />
+      <TextBox
+        Grid.Column="1"
+        x:Name="UserPathBox"
+        IsReadOnly="True"
+        Text="(not set)"
+        MinWidth="560"
+        Margin="0,0,2,0"
+      />
+      <Button
+        Grid.Column="2"
+        Style="{StaticResource PathIconButton}"
+        Click="BrowseUser_Click"
+        ToolTipService.ToolTip="Browse"
+      >
+        <FontIcon Glyph="" FontSize="12" />
+      </Button>
+      <Button
+        Grid.Column="3"
+        Style="{StaticResource PathIconButton}"
+        Click="NewUser_Click"
+        ToolTipService.ToolTip="New empty file"
+      >
+        <FontIcon Glyph="" FontSize="12" />
+      </Button>
+      <Button
+        Grid.Column="4"
+        Style="{StaticResource PathIconButton}"
+        Click="ResetUser_Click"
+        ToolTipService.ToolTip="Clear path"
+      >
+        <FontIcon Glyph="" FontSize="12" />
+      </Button>
+    </Grid>
+    <CheckBox
+      Grid.Row="4"
+      x:Name="ActivateCheck"
+      Content="Activate custom .pol after closing"
+      IsChecked="True"
+    />
+    <TextBlock
+      Grid.Row="5"
+      Text="'New' creates an empty file immediately. 'Reset' clears the path (and you must disable the scope or choose a new file)."
+      FontSize="12"
+      Opacity="0.7"
+      TextWrapping="Wrap"
+    />
+  </Grid>
 </ContentDialog>

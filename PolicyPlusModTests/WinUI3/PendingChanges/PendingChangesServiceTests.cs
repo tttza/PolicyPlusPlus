@@ -1,5 +1,5 @@
-using PolicyPlusPlus.Services;
 using System.Linq;
+using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.PendingChanges
@@ -10,7 +10,8 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
         public void Add_New_And_Update_MergesByPolicyAndScope()
         {
             var svc = PendingChangesService.Instance;
-            svc.Pending.Clear(); svc.History.Clear();
+            svc.Pending.Clear();
+            svc.History.Clear();
 
             var change = new PendingChange
             {
@@ -19,7 +20,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                 Scope = "Computer",
                 Action = "Enable",
                 DesiredState = PolicyState.Enabled,
-                Details = "d1"
+                Details = "d1",
             };
             svc.Add(change);
             Assert.Single(svc.Pending);
@@ -31,7 +32,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                 Scope = "Computer",
                 Action = "Disable",
                 DesiredState = PolicyState.Disabled,
-                Details = "d2"
+                Details = "d2",
             };
             svc.Add(updated);
             Assert.Single(svc.Pending);
@@ -46,11 +47,27 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
         public void Discard_RemovesFromPending_WithoutHistory()
         {
             var svc = PendingChangesService.Instance;
-            svc.Pending.Clear(); svc.History.Clear();
+            svc.Pending.Clear();
+            svc.History.Clear();
 
-            var c1 = new PendingChange { PolicyId = "ID1", PolicyName = "P1", Scope = "User", Action = "Enable", DesiredState = PolicyState.Enabled };
-            var c2 = new PendingChange { PolicyId = "ID2", PolicyName = "P2", Scope = "Computer", Action = "Disable", DesiredState = PolicyState.Disabled };
-            svc.Add(c1); svc.Add(c2);
+            var c1 = new PendingChange
+            {
+                PolicyId = "ID1",
+                PolicyName = "P1",
+                Scope = "User",
+                Action = "Enable",
+                DesiredState = PolicyState.Enabled,
+            };
+            var c2 = new PendingChange
+            {
+                PolicyId = "ID2",
+                PolicyName = "P2",
+                Scope = "Computer",
+                Action = "Disable",
+                DesiredState = PolicyState.Disabled,
+            };
+            svc.Add(c1);
+            svc.Add(c2);
 
             svc.Discard(c1);
 
@@ -62,9 +79,17 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
         public void Applied_MovesToHistoryWithApplied_And_Removes()
         {
             var svc = PendingChangesService.Instance;
-            svc.Pending.Clear(); svc.History.Clear();
+            svc.Pending.Clear();
+            svc.History.Clear();
 
-            var c = new PendingChange { PolicyId = "ID3", PolicyName = "P3", Scope = "User", Action = "Enable", DesiredState = PolicyState.Enabled };
+            var c = new PendingChange
+            {
+                PolicyId = "ID3",
+                PolicyName = "P3",
+                Scope = "User",
+                Action = "Enable",
+                DesiredState = PolicyState.Enabled,
+            };
             svc.Add(c);
 
             svc.Applied(c);
@@ -79,7 +104,8 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
         public void DiscardAll_ClearsPending_WithoutHistory()
         {
             var svc = PendingChangesService.Instance;
-            svc.Pending.Clear(); svc.History.Clear();
+            svc.Pending.Clear();
+            svc.History.Clear();
 
             svc.Add(new PendingChange { PolicyId = "ID1", Scope = "User" });
             svc.Add(new PendingChange { PolicyId = "ID2", Scope = "Computer" });
@@ -94,7 +120,8 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
         public void History_IsTrimmed_To100()
         {
             var svc = PendingChangesService.Instance;
-            svc.Pending.Clear(); svc.History.Clear();
+            svc.Pending.Clear();
+            svc.History.Clear();
 
             // Add 120 applied entries; expect only 100 newest remain
             for (int i = 0; i < 120; i++)
@@ -106,7 +133,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                     Scope = "User",
                     Action = "Enable",
                     DesiredState = PolicyState.Enabled,
-                    Details = "d" + i
+                    Details = "d" + i,
                 };
                 svc.Add(change);
                 svc.Applied(change);

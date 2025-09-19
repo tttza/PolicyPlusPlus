@@ -11,7 +11,8 @@ namespace PolicyPlusCore.Utilities
         {
             s ??= string.Empty;
             // Fast path for empty
-            if (s.Length == 0) return string.Empty;
+            if (s.Length == 0)
+                return string.Empty;
 
             // Normalize width and compatibility characters first
             string normalized = s.Normalize(NormalizationForm.FormKC);
@@ -28,7 +29,11 @@ namespace PolicyPlusCore.Utilities
             catch { }
 
             // Lowercase for case-insensitive matching. Invariant is fine after NFKC.
-            try { normalized = normalized.ToLowerInvariant(); } catch { }
+            try
+            {
+                normalized = normalized.ToLowerInvariant();
+            }
+            catch { }
             return normalized;
         }
 

@@ -1,6 +1,6 @@
+using System.Collections.Generic;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System.Collections.Generic;
 
 namespace PolicyPlusPlus.Dialogs
 {
@@ -32,7 +32,8 @@ namespace PolicyPlusPlus.Dialogs
             else
             {
                 if (initial is List<string> list)
-                    foreach (var s in list) ListItems.Items.Add(new TextBox { Text = s });
+                    foreach (var s in list)
+                        ListItems.Items.Add(new TextBox { Text = s });
             }
         }
 
@@ -47,7 +48,10 @@ namespace PolicyPlusPlus.Dialogs
                 ListItems.Items.Remove(ListItems.SelectedItem);
         }
 
-        private void ListEditorDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        private void ListEditorDialog_PrimaryButtonClick(
+            ContentDialog sender,
+            ContentDialogButtonClickEventArgs args
+        )
         {
             if (_userProvidesNames)
             {
@@ -55,9 +59,11 @@ namespace PolicyPlusPlus.Dialogs
                 foreach (var item in ListItems.Items)
                 {
                     var tb = item as TextBox;
-                    if (tb == null) continue;
+                    if (tb == null)
+                        continue;
                     var text = tb.Text ?? string.Empty;
-                    if (string.IsNullOrWhiteSpace(text)) continue;
+                    if (string.IsNullOrWhiteSpace(text))
+                        continue;
                     var idx = text.IndexOf('=');
                     if (idx >= 0)
                     {
@@ -80,7 +86,8 @@ namespace PolicyPlusPlus.Dialogs
                 foreach (var item in ListItems.Items)
                 {
                     var tb = item as TextBox;
-                    if (tb == null) continue;
+                    if (tb == null)
+                        continue;
                     var s = tb.Text ?? string.Empty;
                     if (!string.IsNullOrWhiteSpace(s))
                         list.Add(s);

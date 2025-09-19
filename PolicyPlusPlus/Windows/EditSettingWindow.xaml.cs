@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -12,11 +17,6 @@ using PolicyPlusPlus.Logging; // logging
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Utils;
 using PolicyPlusPlus.ViewModels; // added for QuickEditRow
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace PolicyPlusPlus.Windows
 {
@@ -38,9 +38,16 @@ namespace PolicyPlusPlus.Windows
         private readonly List<Window> _childWindows = new();
 
         public event EventHandler? Saved;
-        public event EventHandler<(string Scope, PolicyState State, Dictionary<string, object>? Options)>? SavedDetail; // added
+        public event EventHandler<(
+            string Scope,
+            PolicyState State,
+            Dictionary<string, object>? Options
+        )>? SavedDetail; // added
 
-        private static readonly Regex UrlRegex = new Regex(@"(https?://[^\s]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex UrlRegex = new Regex(
+            @"(https?://[^\s]+)",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase
+        );
 
         private bool _useSecondLanguage = false;
         private ToggleButton? _secondLangToggle;
@@ -68,9 +75,16 @@ namespace PolicyPlusPlus.Windows
                         {
                             var st = SettingsService.Instance.LoadSettings();
                             bool enabled = st.SecondLanguageEnabled ?? false;
-                            _secondLangToggle.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
+                            _secondLangToggle.Visibility = enabled
+                                ? Visibility.Visible
+                                : Visibility.Collapsed;
                             string code = st.SecondLanguage ?? "en-US";
-                            ToolTipService.SetToolTip(_secondLangToggle, enabled ? $"Toggle 2nd language ({code})" : "2nd language disabled in preferences");
+                            ToolTipService.SetToolTip(
+                                _secondLangToggle,
+                                enabled
+                                    ? $"Toggle 2nd language ({code})"
+                                    : "2nd language disabled in preferences"
+                            );
                         }
                         catch { }
                     }
@@ -91,7 +105,16 @@ namespace PolicyPlusPlus.Windows
         // Overlay current QuickEditRow (unsaved) values into this window (both scopes).
         internal void OverlayFromQuickEdit(QuickEditRow row)
         {
-            if (row == null || _policy == null || !string.Equals(row.Policy.UniqueID, _policy.UniqueID, StringComparison.OrdinalIgnoreCase)) return;
+            if (
+                row == null
+                || _policy == null
+                || !string.Equals(
+                    row.Policy.UniqueID,
+                    _policy.UniqueID,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+                return;
             try
             {
                 void ApplyScope(bool isUser)
@@ -104,21 +127,28 @@ namespace PolicyPlusPlus.Windows
                     LoadStateFromSource();
                     StateRadio_Checked(this, new RoutedEventArgs());
                     var state = isUser ? row.UserState : row.ComputerState;
-                    if (OptEnabled != null) OptEnabled.IsChecked = state == QuickEditState.Enabled;
-                    if (OptDisabled != null) OptDisabled.IsChecked = state == QuickEditState.Disabled;
-                    if (OptNotConfigured != null) OptNotConfigured.IsChecked = state == QuickEditState.NotConfigured;
+                    if (OptEnabled != null)
+                        OptEnabled.IsChecked = state == QuickEditState.Enabled;
+                    if (OptDisabled != null)
+                        OptDisabled.IsChecked = state == QuickEditState.Disabled;
+                    if (OptNotConfigured != null)
+                        OptNotConfigured.IsChecked = state == QuickEditState.NotConfigured;
                     StateRadio_Checked(this, new RoutedEventArgs());
-                    if (state != QuickEditState.Enabled) return;
+                    if (state != QuickEditState.Enabled)
+                        return;
 
                     // Map each option element dynamically (new multi-element model)
                     foreach (var opt in row.OptionElements)
                     {
-                        if (!_elementControls.TryGetValue(opt.Id, out var ctrl) || ctrl == null) continue;
+                        if (!_elementControls.TryGetValue(opt.Id, out var ctrl) || ctrl == null)
+                            continue;
                         switch (opt.Type)
                         {
                             case OptionElementType.Enum:
                                 if (ctrl is ComboBox cb)
-                                    cb.SelectedIndex = isUser ? opt.UserEnumIndex : opt.ComputerEnumIndex;
+                                    cb.SelectedIndex = isUser
+                                        ? opt.UserEnumIndex
+                                        : opt.ComputerEnumIndex;
                                 break;
                             case OptionElementType.Boolean:
                                 if (ctrl is CheckBox chk)
@@ -126,12 +156,15 @@ namespace PolicyPlusPlus.Windows
                                 break;
                             case OptionElementType.Text:
                                 string txt = isUser ? opt.UserText : opt.ComputerText;
-                                if (ctrl is TextBox tb) tb.Text = txt;
-                                else if (ctrl is AutoSuggestBox asb) asb.Text = txt;
+                                if (ctrl is TextBox tb)
+                                    tb.Text = txt;
+                                else if (ctrl is AutoSuggestBox asb)
+                                    asb.Text = txt;
                                 break;
                             case OptionElementType.Decimal:
                                 var val = isUser ? opt.UserNumber : opt.ComputerNumber;
-                                if (val.HasValue && ctrl is NumberBox nb) nb.Value = val.Value;
+                                if (val.HasValue && ctrl is NumberBox nb)
+                                    nb.Value = val.Value;
                                 break;
                             case OptionElementType.List:
                                 if (ctrl is Button btn)
@@ -144,7 +177,9 @@ namespace PolicyPlusPlus.Windows
                             case OptionElementType.MultiText:
                                 if (ctrl is TextBox mtb)
                                 {
-                                    var lines = isUser ? opt.UserMultiTextItems : opt.ComputerMultiTextItems;
+                                    var lines = isUser
+                                        ? opt.UserMultiTextItems
+                                        : opt.ComputerMultiTextItems;
                                     mtb.Text = string.Join("\r\n", lines);
                                 }
                                 break;
@@ -156,9 +191,14 @@ namespace PolicyPlusPlus.Windows
                 {
                     ApplyScope(false);
                     ApplyScope(true);
-                    var preferUser = row.UserState == QuickEditState.Enabled && row.ComputerState != QuickEditState.Enabled;
+                    var preferUser =
+                        row.UserState == QuickEditState.Enabled
+                        && row.ComputerState != QuickEditState.Enabled;
                     SectionSelector.SelectedIndex = preferUser ? 1 : 0;
-                    _currentSection = SectionSelector.SelectedIndex == 1 ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+                    _currentSection =
+                        SectionSelector.SelectedIndex == 1
+                            ? AdmxPolicySection.User
+                            : AdmxPolicySection.Machine;
                 }
                 else
                 {
@@ -200,25 +240,36 @@ namespace PolicyPlusPlus.Windows
                 if (useSecond)
                 {
                     var sup = LocalizedTextService.GetSupportedDisplayIn(_policy, lang);
-                    SupportedBox.Text = string.IsNullOrEmpty(sup) ? (_policy.SupportedOn?.DisplayName ?? string.Empty) : sup;
+                    SupportedBox.Text = string.IsNullOrEmpty(sup)
+                        ? (_policy.SupportedOn?.DisplayName ?? string.Empty)
+                        : sup;
                 }
                 else
                 {
-                    SupportedBox.Text = _policy.SupportedOn is null ? string.Empty : _policy.SupportedOn.DisplayName;
+                    SupportedBox.Text = _policy.SupportedOn is null
+                        ? string.Empty
+                        : _policy.SupportedOn.DisplayName;
                 }
 
                 // Update tooltip to reflect current language code
                 try
                 {
                     if (_secondLangToggle != null)
-                        ToolTipService.SetToolTip(_secondLangToggle, enabled ? $"Toggle 2nd language ({lang})" : "2nd language disabled in preferences");
+                        ToolTipService.SetToolTip(
+                            _secondLangToggle,
+                            enabled
+                                ? $"Toggle 2nd language ({lang})"
+                                : "2nd language disabled in preferences"
+                        );
                 }
                 catch { }
 
                 // Rebuild option labels/controls for second language when toggled
                 if (_policy.RawPolicy.Elements != null)
                 {
-                    var pres = useSecond ? LocalizedTextService.GetPresentationIn(_policy, lang) : null;
+                    var pres = useSecond
+                        ? LocalizedTextService.GetPresentationIn(_policy, lang)
+                        : null;
                     if (pres != null)
                     {
                         var original = _policy.Presentation;
@@ -239,18 +290,82 @@ namespace PolicyPlusPlus.Windows
             catch { }
         }
 
-        private void Accel_Apply(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { ApplyBtn_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
+        private void Accel_Apply(
+            KeyboardAccelerator sender,
+            KeyboardAcceleratorInvokedEventArgs args
+        )
+        {
+            try
+            {
+                ApplyBtn_Click(this, new RoutedEventArgs());
+            }
+            catch { }
+            args.Handled = true;
+        }
+
         private void Accel_Ok(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { OkBtn_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
-        private void Accel_Preview(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { ViewDetailApplyBtn_Click(this, new RoutedEventArgs()); } catch { } args.Handled = true; }
-        private void Accel_SectionComp(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { if (SectionSelector != null) SectionSelector.SelectedIndex = 0; } catch { } args.Handled = true; }
-        private void Accel_SectionUser(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { if (SectionSelector != null) SectionSelector.SelectedIndex = 1; } catch { } args.Handled = true; }
-        private void Accel_Close(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
-        { try { Close(); } catch { } args.Handled = true; }
+        {
+            try
+            {
+                OkBtn_Click(this, new RoutedEventArgs());
+            }
+            catch { }
+            args.Handled = true;
+        }
+
+        private void Accel_Preview(
+            KeyboardAccelerator sender,
+            KeyboardAcceleratorInvokedEventArgs args
+        )
+        {
+            try
+            {
+                ViewDetailApplyBtn_Click(this, new RoutedEventArgs());
+            }
+            catch { }
+            args.Handled = true;
+        }
+
+        private void Accel_SectionComp(
+            KeyboardAccelerator sender,
+            KeyboardAcceleratorInvokedEventArgs args
+        )
+        {
+            try
+            {
+                if (SectionSelector != null)
+                    SectionSelector.SelectedIndex = 0;
+            }
+            catch { }
+            args.Handled = true;
+        }
+
+        private void Accel_SectionUser(
+            KeyboardAccelerator sender,
+            KeyboardAcceleratorInvokedEventArgs args
+        )
+        {
+            try
+            {
+                if (SectionSelector != null)
+                    SectionSelector.SelectedIndex = 1;
+            }
+            catch { }
+            args.Handled = true;
+        }
+
+        private void Accel_Close(
+            KeyboardAccelerator sender,
+            KeyboardAcceleratorInvokedEventArgs args
+        )
+        {
+            try
+            {
+                Close();
+            }
+            catch { }
+            args.Handled = true;
+        }
 
         private void ApplyWindowTheme()
         {
@@ -260,22 +375,40 @@ namespace PolicyPlusPlus.Windows
                     fe.RequestedTheme = App.CurrentTheme;
                 var textBg = Application.Current.Resources["TextControlBackground"] as Brush;
                 var textFg = Application.Current.Resources["TextFillColorPrimaryBrush"] as Brush;
-                CommentBox.Background = textBg; CommentBox.Foreground = textFg;
-                SupportedBox.Background = textBg; SupportedBox.Foreground = textFg;
+                CommentBox.Background = textBg;
+                CommentBox.Foreground = textFg;
+                SupportedBox.Background = textBg;
+                SupportedBox.Foreground = textFg;
             }
             catch { }
         }
 
-        public void Initialize(PolicyPlusPolicy policy, AdmxPolicySection section, AdmxBundle bundle,
-            IPolicySource compSource, IPolicySource userSource, PolicyLoader compLoader, PolicyLoader userLoader,
-            Dictionary<string, string>? compComments, Dictionary<string, string>? userComments)
+        public void Initialize(
+            PolicyPlusPolicy policy,
+            AdmxPolicySection section,
+            AdmxBundle bundle,
+            IPolicySource compSource,
+            IPolicySource userSource,
+            PolicyLoader compLoader,
+            PolicyLoader userLoader,
+            Dictionary<string, string>? compComments,
+            Dictionary<string, string>? userComments
+        )
         {
-            _policy = policy; _currentSection = section; _bundle = bundle;
-            _compSource = compSource; _userSource = userSource; _compLoader = compLoader; _userLoader = userLoader;
-            _compComments = compComments; _userComments = userComments;
+            _policy = policy;
+            _currentSection = section;
+            _bundle = bundle;
+            _compSource = compSource;
+            _userSource = userSource;
+            _compLoader = compLoader;
+            _userLoader = userLoader;
+            _compComments = compComments;
+            _userComments = userComments;
 
             SettingTitle.Text = policy.DisplayName;
-            SupportedBox.Text = policy.SupportedOn is null ? string.Empty : policy.SupportedOn.DisplayName;
+            SupportedBox.Text = policy.SupportedOn is null
+                ? string.Empty
+                : policy.SupportedOn.DisplayName;
             SetExplanationText(policy.DisplayExplanation ?? string.Empty);
 
             // Determine initial section selection. If the policy supports both and the Computer scope is already configured,
@@ -286,7 +419,8 @@ namespace PolicyPlusPlus.Windows
                 if (policy.RawPolicy.Section == AdmxPolicySection.Both)
                 {
                     var compState = PolicyProcessing.GetPolicyState(_compSource, _policy);
-                    bool compConfigured = compState == PolicyState.Enabled || compState == PolicyState.Disabled;
+                    bool compConfigured =
+                        compState == PolicyState.Enabled || compState == PolicyState.Disabled;
                     if (compConfigured)
                     {
                         initialSection = AdmxPolicySection.Machine;
@@ -308,7 +442,16 @@ namespace PolicyPlusPlus.Windows
             var tmr = this.DispatcherQueue.CreateTimer();
             tmr.Interval = System.TimeSpan.FromMilliseconds(180);
             tmr.IsRepeating = false;
-            tmr.Tick += (s, e) => { try { WindowHelpers.BringToFront(this); this.Activate(); } catch { } }; tmr.Start();
+            tmr.Tick += (s, e) =>
+            {
+                try
+                {
+                    WindowHelpers.BringToFront(this);
+                    this.Activate();
+                }
+                catch { }
+            };
+            tmr.Start();
             App.RegisterEditWindow(_policy.UniqueID, this);
         }
 
@@ -317,9 +460,12 @@ namespace PolicyPlusPlus.Windows
             try
             {
                 var scope = (_currentSection == AdmxPolicySection.User) ? "User" : "Computer";
-                var change = PendingChangesService.Instance.Pending.FirstOrDefault(p => string.Equals(p.PolicyId, _policy.UniqueID, StringComparison.OrdinalIgnoreCase)
-                                                                                    && string.Equals(p.Scope, scope, StringComparison.OrdinalIgnoreCase));
-                if (change == null) return;
+                var change = PendingChangesService.Instance.Pending.FirstOrDefault(p =>
+                    string.Equals(p.PolicyId, _policy.UniqueID, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(p.Scope, scope, StringComparison.OrdinalIgnoreCase)
+                );
+                if (change == null)
+                    return;
 
                 // Apply desired state
                 if (change.DesiredState == PolicyState.Enabled)
@@ -346,33 +492,54 @@ namespace PolicyPlusPlus.Windows
         {
             foreach (var kv in options)
             {
-                if (!_elementControls.TryGetValue(kv.Key, out var ctrl)) continue;
+                if (!_elementControls.TryGetValue(kv.Key, out var ctrl))
+                    continue;
                 var val = kv.Value;
                 switch (ctrl)
                 {
                     case NumberBox nb:
-                        if (val is uint u) nb.Value = u;
-                        else if (val is int i) nb.Value = i;
-                        else if (val is string s && double.TryParse(s, out var d)) nb.Value = d;
+                        if (val is uint u)
+                            nb.Value = u;
+                        else if (val is int i)
+                            nb.Value = i;
+                        else if (val is string s && double.TryParse(s, out var d))
+                            nb.Value = d;
                         break;
                     case TextBox tb:
-                        if (val is string s1) tb.Text = s1;
-                        else if (val is string[] arr) tb.Text = string.Join("\r\n", arr);
+                        if (val is string s1)
+                            tb.Text = s1;
+                        else if (val is string[] arr)
+                            tb.Text = string.Join("\r\n", arr);
                         break;
                     case AutoSuggestBox asb:
                         asb.Text = Convert.ToString(val) ?? string.Empty;
                         break;
                     case ComboBox cb:
-                        if (val is int idx && idx >= -1 && idx < cb.Items.Count) cb.SelectedIndex = idx;
+                        if (val is int idx && idx >= -1 && idx < cb.Items.Count)
+                            cb.SelectedIndex = idx;
                         break;
                     case CheckBox ch:
-                        if (val is bool b) ch.IsChecked = b; else ch.IsChecked = (Convert.ToString(val)?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
+                        if (val is bool b)
+                            ch.IsChecked = b;
+                        else
+                            ch.IsChecked = (
+                                Convert
+                                    .ToString(val)
+                                    ?.Equals("true", StringComparison.OrdinalIgnoreCase) == true
+                            );
                         break;
                     case Button btn:
                         if (val is List<string> list)
-                        { btn.Tag = list; btn.Content = $"Edit... ({list.Count})"; }
+                        {
+                            btn.Tag = list;
+                            btn.Content = $"Edit... ({list.Count})";
+                        }
                         else if (val is IEnumerable<KeyValuePair<string, string>> kvpList)
-                        { var l = kvpList.ToList(); btn.Tag = l; btn.Content = $"Edit... ({l.Count})"; }
+                        {
+                            var l = kvpList.ToList();
+                            btn.Tag = l;
+                            btn.Content = $"Edit... ({l.Count})";
+                        }
                         break;
                 }
             }
@@ -382,7 +549,11 @@ namespace PolicyPlusPlus.Windows
         {
             ExplainText.Blocks.Clear();
             var para = new Paragraph();
-            if (string.IsNullOrEmpty(text)) { ExplainText.Blocks.Add(para); return; }
+            if (string.IsNullOrEmpty(text))
+            {
+                ExplainText.Blocks.Add(para);
+                return;
+            }
 
             int lastIndex = 0;
             foreach (Match m in UrlRegex.Matches(text))
@@ -400,7 +571,11 @@ namespace PolicyPlusPlus.Windows
                 {
                     if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
                     {
-                        try { await global::Windows.System.Launcher.LaunchUriAsync(uri); } catch { }
+                        try
+                        {
+                            await global::Windows.System.Launcher.LaunchUriAsync(uri);
+                        }
+                        catch { }
                     }
                 };
                 para.Inlines.Add(link);
@@ -413,10 +588,18 @@ namespace PolicyPlusPlus.Windows
             ExplainText.Blocks.Add(para);
         }
 
-        private (IPolicySource src, PolicyLoader loader, Dictionary<string, string>? comments) GetCurrent()
+        private (
+            IPolicySource src,
+            PolicyLoader loader,
+            Dictionary<string, string>? comments
+        ) GetCurrent()
         {
             bool user = _currentSection == AdmxPolicySection.User;
-            return (user ? _userSource : _compSource, user ? _userLoader : _compLoader, user ? _userComments : _compComments);
+            return (
+                user ? _userSource : _compSource,
+                user ? _userLoader : _compLoader,
+                user ? _userComments : _compComments
+            );
         }
 
         private void BuildElements()
@@ -431,7 +614,9 @@ namespace PolicyPlusPlus.Windows
             // Decide language context
             var settings = SettingsService.Instance.LoadSettings();
             bool useSecond = _useSecondLanguage && (settings.SecondLanguageEnabled ?? false);
-            string lang = useSecond ? (settings.SecondLanguage ?? "en-US") : (settings.Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name);
+            string lang = useSecond
+                ? (settings.SecondLanguage ?? "en-US")
+                : (settings.Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name);
 
             // Choose presentation (localized when available)
             Presentation presentationToUse = _policy.Presentation;
@@ -448,9 +633,22 @@ namespace PolicyPlusPlus.Windows
                         {
                             foreach (var locElem in lp.Elements)
                             {
-                                if (locElem.ElementType == "decimalTextBox" && locElem is NumericBoxPresentationElement nbLoc && nbLoc.DefaultValue == 0 && originalPresentation != null)
+                                if (
+                                    locElem.ElementType == "decimalTextBox"
+                                    && locElem is NumericBoxPresentationElement nbLoc
+                                    && nbLoc.DefaultValue == 0
+                                    && originalPresentation != null
+                                )
                                 {
-                                    var baseElem = originalPresentation.Elements.FirstOrDefault(e => e.ElementType == "decimalTextBox" && string.Equals(e.ID, locElem.ID, StringComparison.OrdinalIgnoreCase)) as NumericBoxPresentationElement;
+                                    var baseElem =
+                                        originalPresentation.Elements.FirstOrDefault(e =>
+                                            e.ElementType == "decimalTextBox"
+                                            && string.Equals(
+                                                e.ID,
+                                                locElem.ID,
+                                                StringComparison.OrdinalIgnoreCase
+                                            )
+                                        ) as NumericBoxPresentationElement;
                                     if (baseElem != null && baseElem.DefaultValue > 0)
                                     {
                                         nbLoc.DefaultValue = baseElem.DefaultValue; // copy over intended default (e.g., 1400)
@@ -467,10 +665,17 @@ namespace PolicyPlusPlus.Windows
 
             string ResolvePresString(PresentationElement pres, string? fallback)
             {
-                if (!string.IsNullOrWhiteSpace(fallback)) return fallback!;
-                if (pres == null || string.IsNullOrEmpty(pres.ID)) return fallback ?? string.Empty;
-                var viaString = LocalizedTextService.ResolveString("$(string." + pres.ID + ")", _policy.RawPolicy.DefinedIn, lang);
-                if (!string.IsNullOrEmpty(viaString)) return viaString;
+                if (!string.IsNullOrWhiteSpace(fallback))
+                    return fallback!;
+                if (pres == null || string.IsNullOrEmpty(pres.ID))
+                    return fallback ?? string.Empty;
+                var viaString = LocalizedTextService.ResolveString(
+                    "$(string." + pres.ID + ")",
+                    _policy.RawPolicy.DefinedIn,
+                    lang
+                );
+                if (!string.IsNullOrEmpty(viaString))
+                    return viaString;
                 return fallback ?? string.Empty;
             }
 
@@ -482,130 +687,205 @@ namespace PolicyPlusPlus.Windows
                 switch (pres.ElementType)
                 {
                     case "text":
-                        {
-                            var p = (LabelPresentationElement)pres;
-                            label = ResolvePresString(pres, p.Text);
-                            control = new TextBlock { Text = label };
-                            label = string.Empty; // already placed as a TextBlock
-                            break;
-                        }
+                    {
+                        var p = (LabelPresentationElement)pres;
+                        label = ResolvePresString(pres, p.Text);
+                        control = new TextBlock { Text = label };
+                        label = string.Empty; // already placed as a TextBlock
+                        break;
+                    }
                     case "decimalTextBox":
+                    {
+                        var p = (NumericBoxPresentationElement)pres;
+                        var e = (DecimalPolicyElement)elemDict[pres.ID];
+                        // Always use NumberBox; show spin buttons so it is visually distinct from TextBox
+                        var nb = new NumberBox
                         {
-                            var p = (NumericBoxPresentationElement)pres;
-                            var e = (DecimalPolicyElement)elemDict[pres.ID];
-                            // Always use NumberBox; show spin buttons so it is visually distinct from TextBox
-                            var nb = new NumberBox { Minimum = e.Minimum, Maximum = e.Maximum, Value = p.DefaultValue, SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline };
-                            if (p.HasSpinner) nb.SmallChange = p.SpinnerIncrement;
-                            else nb.SmallChange = 1; // sensible default
-                            control = nb;
-                            label = ResolvePresString(pres, p.Label); break;
-                        }
+                            Minimum = e.Minimum,
+                            Maximum = e.Maximum,
+                            Value = p.DefaultValue,
+                            SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
+                        };
+                        if (p.HasSpinner)
+                            nb.SmallChange = p.SpinnerIncrement;
+                        else
+                            nb.SmallChange = 1; // sensible default
+                        control = nb;
+                        label = ResolvePresString(pres, p.Label);
+                        break;
+                    }
                     case "textBox":
+                    {
+                        var p = (TextBoxPresentationElement)pres;
+                        var e = (TextPolicyElement)elemDict[pres.ID];
+                        var tb = new TextBox
                         {
-                            var p = (TextBoxPresentationElement)pres;
-                            var e = (TextPolicyElement)elemDict[pres.ID];
-                            var tb = new TextBox { Text = p.DefaultValue ?? string.Empty, MaxLength = e.MaxLength };
-                            control = tb; label = ResolvePresString(pres, p.Label); break;
-                        }
+                            Text = p.DefaultValue ?? string.Empty,
+                            MaxLength = e.MaxLength,
+                        };
+                        control = tb;
+                        label = ResolvePresString(pres, p.Label);
+                        break;
+                    }
                     case "checkBox":
-                        {
-                            var p = (CheckBoxPresentationElement)pres;
-                            var text = ResolvePresString(pres, p.Text);
-                            var cb = new CheckBox { Content = text, IsChecked = p.DefaultState };
-                            control = cb; label = string.Empty; break;
-                        }
+                    {
+                        var p = (CheckBoxPresentationElement)pres;
+                        var text = ResolvePresString(pres, p.Text);
+                        var cb = new CheckBox { Content = text, IsChecked = p.DefaultState };
+                        control = cb;
+                        label = string.Empty;
+                        break;
+                    }
                     case "comboBox":
+                    {
+                        var p = (ComboBoxPresentationElement)pres;
+                        var e = (TextPolicyElement)elemDict[pres.ID];
+                        var acb = new AutoSuggestBox { Text = p.DefaultText ?? string.Empty };
+                        // Suggestions may be in ADML; attempt to resolve each if they look like IDs
+                        var list = new List<string>();
+                        foreach (var s in p.Suggestions)
                         {
-                            var p = (ComboBoxPresentationElement)pres;
-                            var e = (TextPolicyElement)elemDict[pres.ID];
-                            var acb = new AutoSuggestBox { Text = p.DefaultText ?? string.Empty };
-                            // Suggestions may be in ADML; attempt to resolve each if they look like IDs
-                            var list = new List<string>();
-                            foreach (var s in p.Suggestions)
-                            {
-                                var resolved = LocalizedTextService.ResolveString(s, _policy.RawPolicy.DefinedIn, lang);
-                                list.Add(string.IsNullOrEmpty(resolved) ? s : resolved);
-                            }
-                            acb.ItemsSource = list;
-                            control = acb; label = ResolvePresString(pres, p.Label); break;
+                            var resolved = LocalizedTextService.ResolveString(
+                                s,
+                                _policy.RawPolicy.DefinedIn,
+                                lang
+                            );
+                            list.Add(string.IsNullOrEmpty(resolved) ? s : resolved);
                         }
+                        acb.ItemsSource = list;
+                        control = acb;
+                        label = ResolvePresString(pres, p.Label);
+                        break;
+                    }
                     case "dropdownList":
+                    {
+                        var p = (DropDownPresentationElement)pres;
+                        var e = (EnumPolicyElement)elemDict[pres.ID];
+                        label = ResolvePresString(pres, p.Label);
+                        var cb = new ComboBox { MinWidth = 160 };
+                        int selectedIdx = 0;
+                        int curIdx = 0;
+                        foreach (var enumItem in e.Items)
                         {
-                            var p = (DropDownPresentationElement)pres;
-                            var e = (EnumPolicyElement)elemDict[pres.ID];
-                            label = ResolvePresString(pres, p.Label);
-                            var cb = new ComboBox { MinWidth = 160 };
-                            int selectedIdx = 0;
-                            int curIdx = 0;
-                            foreach (var enumItem in e.Items)
+                            string text;
+                            try
                             {
-                                string text;
+                                text = useSecond
+                                    ? LocalizedTextService.ResolveString(
+                                        enumItem.DisplayCode,
+                                        _policy.RawPolicy.DefinedIn,
+                                        lang
+                                    )
+                                    : _bundle.ResolveString(
+                                        enumItem.DisplayCode,
+                                        _policy.RawPolicy.DefinedIn
+                                    );
+                            }
+                            catch
+                            {
+                                text = _bundle.ResolveString(
+                                    enumItem.DisplayCode,
+                                    _policy.RawPolicy.DefinedIn
+                                );
+                            }
+                            var cbi = new ComboBoxItem
+                            {
+                                Content = string.IsNullOrWhiteSpace(text)
+                                    ? enumItem.DisplayCode
+                                    : text,
+                            };
+                            cb.Items.Add(cbi);
+                            if (p.DefaultItemID.HasValue && curIdx == p.DefaultItemID.Value)
+                                selectedIdx = curIdx;
+                            curIdx++;
+                        }
+                        if (cb.Items.Count > 0)
+                            cb.SelectedIndex = selectedIdx;
+                        cb.Loaded += (s, e2) =>
+                        {
+                            if (cb.SelectedIndex < 0 && cb.Items.Count > 0)
+                                cb.SelectedIndex = selectedIdx;
+                        };
+                        control = cb;
+                        break;
+                    }
+                    case "listBox":
+                    {
+                        var p = (ListPresentationElement)pres;
+                        var e = (ListPolicyElement)elemDict[pres.ID];
+                        var btn = new Button { Content = "Edit..." };
+                        btn.Click += (s, e2) =>
+                        {
+                            string key = _policy.UniqueID + ":" + pres.ID;
+                            if (ListEditorWindow.TryActivateExisting(key))
+                                return;
+                            var win = new ListEditorWindow();
+                            ListEditorWindow.Register(key, win);
+                            _childEditors.Add(win);
+                            _childWindows.Add(win);
+                            win.Closed += (ss, ee) =>
+                            {
+                                _childEditors.Remove(win);
+                                _childWindows.Remove(win);
+                            };
+                            win.Initialize(
+                                ResolvePresString(pres, p.Label),
+                                e.UserProvidesNames,
+                                btn.Tag
+                            );
+                            win.Finished += (ss, ok) =>
+                            {
+                                if (!ok)
+                                    return;
+                                btn.Tag = win.Result;
+                                if (win.CountText != null)
+                                    btn.Content = win.CountText;
+                            };
+                            win.Activate();
+                            WindowHelpers.BringToFront(win);
+                            var t = win.DispatcherQueue.CreateTimer();
+                            t.Interval = System.TimeSpan.FromMilliseconds(180);
+                            t.IsRepeating = false;
+                            t.Tick += (sss, eee) =>
+                            {
                                 try
                                 {
-                                    text = useSecond
-                                        ? LocalizedTextService.ResolveString(enumItem.DisplayCode, _policy.RawPolicy.DefinedIn, lang)
-                                        : _bundle.ResolveString(enumItem.DisplayCode, _policy.RawPolicy.DefinedIn);
+                                    WindowHelpers.BringToFront(win);
+                                    win.Activate();
                                 }
-                                catch
-                                {
-                                    text = _bundle.ResolveString(enumItem.DisplayCode, _policy.RawPolicy.DefinedIn);
-                                }
-                                var cbi = new ComboBoxItem { Content = string.IsNullOrWhiteSpace(text) ? enumItem.DisplayCode : text };
-                                cb.Items.Add(cbi);
-                                if (p.DefaultItemID.HasValue && curIdx == p.DefaultItemID.Value)
-                                    selectedIdx = curIdx;
-                                curIdx++;
-                            }
-                            if (cb.Items.Count > 0)
-                                cb.SelectedIndex = selectedIdx;
-                            cb.Loaded += (s, e2) =>
-                            {
-                                if (cb.SelectedIndex < 0 && cb.Items.Count > 0)
-                                    cb.SelectedIndex = selectedIdx;
+                                catch { }
                             };
-                            control = cb; break;
-                        }
-                    case "listBox":
-                        {
-                            var p = (ListPresentationElement)pres;
-                            var e = (ListPolicyElement)elemDict[pres.ID];
-                            var btn = new Button { Content = "Edit..." };
-                            btn.Click += (s, e2) =>
-                            {
-                                string key = _policy.UniqueID + ":" + pres.ID;
-                                if (ListEditorWindow.TryActivateExisting(key)) return;
-                                var win = new ListEditorWindow();
-                                ListEditorWindow.Register(key, win);
-                                _childEditors.Add(win); _childWindows.Add(win);
-                                win.Closed += (ss, ee) => { _childEditors.Remove(win); _childWindows.Remove(win); };
-                                win.Initialize(ResolvePresString(pres, p.Label), e.UserProvidesNames, btn.Tag);
-                                win.Finished += (ss, ok) =>
-                                {
-                                    if (!ok) return;
-                                    btn.Tag = win.Result;
-                                    if (win.CountText != null) btn.Content = win.CountText;
-                                };
-                                win.Activate();
-                                WindowHelpers.BringToFront(win);
-                                var t = win.DispatcherQueue.CreateTimer();
-                                t.Interval = System.TimeSpan.FromMilliseconds(180);
-                                t.IsRepeating = false;
-                                t.Tick += (sss, eee) => { try { WindowHelpers.BringToFront(win); win.Activate(); } catch { } }; t.Start();
-                            };
-                            control = btn; label = ResolvePresString(pres, p.Label); break;
-                        }
+                            t.Start();
+                        };
+                        control = btn;
+                        label = ResolvePresString(pres, p.Label);
+                        break;
+                    }
                     case "multiTextBox":
+                    {
+                        var p = (MultiTextPresentationElement)pres;
+                        var tb = new TextBox
                         {
-                            var p = (MultiTextPresentationElement)pres;
-                            var tb = new TextBox { AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, Height = 120, Text = string.Empty };
-                            control = tb; label = ResolvePresString(pres, p.Label); break;
-                        }
+                            AcceptsReturn = true,
+                            TextWrapping = TextWrapping.NoWrap,
+                            Height = 120,
+                            Text = string.Empty,
+                        };
+                        control = tb;
+                        label = ResolvePresString(pres, p.Label);
+                        break;
+                    }
                 }
                 if (control != null)
                 {
                     if (!string.IsNullOrEmpty(label))
                     {
-                        var lbl = new TextBlock { Text = label, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+                        var lbl = new TextBlock
+                        {
+                            Text = label,
+                            FontWeight = FontWeights.SemiBold,
+                            TextWrapping = TextWrapping.Wrap,
+                        };
                         OptionsPanel.Children.Add(lbl);
                     }
                     OptionsPanel.Children.Add(control);
@@ -621,29 +901,54 @@ namespace PolicyPlusPlus.Windows
             _lastLoadedState = state;
             OptEnabled.IsChecked = state == PolicyState.Enabled;
             OptDisabled.IsChecked = state == PolicyState.Disabled;
-            OptNotConfigured.IsChecked = state == PolicyState.NotConfigured || state == PolicyState.Unknown;
+            OptNotConfigured.IsChecked =
+                state == PolicyState.NotConfigured || state == PolicyState.Unknown;
 
             Dictionary<string, object> optionStates = new();
             if (state == PolicyState.Enabled)
             {
-                try { optionStates = PolicyProcessing.GetPolicyOptionStates(src, _policy); } catch { optionStates = new(); }
+                try
+                {
+                    optionStates = PolicyProcessing.GetPolicyOptionStates(src, _policy);
+                }
+                catch
+                {
+                    optionStates = new();
+                }
             }
 
             foreach (var elem in _policy.RawPolicy.Elements ?? new List<PolicyElement>())
             {
-                if (!_elementControls.TryGetValue(elem.ID, out var ctrl)) continue;
+                if (!_elementControls.TryGetValue(elem.ID, out var ctrl))
+                    continue;
 
                 if (state == PolicyState.Enabled && optionStates.TryGetValue(elem.ID, out var val))
                 {
                     switch (ctrl)
                     {
-                        case NumberBox nb when val is uint u: nb.Value = u; continue;
-                        case TextBox tb when val is string s: tb.Text = s; continue;
-                        case ComboBox cb when val is int index: cb.SelectedIndex = index; continue;
-                        case CheckBox ch when val is bool b: ch.IsChecked = b; continue;
-                        case TextBox mtb when val is string[] arr: mtb.Text = string.Join("\r\n", arr); continue;
-                        case Button btn when val is Dictionary<string, string> dict: btn.Tag = dict.ToList(); btn.Content = $"Edit... ({dict.Count})"; continue;
-                        case Button btn2 when val is List<string> list: btn2.Tag = list; btn2.Content = $"Edit... ({list.Count})"; continue;
+                        case NumberBox nb when val is uint u:
+                            nb.Value = u;
+                            continue;
+                        case TextBox tb when val is string s:
+                            tb.Text = s;
+                            continue;
+                        case ComboBox cb when val is int index:
+                            cb.SelectedIndex = index;
+                            continue;
+                        case CheckBox ch when val is bool b:
+                            ch.IsChecked = b;
+                            continue;
+                        case TextBox mtb when val is string[] arr:
+                            mtb.Text = string.Join("\r\n", arr);
+                            continue;
+                        case Button btn when val is Dictionary<string, string> dict:
+                            btn.Tag = dict.ToList();
+                            btn.Content = $"Edit... ({dict.Count})";
+                            continue;
+                        case Button btn2 when val is List<string> list:
+                            btn2.Tag = list;
+                            btn2.Content = $"Edit... ({list.Count})";
+                            continue;
                     }
                 }
 
@@ -658,7 +963,8 @@ namespace PolicyPlusPlus.Windows
                     if (string.IsNullOrEmpty(tb2.Text))
                     {
                         var defText = GetTextDefault(elem.ID);
-                        if (defText != null) tb2.Text = defText;
+                        if (defText != null)
+                            tb2.Text = defText;
                     }
                 }
                 else if (elem is BooleanPolicyElement && ctrl is CheckBox ch2)
@@ -671,11 +977,15 @@ namespace PolicyPlusPlus.Windows
 
             if (comments == null)
             {
-                CommentBox.IsEnabled = false; CommentBox.Text = "Comments unavailable for this policy source";
+                CommentBox.IsEnabled = false;
+                CommentBox.Text = "Comments unavailable for this policy source";
             }
             else
             {
-                CommentBox.IsEnabled = true; CommentBox.Text = comments.TryGetValue(_policy.UniqueID, out var c) ? c : string.Empty;
+                CommentBox.IsEnabled = true;
+                CommentBox.Text = comments.TryGetValue(_policy.UniqueID, out var c)
+                    ? c
+                    : string.Empty;
             }
         }
 
@@ -687,7 +997,11 @@ namespace PolicyPlusPlus.Windows
                 {
                     foreach (var pe in _policy.Presentation.Elements)
                     {
-                        if (pe.ElementType == "textBox" && string.Equals(pe.ID, id, StringComparison.OrdinalIgnoreCase) && pe is TextBoxPresentationElement tpe)
+                        if (
+                            pe.ElementType == "textBox"
+                            && string.Equals(pe.ID, id, StringComparison.OrdinalIgnoreCase)
+                            && pe is TextBoxPresentationElement tpe
+                        )
                             return tpe.DefaultValue;
                     }
                 }
@@ -704,7 +1018,10 @@ namespace PolicyPlusPlus.Windows
                 {
                     foreach (var pe in _policy.Presentation.Elements)
                     {
-                        if (pe.ElementType == "decimalTextBox" && string.Equals(pe.ID, id, StringComparison.OrdinalIgnoreCase))
+                        if (
+                            pe.ElementType == "decimalTextBox"
+                            && string.Equals(pe.ID, id, StringComparison.OrdinalIgnoreCase)
+                        )
                         {
                             if (pe is NumericBoxPresentationElement nbpe)
                                 return nbpe.DefaultValue;
@@ -722,8 +1039,10 @@ namespace PolicyPlusPlus.Windows
             {
                 if (elem is DecimalPolicyElement de)
                 {
-                    if (value < de.Minimum) value = de.Minimum;
-                    if (value > de.Maximum) value = de.Maximum; // fixed typo
+                    if (value < de.Minimum)
+                        value = de.Minimum;
+                    if (value > de.Maximum)
+                        value = de.Maximum; // fixed typo
                     return (uint)Math.Round(value);
                 }
             }
@@ -734,10 +1053,12 @@ namespace PolicyPlusPlus.Windows
         private Dictionary<string, object> CollectOptions()
         {
             var options = new Dictionary<string, object>();
-            if (_policy.RawPolicy.Elements is null) return options;
+            if (_policy.RawPolicy.Elements is null)
+                return options;
             foreach (var elem in _policy.RawPolicy.Elements)
             {
-                if (!_elementControls.TryGetValue(elem.ID, out var ctrl)) continue;
+                if (!_elementControls.TryGetValue(elem.ID, out var ctrl))
+                    continue;
                 switch (elem.ElementType)
                 {
                     case "decimal":
@@ -745,15 +1066,37 @@ namespace PolicyPlusPlus.Windows
                         {
                             options[elem.ID] = ClampDecimal(elem, nb.Value);
                         }
-                        else if (ctrl is TextBox tbx && uint.TryParse(tbx.Text, out var u)) options[elem.ID] = ClampDecimal(elem, u); else options[elem.ID] = 0u; break;
+                        else if (ctrl is TextBox tbx && uint.TryParse(tbx.Text, out var u))
+                            options[elem.ID] = ClampDecimal(elem, u);
+                        else
+                            options[elem.ID] = 0u;
+                        break;
                     case "text":
-                        if (ctrl is AutoSuggestBox asb) options[elem.ID] = asb.Text; else if (ctrl is TextBox tbx) options[elem.ID] = tbx.Text; break;
-                    case "boolean": options[elem.ID] = (ctrl as CheckBox)?.IsChecked == true; break;
-                    case "enum": options[elem.ID] = (ctrl as ComboBox)?.SelectedIndex ?? -1; break;
+                        if (ctrl is AutoSuggestBox asb)
+                            options[elem.ID] = asb.Text;
+                        else if (ctrl is TextBox tbx)
+                            options[elem.ID] = tbx.Text;
+                        break;
+                    case "boolean":
+                        options[elem.ID] = (ctrl as CheckBox)?.IsChecked == true;
+                        break;
+                    case "enum":
+                        options[elem.ID] = (ctrl as ComboBox)?.SelectedIndex ?? -1;
+                        break;
                     case "list":
-                        var tag = (ctrl as Button)?.Tag; if (tag is List<string> l) options[elem.ID] = l; else if (tag is List<KeyValuePair<string, string>> kvpList) options[elem.ID] = kvpList; break;
+                        var tag = (ctrl as Button)?.Tag;
+                        if (tag is List<string> l)
+                            options[elem.ID] = l;
+                        else if (tag is List<KeyValuePair<string, string>> kvpList)
+                            options[elem.ID] = kvpList;
+                        break;
                     case "multiText":
-                        var text = (ctrl as TextBox)?.Text ?? string.Empty; options[elem.ID] = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None); break;
+                        var text = (ctrl as TextBox)?.Text ?? string.Empty;
+                        options[elem.ID] = text.Split(
+                            new[] { "\r\n", "\n" },
+                            StringSplitOptions.None
+                        );
+                        break;
                 }
             }
             return options;
@@ -794,23 +1137,28 @@ namespace PolicyPlusPlus.Windows
             if (comments != null)
             {
                 var text = CommentBox.Text ?? string.Empty;
-                if (string.IsNullOrEmpty(text)) comments.Remove(_policy.UniqueID); else comments[_policy.UniqueID] = text;
+                if (string.IsNullOrEmpty(text))
+                    comments.Remove(_policy.UniqueID);
+                else
+                    comments[_policy.UniqueID] = text;
             }
 
             try
             {
                 var scope = (_currentSection == AdmxPolicySection.User) ? "User" : "Computer";
-                PendingChangesService.Instance.Add(new PendingChange
-                {
-                    PolicyId = _policy.UniqueID,
-                    PolicyName = _policy.DisplayName ?? _policy.UniqueID,
-                    Scope = scope,
-                    Action = action,
-                    Details = details,
-                    DetailsFull = detailsFull,
-                    DesiredState = desired,
-                    Options = options
-                });
+                PendingChangesService.Instance.Add(
+                    new PendingChange
+                    {
+                        PolicyId = _policy.UniqueID,
+                        PolicyName = _policy.DisplayName ?? _policy.UniqueID,
+                        Scope = scope,
+                        Action = action,
+                        Details = details,
+                        DetailsFull = detailsFull,
+                        DesiredState = desired,
+                        Options = options,
+                    }
+                );
             }
             catch { }
 
@@ -819,7 +1167,12 @@ namespace PolicyPlusPlus.Windows
                 // If a PendingChangesWindow is open, refresh it proactively
                 if (App.Window is MainWindow main)
                 {
-                    foreach (var field in typeof(App).GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static))
+                    foreach (
+                        var field in typeof(App).GetFields(
+                            System.Reflection.BindingFlags.NonPublic
+                                | System.Reflection.BindingFlags.Static
+                        )
+                    )
                     {
                         // no direct list, but we can find a window by type among current windows is not straightforward in WinUI
                     }
@@ -832,12 +1185,18 @@ namespace PolicyPlusPlus.Windows
             {
                 var scope = (_currentSection == AdmxPolicySection.User) ? "User" : "Computer";
                 SavedDetail?.Invoke(this, (scope, desired, options));
-                try { EventHub.PublishPolicyChangeQueued(_policy.UniqueID, scope, desired, options); } catch { }
+                try
+                {
+                    EventHub.PublishPolicyChangeQueued(_policy.UniqueID, scope, desired, options);
+                }
+                catch { }
             }
             catch { }
         }
 
-        private (string shortText, string longText) BuildDetailsForPending(Dictionary<string, object> options)
+        private (string shortText, string longText) BuildDetailsForPending(
+            Dictionary<string, object> options
+        )
         {
             try
             {
@@ -848,7 +1207,8 @@ namespace PolicyPlusPlus.Windows
                     var pairs = options.Select(kv => kv.Key + "=" + FormatOpt(kv.Value));
                     shortSb.Append(": ");
                     shortSb.Append(string.Join(", ", pairs.Take(4)));
-                    if (options.Count > 4) shortSb.Append($" (+{options.Count - 4} more)");
+                    if (options.Count > 4)
+                        shortSb.Append($" (+{options.Count - 4} more)");
                 }
 
                 var longSb = new StringBuilder();
@@ -856,7 +1216,11 @@ namespace PolicyPlusPlus.Windows
                 longSb.AppendLine("Registry values:");
                 foreach (var kv in PolicyProcessing.GetReferencedRegistryValues(_policy))
                 {
-                    longSb.AppendLine("  ? " + kv.Key + (string.IsNullOrEmpty(kv.Value) ? string.Empty : $" ({kv.Value})"));
+                    longSb.AppendLine(
+                        "  ? "
+                            + kv.Key
+                            + (string.IsNullOrEmpty(kv.Value) ? string.Empty : $" ({kv.Value})")
+                    );
                 }
                 if (options != null && options.Count > 0)
                 {
@@ -866,17 +1230,24 @@ namespace PolicyPlusPlus.Windows
                 }
                 return (shortSb.ToString(), longSb.ToString());
             }
-            catch { return (string.Empty, string.Empty); }
+            catch
+            {
+                return (string.Empty, string.Empty);
+            }
         }
 
         private static string FormatOpt(object v)
         {
-            if (v == null) return string.Empty;
-            if (v is string s) return s;
-            if (v is bool b) return b ? "true" : "false";
+            if (v == null)
+                return string.Empty;
+            if (v is string s)
+                return s;
+            if (v is bool b)
+                return b ? "true" : "false";
 
             // Common list and map shapes coming from CollectOptions
-            if (v is IEnumerable<string> strList) return string.Join(", ", strList);
+            if (v is IEnumerable<string> strList)
+                return string.Join(", ", strList);
             if (v is IEnumerable<KeyValuePair<string, string>> kvList)
                 return string.Join(", ", kvList.Select(kv => kv.Key + "=" + kv.Value));
 
@@ -897,7 +1268,10 @@ namespace PolicyPlusPlus.Windows
 
         private void SectionSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            _currentSection = SectionSelector.SelectedIndex == 1 ? AdmxPolicySection.User : AdmxPolicySection.Machine;
+            _currentSection =
+                SectionSelector.SelectedIndex == 1
+                    ? AdmxPolicySection.User
+                    : AdmxPolicySection.Machine;
             LoadStateFromSource();
         }
 
@@ -915,7 +1289,8 @@ namespace PolicyPlusPlus.Windows
                     var existing = PolicyProcessing.GetPolicyOptionStates(src, _policy);
                     foreach (var elem in _policy.RawPolicy.Elements ?? new List<PolicyElement>())
                     {
-                        if (existing.ContainsKey(elem.ID)) continue; // already had a value
+                        if (existing.ContainsKey(elem.ID))
+                            continue; // already had a value
                         if (_elementControls.TryGetValue(elem.ID, out var ctrl))
                         {
                             if (elem.ElementType == "decimal" && ctrl is NumberBox nb)
@@ -942,11 +1317,14 @@ namespace PolicyPlusPlus.Windows
 
         private static void ToggleChildrenEnabled(Panel panel, bool enabled)
         {
-            if (panel == null) return;
+            if (panel == null)
+                return;
             foreach (var child in panel.Children)
             {
-                if (child is Control ctrl) ctrl.IsEnabled = enabled;
-                else if (child is Panel p) ToggleChildrenEnabled(p, enabled);
+                if (child is Control ctrl)
+                    ctrl.IsEnabled = enabled;
+                else if (child is Panel p)
+                    ToggleChildrenEnabled(p, enabled);
             }
         }
 
@@ -955,14 +1333,20 @@ namespace PolicyPlusPlus.Windows
             try
             {
                 var preview = new PolFile();
-                var desired = OptEnabled.IsChecked == true ? PolicyState.Enabled
-                              : OptDisabled.IsChecked == true ? PolicyState.Disabled
-                              : PolicyState.NotConfigured;
+                var desired =
+                    OptEnabled.IsChecked == true ? PolicyState.Enabled
+                    : OptDisabled.IsChecked == true ? PolicyState.Disabled
+                    : PolicyState.NotConfigured;
                 Dictionary<string, object>? opts = null;
                 if (desired == PolicyState.Enabled)
                     opts = CollectOptions();
 
-                PolicyProcessing.SetPolicyState(preview, _policy, desired, opts ?? new Dictionary<string, object>());
+                PolicyProcessing.SetPolicyState(
+                    preview,
+                    _policy,
+                    desired,
+                    opts ?? new Dictionary<string, object>()
+                );
 
                 var win = new DetailPolicyFormattedWindow();
                 win.Initialize(_policy, _bundle, preview, preview, _currentSection);
@@ -976,60 +1360,138 @@ namespace PolicyPlusPlus.Windows
             // Validate required text elements when enabling
             if (OptEnabled.IsChecked == true && !ValidateRequiredElements())
             {
-                try { if (App.Window is MainWindow mw) mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Required value missing.", InfoBarSeverity.Error }); } catch (Exception ex) { Log.Warn("EditSetting", "ShowInfo failed (Apply validation)", ex); }
+                try
+                {
+                    if (App.Window is MainWindow mw)
+                        mw.GetType()
+                            .GetMethod(
+                                "ShowInfo",
+                                System.Reflection.BindingFlags.NonPublic
+                                    | System.Reflection.BindingFlags.Instance
+                            )
+                            ?.Invoke(
+                                mw,
+                                new object[] { "Required value missing.", InfoBarSeverity.Error }
+                            );
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn("EditSetting", "ShowInfo failed (Apply validation)", ex);
+                }
                 return;
             }
-            try { SaveToSource(); } catch (Exception ex) { Log.Error("EditSetting", "SaveToSource failed in Apply", ex); }
+            try
+            {
+                SaveToSource();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("EditSetting", "SaveToSource failed in Apply", ex);
+            }
             try
             {
                 if (App.Window is MainWindow mw)
                 {
-                    mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Queued.", InfoBarSeverity.Informational });
+                    mw.GetType()
+                        .GetMethod(
+                            "ShowInfo",
+                            System.Reflection.BindingFlags.NonPublic
+                                | System.Reflection.BindingFlags.Instance
+                        )
+                        ?.Invoke(mw, new object[] { "Queued.", InfoBarSeverity.Informational });
                 }
             }
-            catch (Exception ex) { Log.Warn("EditSetting", "ShowInfo failed (Apply queued)", ex); }
+            catch (Exception ex)
+            {
+                Log.Warn("EditSetting", "ShowInfo failed (Apply queued)", ex);
+            }
         }
 
         private void OkBtn_Click(object sender, RoutedEventArgs e)
         {
             if (OptEnabled.IsChecked == true && !ValidateRequiredElements())
             {
-                try { if (App.Window is MainWindow mw) mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Required value missing.", InfoBarSeverity.Error }); } catch (Exception ex) { Log.Warn("EditSetting", "ShowInfo failed (OK validation)", ex); }
+                try
+                {
+                    if (App.Window is MainWindow mw)
+                        mw.GetType()
+                            .GetMethod(
+                                "ShowInfo",
+                                System.Reflection.BindingFlags.NonPublic
+                                    | System.Reflection.BindingFlags.Instance
+                            )
+                            ?.Invoke(
+                                mw,
+                                new object[] { "Required value missing.", InfoBarSeverity.Error }
+                            );
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn("EditSetting", "ShowInfo failed (OK validation)", ex);
+                }
                 return;
             }
-            try { SaveToSource(); } catch (Exception ex) { Log.Error("EditSetting", "SaveToSource failed in OK", ex); }
+            try
+            {
+                SaveToSource();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("EditSetting", "SaveToSource failed in OK", ex);
+            }
             Close();
             try
             {
                 if (App.Window is MainWindow mw)
                 {
-                    mw.GetType().GetMethod("ShowInfo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(mw, new object[] { "Queued.", InfoBarSeverity.Informational });
+                    mw.GetType()
+                        .GetMethod(
+                            "ShowInfo",
+                            System.Reflection.BindingFlags.NonPublic
+                                | System.Reflection.BindingFlags.Instance
+                        )
+                        ?.Invoke(mw, new object[] { "Queued.", InfoBarSeverity.Informational });
                 }
             }
-            catch (Exception ex) { Log.Warn("EditSetting", "ShowInfo failed (OK queued)", ex); }
+            catch (Exception ex)
+            {
+                Log.Warn("EditSetting", "ShowInfo failed (OK queued)", ex);
+            }
         }
 
         private bool ValidateRequiredElements()
         {
             try
             {
-                if (_policy?.RawPolicy?.Elements == null) return true;
+                if (_policy?.RawPolicy?.Elements == null)
+                    return true;
                 foreach (var elem in _policy.RawPolicy.Elements)
                 {
                     if (elem is TextPolicyElement t && t.Required)
                     {
-                        if (_elementControls.TryGetValue(elem.ID, out var ctrl) && ctrl is TextBox tb)
+                        if (
+                            _elementControls.TryGetValue(elem.ID, out var ctrl)
+                            && ctrl is TextBox tb
+                        )
                         {
-                            if (string.IsNullOrWhiteSpace(tb.Text)) return false;
+                            if (string.IsNullOrWhiteSpace(tb.Text))
+                                return false;
                         }
-                        else if (_elementControls.TryGetValue(elem.ID, out var ctrl2) && ctrl2 is AutoSuggestBox asb)
+                        else if (
+                            _elementControls.TryGetValue(elem.ID, out var ctrl2)
+                            && ctrl2 is AutoSuggestBox asb
+                        )
                         {
-                            if (string.IsNullOrWhiteSpace(asb.Text)) return false;
+                            if (string.IsNullOrWhiteSpace(asb.Text))
+                                return false;
                         }
                     }
                 }
             }
-            catch (Exception ex) { Log.Warn("EditSetting", "ValidateRequiredElements failed", ex); }
+            catch (Exception ex)
+            {
+                Log.Warn("EditSetting", "ValidateRequiredElements failed", ex);
+            }
             return true;
         }
     }

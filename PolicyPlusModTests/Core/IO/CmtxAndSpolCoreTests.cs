@@ -1,7 +1,7 @@
-using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Win32;
 using Xunit;
 
 namespace PolicyPlusModTests.Core.IO
@@ -13,8 +13,8 @@ namespace PolicyPlusModTests.Core.IO
         {
             var table = new Dictionary<string, string>
             {
-                {"Microsoft.Policies:PolicyA", "Comment A"},
-                {"Contoso.Settings:PolicyB", "Comment B"}
+                { "Microsoft.Policies:PolicyA", "Comment A" },
+                { "Contoso.Settings:PolicyB", "Comment B" },
             };
             var cmtx = CmtxFile.FromCommentTable(table);
             var tmp = Path.GetTempFileName();
@@ -27,14 +27,24 @@ namespace PolicyPlusModTests.Core.IO
                 foreach (var kv in table)
                     Assert.Equal(kv.Value, round[kv.Key]);
             }
-            finally { try { File.Delete(tmp); } catch { } }
+            finally
+            {
+                try
+                {
+                    File.Delete(tmp);
+                }
+                catch { }
+            }
         }
 
         [Fact(DisplayName = "ConfigurationStorage stores and retrieves values")]
         public void ConfigurationStorage_Basic_CRUD()
         {
             // HKCU is safe for tests
-            var cs = new ConfigurationStorage(RegistryHive.CurrentUser, "Software\\PolicyPlusModTests");
+            var cs = new ConfigurationStorage(
+                RegistryHive.CurrentUser,
+                "Software\\PolicyPlusModTests"
+            );
             var key = "TestValue_" + Guid.NewGuid().ToString("N");
             try
             {
@@ -49,7 +59,10 @@ namespace PolicyPlusModTests.Core.IO
             {
                 try
                 {
-                    using var hkcu = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
+                    using var hkcu = RegistryKey.OpenBaseKey(
+                        RegistryHive.CurrentUser,
+                        RegistryView.Default
+                    );
                     using var sub = hkcu.OpenSubKey("Software\\PolicyPlusModTests", writable: true);
                     sub?.DeleteValue(key, false);
                 }
@@ -61,12 +74,16 @@ namespace PolicyPlusModTests.Core.IO
         public void SpolFile_ParseAndApply()
         {
             // Minimal SPOL content with one enabled policy and an option
-            var text = string.Join(Environment.NewLine, new[]{
-                "Policy Plus Semantic Policy",
-                "C test.policy.id",
-                "Enabled",
-                "  Option1: #5"
-            });
+            var text = string.Join(
+                Environment.NewLine,
+                new[]
+                {
+                    "Policy Plus Semantic Policy",
+                    "C test.policy.id",
+                    "Enabled",
+                    "  Option1: #5",
+                }
+            );
             var spol = SpolFile.FromText(text);
             Assert.Single(spol.Policies);
             var state = spol.Policies[0];
@@ -83,14 +100,14 @@ namespace PolicyPlusModTests.Core.IO
                     RegistryKey = "Software\\Policies\\Contoso",
                     RegistryValue = "Option1",
                     AffectedValues = new PolicyRegistryList(),
-                    DefinedIn = new AdmxFile()
+                    DefinedIn = new AdmxFile(),
                 },
                 Category = new PolicyPlusCategory()
                 {
                     DisplayName = "Cat",
                     Parent = null,
                     RawCategory = new AdmxCategory(),
-                }
+                },
             };
             var polFile = new PolFile();
             var comments = new Dictionary<string, string>();

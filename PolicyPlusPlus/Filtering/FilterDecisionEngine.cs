@@ -11,7 +11,8 @@ namespace PolicyPlusPlus.Filtering
             bool hasSearch,
             bool configuredOnly,
             bool bookmarkOnly,
-            bool limitSettingEnabled)
+            bool limitSettingEnabled
+        )
         {
             // Row classification is mutually exclusive by the combination of 4 booleans.
             // Implement rules derived from table:
@@ -31,7 +32,9 @@ namespace PolicyPlusPlus.Filtering
             bool showSubcatHeaders = hasCategory && !hasSearch && !configuredOnly && !bookmarkOnly;
 
             // 3) IncludeSubcategoryPolicies = false only in row2; otherwise true.
-            bool includeSubcatPolicies = !(hasCategory && !hasSearch && !configuredOnly && !bookmarkOnly);
+            bool includeSubcatPolicies = !(
+                hasCategory && !hasSearch && !configuredOnly && !bookmarkOnly
+            );
 
             // 4) Limit: 1000 only in rows 1 and 3 (global base or global search) AND only when limitSettingEnabled=true.
             // Rows 1: no category, no search, no other filters -> limit 1000.
@@ -48,7 +51,7 @@ namespace PolicyPlusPlus.Filtering
                 FlattenHierarchy = flatten,
                 ShowSubcategoryHeaders = showSubcatHeaders,
                 IncludeSubcategoryPolicies = includeSubcatPolicies,
-                Limit = limit
+                Limit = limit,
             };
         }
     }

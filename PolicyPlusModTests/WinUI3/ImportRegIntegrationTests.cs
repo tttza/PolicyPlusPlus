@@ -1,5 +1,4 @@
 using Microsoft.Win32;
-
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
@@ -11,11 +10,21 @@ namespace PolicyPlusModTests.WinUI3
         {
             var reg = new RegFile();
             // Build a reg with absolute hive names (as a user could load without proper prefix)
-            reg.Keys.Add(new RegFile.RegFileKey
-            {
-                Name = "HKEY_LOCAL_MACHINE\\Software\\Policies\\PolicyPlusTest",
-                Values = { new RegFile.RegFileValue { Name = "Test", Kind = RegistryValueKind.DWord, Data = 1u } }
-            });
+            reg.Keys.Add(
+                new RegFile.RegFileKey
+                {
+                    Name = "HKEY_LOCAL_MACHINE\\Software\\Policies\\PolicyPlusTest",
+                    Values =
+                    {
+                        new RegFile.RegFileValue
+                        {
+                            Name = "Test",
+                            Kind = RegistryValueKind.DWord,
+                            Data = 1u,
+                        },
+                    },
+                }
+            );
 
             var sink = new PolFile();
             reg.Apply(sink);

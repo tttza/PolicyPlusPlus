@@ -26,7 +26,8 @@ public sealed class TestAppHost : IDisposable
     private string? _testDataDirectory; // actual directory used (forced or generated)
     public string TestDataDirectory => _testDataDirectory ?? string.Empty; // exposed for tests to read settings.json
 
-    public TestAppHost() : this(null) { }
+    public TestAppHost()
+        : this(null) { }
 
     public TestAppHost(string? testDataDirectory)
     {
@@ -39,55 +40,85 @@ public sealed class TestAppHost : IDisposable
             Architecture.X64 => "x64",
             Architecture.X86 => "x86",
             Architecture.Arm64 => "ARM64",
-            _ => "x64"
+            _ => "x64",
         };
-        var configs = new[] { baseConfig, ToggleUnpackaged(baseConfig), "Debug-Unpackaged", "Debug", "Release-Unpackaged", "Release" }
+        var configs = new[]
+        {
+            baseConfig,
+            ToggleUnpackaged(baseConfig),
+            "Debug-Unpackaged",
+            "Debug",
+            "Release-Unpackaged",
+            "Release",
+        }
             .Where(c => !string.IsNullOrWhiteSpace(c))
             .Select(c => c!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
-        _exePath = ResolveExecutablePath(appProjectDir, configs, arch)
-            ?? throw new FileNotFoundException("App executable not found. Ensure PolicyPlusPlus project builds before UI tests.");
+        _exePath =
+            ResolveExecutablePath(appProjectDir, configs, arch)
+            ?? throw new FileNotFoundException(
+                "App executable not found. Ensure PolicyPlusPlus project builds before UI tests."
+            );
     }
 
-    private static string ToggleUnpackaged(string cfg)
-        => cfg.EndsWith("-Unpackaged", StringComparison.OrdinalIgnoreCase) ? cfg.Replace("-Unpackaged", string.Empty) : (cfg + "-Unpackaged");
+    private static string ToggleUnpackaged(string cfg) =>
+        cfg.EndsWith("-Unpackaged", StringComparison.OrdinalIgnoreCase)
+            ? cfg.Replace("-Unpackaged", string.Empty)
+            : (cfg + "-Unpackaged");
 
-    private static string? ResolveExecutablePath(string appProjectDir, string[] configs, string arch)
+    private static string? ResolveExecutablePath(
+        string appProjectDir,
+        string[] configs,
+        string arch
+    )
     {
         var binDir = Path.Combine(appProjectDir, "bin");
-        if (!Directory.Exists(binDir)) return null;
+        if (!Directory.Exists(binDir))
+            return null;
         foreach (var cfg in configs)
         {
             string[] bases =
             {
                 Path.Combine(binDir, arch, cfg),
                 Path.Combine(binDir, cfg, arch),
-                Path.Combine(binDir, cfg)
+                Path.Combine(binDir, cfg),
             };
             foreach (var b in bases)
             {
-                if (!Directory.Exists(b)) continue;
+                if (!Directory.Exists(b))
+                    continue;
                 try
                 {
-                    foreach (var tfm in Directory.EnumerateDirectories(b, "net8.0-windows*").OrderByDescending(d => d))
+                    foreach (
+                        var tfm in Directory
+                            .EnumerateDirectories(b, "net8.0-windows*")
+                            .OrderByDescending(d => d)
+                    )
                     {
                         var exe = Path.Combine(tfm, "PolicyPlusPlus.exe");
-                        if (File.Exists(exe)) return exe;
+                        if (File.Exists(exe))
+                            return exe;
                     }
                     var directExe = Path.Combine(b, "PolicyPlusPlus.exe");
-                    if (File.Exists(directExe)) return directExe;
+                    if (File.Exists(directExe))
+                        return directExe;
                 }
                 catch { }
             }
         }
         try
         {
-            var matches = Directory.EnumerateFiles(binDir, "PolicyPlusPlus.exe", SearchOption.AllDirectories).Take(50).ToList();
+            var matches = Directory
+                .EnumerateFiles(binDir, "PolicyPlusPlus.exe", SearchOption.AllDirectories)
+                .Take(50)
+                .ToList();
             if (matches.Count > 0)
             {
                 return matches
-                    .OrderByDescending(p => p.Contains("Unpackaged", StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(p =>
+                        p.Contains("Unpackaged", StringComparison.OrdinalIgnoreCase)
+                    )
                     .ThenByDescending(p => p.Contains("Debug", StringComparison.OrdinalIgnoreCase))
                     .ThenByDescending(p => p)
                     .First();
@@ -103,26 +134,41 @@ public sealed class TestAppHost : IDisposable
         try
         {
             var env = Environment.GetEnvironmentVariable("POLICYPLUS_TEST_ADMX_DIR");
-            if (!string.IsNullOrWhiteSpace(env) && Directory.Exists(env) && Directory.EnumerateFiles(env, "*.admx", SearchOption.TopDirectoryOnly).Any())
+            if (
+                !string.IsNullOrWhiteSpace(env)
+                && Directory.Exists(env)
+                && Directory.EnumerateFiles(env, "*.admx", SearchOption.TopDirectoryOnly).Any()
+            )
                 return env;
         }
         catch { }
 
         // Preferred shared location at repo root
         string shared = Path.Combine(solutionDir, "TestAssets", "Admx");
-        if (Directory.Exists(shared) && Directory.EnumerateFiles(shared, "*.admx", SearchOption.TopDirectoryOnly).Any())
+        if (
+            Directory.Exists(shared)
+            && Directory.EnumerateFiles(shared, "*.admx", SearchOption.TopDirectoryOnly).Any()
+        )
             return shared;
 
         // Legacy UI test path
         string legacy = Path.Combine(solutionDir, "PolicyPlusPlus.Tests.UI", "TestAssets", "Admx");
-        if (Directory.Exists(legacy) && Directory.EnumerateFiles(legacy, "*.admx", SearchOption.TopDirectoryOnly).Any())
+        if (
+            Directory.Exists(legacy)
+            && Directory.EnumerateFiles(legacy, "*.admx", SearchOption.TopDirectoryOnly).Any()
+        )
             return legacy;
 
         // Fallback: shallow scan (depth 3) for any directory ending with Admx containing .admx files
         try
         {
-            var dirs = Directory.EnumerateDirectories(solutionDir, "Admx", SearchOption.AllDirectories)
-                .Where(p => p.Count(c => c == Path.DirectorySeparatorChar) - solutionDir.Count(c => c == Path.DirectorySeparatorChar) <= 6) // crude depth guard
+            var dirs = Directory
+                .EnumerateDirectories(solutionDir, "Admx", SearchOption.AllDirectories)
+                .Where(p =>
+                    p.Count(c => c == Path.DirectorySeparatorChar)
+                        - solutionDir.Count(c => c == Path.DirectorySeparatorChar)
+                    <= 6
+                ) // crude depth guard
                 .Take(20);
             foreach (var d in dirs)
             {
@@ -140,8 +186,11 @@ public sealed class TestAppHost : IDisposable
 
     public void Launch()
     {
-        if (App != null) return;
-        _testDataDirectory = _forcedTestDataDir ?? Path.Combine(Path.GetTempPath(), "PolicyPlusUITest_" + Guid.NewGuid().ToString("N"));
+        if (App != null)
+            return;
+        _testDataDirectory =
+            _forcedTestDataDir
+            ?? Path.Combine(Path.GetTempPath(), "PolicyPlusUITest_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testDataDirectory);
 
         // Pre-create settings.json enabling CustomPol so saves use custom .pol instead of elevation host.
@@ -150,7 +199,12 @@ public sealed class TestAppHost : IDisposable
             var compPath = Path.Combine(_testDataDirectory, "custom_machine.pol");
             var userPath = Path.Combine(_testDataDirectory, "custom_user.pol");
             var settingsPath = Path.Combine(_testDataDirectory, "settings.json");
-            var json = "{\"CustomPol\":{\"EnableComputer\":true,\"EnableUser\":true,\"ComputerPath\":\"" + compPath.Replace("\\", "\\\\") + "\",\"UserPath\":\"" + userPath.Replace("\\", "\\\\") + "\",\"Active\":true}}";
+            var json =
+                "{\"CustomPol\":{\"EnableComputer\":true,\"EnableUser\":true,\"ComputerPath\":\""
+                + compPath.Replace("\\", "\\\\")
+                + "\",\"UserPath\":\""
+                + userPath.Replace("\\", "\\\\")
+                + "\",\"Active\":true}}";
             File.WriteAllText(settingsPath, json, Encoding.UTF8);
         }
         catch { }
@@ -162,7 +216,7 @@ public sealed class TestAppHost : IDisposable
             RedirectStandardError = true,
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
-            WorkingDirectory = Path.GetDirectoryName(_exePath)!
+            WorkingDirectory = Path.GetDirectoryName(_exePath)!,
         };
         psi.Environment["POLICYPLUS_TEST_DATA_DIR"] = _testDataDirectory;
         psi.Environment["POLICYPLUS_TEST_MEMORY_POL"] = "1";
@@ -179,11 +233,21 @@ public sealed class TestAppHost : IDisposable
         psi.Environment["POLICYPLUS_FORCE_LANGUAGE"] = "en-US";
         psi.Environment["POLICYPLUS_FORCE_SECOND_LANGUAGE"] = "fr-FR";
         psi.Environment["POLICYPLUS_FORCE_SECOND_ENABLED"] = "1";
-        _process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start application");
+        _process =
+            Process.Start(psi)
+            ?? throw new InvalidOperationException("Failed to start application");
         try
         {
-            _process.OutputDataReceived += (_, e) => { if (e.Data != null) _stdout.AppendLine(e.Data); };
-            _process.ErrorDataReceived += (_, e) => { if (e.Data != null) _stderr.AppendLine(e.Data); };
+            _process.OutputDataReceived += (_, e) =>
+            {
+                if (e.Data != null)
+                    _stdout.AppendLine(e.Data);
+            };
+            _process.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data != null)
+                    _stderr.AppendLine(e.Data);
+            };
             _process.BeginOutputReadLine();
             _process.BeginErrorReadLine();
         }
@@ -211,7 +275,8 @@ public sealed class TestAppHost : IDisposable
             {
                 var wins = App.GetAllTopLevelWindows(Automation);
                 MainWindow = wins.FirstOrDefault(IsTargetWindow);
-                if (MainWindow != null) break;
+                if (MainWindow != null)
+                    break;
                 var native = NativeFindCandidateWindow(_process.Id);
                 if (native != IntPtr.Zero)
                 {
@@ -219,22 +284,32 @@ public sealed class TestAppHost : IDisposable
                     {
                         var autoEl = Automation.FromHandle(native);
                         MainWindow = new Window(autoEl.FrameworkAutomationElement);
-                        if (IsTargetWindow(MainWindow)) break;
+                        if (IsTargetWindow(MainWindow))
+                            break;
                     }
                     catch { }
                 }
             }
-            catch (Exception ex) { lastEx = ex; }
+            catch (Exception ex)
+            {
+                lastEx = ex;
+            }
             if (_process.HasExited)
             {
-                throw new InvalidOperationException("Application exited early. ExitCode=" + _process.ExitCode + BuildDiagnostics());
+                throw new InvalidOperationException(
+                    "Application exited early. ExitCode=" + _process.ExitCode + BuildDiagnostics()
+                );
             }
             Thread.Sleep(500);
         }
         if (MainWindow == null)
         {
             var diag = BuildDiagnostics(listWindows: true);
-            throw new TimeoutException("Main window not found" + diag + (lastEx != null ? " Last exception: " + lastEx.Message : string.Empty));
+            throw new TimeoutException(
+                "Main window not found"
+                    + diag
+                    + (lastEx != null ? " Last exception: " + lastEx.Message : string.Empty)
+            );
         }
     }
 
@@ -242,27 +317,38 @@ public sealed class TestAppHost : IDisposable
     {
         try
         {
-            if (w is null) return false;
+            if (w is null)
+                return false;
             var title = w.Title ?? string.Empty;
-            return title.Contains("Policy", StringComparison.OrdinalIgnoreCase) || title.Contains("Policy++", StringComparison.OrdinalIgnoreCase);
+            return title.Contains("Policy", StringComparison.OrdinalIgnoreCase)
+                || title.Contains("Policy++", StringComparison.OrdinalIgnoreCase);
         }
-        catch { return false; }
+        catch
+        {
+            return false;
+        }
     }
 
     private static IntPtr NativeFindCandidateWindow(int pid)
     {
         var matches = new List<IntPtr>();
-        EnumWindows((h, l) =>
-        {
-            if (!IsWindowVisible(h)) return true;
-            _ = GetWindowThreadProcessId(h, out var wpid);
-            if (wpid == pid) matches.Add(h);
-            return true;
-        }, IntPtr.Zero);
+        EnumWindows(
+            (h, l) =>
+            {
+                if (!IsWindowVisible(h))
+                    return true;
+                _ = GetWindowThreadProcessId(h, out var wpid);
+                if (wpid == pid)
+                    matches.Add(h);
+                return true;
+            },
+            IntPtr.Zero
+        );
         foreach (var h in matches)
         {
             var title = GetWindowTextSafe(h);
-            if (!string.IsNullOrWhiteSpace(title)) return h;
+            if (!string.IsNullOrWhiteSpace(title))
+                return h;
         }
         return matches.FirstOrDefault();
     }
@@ -270,7 +356,8 @@ public sealed class TestAppHost : IDisposable
     private static string GetWindowTextSafe(IntPtr h)
     {
         var sb = new StringBuilder(512);
-        if (GetWindowText(h, sb, sb.Capacity) > 0) return sb.ToString();
+        if (GetWindowText(h, sb, sb.Capacity) > 0)
+            return sb.ToString();
         return string.Empty;
     }
 
@@ -282,7 +369,8 @@ public sealed class TestAppHost : IDisposable
             sb.AppendLine();
             sb.AppendLine("[Diagnostics]");
             sb.AppendLine("Path=" + _exePath);
-            if (_process != null) sb.AppendLine("ProcessId=" + _process.Id + " HasExited=" + _process.HasExited);
+            if (_process != null)
+                sb.AppendLine("ProcessId=" + _process.Id + " HasExited=" + _process.HasExited);
             if (listWindows && Automation != null && App != null)
             {
                 try
@@ -291,7 +379,14 @@ public sealed class TestAppHost : IDisposable
                     sb.AppendLine("EnumeratedWindows=" + wins.Length);
                     foreach (var w in wins)
                     {
-                        sb.AppendLine(" - Title='" + w.Title + "' IsModal=" + w.IsModal + " Bounds=" + w.BoundingRectangle);
+                        sb.AppendLine(
+                            " - Title='"
+                                + w.Title
+                                + "' IsModal="
+                                + w.IsModal
+                                + " Bounds="
+                                + w.BoundingRectangle
+                        );
                     }
                 }
                 catch { }
@@ -316,7 +411,8 @@ public sealed class TestAppHost : IDisposable
         var dir = AppContext.BaseDirectory;
         while (!string.IsNullOrEmpty(dir))
         {
-            if (File.Exists(Path.Combine(dir, "PolicyPlusMod.sln"))) return dir;
+            if (File.Exists(Path.Combine(dir, "PolicyPlusMod.sln")))
+                return dir;
             dir = Directory.GetParent(dir)?.FullName ?? string.Empty;
         }
         throw new DirectoryNotFoundException("Solution directory not found");
@@ -338,9 +434,17 @@ public sealed class TestAppHost : IDisposable
 
     #region Native
     private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-    [DllImport("user32.dll")] private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
-    [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hWnd);
-    [DllImport("user32.dll", SetLastError = true)] private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-    [DllImport("user32.dll", SetLastError = true)] private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
     #endregion
 }

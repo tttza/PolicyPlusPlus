@@ -1,5 +1,5 @@
-using Microsoft.Win32;
 using System.IO;
+using Microsoft.Win32;
 using Xunit;
 
 namespace PolicyPlusModTests.Core
@@ -11,11 +11,21 @@ namespace PolicyPlusModTests.Core
         {
             var rf = new RegFile();
             // Simulate a snapshot that accidentally produces a leading backslash and lower-case segments
-            rf.Keys.Add(new RegFile.RegFileKey
-            {
-                Name = "\\HKEY_LOCAL_MACHINE\\software\\policies\\Microsoft\\Peernet",
-                Values = { new RegFile.RegFileValue { Name = "Disabled", Kind = RegistryValueKind.DWord, Data = 0u } }
-            });
+            rf.Keys.Add(
+                new RegFile.RegFileKey
+                {
+                    Name = "\\HKEY_LOCAL_MACHINE\\software\\policies\\Microsoft\\Peernet",
+                    Values =
+                    {
+                        new RegFile.RegFileValue
+                        {
+                            Name = "Disabled",
+                            Kind = RegistryValueKind.DWord,
+                            Data = 0u,
+                        },
+                    },
+                }
+            );
 
             using var sw = new StringWriter();
             rf.Save(sw);

@@ -1,122 +1,179 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Window
-    x:Class="PolicyPlusPlus.Windows.EditSettingWindow"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Edit policy setting">
-
+  x:Class="PolicyPlusPlus.Windows.EditSettingWindow"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  Title="Edit policy setting"
+>
   <Window.SystemBackdrop>
     <MicaBackdrop />
   </Window.SystemBackdrop>
-
   <Grid x:Name="ScaleHost">
-    <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="12" KeyboardAcceleratorPlacementMode="Hidden">
+    <Grid
+      x:Name="RootShell"
+      Background="{ThemeResource WindowBackground}"
+      Padding="12"
+      KeyboardAcceleratorPlacementMode="Hidden"
+    >
       <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
       </Grid.RowDefinitions>
       <Grid.ColumnDefinitions>
-        <ColumnDefinition/>
-        <ColumnDefinition/>
+        <ColumnDefinition />
+        <ColumnDefinition />
       </Grid.ColumnDefinitions>
-
       <Grid.KeyboardAccelerators>
-        <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="Accel_Apply"/>
-        <KeyboardAccelerator Key="Enter" Modifiers="Control" Invoked="Accel_Ok"/>
-        <KeyboardAccelerator Key="P" Modifiers="Control" Invoked="Accel_Preview"/>
-        <KeyboardAccelerator Key="Number1" Modifiers="Control" Invoked="Accel_SectionComp"/>
-        <KeyboardAccelerator Key="Number2" Modifiers="Control" Invoked="Accel_SectionUser"/>
-        <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="Accel_Close"/>
-        <KeyboardAccelerator Key="Escape" Invoked="Accel_Close"/>
+        <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="Accel_Apply" />
+        <KeyboardAccelerator Key="Enter" Modifiers="Control" Invoked="Accel_Ok" />
+        <KeyboardAccelerator Key="P" Modifiers="Control" Invoked="Accel_Preview" />
+        <KeyboardAccelerator Key="Number1" Modifiers="Control" Invoked="Accel_SectionComp" />
+        <KeyboardAccelerator Key="Number2" Modifiers="Control" Invoked="Accel_SectionUser" />
+        <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="Accel_Close" />
+        <KeyboardAccelerator Key="Escape" Invoked="Accel_Close" />
       </Grid.KeyboardAccelerators>
-
       <!-- Title row -->
       <Grid Grid.Row="0" Grid.ColumnSpan="2">
         <Grid.ColumnDefinitions>
-          <ColumnDefinition/>
-          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition />
+          <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <TextBlock x:Name="SettingTitle" FontSize="18" FontWeight="SemiBold"/>
+        <TextBlock x:Name="SettingTitle" FontSize="18" FontWeight="SemiBold" />
       </Grid>
-
       <!-- Header -->
-      <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnSpacing="20" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}">
+      <Grid
+        Grid.Row="1"
+        Grid.ColumnSpan="2"
+        ColumnSpacing="20"
+        Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}"
+      >
         <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="10*"/>
-          <ColumnDefinition Width="13*"/>
-          <ColumnDefinition Width="Auto"/>
-          <ColumnDefinition/>
-          <ColumnDefinition Width="Auto"/>
-          <ColumnDefinition/>
-          <ColumnDefinition Width="Auto"/>
-          <ColumnDefinition/>
+          <ColumnDefinition Width="10*" />
+          <ColumnDefinition Width="13*" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition />
         </Grid.ColumnDefinitions>
-
         <StackPanel Grid.Column="0" Spacing="8">
           <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <TextBlock Text="Editing for" VerticalAlignment="Center"/>
+            <TextBlock Text="Editing for" VerticalAlignment="Center" />
             <ComboBox x:Name="SectionSelector" Width="120">
-              <ComboBoxItem Content="Computer"/>
-              <ComboBoxItem Content="User"/>
+              <ComboBoxItem Content="Computer" />
+              <ComboBoxItem Content="User" />
             </ComboBox>
           </StackPanel>
           <StackPanel Spacing="4">
-            <RadioButton x:Name="OptNotConfigured" Content="Not Configured" GroupName="State"/>
-            <RadioButton x:Name="OptEnabled" Content="Enabled" GroupName="State"/>
-            <RadioButton x:Name="OptDisabled" Content="Disabled" GroupName="State"/>
+            <RadioButton x:Name="OptNotConfigured" Content="Not Configured" GroupName="State" />
+            <RadioButton x:Name="OptEnabled" Content="Enabled" GroupName="State" />
+            <RadioButton x:Name="OptDisabled" Content="Disabled" GroupName="State" />
           </StackPanel>
         </StackPanel>
-
         <Grid Grid.Column="1" Grid.ColumnSpan="7" ColumnSpacing="8" HorizontalAlignment="Right">
           <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
           </Grid.RowDefinitions>
           <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
-          <TextBlock Text="Comment" VerticalAlignment="Top"/>
-          <TextBox x:Name="CommentBox" Grid.Column="1" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="56" MinWidth="360"/>
-          <TextBlock Grid.Row="1" Text="Supported on" VerticalAlignment="Center"/>
-          <TextBox x:Name="SupportedBox" Grid.Row="1" Grid.Column="1" IsReadOnly="True" MinWidth="360"/>
+          <TextBlock Text="Comment" VerticalAlignment="Top" />
+          <TextBox
+            x:Name="CommentBox"
+            Grid.Column="1"
+            AcceptsReturn="True"
+            TextWrapping="Wrap"
+            MinHeight="56"
+            MinWidth="360"
+          />
+          <TextBlock Grid.Row="1" Text="Supported on" VerticalAlignment="Center" />
+          <TextBox
+            x:Name="SupportedBox"
+            Grid.Row="1"
+            Grid.Column="1"
+            IsReadOnly="True"
+            MinWidth="360"
+          />
         </Grid>
       </Grid>
-
       <!-- Body -->
-      <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnSpacing="20" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}">
+      <Grid
+        Grid.Row="2"
+        Grid.ColumnSpan="2"
+        ColumnSpacing="20"
+        Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}"
+      >
         <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="9*"/>
-          <ColumnDefinition Width="11*"/>
+          <ColumnDefinition Width="9*" />
+          <ColumnDefinition Width="11*" />
         </Grid.ColumnDefinitions>
-        <ScrollViewer Grid.Column="0" MaxHeight="600" VerticalScrollBarVisibility="Auto" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}">
-          <StackPanel x:Name="OptionsPanel" Spacing="8"/>
+        <ScrollViewer
+          Grid.Column="0"
+          MaxHeight="600"
+          VerticalScrollBarVisibility="Auto"
+          Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}"
+        >
+          <StackPanel x:Name="OptionsPanel" Spacing="8" />
         </ScrollViewer>
-        <ScrollViewer Grid.Column="1" MaxHeight="600" VerticalScrollBarVisibility="Auto" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}">
-          <RichTextBlock x:Name="ExplainText" IsTextSelectionEnabled="True" TextWrapping="Wrap"/>
+        <ScrollViewer
+          Grid.Column="1"
+          MaxHeight="600"
+          VerticalScrollBarVisibility="Auto"
+          Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}"
+        >
+          <RichTextBlock x:Name="ExplainText" IsTextSelectionEnabled="True" TextWrapping="Wrap" />
         </ScrollViewer>
       </Grid>
-
       <!-- Footer -->
-      <Grid Grid.Row="3" Grid.ColumnSpan="2" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}">
+      <Grid
+        Grid.Row="3"
+        Grid.ColumnSpan="2"
+        Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}"
+      >
         <Grid.ColumnDefinitions>
-          <ColumnDefinition/>
-          <ColumnDefinition Width="Auto"/>
-          <ColumnDefinition Width="Auto"/>
-          <ColumnDefinition Width="Auto"/>
-          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <StackPanel Orientation="Horizontal" Spacing="8">
-          <Button x:Name="ViewDetailApplyBtn" Content="Preview Details" ToolTipService.ToolTip="Open formatted details without saving" Style="{StaticResource PreviewButtonStyle}"/>
+          <Button
+            x:Name="ViewDetailApplyBtn"
+            Content="Preview Details"
+            ToolTipService.ToolTip="Open formatted details without saving"
+            Style="{StaticResource PreviewButtonStyle}"
+          />
         </StackPanel>
-        <ToggleButton x:Name="SecondLangToggle" Grid.Column="1" MinWidth="36" MinHeight="36" VerticalAlignment="Center" ToolTipService.ToolTip="Toggle 2nd language" Visibility="Collapsed">
-          <FontIcon Glyph="&#xF2B7;"/>
+        <ToggleButton
+          x:Name="SecondLangToggle"
+          Grid.Column="1"
+          MinWidth="36"
+          MinHeight="36"
+          VerticalAlignment="Center"
+          ToolTipService.ToolTip="Toggle 2nd language"
+          Visibility="Collapsed"
+        >
+          <FontIcon Glyph="" />
         </ToggleButton>
-        <Button x:Name="ApplyBtn" Grid.Column="2" Content="Apply" Style="{StaticResource ApplyButtonStyle}"/>
-        <Button x:Name="OkBtn" Grid.Column="3" Content="OK" Style="{StaticResource PrimaryButtonStyle}"/>
-        <Button x:Name="CancelBtn" Grid.Column="4" Content="Cancel"/>
+        <Button
+          x:Name="ApplyBtn"
+          Grid.Column="2"
+          Content="Apply"
+          Style="{StaticResource ApplyButtonStyle}"
+        />
+        <Button
+          x:Name="OkBtn"
+          Grid.Column="3"
+          Content="OK"
+          Style="{StaticResource PrimaryButtonStyle}"
+        />
+        <Button x:Name="CancelBtn" Grid.Column="4" Content="Cancel" />
       </Grid>
     </Grid>
   </Grid>

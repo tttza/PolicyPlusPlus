@@ -1,7 +1,7 @@
-using PolicyPlusModTests.Testing;
-using PolicyPlusCore.Core; // PolicyProcessing + ADMX
-using PolicyPlusCore.Admx;
 using System.Collections.Generic;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core; // PolicyProcessing + ADMX
+using PolicyPlusModTests.Testing;
 using Xunit;
 
 namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
@@ -18,7 +18,7 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
                 ElementType = "decimal",
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "DecValue",
-                StoreAsText = false
+                StoreAsText = false,
             };
             var raw = new AdmxPolicy
             {
@@ -27,14 +27,27 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { decElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
-            var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:DecDword", DisplayName = "Dec DWord" };
+            var policy = new PolicyPlusPolicy
+            {
+                RawPolicy = raw,
+                UniqueID = "MACHINE:DecDword",
+                DisplayName = "Dec DWord",
+            };
 
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "Dec", 123u } });
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "Dec", 123u } }
+            );
             PolAssert.HasDwordValue(polFile, raw.RegistryKey, raw.RegistryValue, 123u);
 
-            var states = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(polFile, policy);
+            var states = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(
+                polFile,
+                policy
+            );
             Assert.Equal(123u, (uint)states["Dec"]);
         }
 
@@ -48,7 +61,7 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
                 ElementType = "decimal",
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "DecText",
-                StoreAsText = true
+                StoreAsText = true,
             };
             var raw = new AdmxPolicy
             {
@@ -57,14 +70,27 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { decElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
-            var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:DecText", DisplayName = "Dec Text" };
+            var policy = new PolicyPlusPolicy
+            {
+                RawPolicy = raw,
+                UniqueID = "MACHINE:DecText",
+                DisplayName = "Dec Text",
+            };
 
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "Dec", 456u } });
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "Dec", 456u } }
+            );
             PolAssert.HasStringValue(polFile, raw.RegistryKey, raw.RegistryValue, "456");
 
-            var states = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(polFile, policy);
+            var states = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(
+                polFile,
+                policy
+            );
             Assert.Equal(456u, (uint)states["Dec"]);
         }
 
@@ -78,7 +104,7 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
                 ElementType = "decimal",
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "DecTextInvalid",
-                StoreAsText = true
+                StoreAsText = true,
             };
             var raw = new AdmxPolicy
             {
@@ -87,14 +113,27 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { decElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
-            var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:DecTextInvalid", DisplayName = "Dec Text Invalid" };
+            var policy = new PolicyPlusPolicy
+            {
+                RawPolicy = raw,
+                UniqueID = "MACHINE:DecTextInvalid",
+                DisplayName = "Dec Text Invalid",
+            };
 
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "Dec", "notANumber" } });
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "Dec", "notANumber" } }
+            );
             PolAssert.HasStringValue(polFile, raw.RegistryKey, raw.RegistryValue, "notANumber");
 
-            var states = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(polFile, policy);
+            var states = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(
+                polFile,
+                policy
+            );
             Assert.Equal(0u, (uint)states["Dec"]);
         }
 
@@ -107,7 +146,7 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
                 ID = "Multi",
                 ElementType = "multiText",
                 RegistryKey = "Software\\PolicyPlusTest",
-                RegistryValue = "MultiValue"
+                RegistryValue = "MultiValue",
             };
             var raw = new AdmxPolicy
             {
@@ -116,12 +155,22 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { multiElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
-            var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:Multi", DisplayName = "Multi" };
+            var policy = new PolicyPlusPolicy
+            {
+                RawPolicy = raw,
+                UniqueID = "MACHINE:Multi",
+                DisplayName = "Multi",
+            };
 
             IEnumerable<string> lines = new List<string> { "x", "y" };
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "Multi", lines } });
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "Multi", lines } }
+            );
             PolAssert.HasMultiStringValue(polFile, raw.RegistryKey, raw.RegistryValue, lines);
         }
     }

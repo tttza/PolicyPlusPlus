@@ -11,7 +11,8 @@ namespace PolicyPlusModTests.WinUI3.Services
             var svc = BookmarkService.Instance; // singleton; test assumes clean or tolerant state
             var id = "TEST_POLICY_ID";
             // Ensure removed
-            if (svc.IsBookmarked(id)) svc.Toggle(id);
+            if (svc.IsBookmarked(id))
+                svc.Toggle(id);
             Assert.False(svc.IsBookmarked(id));
             svc.Toggle(id);
             Assert.True(svc.IsBookmarked(id));
@@ -24,7 +25,8 @@ namespace PolicyPlusModTests.WinUI3.Services
         {
             var svc = BookmarkService.Instance;
             var id = "TEST_POLICY_ID_2";
-            if (svc.IsBookmarked(id)) svc.Toggle(id);
+            if (svc.IsBookmarked(id))
+                svc.Toggle(id);
             Assert.DoesNotContain(id, svc.ActiveIds);
             svc.Toggle(id);
             Assert.Contains(id, svc.ActiveIds);

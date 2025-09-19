@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using PolicyPlusCore.Core; // core models
 using PolicyPlusCore.Admx; // ADMX models
+using PolicyPlusCore.Core; // core models
 using Xunit;
 
 namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
@@ -17,7 +17,7 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
                 ElementType = "list",
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "Prefix",
-                HasPrefix = true
+                HasPrefix = true,
             };
             var raw = new AdmxPolicy
             {
@@ -26,11 +26,27 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { listElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
-            var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:List", DisplayName = "List" };
+            var policy = new PolicyPlusPolicy
+            {
+                RawPolicy = raw,
+                UniqueID = "MACHINE:List",
+                DisplayName = "List",
+            };
 
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "ListElem", new List<string> { "A", "B" } } });
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object>
+                {
+                    {
+                        "ListElem",
+                        new List<string> { "A", "B" }
+                    },
+                }
+            );
             Assert.True(polFile.GetValueNames("Software\\PolicyPlusTest").Count > 0);
 
             global::PolicyPlusCore.Core.PolicyProcessing.ForgetPolicy(polFile, policy);
@@ -49,9 +65,16 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
                 RegistryValue = "Flag",
                 AffectedRegistry = new PolicyRegistryList
                 {
-                    OnValue = new PolicyRegistryValue { RegistryType = PolicyRegistryValueType.Numeric, NumberValue = 1U },
-                    OffValue = new PolicyRegistryValue { RegistryType = PolicyRegistryValueType.Delete }
-                }
+                    OnValue = new PolicyRegistryValue
+                    {
+                        RegistryType = PolicyRegistryValueType.Numeric,
+                        NumberValue = 1U,
+                    },
+                    OffValue = new PolicyRegistryValue
+                    {
+                        RegistryType = PolicyRegistryValueType.Delete,
+                    },
+                },
             };
             var raw = new AdmxPolicy
             {
@@ -60,12 +83,25 @@ namespace PolicyPlusModTests.Core.PolicyProcessingSpecs
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { boolElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
-            var policy = new PolicyPlusPolicy { RawPolicy = raw, UniqueID = "MACHINE:Bool", DisplayName = "Bool" };
+            var policy = new PolicyPlusPolicy
+            {
+                RawPolicy = raw,
+                UniqueID = "MACHINE:Bool",
+                DisplayName = "Bool",
+            };
 
-            polFile.SetValue(raw.RegistryKey, raw.RegistryValue, 1U, Microsoft.Win32.RegistryValueKind.DWord);
-            var state = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyState(polFile, policy);
+            polFile.SetValue(
+                raw.RegistryKey,
+                raw.RegistryValue,
+                1U,
+                Microsoft.Win32.RegistryValueKind.DWord
+            );
+            var state = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyState(
+                polFile,
+                policy
+            );
             Assert.Equal(PolicyState.Enabled, state);
         }
     }

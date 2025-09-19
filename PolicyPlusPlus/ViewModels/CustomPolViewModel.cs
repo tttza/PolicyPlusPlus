@@ -1,7 +1,7 @@
-using PolicyPlusPlus.Services;
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using PolicyPlusPlus.Services;
 
 namespace PolicyPlusPlus.ViewModels
 {
@@ -32,25 +32,81 @@ namespace PolicyPlusPlus.ViewModels
             }
         }
 
-        public bool EnableComputer { get => _enableComputer; set { if (_enableComputer == value) return; _enableComputer = value; OnChanged(); if (!value && !_enableUser) Active = false; } }
-        public bool EnableUser { get => _enableUser; set { if (_enableUser == value) return; _enableUser = value; OnChanged(); if (!value && !_enableComputer) Active = false; } }
-        public string? ComputerPath { get => _computerPath; set { if (_computerPath == value) return; _computerPath = value; OnChanged(); } }
-        public string? UserPath { get => _userPath; set { if (_userPath == value) return; _userPath = value; OnChanged(); } }
-        public bool Active { get => _active; set { if (_active == value) return; _active = value && (_enableComputer || _enableUser); OnChanged(); } }
+        public bool EnableComputer
+        {
+            get => _enableComputer;
+            set
+            {
+                if (_enableComputer == value)
+                    return;
+                _enableComputer = value;
+                OnChanged();
+                if (!value && !_enableUser)
+                    Active = false;
+            }
+        }
+        public bool EnableUser
+        {
+            get => _enableUser;
+            set
+            {
+                if (_enableUser == value)
+                    return;
+                _enableUser = value;
+                OnChanged();
+                if (!value && !_enableComputer)
+                    Active = false;
+            }
+        }
+        public string? ComputerPath
+        {
+            get => _computerPath;
+            set
+            {
+                if (_computerPath == value)
+                    return;
+                _computerPath = value;
+                OnChanged();
+            }
+        }
+        public string? UserPath
+        {
+            get => _userPath;
+            set
+            {
+                if (_userPath == value)
+                    return;
+                _userPath = value;
+                OnChanged();
+            }
+        }
+        public bool Active
+        {
+            get => _active;
+            set
+            {
+                if (_active == value)
+                    return;
+                _active = value && (_enableComputer || _enableUser);
+                OnChanged();
+            }
+        }
         public bool IsDirty { get; private set; }
 
-        public CustomPolSettings Snapshot() => new()
-        {
-            EnableComputer = _enableComputer,
-            EnableUser = _enableUser,
-            ComputerPath = _enableComputer ? _computerPath : null,
-            UserPath = _enableUser ? _userPath : null,
-            Active = _active && (_enableComputer || _enableUser)
-        };
+        public CustomPolSettings Snapshot() =>
+            new()
+            {
+                EnableComputer = _enableComputer,
+                EnableUser = _enableUser,
+                ComputerPath = _enableComputer ? _computerPath : null,
+                UserPath = _enableUser ? _userPath : null,
+                Active = _active && (_enableComputer || _enableUser),
+            };
 
         private void OnChanged([CallerMemberName] string? name = null)
         {
-            if (_suppressNotify) return;
+            if (_suppressNotify)
+                return;
             IsDirty = true;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
             StateChanged?.Invoke(this, EventArgs.Empty);
@@ -59,7 +115,13 @@ namespace PolicyPlusPlus.ViewModels
         public void Commit()
         {
             var snap = Snapshot();
-            try { _settings.UpdateCustomPol(snap); IsDirty = false; Committed?.Invoke(this, EventArgs.Empty); } catch { }
+            try
+            {
+                _settings.UpdateCustomPol(snap);
+                IsDirty = false;
+                Committed?.Invoke(this, EventArgs.Empty);
+            }
+            catch { }
         }
 
         public void ReplaceModel(CustomPolSettings model)
@@ -74,7 +136,10 @@ namespace PolicyPlusPlus.ViewModels
                 _active = model.Active && (model.EnableComputer || model.EnableUser);
                 IsDirty = false;
             }
-            finally { _suppressNotify = false; }
+            finally
+            {
+                _suppressNotify = false;
+            }
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
         }
     }

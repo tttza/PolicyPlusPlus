@@ -1,12 +1,12 @@
 using System;
 using System.Linq;
 using System.Threading;
+using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.Input;
+using FlaUI.Core.Patterns;
 using FlaUI.Core.Tools;
 using FlaUI.Core.WindowsAPI;
-using FlaUI.Core.AutomationElements;
-using FlaUI.Core.Patterns;
 using PolicyPlusPlus.Tests.UI.Infrastructure;
 using Xunit;
 
@@ -15,6 +15,7 @@ namespace PolicyPlusPlus.Tests.UI.Ui;
 public class SearchTests : IClassFixture<TestAppFixture>
 {
     private readonly TestAppFixture _fixture;
+
     public SearchTests(TestAppFixture fixture) => _fixture = fixture;
 
     // Unified timeouts
@@ -33,19 +34,26 @@ public class SearchTests : IClassFixture<TestAppFixture>
         Keyboard.Release(VirtualKeyShort.CONTROL);
         Keyboard.Press(VirtualKeyShort.DELETE);
         Keyboard.Release(VirtualKeyShort.DELETE);
-        if (!string.IsNullOrEmpty(text)) Keyboard.Type(text);
+        if (!string.IsNullOrEmpty(text))
+            Keyboard.Type(text);
         Thread.Sleep(100);
     }
 
-    private static AutomationElement FindDescendantWithRetry(AutomationElement root, string automationId, int timeoutSeconds = FindElementTimeoutSeconds)
-        => Retry.WhileNull(
+    private static AutomationElement FindDescendantWithRetry(
+        AutomationElement root,
+        string automationId,
+        int timeoutSeconds = FindElementTimeoutSeconds
+    ) =>
+        Retry
+            .WhileNull(
                 () => root.FindFirstDescendant(cf => cf.ByAutomationId(automationId)),
                 timeout: TimeSpan.FromSeconds(timeoutSeconds),
-                interval: TimeSpan.FromMilliseconds(PollShortMs))
+                interval: TimeSpan.FromMilliseconds(PollShortMs)
+            )
             .Result ?? throw new InvalidOperationException(automationId + " not found");
 
-    private static AutomationElement[] GetRows(AutomationElement list)
-        => list.FindAllDescendants(cf => cf.ByControlType(ControlType.DataItem));
+    private static AutomationElement[] GetRows(AutomationElement list) =>
+        list.FindAllDescendants(cf => cf.ByControlType(ControlType.DataItem));
 
     private static bool RowContains(AutomationElement row, string term)
     {
@@ -55,27 +63,40 @@ public class SearchTests : IClassFixture<TestAppFixture>
             var texts = row.FindAllDescendants(cf => cf.ByControlType(ControlType.Text));
             return texts.Any(t => (t.Name ?? string.Empty).ToLowerInvariant().Contains(lower));
         }
-        catch { return false; }
+        catch
+        {
+            return false;
+        }
     }
 
-    private static bool AnyRowContains(AutomationElement list, string term)
-        => GetRows(list).Any(r => RowContains(r, term));
+    private static bool AnyRowContains(AutomationElement list, string term) =>
+        GetRows(list).Any(r => RowContains(r, term));
 
-    private static AutomationElement[] WaitForFilteredRows(AutomationElement list, string term, int timeoutSeconds = FilterTimeoutSeconds)
+    private static AutomationElement[] WaitForFilteredRows(
+        AutomationElement list,
+        string term,
+        int timeoutSeconds = FilterTimeoutSeconds
+    )
     {
         var end = DateTime.UtcNow + TimeSpan.FromSeconds(timeoutSeconds);
         AutomationElement[] rows = Array.Empty<AutomationElement>();
         while (DateTime.UtcNow < end)
         {
             rows = GetRows(list);
-            if (rows.Length > 0 && AnyRowContains(list, term)) break;
+            if (rows.Length > 0 && AnyRowContains(list, term))
+                break;
             Thread.Sleep(PollShortMs);
         }
-        if (rows.Length == 0 || !AnyRowContains(list, term)) throw new TimeoutException("Timed out waiting for rows containing '" + term + "'.");
+        if (rows.Length == 0 || !AnyRowContains(list, term))
+            throw new TimeoutException("Timed out waiting for rows containing '" + term + "'.");
         return rows;
     }
 
-    private static AutomationElement[] WaitForStableRowCount(AutomationElement list, int minRows, int timeoutSeconds = StableRowTimeoutSeconds)
+    private static AutomationElement[] WaitForStableRowCount(
+        AutomationElement list,
+        int minRows,
+        int timeoutSeconds = StableRowTimeoutSeconds
+    )
     {
         var end = DateTime.UtcNow + TimeSpan.FromSeconds(timeoutSeconds);
         AutomationElement[] latest = Array.Empty<AutomationElement>();
@@ -84,9 +105,13 @@ public class SearchTests : IClassFixture<TestAppFixture>
         while (DateTime.UtcNow < end)
         {
             latest = GetRows(list);
-            if (latest.Length == lastCount) stableTicks++; else stableTicks = 0;
+            if (latest.Length == lastCount)
+                stableTicks++;
+            else
+                stableTicks = 0;
             lastCount = latest.Length;
-            if (latest.Length >= minRows && stableTicks >= 2) break; // need a couple stable polls
+            if (latest.Length >= minRows && stableTicks >= 2)
+                break; // need a couple stable polls
             Thread.Sleep(PollShortMs);
         }
         return latest;
@@ -95,18 +120,31 @@ public class SearchTests : IClassFixture<TestAppFixture>
     private static AutomationElement[] WaitForBaseline(AutomationElement list, int desiredMinimum)
     {
         var first = WaitForStableRowCount(list, desiredMinimum, StableRowTimeoutSeconds);
-        if (first.Length >= desiredMinimum) return first;
+        if (first.Length >= desiredMinimum)
+            return first;
         var extended = WaitForStableRowCount(list, desiredMinimum, StableRowTimeoutSeconds * 2);
         return extended.Length >= desiredMinimum ? extended : first;
     }
 
     private static void InvokeIfSupported(AutomationElement element)
-    { try { element.Patterns.Invoke.PatternOrDefault?.Invoke(); } catch { } }
+    {
+        try
+        {
+            element.Patterns.Invoke.PatternOrDefault?.Invoke();
+        }
+        catch { }
+    }
 
     private static void SelectIfSupported(AutomationElement element)
     {
-        try { element.Patterns.SelectionItem.PatternOrDefault?.Select(); }
-        catch { InvokeIfSupported(element); }
+        try
+        {
+            element.Patterns.SelectionItem.PatternOrDefault?.Select();
+        }
+        catch
+        {
+            InvokeIfSupported(element);
+        }
     }
 
     private static void ToggleOffIfOn(AutomationElement checkbox)
@@ -126,45 +164,58 @@ public class SearchTests : IClassFixture<TestAppFixture>
         try
         {
             var search = window.FindFirstDescendant(cf => cf.ByAutomationId("SearchBox"));
-            if (search != null) ClearAndType(search, string.Empty);
+            if (search != null)
+                ClearAndType(search, string.Empty);
         }
         catch { }
         // Clear category filter
         try
         {
-            var clearBtn = window.FindFirstDescendant(cf => cf.ByAutomationId("ClearCategoryFilterButton"));
-            if (clearBtn != null) InvokeIfSupported(clearBtn);
+            var clearBtn = window.FindFirstDescendant(cf =>
+                cf.ByAutomationId("ClearCategoryFilterButton")
+            );
+            if (clearBtn != null)
+                InvokeIfSupported(clearBtn);
         }
         catch { }
         // Ensure bookmark / configured checkboxes are OFF
         try
         {
             var bm = window.FindFirstDescendant(cf => cf.ByAutomationId("BookmarksOnlyCheck"));
-            if (bm != null) ToggleOffIfOn(bm);
+            if (bm != null)
+                ToggleOffIfOn(bm);
         }
         catch { }
         try
         {
             var cfg = window.FindFirstDescendant(cf => cf.ByAutomationId("ConfiguredOnlyCheck"));
-            if (cfg != null) ToggleOffIfOn(cfg);
+            if (cfg != null)
+                ToggleOffIfOn(cfg);
         }
         catch { }
         Thread.Sleep(120); // allow UI to rebind
     }
 
-    private static AutomationElement FindCategoryItem(Window window, string name)
-        => Retry.WhileNull(
-                () => window.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem).And(cf.ByName(name))),
+    private static AutomationElement FindCategoryItem(Window window, string name) =>
+        Retry
+            .WhileNull(
+                () =>
+                    window.FindFirstDescendant(cf =>
+                        cf.ByControlType(ControlType.TreeItem).And(cf.ByName(name))
+                    ),
                 timeout: TimeSpan.FromSeconds(FindElementTimeoutSeconds),
-                interval: TimeSpan.FromMilliseconds(PollShortMs))
-            .Result ?? throw new InvalidOperationException("Category tree item '" + name + "' not found");
+                interval: TimeSpan.FromMilliseconds(PollShortMs)
+            )
+            .Result
+        ?? throw new InvalidOperationException("Category tree item '" + name + "' not found");
 
     private static void WaitUntil(Func<bool> predicate, int timeoutMs = 2500)
     {
         var end = DateTime.UtcNow.AddMilliseconds(timeoutMs);
         while (DateTime.UtcNow < end)
         {
-            if (predicate()) return;
+            if (predicate())
+                return;
             Thread.Sleep(PollShortMs);
         }
         throw new TimeoutException("Condition not met within timeout");
@@ -236,8 +287,11 @@ public class SearchTests : IClassFixture<TestAppFixture>
         });
         Assert.Contains(GetRows(policyList), r => RowContains(r, "Dummy"));
 
-        var clearBtn = window.FindFirstDescendant(cf => cf.ByAutomationId("ClearCategoryFilterButton"));
-        if (clearBtn != null) InvokeIfSupported(clearBtn);
+        var clearBtn = window.FindFirstDescendant(cf =>
+            cf.ByAutomationId("ClearCategoryFilterButton")
+        );
+        if (clearBtn != null)
+            InvokeIfSupported(clearBtn);
     }
 
     [Fact]
@@ -251,11 +305,19 @@ public class SearchTests : IClassFixture<TestAppFixture>
         foreach (var row in firstTwo)
         {
             var starBtn = row.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button));
-            if (starBtn != null) InvokeIfSupported(starBtn);
+            if (starBtn != null)
+                InvokeIfSupported(starBtn);
         }
-        var bookmarkCheck = window.FindFirstDescendant(cf => cf.ByAutomationId("BookmarksOnlyCheck"));
-        if (bookmarkCheck != null) InvokeIfSupported(bookmarkCheck);
-        WaitUntil(() => { var rows = GetRows(policyList); return rows.Length > 0 && rows.Length <= baseline.Length; });
+        var bookmarkCheck = window.FindFirstDescendant(cf =>
+            cf.ByAutomationId("BookmarksOnlyCheck")
+        );
+        if (bookmarkCheck != null)
+            InvokeIfSupported(bookmarkCheck);
+        WaitUntil(() =>
+        {
+            var rows = GetRows(policyList);
+            return rows.Length > 0 && rows.Length <= baseline.Length;
+        });
         var filtered = GetRows(policyList);
         Assert.True(filtered.Length > 0 && filtered.Length <= baseline.Length);
     }
@@ -267,8 +329,11 @@ public class SearchTests : IClassFixture<TestAppFixture>
         ResetUiState(window);
         var policyList = FindDescendantWithRetry(window, "PolicyList");
         WaitForBaseline(policyList, 3);
-        var configuredCheck = window.FindFirstDescendant(cf => cf.ByAutomationId("ConfiguredOnlyCheck"));
-        if (configuredCheck != null) InvokeIfSupported(configuredCheck);
+        var configuredCheck = window.FindFirstDescendant(cf =>
+            cf.ByAutomationId("ConfiguredOnlyCheck")
+        );
+        if (configuredCheck != null)
+            InvokeIfSupported(configuredCheck);
         // No policies configured yet; we just validate no crash and list still accessible
         WaitUntil(() => GetRows(policyList).Length >= 1);
     }
@@ -277,10 +342,12 @@ public class SearchTests : IClassFixture<TestAppFixture>
 public class TestAppFixture : IDisposable
 {
     public TestAppHost Host { get; }
+
     public TestAppFixture()
     {
         Host = new TestAppHost();
         Host.Launch();
     }
+
     public void Dispose() => Host.Dispose();
 }

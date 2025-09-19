@@ -17,7 +17,7 @@ namespace PolicyPlusCore.Core
     {
         Product,
         MajorRevision,
-        MinorRevision
+        MinorRevision,
     }
 
     public class AdmxSupportDefinition
@@ -33,7 +33,7 @@ namespace PolicyPlusCore.Core
     {
         Blank,
         AllOf,
-        AnyOf
+        AnyOf,
     }
 
     public class AdmxSupportEntry
@@ -74,6 +74,6 @@ namespace PolicyPlusCore.Core
     {
         Machine = 1,
         User = 2,
-        Both = 3
+        Both = 3,
     }
 }

@@ -1,8 +1,8 @@
+using System.Collections.Generic;
+using PolicyPlusCore.Admx; // ADMX models
+using PolicyPlusCore.Core; // core models
 using PolicyPlusModTests.TestHelpers; // PolAssert
 using PolicyPlusModTests.Testing;
-using PolicyPlusCore.Core; // core models
-using PolicyPlusCore.Admx; // ADMX models
-using System.Collections.Generic;
 using Xunit;
 
 namespace PolicyPlusModTests.Core.Presentation
@@ -15,7 +15,17 @@ namespace PolicyPlusModTests.Core.Presentation
     {
         private static AdmxFile DummyAdmx() => new AdmxFile { SourceFile = "dummy.admx" };
 
-        private static PolicyPlusPolicy BuildPolicy(AdmxPolicy raw, string idSuffix, string displayName) => new PolicyPlusPolicy { RawPolicy = raw, UniqueID = $"MACHINE:{idSuffix}", DisplayName = displayName };
+        private static PolicyPlusPolicy BuildPolicy(
+            AdmxPolicy raw,
+            string idSuffix,
+            string displayName
+        ) =>
+            new PolicyPlusPolicy
+            {
+                RawPolicy = raw,
+                UniqueID = $"MACHINE:{idSuffix}",
+                DisplayName = displayName,
+            };
 
         [Fact(DisplayName = "Enum element stores underlying numeric value but reports index state")]
         public void EnumElement_NonSequential_IndexReported_NumericStored()
@@ -26,11 +36,41 @@ namespace PolicyPlusModTests.Core.Presentation
                 ID = "EnumElem",
                 ElementType = "enum",
                 RegistryKey = "Software\\PolicyPlusTest",
-                RegistryValue = "EnumValue"
+                RegistryValue = "EnumValue",
             };
-            enumElem.Items.Add(new EnumPolicyElementItem { DisplayCode = "$(string.Item1)", Value = new PolicyRegistryValue { RegistryType = PolicyRegistryValueType.Numeric, NumberValue = 10 } });
-            enumElem.Items.Add(new EnumPolicyElementItem { DisplayCode = "$(string.Item2)", Value = new PolicyRegistryValue { RegistryType = PolicyRegistryValueType.Numeric, NumberValue = 20 } });
-            enumElem.Items.Add(new EnumPolicyElementItem { DisplayCode = "$(string.Item3)", Value = new PolicyRegistryValue { RegistryType = PolicyRegistryValueType.Numeric, NumberValue = 30 } });
+            enumElem.Items.Add(
+                new EnumPolicyElementItem
+                {
+                    DisplayCode = "$(string.Item1)",
+                    Value = new PolicyRegistryValue
+                    {
+                        RegistryType = PolicyRegistryValueType.Numeric,
+                        NumberValue = 10,
+                    },
+                }
+            );
+            enumElem.Items.Add(
+                new EnumPolicyElementItem
+                {
+                    DisplayCode = "$(string.Item2)",
+                    Value = new PolicyRegistryValue
+                    {
+                        RegistryType = PolicyRegistryValueType.Numeric,
+                        NumberValue = 20,
+                    },
+                }
+            );
+            enumElem.Items.Add(
+                new EnumPolicyElementItem
+                {
+                    DisplayCode = "$(string.Item3)",
+                    Value = new PolicyRegistryValue
+                    {
+                        RegistryType = PolicyRegistryValueType.Numeric,
+                        NumberValue = 30,
+                    },
+                }
+            );
 
             var raw = new AdmxPolicy
             {
@@ -39,22 +79,32 @@ namespace PolicyPlusModTests.Core.Presentation
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { enumElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = DummyAdmx()
+                DefinedIn = DummyAdmx(),
             };
             var policy = BuildPolicy(raw, "EnumNonSeq", "Enum NonSeq");
             var polFile = new PolFile();
 
             // Act
-            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(polFile, policy, PolicyState.Enabled, new Dictionary<string, object> { { "EnumElem", 1 } });
+            global::PolicyPlusCore.Core.PolicyProcessing.SetPolicyState(
+                polFile,
+                policy,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "EnumElem", 1 } }
+            );
 
             // Assert registry underlying numeric value stored
             PolAssert.HasDwordValue(polFile, raw.RegistryKey, raw.RegistryValue, 20u);
             // Assert option state reports index
-            var optStates = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(polFile, policy);
+            var optStates = global::PolicyPlusCore.Core.PolicyProcessing.GetPolicyOptionStates(
+                polFile,
+                policy
+            );
             Assert.Equal(1, (int)optStates["EnumElem"]);
         }
 
-        [Fact(DisplayName = "CheckBox defaultChecked=true is applied when enabling with no explicit option value")]
+        [Fact(
+            DisplayName = "CheckBox defaultChecked=true is applied when enabling with no explicit option value"
+        )]
         public void CheckBox_DefaultChecked_AppliedOnEnable()
         {
             var boolElem = new BooleanPolicyElement
@@ -62,7 +112,7 @@ namespace PolicyPlusModTests.Core.Presentation
                 ID = "BoolElem",
                 ElementType = "boolean",
                 RegistryKey = "Software\\PolicyPlusTest",
-                RegistryValue = "BoolValue"
+                RegistryValue = "BoolValue",
             };
             var raw = new AdmxPolicy
             {
@@ -71,7 +121,7 @@ namespace PolicyPlusModTests.Core.Presentation
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { boolElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = DummyAdmx()
+                DefinedIn = DummyAdmx(),
             };
             var policy = BuildPolicy(raw, "BoolDefault", "Bool Default");
             policy.Presentation = new global::PolicyPlusCore.Core.Presentation
@@ -83,24 +133,31 @@ namespace PolicyPlusModTests.Core.Presentation
                         ID = "BoolElem",
                         ElementType = "checkBox",
                         DefaultState = true,
-                        Text = "Test Bool"
-                    }
-                }
+                        Text = "Test Bool",
+                    },
+                },
             };
 
             var polFile = new PolFile();
             var edit = new EditSettingTestable();
             edit.SetTestContext(policy, AdmxPolicySection.Machine, polFile);
-            edit.NotConfiguredOption.Checked = true; edit.InvokeStateRadiosChanged();
-            edit.EnabledOption.Checked = true; edit.InvokeStateRadiosChanged();
+            edit.NotConfiguredOption.Checked = true;
+            edit.InvokeStateRadiosChanged();
+            edit.EnabledOption.Checked = true;
+            edit.InvokeStateRadiosChanged();
             edit.ApplyToPolicySource_PublicForTest();
 
             Assert.True(polFile.ContainsValue(raw.RegistryKey, raw.RegistryValue));
             var stored = polFile.GetValue(raw.RegistryKey, raw.RegistryValue);
-            Assert.True(object.Equals(stored, 1u) || object.Equals(stored, "1"), $"Unexpected stored bool value: {stored}");
+            Assert.True(
+                object.Equals(stored, 1u) || object.Equals(stored, "1"),
+                $"Unexpected stored bool value: {stored}"
+            );
         }
 
-        [Fact(DisplayName = "Decimal presentation defaultValue is applied when no user input provided")]
+        [Fact(
+            DisplayName = "Decimal presentation defaultValue is applied when no user input provided"
+        )]
         public void Decimal_DefaultValue_Applied()
         {
             var decElem = new DecimalPolicyElement
@@ -111,7 +168,7 @@ namespace PolicyPlusModTests.Core.Presentation
                 RegistryValue = "DecValue",
                 Minimum = 1,
                 Maximum = 100,
-                StoreAsText = false
+                StoreAsText = false,
             };
             var raw = new AdmxPolicy
             {
@@ -120,7 +177,7 @@ namespace PolicyPlusModTests.Core.Presentation
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { decElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = DummyAdmx()
+                DefinedIn = DummyAdmx(),
             };
             var policy = BuildPolicy(raw, "DecDefault", "Dec Default");
             policy.Presentation = new global::PolicyPlusCore.Core.Presentation
@@ -134,22 +191,26 @@ namespace PolicyPlusModTests.Core.Presentation
                         DefaultValue = 42,
                         HasSpinner = true,
                         SpinnerIncrement = 5,
-                        Label = "Dec Label"
-                    }
-                }
+                        Label = "Dec Label",
+                    },
+                },
             };
 
             var polFile = new PolFile();
             var edit = new EditSettingTestable();
             edit.SetTestContext(policy, AdmxPolicySection.Machine, polFile);
-            edit.NotConfiguredOption.Checked = true; edit.InvokeStateRadiosChanged();
-            edit.EnabledOption.Checked = true; edit.InvokeStateRadiosChanged();
+            edit.NotConfiguredOption.Checked = true;
+            edit.InvokeStateRadiosChanged();
+            edit.EnabledOption.Checked = true;
+            edit.InvokeStateRadiosChanged();
             edit.ApplyToPolicySource_PublicForTest();
 
             PolAssert.HasDwordValue(polFile, raw.RegistryKey, raw.RegistryValue, 42u);
         }
 
-        [Fact(DisplayName = "TextBox presentation defaultValue is applied when no user input provided")]
+        [Fact(
+            DisplayName = "TextBox presentation defaultValue is applied when no user input provided"
+        )]
         public void Text_DefaultValue_Applied()
         {
             var textElem = new TextPolicyElement
@@ -158,7 +219,7 @@ namespace PolicyPlusModTests.Core.Presentation
                 ElementType = "text",
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "TxtValue",
-                MaxLength = 200
+                MaxLength = 200,
             };
             var raw = new AdmxPolicy
             {
@@ -167,7 +228,7 @@ namespace PolicyPlusModTests.Core.Presentation
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { textElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = DummyAdmx()
+                DefinedIn = DummyAdmx(),
             };
             var policy = BuildPolicy(raw, "TxtDefault", "Txt Default");
             policy.Presentation = new global::PolicyPlusCore.Core.Presentation
@@ -179,16 +240,18 @@ namespace PolicyPlusModTests.Core.Presentation
                         ID = "TxtElem",
                         ElementType = "textBox",
                         DefaultValue = "PresetValue",
-                        Label = "Text Label"
-                    }
-                }
+                        Label = "Text Label",
+                    },
+                },
             };
 
             var polFile = new PolFile();
             var edit = new EditSettingTestable();
             edit.SetTestContext(policy, AdmxPolicySection.Machine, polFile);
-            edit.NotConfiguredOption.Checked = true; edit.InvokeStateRadiosChanged();
-            edit.EnabledOption.Checked = true; edit.InvokeStateRadiosChanged();
+            edit.NotConfiguredOption.Checked = true;
+            edit.InvokeStateRadiosChanged();
+            edit.EnabledOption.Checked = true;
+            edit.InvokeStateRadiosChanged();
             edit.ApplyToPolicySource_PublicForTest();
 
             PolAssert.HasStringValue(polFile, raw.RegistryKey, raw.RegistryValue, "PresetValue");

@@ -1,13 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using PolicyPlusCore.Core;
 using PolicyPlusPlus.Services; // for PolicySourceAccessor
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace PolicyPlusPlus
 {
@@ -22,10 +22,14 @@ namespace PolicyPlusPlus
         private string? _lastTapCatId;
         private DateTime _lastTapAt;
 
-        private void CategoryTree_ItemInvoked(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewItemInvokedEventArgs args)
+        private void CategoryTree_ItemInvoked(
+            Microsoft.UI.Xaml.Controls.TreeView sender,
+            Microsoft.UI.Xaml.Controls.TreeViewItemInvokedEventArgs args
+        )
         {
             var cat = args.InvokedItem as PolicyPlusCategory;
-            if (cat == null) return;
+            if (cat == null)
+                return;
             _selectedCategory = cat;
             UpdateSearchPlaceholder();
             _navTyping = false;
@@ -33,19 +37,32 @@ namespace PolicyPlusPlus
             SelectCategoryInTree(cat);
 
             var now = DateTime.UtcNow;
-            if (!string.IsNullOrEmpty(_recentDoubleTapCategoryId)
-                && string.Equals(_recentDoubleTapCategoryId, cat.UniqueID, StringComparison.OrdinalIgnoreCase)
-                && (now - _recentDoubleTapAt).TotalMilliseconds < 500)
+            if (
+                !string.IsNullOrEmpty(_recentDoubleTapCategoryId)
+                && string.Equals(
+                    _recentDoubleTapCategoryId,
+                    cat.UniqueID,
+                    StringComparison.OrdinalIgnoreCase
+                )
+                && (now - _recentDoubleTapAt).TotalMilliseconds < 500
+            )
             {
                 return;
             }
 
-            if (!string.IsNullOrEmpty(_lastInvokedCatId)
-                && string.Equals(_lastInvokedCatId, cat.UniqueID, StringComparison.OrdinalIgnoreCase)
-                && (now - _lastInvokedAt).TotalMilliseconds < 350)
+            if (
+                !string.IsNullOrEmpty(_lastInvokedCatId)
+                && string.Equals(
+                    _lastInvokedCatId,
+                    cat.UniqueID,
+                    StringComparison.OrdinalIgnoreCase
+                )
+                && (now - _lastInvokedAt).TotalMilliseconds < 350
+            )
             {
                 var node = FindNodeByCategory(sender.RootNodes, cat.UniqueID);
-                if (node != null) node.IsExpanded = !node.IsExpanded;
+                if (node != null)
+                    node.IsExpanded = !node.IsExpanded;
                 _lastInvokedCatId = null;
                 return;
             }
@@ -56,17 +73,21 @@ namespace PolicyPlusPlus
 
         private void CategoryTree_Tapped(object sender, TappedRoutedEventArgs e)
         {
-            if (CategoryTree == null) return;
+            if (CategoryTree == null)
+                return;
             var dep = e.OriginalSource as DependencyObject;
             var container = FindAncestorTreeViewItem(dep);
             Microsoft.UI.Xaml.Controls.TreeViewNode? node = null;
             if (container != null)
                 node = CategoryTree.NodeFromContainer(container);
             if (node == null)
-                node = (e.OriginalSource as FrameworkElement)?.DataContext as Microsoft.UI.Xaml.Controls.TreeViewNode;
+                node =
+                    (e.OriginalSource as FrameworkElement)?.DataContext
+                    as Microsoft.UI.Xaml.Controls.TreeViewNode;
             if (node == null)
                 node = CategoryTree.SelectedNode;
-            if (node == null) return;
+            if (node == null)
+                return;
 
             _lastTapWasExpanded = node.IsExpanded;
             if (node.Content is PolicyPlusCategory cat)
@@ -78,7 +99,8 @@ namespace PolicyPlusPlus
 
         private void CategoryTree_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-            if (CategoryTree == null) return;
+            if (CategoryTree == null)
+                return;
 
             var dep = e.OriginalSource as DependencyObject;
             var container = FindAncestorTreeViewItem(dep);
@@ -90,21 +112,26 @@ namespace PolicyPlusPlus
             }
             if (node == null)
             {
-                node = (e.OriginalSource as FrameworkElement)?.DataContext as Microsoft.UI.Xaml.Controls.TreeViewNode;
+                node =
+                    (e.OriginalSource as FrameworkElement)?.DataContext
+                    as Microsoft.UI.Xaml.Controls.TreeViewNode;
             }
             if (node == null)
             {
                 node = CategoryTree.SelectedNode;
             }
-            if (node == null) return;
+            if (node == null)
+                return;
 
             e.Handled = true;
 
             bool desiredExpanded;
-            if (node.Content is PolicyPlusCategory cat0
+            if (
+                node.Content is PolicyPlusCategory cat0
                 && !string.IsNullOrEmpty(_lastTapCatId)
                 && string.Equals(_lastTapCatId, cat0.UniqueID, StringComparison.OrdinalIgnoreCase)
-                && (DateTime.UtcNow - _lastTapAt).TotalMilliseconds < 600)
+                && (DateTime.UtcNow - _lastTapAt).TotalMilliseconds < 600
+            )
             {
                 desiredExpanded = !_lastTapWasExpanded;
             }
@@ -121,8 +148,14 @@ namespace PolicyPlusPlus
                 _navTyping = false;
                 RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
                 _suppressCategorySelectionChanged = true;
-                try { CategoryTree.SelectedNode = node; }
-                finally { _suppressCategorySelectionChanged = false; }
+                try
+                {
+                    CategoryTree.SelectedNode = node;
+                }
+                finally
+                {
+                    _suppressCategorySelectionChanged = false;
+                }
 
                 _recentDoubleTapCategoryId = cat.UniqueID;
                 _recentDoubleTapAt = DateTime.UtcNow;
@@ -133,7 +166,8 @@ namespace PolicyPlusPlus
         {
             while (start != null)
             {
-                if (start is TreeViewItem tvi) return tvi;
+                if (start is TreeViewItem tvi)
+                    return tvi;
                 start = VisualTreeHelper.GetParent(start);
             }
             return null;
@@ -147,7 +181,8 @@ namespace PolicyPlusPlus
 
         private void BuildCategoryTreeAsync()
         {
-            if (CategoryTree == null || _bundle == null) return;
+            if (CategoryTree == null || _bundle == null)
+                return;
 
             var bundleLocal = _bundle;
             var hideEmpty = _hideEmptyCategories; // user preference
@@ -161,22 +196,26 @@ namespace PolicyPlusPlus
                 {
                     bool IsTrulyEmpty(PolicyPlusCategory c)
                     {
-                        if (c.Policies.Count > 0) return false;
+                        if (c.Policies.Count > 0)
+                            return false;
                         foreach (var ch in c.Children)
                         {
-                            if (!IsTrulyEmpty(ch)) return false;
+                            if (!IsTrulyEmpty(ch))
+                                return false;
                         }
                         return true;
                     }
 
                     bool Include(PolicyPlusCategory cat)
                     {
-                        if (!hideEmpty) return true; // show everything when user disabled hiding
+                        if (!hideEmpty)
+                            return true; // show everything when user disabled hiding
                         // Hide only categories that have no policies anywhere in their subtree.
                         return !IsTrulyEmpty(cat);
                     }
 
-                    var rootCats = bundleLocal.Categories.Values.Where(c => c.Parent == null)
+                    var rootCats = bundleLocal
+                        .Categories.Values.Where(c => c.Parent == null)
                         .OrderBy(c => c.DisplayName)
                         .ToList();
 
@@ -185,7 +224,8 @@ namespace PolicyPlusPlus
                         var nd = new CatNodeData { Cat = c };
                         foreach (var ch in c.Children.OrderBy(x => x.DisplayName))
                         {
-                            if (!Include(ch)) continue;
+                            if (!Include(ch))
+                                continue;
                             nd.Children.Add(BuildNode(ch));
                         }
                         return nd;
@@ -211,7 +251,8 @@ namespace PolicyPlusPlus
 
         private void ApplyCategoryTreeData(List<CatNodeData> roots, string? selectedId)
         {
-            if (CategoryTree == null) return;
+            if (CategoryTree == null)
+                return;
             _suppressCategorySelectionChanged = true;
             try
             {
@@ -253,15 +294,21 @@ namespace PolicyPlusPlus
         {
             try
             {
-                return _bundle?.Categories.Values.FirstOrDefault(c => string.Equals(c.UniqueID, uniqueId, StringComparison.OrdinalIgnoreCase));
+                return _bundle?.Categories.Values.FirstOrDefault(c =>
+                    string.Equals(c.UniqueID, uniqueId, StringComparison.OrdinalIgnoreCase)
+                );
             }
-            catch { return null; }
+            catch
+            {
+                return null;
+            }
         }
 
         // Legacy synchronous builder kept for fallback
         private void BuildCategoryTree()
         {
-            if (CategoryTree == null || _bundle == null) return;
+            if (CategoryTree == null || _bundle == null)
+                return;
             _suppressCategorySelectionChanged = true;
             try
             {
@@ -274,7 +321,11 @@ namespace PolicyPlusPlus
                     var cat = kv.Value;
                     if (_hideEmptyCategories && IsCategoryEmpty(cat))
                         continue;
-                    var node = new Microsoft.UI.Xaml.Controls.TreeViewNode() { Content = cat, IsExpanded = false };
+                    var node = new Microsoft.UI.Xaml.Controls.TreeViewNode()
+                    {
+                        Content = cat,
+                        IsExpanded = false,
+                    };
                     BuildChildCategoryNodes(node, cat);
                     CategoryTree.RootNodes.Add(node);
                 }
@@ -292,7 +343,10 @@ namespace PolicyPlusPlus
             }
         }
 
-        private void BuildChildCategoryNodes(Microsoft.UI.Xaml.Controls.TreeViewNode parentNode, PolicyPlusCategory parentCat)
+        private void BuildChildCategoryNodes(
+            Microsoft.UI.Xaml.Controls.TreeViewNode parentNode,
+            PolicyPlusCategory parentCat
+        )
         {
             foreach (var child in parentCat.Children.OrderBy(c => c.DisplayName))
             {
@@ -307,12 +361,17 @@ namespace PolicyPlusPlus
 
         private void SelectCategoryInTree(PolicyPlusCategory? category)
         {
-            if (CategoryTree == null || category == null) return;
+            if (CategoryTree == null || category == null)
+                return;
             _suppressCategorySelectionChanged = true;
             try
             {
-                Microsoft.UI.Xaml.Controls.TreeViewNode? target = FindNodeByCategory(CategoryTree.RootNodes, category.UniqueID);
-                if (target == null) return;
+                Microsoft.UI.Xaml.Controls.TreeViewNode? target = FindNodeByCategory(
+                    CategoryTree.RootNodes,
+                    category.UniqueID
+                );
+                if (target == null)
+                    return;
 
                 var parent = target.Parent;
                 while (parent != null)
@@ -345,14 +404,21 @@ namespace PolicyPlusPlus
             }
         }
 
-        private Microsoft.UI.Xaml.Controls.TreeViewNode? FindNodeByCategory(System.Collections.Generic.IList<Microsoft.UI.Xaml.Controls.TreeViewNode> nodes, string uniqueId)
+        private Microsoft.UI.Xaml.Controls.TreeViewNode? FindNodeByCategory(
+            System.Collections.Generic.IList<Microsoft.UI.Xaml.Controls.TreeViewNode> nodes,
+            string uniqueId
+        )
         {
             foreach (var n in nodes)
             {
-                if (n.Content is PolicyPlusCategory pc && string.Equals(pc.UniqueID, uniqueId, StringComparison.OrdinalIgnoreCase))
+                if (
+                    n.Content is PolicyPlusCategory pc
+                    && string.Equals(pc.UniqueID, uniqueId, StringComparison.OrdinalIgnoreCase)
+                )
                     return n;
                 var child = FindNodeByCategory(n.Children, uniqueId);
-                if (child != null) return child;
+                if (child != null)
+                    return child;
             }
             return null;
         }
@@ -374,14 +440,28 @@ namespace PolicyPlusPlus
             try
             {
                 var ctx = PolicySourceAccessor.Acquire();
-                return ViewModels.CategoryVisibilityEvaluator.IsCategoryVisible(cat, _allPolicies, _appliesFilter, _configuredOnly, ctx.Comp, ctx.User);
+                return ViewModels.CategoryVisibilityEvaluator.IsCategoryVisible(
+                    cat,
+                    _allPolicies,
+                    _appliesFilter,
+                    _configuredOnly,
+                    ctx.Comp,
+                    ctx.User
+                );
             }
-            catch { return true; }
+            catch
+            {
+                return true;
+            }
         }
 
-        private void CategoryTree_SelectionChanged(Microsoft.UI.Xaml.Controls.TreeView sender, Microsoft.UI.Xaml.Controls.TreeViewSelectionChangedEventArgs args)
+        private void CategoryTree_SelectionChanged(
+            Microsoft.UI.Xaml.Controls.TreeView sender,
+            Microsoft.UI.Xaml.Controls.TreeViewSelectionChangedEventArgs args
+        )
         {
-            if (_suppressCategorySelectionChanged) return;
+            if (_suppressCategorySelectionChanged)
+                return;
             if (sender.SelectedNodes != null && sender.SelectedNodes.Count > 0)
             {
                 var cat = sender.SelectedNodes.FirstOrDefault()?.Content as PolicyPlusCategory;

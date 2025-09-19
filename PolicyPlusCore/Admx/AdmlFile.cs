@@ -1,7 +1,7 @@
-using PolicyPlusCore.Core;
-using PolicyPlusCore.Utils;
 using System.Globalization;
 using System.Xml;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.Utils;
 
 namespace PolicyPlusCore.Admx
 {
@@ -12,11 +12,10 @@ namespace PolicyPlusCore.Admx
         public string DisplayName = string.Empty;
         public string Description = string.Empty;
         public Dictionary<string, string> StringTable = new Dictionary<string, string>();
-        public Dictionary<string, Presentation> PresentationTable = new Dictionary<string, Presentation>();
+        public Dictionary<string, Presentation> PresentationTable =
+            new Dictionary<string, Presentation>();
 
-        private AdmlFile()
-        {
-        }
+        private AdmlFile() { }
 
         public static AdmlFile Load(string File)
         {
@@ -26,30 +25,40 @@ namespace PolicyPlusCore.Admx
             var xmlDoc = new XmlDocument();
             xmlDoc.Load(File);
             // Load ADML metadata
-            var policyDefinitionResourcesList = xmlDoc.GetElementsByTagName("policyDefinitionResources");
+            var policyDefinitionResourcesList = xmlDoc.GetElementsByTagName(
+                "policyDefinitionResources"
+            );
             if (policyDefinitionResourcesList.Count == 0)
                 return adml;
             var policyDefinitionResources = policyDefinitionResourcesList[0];
             if (policyDefinitionResources is null)
                 return adml;
             var revisionAttr = policyDefinitionResources.Attributes?["revision"]?.Value;
-            if (!string.IsNullOrEmpty(revisionAttr) && decimal.TryParse(revisionAttr, NumberStyles.Number, CultureInfo.InvariantCulture, out var rev))
+            if (
+                !string.IsNullOrEmpty(revisionAttr)
+                && decimal.TryParse(
+                    revisionAttr,
+                    NumberStyles.Number,
+                    CultureInfo.InvariantCulture,
+                    out var rev
+                )
+            )
                 adml.Revision = rev;
             foreach (XmlNode child in policyDefinitionResources.ChildNodes)
             {
                 switch (child.LocalName ?? "")
                 {
                     case "displayName":
-                        {
-                            adml.DisplayName = child.InnerText ?? string.Empty;
-                            break;
-                        }
+                    {
+                        adml.DisplayName = child.InnerText ?? string.Empty;
+                        break;
+                    }
 
                     case "description":
-                        {
-                            adml.Description = child.InnerText ?? string.Empty;
-                            break;
-                        }
+                    {
+                        adml.Description = child.InnerText ?? string.Empty;
+                        break;
+                    }
                 }
             }
             // Load localized strings
@@ -63,7 +72,9 @@ namespace PolicyPlusCore.Admx
                     {
                         if (stringElement.LocalName != "string")
                             continue;
-                        var idAttr = stringElement.Attributes?["id"]; if (idAttr is null) continue;
+                        var idAttr = stringElement.Attributes?["id"];
+                        if (idAttr is null)
+                            continue;
                         string key = idAttr.Value;
                         string value = stringElement.InnerText ?? string.Empty;
                         adml.StringTable.Add(key, value);
@@ -82,7 +93,9 @@ namespace PolicyPlusCore.Admx
                         if (presElement.LocalName != "presentation")
                             continue;
                         var presentation = new Presentation();
-                        var presIdAttr = presElement.Attributes?["id"]; if (presIdAttr is null) continue;
+                        var presIdAttr = presElement.Attributes?["id"];
+                        if (presIdAttr is null)
+                            continue;
                         presentation.Name = presIdAttr.Value ?? string.Empty;
                         foreach (XmlNode uiElement in presElement.ChildNodes)
                         {
@@ -90,115 +103,140 @@ namespace PolicyPlusCore.Admx
                             switch (uiElement.LocalName ?? "")
                             {
                                 case "text":
-                                    {
-                                        var textPart = new LabelPresentationElement();
-                                        textPart.Text = uiElement.InnerText ?? string.Empty;
-                                        presPart = textPart;
-                                        break;
-                                    }
+                                {
+                                    var textPart = new LabelPresentationElement();
+                                    textPart.Text = uiElement.InnerText ?? string.Empty;
+                                    presPart = textPart;
+                                    break;
+                                }
 
                                 case "decimalTextBox":
-                                    {
-                                        var decTextPart = new NumericBoxPresentationElement();
-                                        decTextPart.DefaultValue = Convert.ToUInt32(uiElement.AttributeOrDefault("defaultValue", 1), CultureInfo.InvariantCulture);
-                                        decTextPart.HasSpinner = Convert.ToBoolean(uiElement.AttributeOrDefault("spin", true));
-                                        decTextPart.SpinnerIncrement = Convert.ToUInt32(uiElement.AttributeOrDefault("spinStep", 1), CultureInfo.InvariantCulture);
-                                        decTextPart.Label = uiElement.InnerText ?? string.Empty;
-                                        presPart = decTextPart;
-                                        break;
-                                    }
+                                {
+                                    var decTextPart = new NumericBoxPresentationElement();
+                                    decTextPart.DefaultValue = Convert.ToUInt32(
+                                        uiElement.AttributeOrDefault("defaultValue", 1),
+                                        CultureInfo.InvariantCulture
+                                    );
+                                    decTextPart.HasSpinner = Convert.ToBoolean(
+                                        uiElement.AttributeOrDefault("spin", true)
+                                    );
+                                    decTextPart.SpinnerIncrement = Convert.ToUInt32(
+                                        uiElement.AttributeOrDefault("spinStep", 1),
+                                        CultureInfo.InvariantCulture
+                                    );
+                                    decTextPart.Label = uiElement.InnerText ?? string.Empty;
+                                    presPart = decTextPart;
+                                    break;
+                                }
 
                                 case "textBox":
+                                {
+                                    var textPart = new TextBoxPresentationElement();
+                                    foreach (XmlNode textboxInfo in uiElement.ChildNodes)
                                     {
-                                        var textPart = new TextBoxPresentationElement();
-                                        foreach (XmlNode textboxInfo in uiElement.ChildNodes)
+                                        switch (textboxInfo.LocalName ?? "")
                                         {
-                                            switch (textboxInfo.LocalName ?? "")
+                                            case "label":
                                             {
-                                                case "label":
-                                                    {
-                                                        textPart.Label = textboxInfo.InnerText ?? string.Empty;
-                                                        break;
-                                                    }
+                                                textPart.Label =
+                                                    textboxInfo.InnerText ?? string.Empty;
+                                                break;
+                                            }
 
-                                                case "defaultValue":
-                                                    {
-                                                        textPart.DefaultValue = textboxInfo.InnerText ?? string.Empty;
-                                                        break;
-                                                    }
+                                            case "defaultValue":
+                                            {
+                                                textPart.DefaultValue =
+                                                    textboxInfo.InnerText ?? string.Empty;
+                                                break;
                                             }
                                         }
-
-                                        presPart = textPart;
-                                        break;
                                     }
+
+                                    presPart = textPart;
+                                    break;
+                                }
 
                                 case "checkBox":
-                                    {
-                                        var checkPart = new CheckBoxPresentationElement();
-                                        checkPart.DefaultState = Convert.ToBoolean(uiElement.AttributeOrDefault("defaultChecked", false));
-                                        checkPart.Text = uiElement.InnerText ?? string.Empty;
-                                        presPart = checkPart;
-                                        break;
-                                    }
+                                {
+                                    var checkPart = new CheckBoxPresentationElement();
+                                    checkPart.DefaultState = Convert.ToBoolean(
+                                        uiElement.AttributeOrDefault("defaultChecked", false)
+                                    );
+                                    checkPart.Text = uiElement.InnerText ?? string.Empty;
+                                    presPart = checkPart;
+                                    break;
+                                }
 
                                 case "comboBox":
+                                {
+                                    var comboPart = new ComboBoxPresentationElement();
+                                    comboPart.NoSort = Convert.ToBoolean(
+                                        uiElement.AttributeOrDefault("noSort", false)
+                                    );
+                                    foreach (XmlNode comboInfo in uiElement.ChildNodes)
                                     {
-                                        var comboPart = new ComboBoxPresentationElement();
-                                        comboPart.NoSort = Convert.ToBoolean(uiElement.AttributeOrDefault("noSort", false));
-                                        foreach (XmlNode comboInfo in uiElement.ChildNodes)
+                                        switch (comboInfo.LocalName ?? "")
                                         {
-                                            switch (comboInfo.LocalName ?? "")
+                                            case "label":
                                             {
-                                                case "label":
-                                                    {
-                                                        comboPart.Label = comboInfo.InnerText ?? string.Empty;
-                                                        break;
-                                                    }
+                                                comboPart.Label =
+                                                    comboInfo.InnerText ?? string.Empty;
+                                                break;
+                                            }
 
-                                                case "default":
-                                                    {
-                                                        comboPart.DefaultText = comboInfo.InnerText ?? string.Empty;
-                                                        break;
-                                                    }
+                                            case "default":
+                                            {
+                                                comboPart.DefaultText =
+                                                    comboInfo.InnerText ?? string.Empty;
+                                                break;
+                                            }
 
-                                                case "suggestion":
-                                                    {
-                                                        comboPart.Suggestions.Add(comboInfo.InnerText ?? string.Empty);
-                                                        break;
-                                                    }
+                                            case "suggestion":
+                                            {
+                                                comboPart.Suggestions.Add(
+                                                    comboInfo.InnerText ?? string.Empty
+                                                );
+                                                break;
                                             }
                                         }
-
-                                        presPart = comboPart;
-                                        break;
                                     }
+
+                                    presPart = comboPart;
+                                    break;
+                                }
 
                                 case "dropdownList":
-                                    {
-                                        var dropPart = new DropDownPresentationElement();
-                                        dropPart.NoSort = Convert.ToBoolean(uiElement.AttributeOrDefault("noSort", false));
-                                        dropPart.DefaultItemID = int.TryParse(uiElement.AttributeOrNull("defaultItem"), out int num) ? num : null;
-                                        dropPart.Label = uiElement.InnerText ?? string.Empty;
-                                        presPart = dropPart;
-                                        break;
-                                    }
+                                {
+                                    var dropPart = new DropDownPresentationElement();
+                                    dropPart.NoSort = Convert.ToBoolean(
+                                        uiElement.AttributeOrDefault("noSort", false)
+                                    );
+                                    dropPart.DefaultItemID = int.TryParse(
+                                        uiElement.AttributeOrNull("defaultItem"),
+                                        out int num
+                                    )
+                                        ? num
+                                        : null;
+                                    dropPart.Label = uiElement.InnerText ?? string.Empty;
+                                    presPart = dropPart;
+                                    break;
+                                }
 
                                 case "listBox":
-                                    {
-                                        var listPart = new ListPresentationElement();
-                                        listPart.Label = uiElement.InnerText ?? string.Empty;
-                                        presPart = listPart;
-                                        break;
-                                    }
+                                {
+                                    var listPart = new ListPresentationElement();
+                                    listPart.Label = uiElement.InnerText ?? string.Empty;
+                                    presPart = listPart;
+                                    break;
+                                }
 
                                 case "multiTextBox":
-                                    {
-                                        var multiTextPart = new MultiTextPresentationElement();
-                                        multiTextPart.Label = uiElement.InnerText ?? string.Empty;
-                                        presPart = multiTextPart;
-                                        break;
-                                    }
+                                {
+                                    var multiTextPart = new MultiTextPresentationElement();
+                                    multiTextPart.Label = uiElement.InnerText ?? string.Empty;
+                                    presPart = multiTextPart;
+                                    break;
+                                }
                             }
 
                             if (presPart is object)

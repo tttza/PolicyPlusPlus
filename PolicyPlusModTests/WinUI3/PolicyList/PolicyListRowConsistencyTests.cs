@@ -1,6 +1,6 @@
+using System.Collections.Generic;
 using PolicyPlusPlus.Models;
 using PolicyPlusPlus.Services;
-using System.Collections.Generic;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.PolicyList
@@ -19,8 +19,8 @@ namespace PolicyPlusModTests.WinUI3.PolicyList
                     RegistryValue = "V",
                     Section = AdmxPolicySection.Both,
                     AffectedValues = new PolicyRegistryList(),
-                    DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
-                }
+                    DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
+                },
             };
         }
 
@@ -28,8 +28,14 @@ namespace PolicyPlusModTests.WinUI3.PolicyList
         public void Consistency_Actual_Enabled_NoPending()
         {
             var p = MakeBothPolicy("BOTH:Sample");
-            var comp = new PolFile(); var user = new PolFile();
-            PolicyProcessing.SetPolicyState(comp, p, PolicyState.Enabled, new Dictionary<string, object>());
+            var comp = new PolFile();
+            var user = new PolFile();
+            PolicyProcessing.SetPolicyState(
+                comp,
+                p,
+                PolicyState.Enabled,
+                new Dictionary<string, object>()
+            );
 
             PendingChangesService.Instance.Pending.Clear();
             var row = PolicyListRow.FromPolicy(p, comp, user);
@@ -41,11 +47,24 @@ namespace PolicyPlusModTests.WinUI3.PolicyList
         public void Consistency_Pending_Overrides_Actual()
         {
             var p = MakeBothPolicy("BOTH:Sample2");
-            var comp = new PolFile(); var user = new PolFile();
-            PolicyProcessing.SetPolicyState(comp, p, PolicyState.Disabled, new Dictionary<string, object>());
+            var comp = new PolFile();
+            var user = new PolFile();
+            PolicyProcessing.SetPolicyState(
+                comp,
+                p,
+                PolicyState.Disabled,
+                new Dictionary<string, object>()
+            );
 
             PendingChangesService.Instance.Pending.Clear();
-            PendingChangesService.Instance.Add(new PendingChange { PolicyId = p.UniqueID, Scope = "Computer", DesiredState = PolicyState.Enabled });
+            PendingChangesService.Instance.Add(
+                new PendingChange
+                {
+                    PolicyId = p.UniqueID,
+                    Scope = "Computer",
+                    DesiredState = PolicyState.Enabled,
+                }
+            );
 
             var row = PolicyListRow.FromPolicy(p, comp, user);
             Assert.True(row.ComputerConfigured);

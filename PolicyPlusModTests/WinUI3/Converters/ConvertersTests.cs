@@ -1,5 +1,5 @@
-using PolicyPlusPlus.Converters;
 using System;
+using PolicyPlusPlus.Converters;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.Converters
@@ -10,7 +10,11 @@ namespace PolicyPlusModTests.WinUI3.Converters
         [InlineData(true, "Visible", true)]
         [InlineData(false, "Collapsed", false)]
         [InlineData(null, "Collapsed", false)]
-        public void BoolToVisibility_Convert_And_Back(object? input, string expectedName, bool expectedBack)
+        public void BoolToVisibility_Convert_And_Back(
+            object? input,
+            string expectedName,
+            bool expectedBack
+        )
         {
             var conv = new BoolToVisibilityConverter();
             var result = conv.Convert(input!, null!, null!, "");
@@ -24,7 +28,11 @@ namespace PolicyPlusModTests.WinUI3.Converters
         [InlineData(true, "Collapsed", false)]
         [InlineData(false, "Visible", true)]
         [InlineData(null, "Visible", true)]
-        public void NotBoolToVisibility_Convert_And_Back(object? input, string expectedName, bool expectedBack)
+        public void NotBoolToVisibility_Convert_And_Back(
+            object? input,
+            string expectedName,
+            bool expectedBack
+        )
         {
             var conv = new NotBoolToVisibilityConverter();
             var result = conv.Convert(input!, null!, null!, "");
@@ -75,7 +83,10 @@ namespace PolicyPlusModTests.WinUI3.Converters
         public void BoolPairToGlyph_ConvertBack_NotSupported()
         {
             var conv = new BoolPairToGlyphConverter();
-            Assert.Throws<NotSupportedException>(() => { var _ = conv.ConvertBack("", typeof(ValueTuple<bool, bool>), null!, ""); });
+            Assert.Throws<NotSupportedException>(() =>
+            {
+                var _ = conv.ConvertBack("", typeof(ValueTuple<bool, bool>), null!, "");
+            });
         }
     }
 }

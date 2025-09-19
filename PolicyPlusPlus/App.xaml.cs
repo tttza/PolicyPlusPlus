@@ -1,14 +1,14 @@
-﻿using Microsoft.UI.Xaml;
-using PolicyPlusPlus.Logging; // logging
-using PolicyPlusPlus.Services;
-using PolicyPlusPlus.Utils;
-using PolicyPlusPlus.Windows;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Microsoft.UI.Xaml;
+using PolicyPlusPlus.Logging; // logging
+using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Utils;
+using PolicyPlusPlus.Windows;
 
 namespace PolicyPlusPlus
 {
@@ -19,7 +19,8 @@ namespace PolicyPlusPlus
         {
             get
             {
-                if (_cached != null) return _cached;
+                if (_cached != null)
+                    return _cached;
                 try
                 {
                     string baseDir = AppContext.BaseDirectory;
@@ -27,16 +28,24 @@ namespace PolicyPlusPlus
                     if (File.Exists(path))
                     {
                         var txt = File.ReadAllText(path).Trim();
-                        if (!string.IsNullOrEmpty(txt)) { _cached = txt; return _cached; }
+                        if (!string.IsNullOrEmpty(txt))
+                        {
+                            _cached = txt;
+                            return _cached;
+                        }
                     }
                 }
-                catch (Exception ex) { Log.Debug("App", $"version file read failed: {ex.GetType().Name} {ex.Message}"); }
+                catch (Exception ex)
+                {
+                    Log.Debug("App", $"version file read failed: {ex.GetType().Name} {ex.Message}");
+                }
                 _cached = "dev";
                 return _cached;
             }
         }
         public static string CreditsHeader => $"Policy++ {Version}";
     }
+
     public partial class App : Application
     {
         public static Window? Window { get; private set; }
@@ -67,12 +76,35 @@ namespace PolicyPlusPlus
             // Store update checks are not performed at startup (manual trigger only).
 #endif
             InitializeComponent();
-            this.UnhandledException += (s, e) => { try { e.Handled = true; } catch { } };
+            this.UnhandledException += (s, e) =>
+            {
+                try
+                {
+                    e.Handled = true;
+                }
+                catch { }
+            };
             try
             {
-                AppDomain.CurrentDomain.ProcessExit += (s, e) => { try { ElevationService.Instance.ShutdownAsync().GetAwaiter().GetResult(); } catch (Exception ex) { Log.Debug("App", $"elevation shutdown exit hook failed: {ex.GetType().Name} {ex.Message}"); } };
+                AppDomain.CurrentDomain.ProcessExit += (s, e) =>
+                {
+                    try
+                    {
+                        ElevationService.Instance.ShutdownAsync().GetAwaiter().GetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(
+                            "App",
+                            $"elevation shutdown exit hook failed: {ex.GetType().Name} {ex.Message}"
+                        );
+                    }
+                };
             }
-            catch (Exception ex) { Log.Debug("App", $"attach ProcessExit failed: {ex.GetType().Name} {ex.Message}"); }
+            catch (Exception ex)
+            {
+                Log.Debug("App", $"attach ProcessExit failed: {ex.GetType().Name} {ex.Message}");
+            }
         }
 
         protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
@@ -82,7 +114,14 @@ namespace PolicyPlusPlus
                 SettingsService.Instance.Initialize();
                 var appSettings = SettingsService.Instance.LoadSettings();
                 if (!string.IsNullOrEmpty(appSettings.Theme))
-                    SetGlobalTheme(appSettings.Theme switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
+                    SetGlobalTheme(
+                        appSettings.Theme switch
+                        {
+                            "Light" => ElementTheme.Light,
+                            "Dark" => ElementTheme.Dark,
+                            _ => ElementTheme.Default,
+                        }
+                    );
                 if (!string.IsNullOrEmpty(appSettings.UIScale))
                 {
                     if (double.TryParse(appSettings.UIScale.TrimEnd('%'), out var pct))
@@ -91,12 +130,22 @@ namespace PolicyPlusPlus
                 var (counts, lastUsed) = SettingsService.Instance.LoadSearchStats();
                 SearchRankingService.Initialize(counts, lastUsed);
             }
-            catch (Exception ex) { Log.Warn("App", $"settings init failed", ex); }
+            catch (Exception ex)
+            {
+                Log.Warn("App", $"settings init failed", ex);
+            }
 
-            var customPolVm = new ViewModels.CustomPolViewModel(SettingsService.Instance, SettingsService.Instance.LoadSettings().CustomPol);
+            var customPolVm = new ViewModels.CustomPolViewModel(
+                SettingsService.Instance,
+                SettingsService.Instance.LoadSettings().CustomPol
+            );
 
             Window = new MainWindow();
-            try { Window.Title = "Policy++"; } catch { }
+            try
+            {
+                Window.Title = "Policy++";
+            }
+            catch { }
             if (Window.Content is FrameworkElement feRoot)
             {
                 feRoot.DataContext = customPolVm;
@@ -112,7 +161,10 @@ namespace PolicyPlusPlus
                     await mw.EnsureInitializedAsync();
                 }
             }
-            catch (Exception ex) { Log.Debug("App", $"async init failed: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                Log.Debug("App", $"async init failed: {ex.Message}");
+            }
 
             Window.Closed += async (s, e) =>
             {
@@ -121,8 +173,18 @@ namespace PolicyPlusPlus
                     var snap = SearchRankingService.GetSnapshot();
                     SettingsService.Instance.SaveSearchStats(snap.counts, snap.lastUsed);
                 }
-                catch (Exception ex) { Log.Debug("App", $"save search stats failed: {ex.Message}"); }
-                try { await ElevationService.Instance.ShutdownAsync(); } catch (Exception ex) { Log.Debug("App", $"elevation shutdown (Closed) failed: {ex.Message}"); }
+                catch (Exception ex)
+                {
+                    Log.Debug("App", $"save search stats failed: {ex.Message}");
+                }
+                try
+                {
+                    await ElevationService.Instance.ShutdownAsync();
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug("App", $"elevation shutdown (Closed) failed: {ex.Message}");
+                }
                 CloseAllSecondaryWindows();
             };
             Window.Activate();
@@ -138,20 +200,35 @@ namespace PolicyPlusPlus
                     return;
                 }
             }
-            catch (Exception ex) { Log.Debug("App", $"set icon cached failed: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                Log.Debug("App", $"set icon cached failed: {ex.Message}");
+            }
 
             try
             {
                 var asm = Assembly.GetExecutingAssembly();
                 var names = asm.GetManifestResourceNames();
-                var icoName = names.FirstOrDefault(n => n.EndsWith(".ico", StringComparison.OrdinalIgnoreCase));
+                var icoName = names.FirstOrDefault(n =>
+                    n.EndsWith(".ico", StringComparison.OrdinalIgnoreCase)
+                );
                 if (!string.IsNullOrEmpty(icoName))
                 {
                     using var s = asm.GetManifestResourceStream(icoName);
                     if (s != null)
                     {
-                        var tempPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "PolicyPlusAppIcon.ico");
-                        using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                        var tempPath = System.IO.Path.Combine(
+                            System.IO.Path.GetTempPath(),
+                            "PolicyPlusAppIcon.ico"
+                        );
+                        using (
+                            var fs = new FileStream(
+                                tempPath,
+                                FileMode.Create,
+                                FileAccess.Write,
+                                FileShare.Read
+                            )
+                        )
                         {
                             s.CopyTo(fs);
                         }
@@ -161,7 +238,10 @@ namespace PolicyPlusPlus
                     }
                 }
             }
-            catch (Exception ex) { Log.Debug("App", $"embedded icon apply failed: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                Log.Debug("App", $"embedded icon apply failed: {ex.Message}");
+            }
 
             try
             {
@@ -177,20 +257,26 @@ namespace PolicyPlusPlus
                     }
                 }
             }
-            catch (Exception ex) { Log.Debug("App", $"fallback icon apply failed: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                Log.Debug("App", $"fallback icon apply failed: {ex.Message}");
+            }
         }
 
         public static void SetGlobalTheme(ElementTheme theme)
         {
             CurrentTheme = theme;
-            if (Window != null) ApplyThemeTo(Window);
-            foreach (var w in _secondaryWindows) ApplyThemeTo(w);
+            if (Window != null)
+                ApplyThemeTo(Window);
+            foreach (var w in _secondaryWindows)
+                ApplyThemeTo(w);
             ThemeChanged?.Invoke(null, EventArgs.Empty);
         }
 
         public static void SetGlobalScale(double scale)
         {
-            if (scale <= 0) scale = 1.0;
+            if (scale <= 0)
+                scale = 1.0;
             CurrentScale = scale;
             ScaleChanged?.Invoke(null, EventArgs.Empty);
         }
@@ -203,17 +289,28 @@ namespace PolicyPlusPlus
 
         public static void RegisterWindow(Window w)
         {
-            if (w == Window) return;
+            if (w == Window)
+                return;
             _secondaryWindows.Add(w);
             ApplyThemeTo(w);
             TryApplyIconTo(w);
         }
+
         public static void UnregisterWindow(Window w)
-        { _secondaryWindows.Remove(w); }
+        {
+            _secondaryWindows.Remove(w);
+        }
+
         public static void CloseAllSecondaryWindows()
         {
             foreach (var w in _secondaryWindows.ToArray())
-            { try { w.Close(); } catch { } }
+            {
+                try
+                {
+                    w.Close();
+                }
+                catch { }
+            }
             _secondaryWindows.Clear();
             _openEditWindows.Clear();
         }
@@ -229,7 +326,15 @@ namespace PolicyPlusPlus
                     var timer = win.DispatcherQueue.CreateTimer();
                     timer.Interval = TimeSpan.FromMilliseconds(180);
                     timer.IsRepeating = false;
-                    timer.Tick += (s, e) => { try { WindowHelpers.BringToFront(win); win.Activate(); } catch { } };
+                    timer.Tick += (s, e) =>
+                    {
+                        try
+                        {
+                            WindowHelpers.BringToFront(win);
+                            win.Activate();
+                        }
+                        catch { }
+                    };
                     timer.Start();
                 }
                 catch { }
@@ -241,7 +346,10 @@ namespace PolicyPlusPlus
         public static void RegisterEditWindow(string policyId, EditSettingWindow win)
         {
             _openEditWindows[policyId] = win;
-            win.Closed += (s, e) => { _openEditWindows.Remove(policyId); };
+            win.Closed += (s, e) =>
+            {
+                _openEditWindows.Remove(policyId);
+            };
         }
     }
 }

@@ -1,7 +1,7 @@
+using System.Collections.Generic;
 using Microsoft.UI.Xaml;
 using PolicyPlusCore.Core;
 using PolicyPlusPlus.Services;
-using System.Collections.Generic;
 
 namespace PolicyPlusPlus
 {
@@ -17,7 +17,8 @@ namespace PolicyPlusPlus
                 var nav = ViewNavigationService.Instance;
                 nav.HistoryChanged += (s, e) => UpdateNavButtons();
                 // Build category index for stable ID->instance resolution
-                if (_bundle != null) _catIndex = CategoryIndex.BuildIndex(_bundle);
+                if (_bundle != null)
+                    _catIndex = CategoryIndex.BuildIndex(_bundle);
                 // Push initial baseline state
                 MaybePushCurrentState();
                 UpdateNavButtons();
@@ -29,15 +30,18 @@ namespace PolicyPlusPlus
         {
             try
             {
-                if (BtnBack != null) BtnBack.IsEnabled = ViewNavigationService.Instance.CanGoBack;
-                if (BtnForward != null) BtnForward.IsEnabled = ViewNavigationService.Instance.CanGoForward;
+                if (BtnBack != null)
+                    BtnBack.IsEnabled = ViewNavigationService.Instance.CanGoBack;
+                if (BtnForward != null)
+                    BtnForward.IsEnabled = ViewNavigationService.Instance.CanGoForward;
             }
             catch { }
         }
 
         private void MaybePushCurrentState()
         {
-            if (_suppressHistoryPush || _navTyping) return;
+            if (_suppressHistoryPush || _navTyping)
+                return;
             try
             {
                 var q = SearchBox?.Text ?? string.Empty;
@@ -51,18 +55,23 @@ namespace PolicyPlusPlus
 
         private void ApplyViewState(ViewState? state)
         {
-            if (state == null) return;
+            if (state == null)
+                return;
             _suppressHistoryPush = true;
             try
             {
-                if (_bundle != null && _catIndex == null) _catIndex = CategoryIndex.BuildIndex(_bundle);
+                if (_bundle != null && _catIndex == null)
+                    _catIndex = CategoryIndex.BuildIndex(_bundle);
 
                 // Applies filter
                 _appliesFilter = state.AppliesTo;
                 if (AppliesToSelector != null)
                 {
                     _suppressAppliesToSelectionChanged = true;
-                    var idx = state.AppliesTo == AdmxPolicySection.Machine ? 1 : state.AppliesTo == AdmxPolicySection.User ? 2 : 0;
+                    var idx =
+                        state.AppliesTo == AdmxPolicySection.Machine ? 1
+                        : state.AppliesTo == AdmxPolicySection.User ? 2
+                        : 0;
                     AppliesToSelector.SelectedIndex = idx;
                     _suppressAppliesToSelectionChanged = false;
                 }
@@ -82,7 +91,8 @@ namespace PolicyPlusPlus
                 }
 
                 // Search text
-                if (SearchBox != null) SearchBox.Text = state.Query ?? string.Empty;
+                if (SearchBox != null)
+                    SearchBox.Text = state.Query ?? string.Empty;
 
                 // Set selection first, then bind once
                 if (catToApply != null)
@@ -98,7 +108,12 @@ namespace PolicyPlusPlus
                     {
                         _suppressCategorySelectionChanged = true;
                         var old = CategoryTree.SelectionMode;
-                        CategoryTree.SelectionMode = Microsoft.UI.Xaml.Controls.TreeViewSelectionMode.None;
+                        CategoryTree.SelectionMode = Microsoft
+                            .UI
+                            .Xaml
+                            .Controls
+                            .TreeViewSelectionMode
+                            .None;
                         CategoryTree.SelectedNode = null;
                         CategoryTree.SelectionMode = old;
                         _suppressCategorySelectionChanged = false;

@@ -18,8 +18,10 @@ namespace PolicyPlusCore.IO
 
     public class PolFile : IPolicySource
     {
-        private readonly SortedDictionary<string, PolEntryData> Entries = new SortedDictionary<string, PolEntryData>();
-        private readonly Dictionary<string, string> CasePreservation = new Dictionary<string, string>();
+        private readonly SortedDictionary<string, PolEntryData> Entries =
+            new SortedDictionary<string, PolEntryData>();
+        private readonly Dictionary<string, string> CasePreservation =
+            new Dictionary<string, string>();
 
         private string GetDictKey(string Key, string Value)
         {
@@ -55,8 +57,7 @@ namespace PolicyPlusCore.IO
                     if (charCode == 0)
                         break;
                     sb.Append(char.ConvertFromUtf32(charCode));
-                }
-                while (true);
+                } while (true);
                 return sb.ToString();
             }
             ;
@@ -106,7 +107,8 @@ namespace PolicyPlusCore.IO
             foreach (var kv in Entries)
             {
                 Writer.Write('[');
-                var pathparts = CasePreservation[kv.Key].Split(new[] { "\\\\" }, 2, StringSplitOptions.None);
+                var pathparts = CasePreservation[kv.Key]
+                    .Split(new[] { "\\\\" }, 2, StringSplitOptions.None);
                 writeSz(pathparts[0]);
                 Writer.Write(';');
                 writeSz(pathparts[1]);
@@ -152,7 +154,10 @@ namespace PolicyPlusCore.IO
                 else if (Data is IEnumerable<string> lines)
                     Entries.Add(dictKey, PolEntryData.FromMultiString(lines.ToArray()));
                 else if (Data != null)
-                    Entries.Add(dictKey, PolEntryData.FromMultiString(new[] { Data?.ToString() ?? string.Empty }));
+                    Entries.Add(
+                        dictKey,
+                        PolEntryData.FromMultiString(new[] { Data?.ToString() ?? string.Empty })
+                    );
                 else
                     Entries.Add(dictKey, PolEntryData.FromMultiString(Array.Empty<string>()));
                 return;
@@ -194,7 +199,9 @@ namespace PolicyPlusCore.IO
                 else if ((kv.Key ?? "") == (GetDictKey(Key, "**deletevalues") ?? ""))
                 {
                     string lowerVal = Value.ToLowerInvariant();
-                    var deletedValues = kv.Value.AsString().Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                    var deletedValues = kv
+                        .Value.AsString()
+                        .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
                     if (deletedValues.Any(s => (s.ToLowerInvariant() ?? "") == (lowerVal ?? "")))
                         willDelete = true;
                 }
@@ -220,7 +227,8 @@ namespace PolicyPlusCore.IO
             {
                 if (k.StartsWith(prefix))
                 {
-                    string valName = CasePreservation[k].Split(new[] { "\\\\" }, 2, StringSplitOptions.None)[1];
+                    string valName = CasePreservation[k]
+                        .Split(new[] { "\\\\" }, 2, StringSplitOptions.None)[1];
                     if (!(OnlyValues & valName.StartsWith("**")))
                         valNames.Add(valName);
                 }
@@ -237,7 +245,8 @@ namespace PolicyPlusCore.IO
             foreach (var kv in Entries)
             {
                 var parts = kv.Key.Split(new[] { "\\\\" }, 2, StringSplitOptions.None);
-                var casedParts = CasePreservation[kv.Key].Split(new[] { "\\\\" }, 2, StringSplitOptions.None);
+                var casedParts = CasePreservation[kv.Key]
+                    .Split(new[] { "\\\\" }, 2, StringSplitOptions.None);
                 if (parts[1].StartsWith("**del."))
                 {
                     Target.DeleteValue(parts[0], parts[1].Split(new[] { '.' }, 2)[1]);
@@ -248,17 +257,30 @@ namespace PolicyPlusCore.IO
                 }
                 else if (parts[1] == "**deletevalues")
                 {
-                    foreach (var entry in kv.Value.AsString().Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+                    foreach (
+                        var entry in kv
+                            .Value.AsString()
+                            .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    )
                         Target.DeleteValue(parts[0], entry);
                 }
                 else if (parts[1].StartsWith("**deletekeys"))
                 {
-                    foreach (var entry in kv.Value.AsString().Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+                    foreach (
+                        var entry in kv
+                            .Value.AsString()
+                            .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    )
                         Target.ClearKey(parts[0] + @"\" + entry);
                 }
                 else if (!string.IsNullOrEmpty(parts[1]) & !parts[1].StartsWith("**"))
                 {
-                    Target.SetValue(casedParts[0], casedParts[1], kv.Value.AsArbitrary(), kv.Value.Kind);
+                    Target.SetValue(
+                        casedParts[0],
+                        casedParts[1],
+                        kv.Value.AsArbitrary(),
+                        kv.Value.Kind
+                    );
                     if (oldEntries.Contains(kv.Key))
                         oldEntries.Remove(kv.Key);
                 }
@@ -295,14 +317,21 @@ namespace PolicyPlusCore.IO
         {
             var subkeyNames = new List<string>();
             string prefix = string.IsNullOrEmpty(Key) ? "" : Key + @"\";
-            foreach (var entry in Entries.Keys.Where(e => e.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase)))
+            foreach (
+                var entry in Entries.Keys.Where(e =>
+                    e.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase)
+                )
+            )
             {
                 if (entry.StartsWith(prefix + @"\", StringComparison.InvariantCultureIgnoreCase))
                     continue;
-                string properCased = CasePreservation[entry].Split(new[] { "\\\\" }, 2, StringSplitOptions.None)[0];
+                string properCased = CasePreservation[entry]
+                    .Split(new[] { "\\\\" }, 2, StringSplitOptions.None)[0];
                 if (prefix.Length >= properCased.Length)
                     continue;
-                string localKeyName = properCased.Substring(prefix.Length).Split(new[] { '\\' }, 2)[0];
+                string localKeyName = properCased.Substring(prefix.Length).Split(new[] { '\\' }, 2)[
+                    0
+                ];
                 if (!subkeyNames.Contains(localKeyName, StringComparer.InvariantCultureIgnoreCase))
                     subkeyNames.Add(localKeyName);
             }
@@ -366,7 +395,8 @@ namespace PolicyPlusCore.IO
                 var ped = new PolEntryData() { Kind = RegistryValueKind.String };
                 if (Expand)
                     ped.Kind = RegistryValueKind.ExpandString;
-                if (Text is null) Text = "";
+                if (Text is null)
+                    Text = "";
                 var data = new byte[Text.Length * 2 + 1 + 1];
                 for (int x = 0, loopTo = Text.Length - 1; x <= loopTo; x++)
                 {
@@ -381,7 +411,10 @@ namespace PolicyPlusCore.IO
 
             public uint AsDword()
             {
-                return Data[0] + ((uint)Data[1] << 8) + ((uint)Data[2] << 16) + ((uint)Data[3] << 24);
+                return Data[0]
+                    + ((uint)Data[1] << 8)
+                    + ((uint)Data[2] << 16)
+                    + ((uint)Data[3] << 24);
             }
 
             public static PolEntryData FromDword(uint Dword)
@@ -444,10 +477,12 @@ namespace PolicyPlusCore.IO
                     var bytes = System.Text.Encoding.Unicode.GetBytes(s);
                     Array.Copy(bytes, 0, data, n, bytes.Length);
                     n += bytes.Length;
-                    data[n] = 0; data[n + 1] = 0;
+                    data[n] = 0;
+                    data[n + 1] = 0;
                     n += 2;
                 }
-                data[n] = 0; data[n + 1] = 0;
+                data[n] = 0;
+                data[n + 1] = 0;
                 ped.Data = data;
                 return ped;
             }
@@ -457,7 +492,10 @@ namespace PolicyPlusCore.IO
                 return (byte[])Data.Clone();
             }
 
-            public static PolEntryData FromBinary(byte[] Binary, RegistryValueKind Kind = RegistryValueKind.Binary)
+            public static PolEntryData FromBinary(
+                byte[] Binary,
+                RegistryValueKind Kind = RegistryValueKind.Binary
+            )
             {
                 var ped = new PolEntryData() { Kind = Kind };
                 ped.Data = (byte[])Binary.Clone();
@@ -508,11 +546,11 @@ namespace PolicyPlusCore.IO
     {
         private RegistryKey RootKey = null!;
 
-        public static RegistryPolicyProxy EncapsulateKey(RegistryKey Key)
-            => new RegistryPolicyProxy() { RootKey = Key };
+        public static RegistryPolicyProxy EncapsulateKey(RegistryKey Key) =>
+            new RegistryPolicyProxy() { RootKey = Key };
 
-        public static RegistryPolicyProxy EncapsulateKey(RegistryHive Key)
-            => EncapsulateKey(RegistryKey.OpenBaseKey(Key, RegistryView.Default));
+        public static RegistryPolicyProxy EncapsulateKey(RegistryHive Key) =>
+            EncapsulateKey(RegistryKey.OpenBaseKey(Key, RegistryView.Default));
 
         public RegistryKey EncapsulatedRegistry => RootKey;
 
@@ -554,28 +592,46 @@ namespace PolicyPlusCore.IO
 
         public void SetValue(string Key, string Value, object Data, RegistryValueKind DataType)
         {
-            if (Data is uint u) Data = new ReinterpretableDword() { Unsigned = u }.Signed;
-            else if (Data is ulong ul) Data = new ReinterpretableQword() { Unsigned = ul }.Signed;
+            if (Data is uint u)
+                Data = new ReinterpretableDword() { Unsigned = u }.Signed;
+            else if (Data is ulong ul)
+                Data = new ReinterpretableQword() { Unsigned = ul }.Signed;
 
             if (string.IsNullOrEmpty(Key))
-            { RootKey.SetValue(Value, Data, DataType); return; }
+            {
+                RootKey.SetValue(Value, Data, DataType);
+                return;
+            }
 
             using (var regKey = RootKey.CreateSubKey(Key))
-            { regKey.SetValue(Value, Data, DataType); }
+            {
+                regKey.SetValue(Value, Data, DataType);
+            }
         }
 
         public bool ContainsValue(string Key, string Value)
         {
             if (string.IsNullOrEmpty(Key))
             {
-                var data = RootKey.GetValue(Value, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
-                return data != null || RootKey.GetValueNames().Any(s => s.Equals(Value, StringComparison.InvariantCultureIgnoreCase));
+                var data = RootKey.GetValue(
+                    Value,
+                    null,
+                    RegistryValueOptions.DoNotExpandEnvironmentNames
+                );
+                return data != null
+                    || RootKey
+                        .GetValueNames()
+                        .Any(s => s.Equals(Value, StringComparison.InvariantCultureIgnoreCase));
             }
             using (var regKey = RootKey.OpenSubKey(Key))
             {
-                if (regKey is null) return false;
-                if (string.IsNullOrEmpty(Value)) return true;
-                return regKey.GetValueNames().Any(s => s.Equals(Value, StringComparison.InvariantCultureIgnoreCase));
+                if (regKey is null)
+                    return false;
+                if (string.IsNullOrEmpty(Value))
+                    return true;
+                return regKey
+                    .GetValueNames()
+                    .Any(s => s.Equals(Value, StringComparison.InvariantCultureIgnoreCase));
             }
         }
 
@@ -583,50 +639,74 @@ namespace PolicyPlusCore.IO
         {
             if (string.IsNullOrEmpty(Key))
             {
-                var data = RootKey.GetValue(Value, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
-                if (data is int i) return new ReinterpretableDword() { Signed = i }.Unsigned;
-                if (data is long l) return new ReinterpretableQword() { Signed = l }.Unsigned;
+                var data = RootKey.GetValue(
+                    Value,
+                    null,
+                    RegistryValueOptions.DoNotExpandEnvironmentNames
+                );
+                if (data is int i)
+                    return new ReinterpretableDword() { Signed = i }.Unsigned;
+                if (data is long l)
+                    return new ReinterpretableQword() { Signed = l }.Unsigned;
                 return data;
             }
             using (var regKey = RootKey.OpenSubKey(Key, false))
             {
-                if (regKey is null) return null;
-                var data = regKey.GetValue(Value, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
-                if (data is int i) return new ReinterpretableDword() { Signed = i }.Unsigned;
-                if (data is long l) return new ReinterpretableQword() { Signed = l }.Unsigned;
+                if (regKey is null)
+                    return null;
+                var data = regKey.GetValue(
+                    Value,
+                    null,
+                    RegistryValueOptions.DoNotExpandEnvironmentNames
+                );
+                if (data is int i)
+                    return new ReinterpretableDword() { Signed = i }.Unsigned;
+                if (data is long l)
+                    return new ReinterpretableQword() { Signed = l }.Unsigned;
                 return data;
             }
         }
 
         public List<string> GetValueNames(string Key)
         {
-            if (string.IsNullOrEmpty(Key)) return RootKey.GetValueNames().ToList();
+            if (string.IsNullOrEmpty(Key))
+                return RootKey.GetValueNames().ToList();
             using (var regKey = RootKey.OpenSubKey(Key))
-            { return regKey is null ? new List<string>() : regKey.GetValueNames().ToList(); }
+            {
+                return regKey is null ? new List<string>() : regKey.GetValueNames().ToList();
+            }
         }
 
         public bool WillDeleteValue(string Key, string Value) => false;
 
         public static bool IsPolicyKey(string KeyPath)
         {
-            return PolicyKeys.Any(pk => KeyPath.StartsWith(pk + @"\", StringComparison.InvariantCultureIgnoreCase)
-                                     || KeyPath.Equals(pk, StringComparison.InvariantCultureIgnoreCase));
+            return PolicyKeys.Any(pk =>
+                KeyPath.StartsWith(pk + @"\", StringComparison.InvariantCultureIgnoreCase)
+                || KeyPath.Equals(pk, StringComparison.InvariantCultureIgnoreCase)
+            );
         }
 
         public void ClearKey(string Key)
         {
             if (string.IsNullOrEmpty(Key))
-            { foreach (var value in RootKey.GetValueNames()) ForgetValue(string.Empty, value); return; }
-            foreach (var value in GetValueNames(Key)) ForgetValue(Key, value);
+            {
+                foreach (var value in RootKey.GetValueNames())
+                    ForgetValue(string.Empty, value);
+                return;
+            }
+            foreach (var value in GetValueNames(Key))
+                ForgetValue(Key, value);
         }
 
         public void ForgetKeyClearance(string Key) { }
 
-        public static IEnumerable<string> PolicyKeys => new[]
-        {
-            @"software\policies",
-            @"software\microsoft\windows\currentversion\policies",
-            @"system\currentcontrolset\policies"
-        };
+        public static IEnumerable<string> PolicyKeys =>
+            new[]
+            {
+                @"software\policies",
+                @"software\microsoft\windows\currentversion\policies",
+                @"system\currentcontrolset\policies",
+            };
     }
 }

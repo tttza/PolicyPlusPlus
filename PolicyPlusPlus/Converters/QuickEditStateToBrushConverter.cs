@@ -1,8 +1,8 @@
+using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using PolicyPlusPlus.ViewModels;
-using System;
 
 namespace PolicyPlusPlus.Converters
 {
@@ -15,10 +15,12 @@ namespace PolicyPlusPlus.Converters
             {
                 QuickEditState.Enabled => "StateEnabledBrush",
                 QuickEditState.Disabled => "StateDisabledBrush",
-                _ => "StateNotConfiguredBrush"
+                _ => "StateNotConfiguredBrush",
             };
             // Attempt to resolve from Application resources (handles theme dictionaries)
-            if (Application.Current.Resources.TryGetValue(key, out object brush) && brush is Brush b)
+            if (
+                Application.Current.Resources.TryGetValue(key, out object brush) && brush is Brush b
+            )
             {
                 return b;
             }
@@ -26,6 +28,11 @@ namespace PolicyPlusPlus.Converters
             return new SolidColorBrush(Microsoft.UI.Colors.LightGray);
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, string language) => throw new NotSupportedException();
+        public object ConvertBack(
+            object value,
+            Type targetType,
+            object parameter,
+            string language
+        ) => throw new NotSupportedException();
     }
 }

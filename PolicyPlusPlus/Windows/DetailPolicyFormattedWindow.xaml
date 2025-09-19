@@ -1,103 +1,172 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Window
-    x:Class="PolicyPlusPlus.Windows.DetailPolicyFormattedWindow"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="Policy Details (formatted)">
-
-    <Window.SystemBackdrop>
-        <MicaBackdrop />
-    </Window.SystemBackdrop>
-
-    <Grid x:Name="ScaleHost">
-        <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="10" RowSpacing="6" ColumnSpacing="8" KeyboardAcceleratorPlacementMode="Hidden">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <Grid.KeyboardAccelerators>
-                <KeyboardAccelerator Key="T" Modifiers="Control" Invoked="Accel_ToggleView"/>
-                <KeyboardAccelerator Key="P" Modifiers="Control,Shift" Invoked="Accel_CopyPath"/>
-                <KeyboardAccelerator Key="R" Modifiers="Control,Shift" Invoked="Accel_CopyReg"/>
-                <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="Accel_Close"/>
-                <KeyboardAccelerator Key="Escape" Invoked="Accel_Close"/>
-            </Grid.KeyboardAccelerators>
-
-            <!-- Name -->
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="0" Grid.Column="1" x:Name="NameBox" IsReadOnly="True"/>
-
-            <!-- Unique ID -->
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Unique ID" VerticalAlignment="Center"/>
-            <TextBox x:Name="IdBox" Grid.Row="1" Grid.Column="1" IsReadOnly="True"/>
-
-            <!-- Defined in -->
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Defined in" VerticalAlignment="Center"/>
-            <TextBox x:Name="DefinedInBox" Grid.Row="2" Grid.Column="1" IsReadOnly="True"/>
-
-            <!-- Policy Path -->
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="Policy Path" VerticalAlignment="Top"/>
-            <ScrollViewer Grid.Row="3" Grid.Column="1" VerticalScrollBarVisibility="Auto" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}">
-                <TextBox x:Name="PathBox" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Consolas"/>
-            </ScrollViewer>
-            <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Vertical" Spacing="6" VerticalAlignment="Top">
-                <Button x:Name="CopyPathBtn" ToolTipService.ToolTip="Copy" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
-                    <FontIcon Glyph="&#xE8C8;"/>
-                </Button>
-                <Button x:Name="PathSymbolBtn" MinWidth="36" MinHeight="36" Content="+" ToolTipService.ToolTip="Join symbol">
-                    <Button.Flyout>
-                        <MenuFlyout>
-                            <MenuFlyoutItem Text="+" Click="PathSymbolItem_Click"/>
-                            <MenuFlyoutItem Text="└" Click="PathSymbolItem_Click"/>
-                            <MenuFlyoutItem Text=">" Click="PathSymbolItem_Click"/>
-                            <MenuFlyoutItem Text="-" Click="PathSymbolItem_Click"/>
-                            <MenuFlyoutItem Text="•" Click="PathSymbolItem_Click"/>
-                            <MenuFlyoutItem Text="→" Click="PathSymbolItem_Click"/>
-                            <MenuFlyoutItem Text="▶" Click="PathSymbolItem_Click"/>
-                        </MenuFlyout>
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
-
-            <!-- Registry Value -->
-            <TextBlock Grid.Row="4" Grid.Column="0" Text="Registry Value" VerticalAlignment="Top"/>
-            <ScrollViewer Grid.Row="4" Grid.Column="1" VerticalScrollBarVisibility="Auto" Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}">
-                <TextBox x:Name="RegBox" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Consolas"/>
-            </ScrollViewer>
-            <StackPanel Grid.Row="4" Grid.Column="2" Orientation="Vertical" Spacing="6" VerticalAlignment="Top">
-                <Button x:Name="ToggleViewBtn" ToolTipService.ToolTip="Toggle" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
-                    <FontIcon Glyph="&#xE895;"/>
-                </Button>
-                <Button x:Name="CopyRegBtn" ToolTipService.ToolTip="Copy" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
-                    <FontIcon Glyph="&#xE8C8;"/>
-                </Button>
-                <Button x:Name="OpenRegBtn" ToolTipService.ToolTip="Open in Registry Editor" Style="{StaticResource IconAccentButtonStyle}" MinWidth="36" MinHeight="36">
-                    <FontIcon Glyph="&#xE8A7;"/>
-                </Button>
-            </StackPanel>
-
-            <!-- Footer -->
-            <Grid Grid.Row="5" Grid.ColumnSpan="3">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <ToggleButton x:Name="LangToggle" Grid.Column="1" MinWidth="36" MinHeight="36" ToolTipService.ToolTip="Toggle 2nd language" Visibility="Collapsed">
-                    <FontIcon Glyph="&#xF2B7;"/>
-                </ToggleButton>
-                <Button x:Name="CloseBtn" Grid.Column="2" Content="Close" Style="{StaticResource PrimaryButtonStyle}" MinWidth="90"/>
-            </Grid>
-        </Grid>
+  x:Class="PolicyPlusPlus.Windows.DetailPolicyFormattedWindow"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  Title="Policy Details (formatted)"
+>
+  <Window.SystemBackdrop>
+    <MicaBackdrop />
+  </Window.SystemBackdrop>
+  <Grid x:Name="ScaleHost">
+    <Grid
+      x:Name="RootShell"
+      Background="{ThemeResource WindowBackground}"
+      Padding="10"
+      RowSpacing="6"
+      ColumnSpacing="8"
+      KeyboardAcceleratorPlacementMode="Hidden"
+    >
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <Grid.KeyboardAccelerators>
+        <KeyboardAccelerator Key="T" Modifiers="Control" Invoked="Accel_ToggleView" />
+        <KeyboardAccelerator Key="P" Modifiers="Control,Shift" Invoked="Accel_CopyPath" />
+        <KeyboardAccelerator Key="R" Modifiers="Control,Shift" Invoked="Accel_CopyReg" />
+        <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="Accel_Close" />
+        <KeyboardAccelerator Key="Escape" Invoked="Accel_Close" />
+      </Grid.KeyboardAccelerators>
+      <!-- Name -->
+      <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center" />
+      <TextBox Grid.Row="0" Grid.Column="1" x:Name="NameBox" IsReadOnly="True" />
+      <!-- Unique ID -->
+      <TextBlock Grid.Row="1" Grid.Column="0" Text="Unique ID" VerticalAlignment="Center" />
+      <TextBox x:Name="IdBox" Grid.Row="1" Grid.Column="1" IsReadOnly="True" />
+      <!-- Defined in -->
+      <TextBlock Grid.Row="2" Grid.Column="0" Text="Defined in" VerticalAlignment="Center" />
+      <TextBox x:Name="DefinedInBox" Grid.Row="2" Grid.Column="1" IsReadOnly="True" />
+      <!-- Policy Path -->
+      <TextBlock Grid.Row="3" Grid.Column="0" Text="Policy Path" VerticalAlignment="Top" />
+      <ScrollViewer
+        Grid.Row="3"
+        Grid.Column="1"
+        VerticalScrollBarVisibility="Auto"
+        Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}"
+      >
+        <TextBox
+          x:Name="PathBox"
+          AcceptsReturn="True"
+          TextWrapping="NoWrap"
+          FontFamily="Consolas"
+        />
+      </ScrollViewer>
+      <StackPanel
+        Grid.Row="3"
+        Grid.Column="2"
+        Orientation="Vertical"
+        Spacing="6"
+        VerticalAlignment="Top"
+      >
+        <Button
+          x:Name="CopyPathBtn"
+          ToolTipService.ToolTip="Copy"
+          Style="{StaticResource IconAccentButtonStyle}"
+          MinWidth="36"
+          MinHeight="36"
+        >
+          <FontIcon Glyph="" />
+        </Button>
+        <Button
+          x:Name="PathSymbolBtn"
+          MinWidth="36"
+          MinHeight="36"
+          Content="+"
+          ToolTipService.ToolTip="Join symbol"
+        >
+          <Button.Flyout>
+            <MenuFlyout>
+              <MenuFlyoutItem Text="+" Click="PathSymbolItem_Click" />
+              <MenuFlyoutItem Text="└" Click="PathSymbolItem_Click" />
+              <MenuFlyoutItem Text="&gt;" Click="PathSymbolItem_Click" />
+              <MenuFlyoutItem Text="-" Click="PathSymbolItem_Click" />
+              <MenuFlyoutItem Text="•" Click="PathSymbolItem_Click" />
+              <MenuFlyoutItem Text="→" Click="PathSymbolItem_Click" />
+              <MenuFlyoutItem Text="▶" Click="PathSymbolItem_Click" />
+            </MenuFlyout>
+          </Button.Flyout>
+        </Button>
+      </StackPanel>
+      <!-- Registry Value -->
+      <TextBlock Grid.Row="4" Grid.Column="0" Text="Registry Value" VerticalAlignment="Top" />
+      <ScrollViewer
+        Grid.Row="4"
+        Grid.Column="1"
+        VerticalScrollBarVisibility="Auto"
+        Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}"
+      >
+        <TextBox x:Name="RegBox" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Consolas" />
+      </ScrollViewer>
+      <StackPanel
+        Grid.Row="4"
+        Grid.Column="2"
+        Orientation="Vertical"
+        Spacing="6"
+        VerticalAlignment="Top"
+      >
+        <Button
+          x:Name="ToggleViewBtn"
+          ToolTipService.ToolTip="Toggle"
+          Style="{StaticResource IconAccentButtonStyle}"
+          MinWidth="36"
+          MinHeight="36"
+        >
+          <FontIcon Glyph="" />
+        </Button>
+        <Button
+          x:Name="CopyRegBtn"
+          ToolTipService.ToolTip="Copy"
+          Style="{StaticResource IconAccentButtonStyle}"
+          MinWidth="36"
+          MinHeight="36"
+        >
+          <FontIcon Glyph="" />
+        </Button>
+        <Button
+          x:Name="OpenRegBtn"
+          ToolTipService.ToolTip="Open in Registry Editor"
+          Style="{StaticResource IconAccentButtonStyle}"
+          MinWidth="36"
+          MinHeight="36"
+        >
+          <FontIcon Glyph="" />
+        </Button>
+      </StackPanel>
+      <!-- Footer -->
+      <Grid Grid.Row="5" Grid.ColumnSpan="3">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <ToggleButton
+          x:Name="LangToggle"
+          Grid.Column="1"
+          MinWidth="36"
+          MinHeight="36"
+          ToolTipService.ToolTip="Toggle 2nd language"
+          Visibility="Collapsed"
+        >
+          <FontIcon Glyph="" />
+        </ToggleButton>
+        <Button
+          x:Name="CloseBtn"
+          Grid.Column="2"
+          Content="Close"
+          Style="{StaticResource PrimaryButtonStyle}"
+          MinWidth="90"
+        />
+      </Grid>
     </Grid>
+  </Grid>
 </Window>

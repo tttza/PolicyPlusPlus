@@ -1,9 +1,7 @@
+using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-
 using PolicyPlusCore.IO;
-
-using System;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 
@@ -12,6 +10,7 @@ namespace PolicyPlusPlus.Dialogs
     public sealed partial class ExportRegDialog : ContentDialog
     {
         private PolFile _source = null!;
+
         public ExportRegDialog()
         {
             this.InitializeComponent();
@@ -29,14 +28,20 @@ namespace PolicyPlusPlus.Dialogs
         {
             var picker = new FileSavePicker();
             InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.Window));
-            picker.FileTypeChoices.Add("Registry scripts", new System.Collections.Generic.List<string> { ".reg" });
+            picker.FileTypeChoices.Add(
+                "Registry scripts",
+                new System.Collections.Generic.List<string> { ".reg" }
+            );
             picker.SuggestedFileName = "export";
             var file = await picker.PickSaveFileAsync();
             if (file != null)
                 TextReg.Text = file.Path;
         }
 
-        private void ExportRegDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        private void ExportRegDialog_PrimaryButtonClick(
+            ContentDialog sender,
+            ContentDialogButtonClickEventArgs args
+        )
         {
             if (string.IsNullOrWhiteSpace(TextReg.Text))
             {

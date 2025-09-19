@@ -1,6 +1,6 @@
+using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
-using System;
 
 namespace PolicyPlusPlus.Converters
 {
@@ -18,8 +18,13 @@ namespace PolicyPlusPlus.Converters
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)
         {
-            if (value is Visibility v) return v == Visibility.Visible;
-            if (value is double d && parameter is string s && s.Equals("Opacity", StringComparison.OrdinalIgnoreCase))
+            if (value is Visibility v)
+                return v == Visibility.Visible;
+            if (
+                value is double d
+                && parameter is string s
+                && s.Equals("Opacity", StringComparison.OrdinalIgnoreCase)
+            )
             {
                 return d > 0.5;
             }

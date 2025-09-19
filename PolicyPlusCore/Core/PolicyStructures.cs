@@ -33,7 +33,7 @@ namespace PolicyPlusCore.Core
     {
         Delete,
         Numeric,
-        Text
+        Text,
     }
 
     public abstract class PolicyElement

@@ -1,7 +1,7 @@
-using PolicyPlusCore.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using PolicyPlusCore.IO;
 
 namespace PolicyPlusPlus.Services
 {
@@ -9,8 +9,10 @@ namespace PolicyPlusPlus.Services
     {
         public static (RegFile userReg, RegFile machineReg) SplitByHive(RegFile source)
         {
-            var user = new RegFile(); user.SetPrefix(string.Empty);
-            var machine = new RegFile(); machine.SetPrefix(string.Empty);
+            var user = new RegFile();
+            user.SetPrefix(string.Empty);
+            var machine = new RegFile();
+            machine.SetPrefix(string.Empty);
 
             foreach (var key in source.Keys)
             {
@@ -19,7 +21,12 @@ namespace PolicyPlusPlus.Services
                 {
                     machine.Keys.Add(CloneKey(key));
                 }
-                else if (StartsWith(name, "HKEY_CURRENT_USER\\") || StartsWith(name, "HKCU\\") || StartsWith(name, "HKEY_USERS\\") || StartsWith(name, "HKU\\"))
+                else if (
+                    StartsWith(name, "HKEY_CURRENT_USER\\")
+                    || StartsWith(name, "HKCU\\")
+                    || StartsWith(name, "HKEY_USERS\\")
+                    || StartsWith(name, "HKU\\")
+                )
                 {
                     user.Keys.Add(CloneKey(key));
                 }
@@ -36,24 +43,36 @@ namespace PolicyPlusPlus.Services
             var (userReg, machineReg) = SplitByHive(source);
             var userPol = new PolFile();
             var machinePol = new PolFile();
-            try { if (userReg.Keys.Count > 0) userReg.Apply(userPol); } catch { }
-            try { if (machineReg.Keys.Count > 0) machineReg.Apply(machinePol); } catch { }
+            try
+            {
+                if (userReg.Keys.Count > 0)
+                    userReg.Apply(userPol);
+            }
+            catch { }
+            try
+            {
+                if (machineReg.Keys.Count > 0)
+                    machineReg.Apply(machinePol);
+            }
+            catch { }
             return (userPol, machinePol);
         }
 
         // Removes all keys that are not under well-known policy root paths.
         public static void FilterToPolicyKeysInPlace(RegFile source)
         {
-            if (source == null) return;
+            if (source == null)
+                return;
             try
             {
-                var policyRoots = PolicyPlusCore.IO.RegistryPolicyProxy.PolicyKeys
-                    .Select(k => k.ToLowerInvariant())
+                var policyRoots = PolicyPlusCore
+                    .IO.RegistryPolicyProxy.PolicyKeys.Select(k => k.ToLowerInvariant())
                     .ToArray();
 
                 bool IsPolicyKey(string fullName)
                 {
-                    if (string.IsNullOrEmpty(fullName)) return false;
+                    if (string.IsNullOrEmpty(fullName))
+                        return false;
                     var lower = fullName.ToLowerInvariant();
                     lower = StripHive(lower); // Remove hive for comparison
                     foreach (var r in policyRoots)
@@ -75,17 +94,25 @@ namespace PolicyPlusPlus.Services
                         if (path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                         {
                             remainder = path.Substring(prefix.Length);
-                            if (remainder.StartsWith("\\")) remainder = remainder.Substring(1);
+                            if (remainder.StartsWith("\\"))
+                                remainder = remainder.Substring(1);
                             return true;
                         }
-                        remainder = path; return false;
+                        remainder = path;
+                        return false;
                     }
-                    if (Try(path, "hkey_local_machine\\", out var r)) return r;
-                    if (Try(path, "hklm\\", out r)) return r;
-                    if (Try(path, "hkey_current_user\\", out r)) return r;
-                    if (Try(path, "hkcu\\", out r)) return r;
-                    if (Try(path, "hkey_users\\", out r)) return r;
-                    if (Try(path, "hku\\", out r)) return r;
+                    if (Try(path, "hkey_local_machine\\", out var r))
+                        return r;
+                    if (Try(path, "hklm\\", out r))
+                        return r;
+                    if (Try(path, "hkey_current_user\\", out r))
+                        return r;
+                    if (Try(path, "hkcu\\", out r))
+                        return r;
+                    if (Try(path, "hkey_users\\", out r))
+                        return r;
+                    if (Try(path, "hku\\", out r))
+                        return r;
                     return path;
                 }
 
@@ -100,15 +127,23 @@ namespace PolicyPlusPlus.Services
             catch { }
         }
 
-        private static bool StartsWith(string text, string prefix)
-            => text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+        private static bool StartsWith(string text, string prefix) =>
+            text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
 
         private static RegFile.RegFileKey CloneKey(RegFile.RegFileKey src)
         {
             var k = new RegFile.RegFileKey { Name = src.Name, IsDeleter = src.IsDeleter };
             foreach (var v in src.Values)
             {
-                k.Values.Add(new RegFile.RegFileValue { Name = v.Name, Data = v.Data, Kind = v.Kind, IsDeleter = v.IsDeleter });
+                k.Values.Add(
+                    new RegFile.RegFileValue
+                    {
+                        Name = v.Name,
+                        Data = v.Data,
+                        Kind = v.Kind,
+                        IsDeleter = v.IsDeleter,
+                    }
+                );
             }
             return k;
         }

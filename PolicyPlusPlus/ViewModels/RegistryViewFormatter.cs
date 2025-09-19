@@ -1,47 +1,64 @@
-using PolicyPlusCore.Core;
-using PolicyPlusCore.IO;
-using PolicyPlusPlus.Services;
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
+using PolicyPlusPlus.Services;
 
 namespace PolicyPlusPlus.ViewModels
 {
     public static class RegistryViewFormatter
     {
-        public static string BuildRegistryFormatted(PolicyPlusPolicy policy, IPolicySource source, AdmxPolicySection section)
+        public static string BuildRegistryFormatted(
+            PolicyPlusPolicy policy,
+            IPolicySource source,
+            AdmxPolicySection section
+        )
         {
             // Default: use app UI language for labels
             var uiLang = GetLanguage();
-            return BuildRegistryFormatted(policy, source, section, useSecondLanguage: false, secondLanguageCode: uiLang);
+            return BuildRegistryFormatted(
+                policy,
+                source,
+                section,
+                useSecondLanguage: false,
+                secondLanguageCode: uiLang
+            );
         }
 
-        public static string BuildRegistryFormatted(PolicyPlusPolicy policy, IPolicySource source, AdmxPolicySection section, bool useSecondLanguage, string? secondLanguageCode)
+        public static string BuildRegistryFormatted(
+            PolicyPlusPolicy policy,
+            IPolicySource source,
+            AdmxPolicySection section,
+            bool useSecondLanguage,
+            string? secondLanguageCode
+        )
         {
             string lang = useSecondLanguage ? (secondLanguageCode ?? GetLanguage()) : GetLanguage();
             bool isJa = lang.StartsWith("ja", StringComparison.OrdinalIgnoreCase);
             string L(string en)
             {
-                if (!isJa) return en;
+                if (!isJa)
+                    return en;
                 return en switch
                 {
                     "Key" => "キー",
                     "Name" => "名前",
                     "Type" => "種類",
                     "Value" => "値",
-                    _ => en
+                    _ => en,
                 };
             }
             string GetText(string en)
             {
-                if (!isJa) return en;
+                if (!isJa)
+                    return en;
                 return en switch
                 {
                     "(no referenced registry values)" => "(参照されているレジストリ値がありません)",
-                    _ => en
+                    _ => en,
                 };
             }
 
@@ -90,7 +107,11 @@ namespace PolicyPlusPlus.ViewModels
                     sb.AppendLine($"{L("Key")}: {hive}\\{kv.Key}");
                     sb.AppendLine(); // Blank line before repeating Name/Type/Value blocks for readability
                     var valueNames = new List<string>();
-                    try { valueNames = source.GetValueNames(kv.Key); } catch { }
+                    try
+                    {
+                        valueNames = source.GetValueNames(kv.Key);
+                    }
+                    catch { }
                     bool firstValue = true;
                     foreach (var name in valueNames)
                     {
@@ -131,7 +152,11 @@ namespace PolicyPlusPlus.ViewModels
             return sb.ToString().TrimEnd();
         }
 
-        public static string BuildRegExport(PolicyPlusPolicy policy, IPolicySource source, AdmxPolicySection section)
+        public static string BuildRegExport(
+            PolicyPlusPolicy policy,
+            IPolicySource source,
+            AdmxPolicySection section
+        )
         {
             var sb = new StringBuilder();
             sb.AppendLine("Windows Registry Editor Version 5.00");
@@ -144,7 +169,8 @@ namespace PolicyPlusPlus.ViewModels
                 if (!string.IsNullOrEmpty(kv.Value))
                 {
                     var data = source.GetValue(kv.Key, kv.Value);
-                    if (data is null) continue;
+                    if (data is null)
+                        continue;
                     sb.AppendLine(FormatRegValue(kv.Value, data));
                 }
                 else
@@ -153,7 +179,8 @@ namespace PolicyPlusPlus.ViewModels
                     foreach (var name in source.GetValueNames(kv.Key))
                     {
                         var data = source.GetValue(kv.Key, name);
-                        if (data is null) continue;
+                        if (data is null)
+                            continue;
                         sb.AppendLine(FormatRegValue(name, data));
                     }
                 }
@@ -168,31 +195,47 @@ namespace PolicyPlusPlus.ViewModels
 
         public static (string typeName, string dataText) GetTypeAndDataText(object? data)
         {
-            if (data is null) return ("(not set)", "");
+            if (data is null)
+                return ("(not set)", "");
             switch (data)
             {
-                case uint u: return ("REG_DWORD", $"{u}");
-                case ulong uq: return ("REG_QWORD", $"{uq}");
-                case string s: return ("REG_SZ", s);
-                case string[] arr: return ("REG_MULTI_SZ", string.Join(" | ", arr));
-                case byte[] bin: return ("REG_BINARY", string.Join(" ", bin.Select(b => b.ToString("x2"))));
-                default: return ("(unknown)", Convert.ToString(data) ?? string.Empty);
+                case uint u:
+                    return ("REG_DWORD", $"{u}");
+                case ulong uq:
+                    return ("REG_QWORD", $"{uq}");
+                case string s:
+                    return ("REG_SZ", s);
+                case string[] arr:
+                    return ("REG_MULTI_SZ", string.Join(" | ", arr));
+                case byte[] bin:
+                    return ("REG_BINARY", string.Join(" ", bin.Select(b => b.ToString("x2"))));
+                default:
+                    return ("(unknown)", Convert.ToString(data) ?? string.Empty);
             }
         }
 
         public static IEnumerable<string> SplitMultiline(string s)
         {
-            if (string.IsNullOrEmpty(s)) { yield return string.Empty; yield break; }
+            if (string.IsNullOrEmpty(s))
+            {
+                yield return string.Empty;
+                yield break;
+            }
             var parts = s.Replace("\r\n", "\n").Split('\n');
-            foreach (var p in parts) yield return p;
+            foreach (var p in parts)
+                yield return p;
         }
 
         public static string FormatRegValue(string name, object data)
         {
-            if (data is uint u) return $"\"{name}\"=dword:{u:x8}";
-            if (data is string s) return $"\"{name}\"=\"{EscapeRegString(s)}\"";
-            if (data is string[] arr) return $"\"{name}\"=hex(7):{EncodeMultiString(arr)}";
-            if (data is byte[] bin) return $"\"{name}\"=hex:{string.Join(",", bin.Select(b => b.ToString("x2")))}";
+            if (data is uint u)
+                return $"\"{name}\"=dword:{u:x8}";
+            if (data is string s)
+                return $"\"{name}\"=\"{EscapeRegString(s)}\"";
+            if (data is string[] arr)
+                return $"\"{name}\"=hex(7):{EncodeMultiString(arr)}";
+            if (data is byte[] bin)
+                return $"\"{name}\"=hex:{string.Join(",", bin.Select(b => b.ToString("x2")))}";
             if (data is ulong qu)
             {
                 var b = BitConverter.GetBytes(qu); // little-endian order
@@ -211,7 +254,8 @@ namespace PolicyPlusPlus.ViewModels
             }
         }
 
-        private static string EscapeRegString(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        private static string EscapeRegString(string s) =>
+            s.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
         private static string EncodeMultiString(string[] lines)
         {
@@ -220,9 +264,11 @@ namespace PolicyPlusPlus.ViewModels
             {
                 var b = Encoding.Unicode.GetBytes(line);
                 bytes.AddRange(b);
-                bytes.Add(0); bytes.Add(0);
+                bytes.Add(0);
+                bytes.Add(0);
             }
-            bytes.Add(0); bytes.Add(0);
+            bytes.Add(0);
+            bytes.Add(0);
             return string.Join(",", bytes.Select(b => b.ToString("x2")));
         }
 
@@ -235,7 +281,14 @@ namespace PolicyPlusPlus.ViewModels
                     return s.Language!;
             }
             catch { }
-            try { return CultureInfo.CurrentUICulture.Name; } catch { return "en-US"; }
+            try
+            {
+                return CultureInfo.CurrentUICulture.Name;
+            }
+            catch
+            {
+                return "en-US";
+            }
         }
     }
 }

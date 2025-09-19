@@ -10,21 +10,41 @@ namespace PolicyPlusCore.Utilities
             var s = SearchText.Normalize(input);
             var p = SearchText.Normalize(pattern);
 
-            int i = 0, pi = 0, star = -1, mark = 0;
+            int i = 0,
+                pi = 0,
+                star = -1,
+                mark = 0;
             while (i < s.Length)
             {
-                if (pi < p.Length && (p[pi] == '?' || p[pi] == s[i])) { i++; pi++; continue; }
-                if (pi < p.Length && p[pi] == '*') { star = pi++; mark = i; continue; }
-                if (star != -1) { pi = star + 1; i = ++mark; continue; }
+                if (pi < p.Length && (p[pi] == '?' || p[pi] == s[i]))
+                {
+                    i++;
+                    pi++;
+                    continue;
+                }
+                if (pi < p.Length && p[pi] == '*')
+                {
+                    star = pi++;
+                    mark = i;
+                    continue;
+                }
+                if (star != -1)
+                {
+                    pi = star + 1;
+                    i = ++mark;
+                    continue;
+                }
                 return false;
             }
-            while (pi < p.Length && p[pi] == '*') pi++;
+            while (pi < p.Length && p[pi] == '*')
+                pi++;
             return pi == p.Length;
         }
 
         public static bool WildcardOrExact(string input, string pattern, bool allowSubstring)
         {
-            if (string.IsNullOrEmpty(pattern)) return true;
+            if (string.IsNullOrEmpty(pattern))
+                return true;
             if (pattern.Contains('*') || pattern.Contains('?'))
                 return WildcardMatch(input, pattern);
 

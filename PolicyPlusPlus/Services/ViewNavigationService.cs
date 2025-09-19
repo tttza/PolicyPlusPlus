@@ -1,6 +1,6 @@
-using PolicyPlusCore.Core; // For AdmxPolicySection
 using System;
 using System.Collections.Generic;
+using PolicyPlusCore.Core; // For AdmxPolicySection
 
 namespace PolicyPlusPlus.Services
 {
@@ -28,7 +28,8 @@ namespace PolicyPlusPlus.Services
 
         public void Push(ViewState state)
         {
-            if (state == null) return;
+            if (state == null)
+                return;
 
             // Trim any forward history
             if (_index >= 0 && _index < _items.Count - 1)
@@ -49,7 +50,8 @@ namespace PolicyPlusPlus.Services
 
         public ViewState? GoBack()
         {
-            if (!CanGoBack) return Current;
+            if (!CanGoBack)
+                return Current;
             _index--;
             HistoryChanged?.Invoke(this, EventArgs.Empty);
             return Current;
@@ -57,7 +59,8 @@ namespace PolicyPlusPlus.Services
 
         public ViewState? GoForward()
         {
-            if (!CanGoForward) return Current;
+            if (!CanGoForward)
+                return Current;
             _index++;
             HistoryChanged?.Invoke(this, EventArgs.Empty);
             return Current;
@@ -75,9 +78,18 @@ namespace PolicyPlusPlus.Services
 
         public bool Equals(ViewState? other)
         {
-            if (other == null) return false;
-            return string.Equals(CategoryId ?? string.Empty, other.CategoryId ?? string.Empty, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(Query ?? string.Empty, other.Query ?? string.Empty, StringComparison.Ordinal)
+            if (other == null)
+                return false;
+            return string.Equals(
+                    CategoryId ?? string.Empty,
+                    other.CategoryId ?? string.Empty,
+                    StringComparison.OrdinalIgnoreCase
+                )
+                && string.Equals(
+                    Query ?? string.Empty,
+                    other.Query ?? string.Empty,
+                    StringComparison.Ordinal
+                )
                 && AppliesTo == other.AppliesTo
                 && ConfiguredOnly == other.ConfiguredOnly;
         }
@@ -95,7 +107,18 @@ namespace PolicyPlusPlus.Services
             }
         }
 
-        public static ViewState Create(string? categoryId, string? query, AdmxPolicySection applies, bool configuredOnly)
-            => new ViewState { CategoryId = categoryId, Query = query ?? string.Empty, AppliesTo = applies, ConfiguredOnly = configuredOnly };
+        public static ViewState Create(
+            string? categoryId,
+            string? query,
+            AdmxPolicySection applies,
+            bool configuredOnly
+        ) =>
+            new ViewState
+            {
+                CategoryId = categoryId,
+                Query = query ?? string.Empty,
+                AppliesTo = applies,
+                ConfiguredOnly = configuredOnly,
+            };
     }
 }

@@ -1,3 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
@@ -15,12 +21,6 @@ using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Utils;
 using PolicyPlusPlus.ViewModels;
 using PolicyPlusPlus.Windows;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 
@@ -35,11 +35,12 @@ namespace PolicyPlusPlus
         private GridLength? _savedDetailRowHeight;
         private GridLength? _savedSplitterRowHeight;
 
-
         private AdmxBundle? _bundle;
         private List<PolicyPlusPolicy> _allPolicies = new();
         private List<PolicyPlusPolicy> _visiblePolicies = new();
-        private Dictionary<string, List<PolicyPlusPolicy>> _nameGroups = new(System.StringComparer.InvariantCultureIgnoreCase);
+        private Dictionary<string, List<PolicyPlusPolicy>> _nameGroups = new(
+            System.StringComparer.InvariantCultureIgnoreCase
+        );
         private int _totalGroupCount = 0;
         private AdmxPolicySection _appliesFilter = AdmxPolicySection.Both;
         private PolicyPlusCategory? _selectedCategory = null;
@@ -52,13 +53,19 @@ namespace PolicyPlusPlus
         internal AdmxBundle? Bundle => _bundle;
 
         // Map of visible policy id -> row for fast partial updates
-        private readonly Dictionary<string, PolicyListRow> _rowByPolicyId = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, PolicyListRow> _rowByPolicyId = new(
+            StringComparer.OrdinalIgnoreCase
+        );
 
         // Temp .pol mode and save tracking
         private string? _tempPolCompPath = null;
         private string? _tempPolUserPath = null;
 
-        private static readonly System.Text.RegularExpressions.Regex UrlRegex = new(@"(https?://[^\s]+)", System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        private static readonly System.Text.RegularExpressions.Regex UrlRegex = new(
+            @"(https?://[^\s]+)",
+            System.Text.RegularExpressions.RegexOptions.Compiled
+                | System.Text.RegularExpressions.RegexOptions.IgnoreCase
+        );
 
         // Prevents SelectionChanged from re-applying category during programmatic tree updates
         private bool _suppressCategorySelectionChanged;
@@ -87,47 +94,114 @@ namespace PolicyPlusPlus
         private bool _doubleTapHooked; // used by HookDoubleTapHandlers
         private bool _initialized; // guard to run initialization once
         private AppSettings? _settingsCache; // cached settings snapshot
-
 #if USE_VELOPACK
         // UpdateManager handled by UpdateHelper now.
 #endif
         public MainWindow()
         {
             this.InitializeComponent();
-            try { ObserveSearchOptions(); } catch { }
-            try { TryHookCustomPolVm(); } catch { }
-            try { PolicySourceManager.Instance.SourcesChanged += (_, __) => { RefreshVisibleRows(); var li = RootGrid?.FindName("SourceStatusText") as TextBlock; if (li != null) li.Text = SourceStatusFormatter.FormatStatus(); }; } catch { }
+            try
+            {
+                ObserveSearchOptions();
+            }
+            catch { }
+            try
+            {
+                TryHookCustomPolVm();
+            }
+            catch { }
+            try
+            {
+                PolicySourceManager.Instance.SourcesChanged += (_, __) =>
+                {
+                    RefreshVisibleRows();
+                    var li = RootGrid?.FindName("SourceStatusText") as TextBlock;
+                    if (li != null)
+                        li.Text = SourceStatusFormatter.FormatStatus();
+                };
+            }
+            catch { }
             HookPendingQueue();
             TryInitCustomTitleBar();
             RootGrid.Loaded += (s, e) =>
             {
-                try { ScaleHelper.Attach(this, ScaleHost, RootGrid); } catch { }
+                try
+                {
+                    ScaleHelper.Attach(this, ScaleHost, RootGrid);
+                }
+                catch { }
                 InitUpdateMenuVisibility();
-                try { LoadCustomPolSettings(); } catch { }
-                try { ObserveSearchOptions(); } catch { }
-                try { ObserveFilterOptions(); } catch { }
+                try
+                {
+                    LoadCustomPolSettings();
+                }
+                catch { }
+                try
+                {
+                    ObserveSearchOptions();
+                }
+                catch { }
+                try
+                {
+                    ObserveFilterOptions();
+                }
+                catch { }
             };
-            try { BookmarkService.Instance.ActiveListChanged += BookmarkService_ActiveListChanged; } catch { }
-            try { PendingChangesService.Instance.DirtyChanged += (_, __) => UpdateUnsavedIndicator(); } catch { }
-            try { Closed += (s, e) => { try { BookmarkService.Instance.ActiveListChanged -= BookmarkService_ActiveListChanged; } catch { } try { PendingChangesService.Instance.DirtyChanged -= (_, __) => UpdateUnsavedIndicator(); } catch { } }; } catch { }
+            try
+            {
+                BookmarkService.Instance.ActiveListChanged += BookmarkService_ActiveListChanged;
+            }
+            catch { }
+            try
+            {
+                PendingChangesService.Instance.DirtyChanged += (_, __) => UpdateUnsavedIndicator();
+            }
+            catch { }
+            try
+            {
+                Closed += (s, e) =>
+                {
+                    try
+                    {
+                        BookmarkService.Instance.ActiveListChanged -=
+                            BookmarkService_ActiveListChanged;
+                    }
+                    catch { }
+                    try
+                    {
+                        PendingChangesService.Instance.DirtyChanged -= (_, __) =>
+                            UpdateUnsavedIndicator();
+                    }
+                    catch { }
+                };
+            }
+            catch { }
             AppWindow.Closing += AppWindow_Closing;
         }
+
         private void InitUpdateMenuVisibility()
         {
             try
             {
-                if (Content is not FrameworkElement fe) return;
+                if (Content is not FrameworkElement fe)
+                    return;
                 var checkItem = fe.FindName("MenuCheckForUpdates") as MenuFlyoutItem;
                 var storeItem = fe.FindName("MenuOpenStorePage") as MenuFlyoutItem;
-                if (UpdateHelper.IsVelopackAvailable && checkItem != null) checkItem.Visibility = Visibility.Visible;
-                if (UpdateHelper.IsStoreBuild && storeItem != null) storeItem.Visibility = Visibility.Visible;
+                if (UpdateHelper.IsVelopackAvailable && checkItem != null)
+                    checkItem.Visibility = Visibility.Visible;
+                if (UpdateHelper.IsStoreBuild && storeItem != null)
+                    storeItem.Visibility = Visibility.Visible;
             }
             catch { }
         }
+
         private async void MenuCheckForUpdates_Click(object sender, RoutedEventArgs e)
         {
             if (!UpdateHelper.IsVelopackAvailable)
-            { ShowInfo("Updates not available in this build."); return; }
+            {
+                ShowInfo("Updates not available in this build.");
+                return;
+            }
 
             if (UpdateHelper.IsRestartPending)
             {
@@ -136,14 +210,23 @@ namespace PolicyPlusPlus
                     ContentDialog df = new()
                     {
                         Title = "Update Ready (Deferred)",
-                        Content = "An update has been prepared and will install when the app exits. Close and restart the application to complete installation.",
+                        Content =
+                            "An update has been prepared and will install when the app exits. Close and restart the application to complete installation.",
                         PrimaryButtonText = "Exit & Install Now",
                         CloseButtonText = "Cancel",
-                        DefaultButton = ContentDialogButton.Primary
+                        DefaultButton = ContentDialogButton.Primary,
                     };
-                    if (this.Content is FrameworkElement feDf) df.XamlRoot = feDf.XamlRoot;
+                    if (this.Content is FrameworkElement feDf)
+                        df.XamlRoot = feDf.XamlRoot;
                     ContentDialogResult dr;
-                    try { dr = await df.ShowAsync(); } catch { dr = ContentDialogResult.None; }
+                    try
+                    {
+                        dr = await df.ShowAsync();
+                    }
+                    catch
+                    {
+                        dr = ContentDialogResult.None;
+                    }
                     if (dr == ContentDialogResult.Primary)
                     {
                         App.Current.Exit();
@@ -155,21 +238,33 @@ namespace PolicyPlusPlus
                     ContentDialog rd = new()
                     {
                         Title = "Update Ready",
-                        Content = "An update has been downloaded and is ready to install. Restart the application now?",
+                        Content =
+                            "An update has been downloaded and is ready to install. Restart the application now?",
                         PrimaryButtonText = "Restart Now",
                         CloseButtonText = "Cancel",
-                        DefaultButton = ContentDialogButton.Primary
+                        DefaultButton = ContentDialogButton.Primary,
                     };
-                    if (this.Content is FrameworkElement feR) rd.XamlRoot = feR.XamlRoot;
+                    if (this.Content is FrameworkElement feR)
+                        rd.XamlRoot = feR.XamlRoot;
                     ContentDialogResult rRes;
-                    try { rRes = await rd.ShowAsync(); } catch { rRes = ContentDialogResult.None; }
+                    try
+                    {
+                        rRes = await rd.ShowAsync();
+                    }
+                    catch
+                    {
+                        rRes = ContentDialogResult.None;
+                    }
                     if (rRes == ContentDialogResult.Primary)
                     {
                         App.Current.Exit();
                     }
                     else
                     {
-                        ShowInfo("Restart later to finish applying the update.", InfoBarSeverity.Informational);
+                        ShowInfo(
+                            "Restart later to finish applying the update.",
+                            InfoBarSeverity.Informational
+                        );
                     }
                     return;
                 }
@@ -178,12 +273,21 @@ namespace PolicyPlusPlus
             ShowInfo("Checking for updates...");
             var (ok, hasUpdate, message) = await UpdateHelper.CheckVelopackUpdatesAsync();
             if (!ok)
-            { ShowInfo("Update check failed: " + message, InfoBarSeverity.Error); return; }
+            {
+                ShowInfo("Update check failed: " + message, InfoBarSeverity.Error);
+                return;
+            }
             if (!hasUpdate)
-            { if (message != null) ShowInfo(message, InfoBarSeverity.Informational); return; }
+            {
+                if (message != null)
+                    ShowInfo(message, InfoBarSeverity.Informational);
+                return;
+            }
 
             string notes = UpdateHelper.GetPendingUpdateNotes() ?? string.Empty;
-            string body = string.IsNullOrEmpty(notes) ? "An update is available. Choose how to apply it." : "An update is available. Choose how to apply it.\n\n" + notes;
+            string body = string.IsNullOrEmpty(notes)
+                ? "An update is available. Choose how to apply it."
+                : "An update is available. Choose how to apply it.\n\n" + notes;
 
             ContentDialog choiceDlg = new()
             {
@@ -192,25 +296,48 @@ namespace PolicyPlusPlus
                 PrimaryButtonText = "Install & Restart Now",
                 SecondaryButtonText = "Install On Exit",
                 CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Primary
+                DefaultButton = ContentDialogButton.Primary,
             };
             if (this.Content is FrameworkElement root)
                 choiceDlg.XamlRoot = root.XamlRoot;
             ContentDialogResult choiceRes;
-            try { choiceRes = await choiceDlg.ShowAsync(); } catch { choiceRes = ContentDialogResult.None; }
-
-            if (choiceRes != ContentDialogResult.Primary && choiceRes != ContentDialogResult.Secondary)
+            try
             {
-                _ = UpdateHelper.ApplyVelopackPendingAsync(UpdateHelper.VelopackUpdateApplyChoice.Cancel);
+                choiceRes = await choiceDlg.ShowAsync();
+            }
+            catch
+            {
+                choiceRes = ContentDialogResult.None;
+            }
+
+            if (
+                choiceRes != ContentDialogResult.Primary
+                && choiceRes != ContentDialogResult.Secondary
+            )
+            {
+                _ = UpdateHelper.ApplyVelopackPendingAsync(
+                    UpdateHelper.VelopackUpdateApplyChoice.Cancel
+                );
                 ShowInfo("Update canceled.", InfoBarSeverity.Informational);
                 return;
             }
 
-            var applyChoice = choiceRes == ContentDialogResult.Primary ? UpdateHelper.VelopackUpdateApplyChoice.RestartNow : UpdateHelper.VelopackUpdateApplyChoice.OnExit;
-            ShowInfo(applyChoice == UpdateHelper.VelopackUpdateApplyChoice.RestartNow ? "Applying update and restarting..." : "Downloading update for apply-on-exit...");
-            var (applyOk, restartInitiated, applyMessage) = await UpdateHelper.ApplyVelopackPendingAsync(applyChoice);
+            var applyChoice =
+                choiceRes == ContentDialogResult.Primary
+                    ? UpdateHelper.VelopackUpdateApplyChoice.RestartNow
+                    : UpdateHelper.VelopackUpdateApplyChoice.OnExit;
+            ShowInfo(
+                applyChoice == UpdateHelper.VelopackUpdateApplyChoice.RestartNow
+                    ? "Applying update and restarting..."
+                    : "Downloading update for apply-on-exit..."
+            );
+            var (applyOk, restartInitiated, applyMessage) =
+                await UpdateHelper.ApplyVelopackPendingAsync(applyChoice);
             if (!applyOk)
-            { ShowInfo("Update failed: " + applyMessage, InfoBarSeverity.Error); return; }
+            {
+                ShowInfo("Update failed: " + applyMessage, InfoBarSeverity.Error);
+                return;
+            }
 
             if (restartInitiated)
             {
@@ -220,7 +347,10 @@ namespace PolicyPlusPlus
             {
                 if (applyChoice == UpdateHelper.VelopackUpdateApplyChoice.OnExit)
                 {
-                    ShowInfo(applyMessage ?? "Update will be applied on exit.", InfoBarSeverity.Informational);
+                    ShowInfo(
+                        applyMessage ?? "Update will be applied on exit.",
+                        InfoBarSeverity.Informational
+                    );
                 }
                 else
                 {
@@ -228,13 +358,19 @@ namespace PolicyPlusPlus
                 }
             }
         }
+
         private async void MenuOpenStorePage_Click(object sender, RoutedEventArgs e)
         {
             if (!UpdateHelper.IsStoreBuild)
-            { ShowInfo("Store page not available in this build."); return; }
+            {
+                ShowInfo("Store page not available in this build.");
+                return;
+            }
             var (ok, message) = await UpdateHelper.OpenStorePageAsync();
-            if (!ok) ShowInfo("Failed to open Store page: " + message, InfoBarSeverity.Error);
+            if (!ok)
+                ShowInfo("Failed to open Store page: " + message, InfoBarSeverity.Error);
         }
+
         private void BookmarkService_ActiveListChanged(object? sender, EventArgs e)
         {
             try
@@ -242,7 +378,9 @@ namespace PolicyPlusPlus
                 // If bookmark-only filter is enabled, active list switch changes the visible set.
                 if (_bookmarksOnly)
                 {
-                    DispatcherQueue.TryEnqueue(() => RebindConsideringAsync(SearchBox?.Text ?? string.Empty));
+                    DispatcherQueue.TryEnqueue(() =>
+                        RebindConsideringAsync(SearchBox?.Text ?? string.Empty)
+                    );
                 }
                 else
                 {
@@ -252,6 +390,7 @@ namespace PolicyPlusPlus
             }
             catch { }
         }
+
         private void TryInitCustomTitleBar()
         {
             try
@@ -267,11 +406,13 @@ namespace PolicyPlusPlus
                 }
                 if (Content is FrameworkElement fe)
                 {
-                    fe.Loaded += (_, __) => this.SetTitleBar(fe.FindName("AppTitleBar") as UIElement);
+                    fe.Loaded += (_, __) =>
+                        this.SetTitleBar(fe.FindName("AppTitleBar") as UIElement);
                 }
             }
             catch { }
         }
+
         private void UpdateTitleBarMargin(AppWindow appWindow)
         {
             try
@@ -280,11 +421,17 @@ namespace PolicyPlusPlus
                 {
                     var left = appWindow.TitleBar.LeftInset;
                     var right = appWindow.TitleBar.RightInset;
-                    bar.Margin = new Thickness(left + 8, bar.Margin.Top, right + 8, bar.Margin.Bottom);
+                    bar.Margin = new Thickness(
+                        left + 8,
+                        bar.Margin.Top,
+                        right + 8,
+                        bar.Margin.Bottom
+                    );
                 }
             }
             catch { }
         }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             // Retained for legacy path; main startup now calls EnsureInitializedAsync earlier.
@@ -293,51 +440,110 @@ namespace PolicyPlusPlus
 
         private async System.Threading.Tasks.Task InitializeUiFromSettingsAsync()
         {
-            if (_initialized) return;
+            if (_initialized)
+                return;
             _initialized = true;
-            try { (RootGrid?.FindName("VersionText") as TextBlock)!.Text = BuildInfo.Version; } catch { }
+            try
+            {
+                (RootGrid?.FindName("VersionText") as TextBlock)!.Text = BuildInfo.Version;
+            }
+            catch { }
             AppSettings s;
-            try { s = _settingsCache ?? SettingsService.Instance.LoadSettings(); _settingsCache = s; }
-            catch { s = new AppSettings(); }
+            try
+            {
+                s = _settingsCache ?? SettingsService.Instance.LoadSettings();
+                _settingsCache = s;
+            }
+            catch
+            {
+                s = new AppSettings();
+            }
             try
             {
                 _hideEmptyCategories = s.HideEmptyCategories ?? true;
-                try { ToggleHideEmptyMenu.IsChecked = _hideEmptyCategories; } catch { }
+                try
+                {
+                    ToggleHideEmptyMenu.IsChecked = _hideEmptyCategories;
+                }
+                catch { }
 
                 _configuredOnly = s.ConfiguredOnly ?? false;
                 _bookmarksOnly = s.BookmarksOnly ?? false;
                 try
                 {
-                    if (ChkConfiguredOnly != null) { ChkConfiguredOnly.IsChecked = _configuredOnly; }
-                    if (ChkBookmarksOnly != null) { ChkBookmarksOnly.IsChecked = _bookmarksOnly; }
+                    if (ChkConfiguredOnly != null)
+                    {
+                        ChkConfiguredOnly.IsChecked = _configuredOnly;
+                    }
+                    if (ChkBookmarksOnly != null)
+                    {
+                        ChkBookmarksOnly.IsChecked = _bookmarksOnly;
+                    }
                 }
                 catch { }
 
-                try { UpdateSearchPlaceholder(); } catch { }
+                try
+                {
+                    UpdateSearchPlaceholder();
+                }
+                catch { }
                 ApplySavedDetailPaneRatioIfAny();
 
                 _showDetails = s.ShowDetails ?? true;
-                try { ViewDetailsToggle.IsChecked = _showDetails; } catch { }
+                try
+                {
+                    ViewDetailsToggle.IsChecked = _showDetails;
+                }
+                catch { }
                 ApplyDetailsPaneVisibility();
 
                 _limitUnfilteredTo1000 = s.LimitUnfilteredTo1000 ?? true;
-                try { ToggleLimitUnfilteredMenu.IsChecked = _limitUnfilteredTo1000; } catch { }
+                try
+                {
+                    ToggleLimitUnfilteredMenu.IsChecked = _limitUnfilteredTo1000;
+                }
+                catch { }
 
                 var themePref = s.Theme ?? "System";
                 ApplyTheme(themePref);
-                App.SetGlobalTheme(themePref switch { "Light" => ElementTheme.Light, "Dark" => ElementTheme.Dark, _ => ElementTheme.Default });
+                App.SetGlobalTheme(
+                    themePref switch
+                    {
+                        "Light" => ElementTheme.Light,
+                        "Dark" => ElementTheme.Dark,
+                        _ => ElementTheme.Default,
+                    }
+                );
 
                 var scalePref = s.UIScale ?? "100%";
                 SetScaleFromString(scalePref, updateSelector: false, save: false);
 
                 LoadColumnPrefs();
-                try { HookColumnLayoutEvents(); } catch { }
-                try { ApplySavedColumnLayout(); } catch { }
-                try { ApplySecondLanguageVisibilityToViewMenu(); } catch { }
-                try { ApplyPersistedLayout(); } catch { }
+                try
+                {
+                    HookColumnLayoutEvents();
+                }
+                catch { }
+                try
+                {
+                    ApplySavedColumnLayout();
+                }
+                catch { }
+                try
+                {
+                    ApplySecondLanguageVisibilityToViewMenu();
+                }
+                catch { }
+                try
+                {
+                    ApplyPersistedLayout();
+                }
+                catch { }
                 HookDoubleTapHandlers();
 
-                string defaultPath = Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
+                string defaultPath = Environment.ExpandEnvironmentVariables(
+                    @"%WINDIR%\\PolicyDefinitions"
+                );
                 try
                 {
                     var testAdmx = Environment.GetEnvironmentVariable("POLICYPLUS_TEST_ADMX_DIR");
@@ -349,25 +555,45 @@ namespace PolicyPlusPlus
                 catch { }
                 string lastPath = s.AdmxSourcePath ?? defaultPath;
                 if (Directory.Exists(lastPath))
-                { await LoadAdmxFolderAsync(lastPath); }
+                {
+                    await LoadAdmxFolderAsync(lastPath);
+                }
 
-                try { InitNavigation(); } catch { }
-                try { UpdateSearchClearButtonVisibility(); } catch { }
+                try
+                {
+                    InitNavigation();
+                }
+                catch { }
+                try
+                {
+                    UpdateSearchClearButtonVisibility();
+                }
+                catch { }
 
                 try
                 {
                     var hist = SettingsService.Instance.LoadHistory();
-                    foreach (var h in hist) PendingChangesService.Instance.History.Add(h);
+                    foreach (var h in hist)
+                        PendingChangesService.Instance.History.Add(h);
                 }
                 catch { }
 
-                try { ObserveSearchOptions(); } catch { }
-                try { ObserveFilterOptions(); } catch { }
+                try
+                {
+                    ObserveSearchOptions();
+                }
+                catch { }
+                try
+                {
+                    ObserveFilterOptions();
+                }
+                catch { }
             }
             catch { }
         }
 
-        public System.Threading.Tasks.Task EnsureInitializedAsync() => InitializeUiFromSettingsAsync();
+        public System.Threading.Tasks.Task EnsureInitializedAsync() =>
+            InitializeUiFromSettingsAsync();
 
         // Helper to detect double-tap originating from bookmark toggle button to suppress edit dialog.
         private bool IsFromBookmarkButton(DependencyObject? dep)
@@ -383,39 +609,63 @@ namespace PolicyPlusPlus
 
         private void HookDoubleTapHandlers()
         {
-            if (_doubleTapHooked) return;
+            if (_doubleTapHooked)
+                return;
             try
             {
                 if (PolicyList != null)
                 {
-                    PolicyList.AddHandler(UIElement.DoubleTappedEvent, new DoubleTappedEventHandler(PolicyList_DoubleTapped), true);
+                    PolicyList.AddHandler(
+                        UIElement.DoubleTappedEvent,
+                        new DoubleTappedEventHandler(PolicyList_DoubleTapped),
+                        true
+                    );
                 }
                 if (CategoryTree != null)
                 {
-                    CategoryTree.AddHandler(UIElement.TappedEvent, new TappedEventHandler(CategoryTree_Tapped), true);
-                    CategoryTree.AddHandler(UIElement.DoubleTappedEvent, new DoubleTappedEventHandler(CategoryTree_DoubleTapped), true);
+                    CategoryTree.AddHandler(
+                        UIElement.TappedEvent,
+                        new TappedEventHandler(CategoryTree_Tapped),
+                        true
+                    );
+                    CategoryTree.AddHandler(
+                        UIElement.DoubleTappedEvent,
+                        new DoubleTappedEventHandler(CategoryTree_DoubleTapped),
+                        true
+                    );
                 }
                 _doubleTapHooked = true;
             }
             catch { }
         }
 
-        private CheckBox? GetFlag(string name)
-            => (RootGrid?.FindName(name) as CheckBox);
+        private CheckBox? GetFlag(string name) => (RootGrid?.FindName(name) as CheckBox);
 
         private void HookPendingQueue()
         {
             try
             {
-                PendingChangesWindow.ChangesAppliedOrDiscarded += (_, __) => { UpdateUnsavedIndicator(); RebindConsideringAsync(SearchBox?.Text ?? string.Empty); PersistHistory(); };
-                PendingChangesService.Instance.Pending.CollectionChanged += Pending_CollectionChanged;
-                PendingChangesService.Instance.History.CollectionChanged += (_, __) => { PersistHistory(); };
+                PendingChangesWindow.ChangesAppliedOrDiscarded += (_, __) =>
+                {
+                    UpdateUnsavedIndicator();
+                    RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                    PersistHistory();
+                };
+                PendingChangesService.Instance.Pending.CollectionChanged +=
+                    Pending_CollectionChanged;
+                PendingChangesService.Instance.History.CollectionChanged += (_, __) =>
+                {
+                    PersistHistory();
+                };
                 UpdateUnsavedIndicator();
             }
             catch { }
         }
 
-        private void Pending_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        private void Pending_CollectionChanged(
+            object? sender,
+            System.Collections.Specialized.NotifyCollectionChangedEventArgs e
+        )
         {
             try
             {
@@ -424,14 +674,16 @@ namespace PolicyPlusPlus
                 {
                     foreach (var obj in e.NewItems)
                     {
-                        if (obj is PendingChange pc && !string.IsNullOrEmpty(pc.PolicyId)) ids.Add(pc.PolicyId);
+                        if (obj is PendingChange pc && !string.IsNullOrEmpty(pc.PolicyId))
+                            ids.Add(pc.PolicyId);
                     }
                 }
                 if (e.OldItems != null)
                 {
                     foreach (var obj in e.OldItems)
                     {
-                        if (obj is PendingChange pc && !string.IsNullOrEmpty(pc.PolicyId)) ids.Add(pc.PolicyId);
+                        if (obj is PendingChange pc && !string.IsNullOrEmpty(pc.PolicyId))
+                            ids.Add(pc.PolicyId);
                     }
                 }
 
@@ -516,9 +768,19 @@ namespace PolicyPlusPlus
                 var token = _refreshDebounceCts.Token;
                 _ = Task.Run(async () =>
                 {
-                    try { await Task.Delay(60, token); } catch { return; }
-                    if (token.IsCancellationRequested) return;
-                    DispatcherQueue.TryEnqueue(() => RebindConsideringAsync(SearchBox?.Text ?? string.Empty));
+                    try
+                    {
+                        await Task.Delay(60, token);
+                    }
+                    catch
+                    {
+                        return;
+                    }
+                    if (token.IsCancellationRequested)
+                        return;
+                    DispatcherQueue.TryEnqueue(() =>
+                        RebindConsideringAsync(SearchBox?.Text ?? string.Empty)
+                    );
                 });
             }
             catch { }
@@ -546,25 +808,40 @@ namespace PolicyPlusPlus
             {
                 if (UnsavedIndicator != null)
                 {
-                    UnsavedIndicator.Visibility = (PendingChangesService.Instance.Pending.Count > 0) ? Visibility.Visible : Visibility.Collapsed;
+                    UnsavedIndicator.Visibility =
+                        (PendingChangesService.Instance.Pending.Count > 0)
+                            ? Visibility.Visible
+                            : Visibility.Collapsed;
                 }
             });
         }
 
         private void SetBusy(bool busy)
         {
-            if (BusyOverlay == null) return;
+            if (BusyOverlay == null)
+                return;
             if (busy)
             {
-                try { if (BusyText != null && string.IsNullOrWhiteSpace(BusyText.Text)) BusyText.Text = "Working..."; } catch { }
+                try
+                {
+                    if (BusyText != null && string.IsNullOrWhiteSpace(BusyText.Text))
+                        BusyText.Text = "Working...";
+                }
+                catch { }
             }
             BusyOverlay.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void SetBusy(bool busy, string? message)
         {
-            if (BusyOverlay == null) return;
-            try { if (BusyText != null && !string.IsNullOrEmpty(message)) BusyText.Text = message; } catch { }
+            if (BusyOverlay == null)
+                return;
+            try
+            {
+                if (BusyText != null && !string.IsNullOrEmpty(message))
+                    BusyText.Text = message;
+            }
+            catch { }
             BusyOverlay.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -574,10 +851,16 @@ namespace PolicyPlusPlus
             try
             {
                 var settings = SettingsService.Instance.LoadSettings();
-                var langPref = settings.Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
+                var langPref =
+                    settings.Language ?? System.Globalization.CultureInfo.CurrentUICulture.Name;
                 var secondEnabled = settings.SecondLanguageEnabled ?? false;
-                var secondLang = secondEnabled ? (settings.SecondLanguage ?? "en-US") : string.Empty;
-                bool useSecond = secondEnabled && !string.IsNullOrEmpty(secondLang) && !string.Equals(secondLang, langPref, StringComparison.OrdinalIgnoreCase);
+                var secondLang = secondEnabled
+                    ? (settings.SecondLanguage ?? "en-US")
+                    : string.Empty;
+                bool useSecond =
+                    secondEnabled
+                    && !string.IsNullOrEmpty(secondLang)
+                    && !string.Equals(secondLang, langPref, StringComparison.OrdinalIgnoreCase);
 
                 _currentAdmxPath = path; // for cache keys
                 _currentLanguage = langPref; // for cache keys
@@ -586,8 +869,23 @@ namespace PolicyPlusPlus
                 int failureCount = 0;
                 List<PolicyPlusPolicy>? allLocal = null;
                 int totalGroupsLocal = 0;
-                List<(PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)>? searchIndexLocal = null;
-                Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)>? searchIndexByIdLocal = null;
+                List<(
+                    PolicyPlusPolicy Policy,
+                    string NameLower,
+                    string SecondLower,
+                    string IdLower,
+                    string DescLower
+                )>? searchIndexLocal = null;
+                Dictionary<
+                    string,
+                    (
+                        PolicyPlusPolicy Policy,
+                        string NameLower,
+                        string SecondLower,
+                        string IdLower,
+                        string DescLower
+                    )
+                >? searchIndexByIdLocal = null;
 
                 await System.Threading.Tasks.Task.Run(() =>
                 {
@@ -596,23 +894,47 @@ namespace PolicyPlusPlus
                     newBundle = b;
                     failureCount = fails.Count();
                     allLocal = b.Policies.Values.ToList();
-                    totalGroupsLocal = allLocal.GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase).Count();
+                    totalGroupsLocal = allLocal
+                        .GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
+                        .Count();
                     try
                     {
-                        searchIndexLocal = allLocal.Select(p => (
-                            Policy: p,
-                            NameLower: SearchText.Normalize(p.DisplayName),
-                            SecondLower: useSecond ? SearchText.Normalize(LocalizedTextService.GetPolicyNameIn(p, secondLang)) : string.Empty,
-                            IdLower: SearchText.Normalize(p.UniqueID),
-                            DescLower: SearchText.Normalize(p.DisplayExplanation)
-                        )).ToList();
-                        searchIndexByIdLocal = new Dictionary<string, (PolicyPlusPolicy Policy, string NameLower, string SecondLower, string IdLower, string DescLower)>(StringComparer.OrdinalIgnoreCase);
-                        foreach (var e in searchIndexLocal) searchIndexByIdLocal[e.Policy.UniqueID] = e;
+                        searchIndexLocal = allLocal
+                            .Select(p =>
+                                (
+                                    Policy: p,
+                                    NameLower: SearchText.Normalize(p.DisplayName),
+                                    SecondLower: useSecond
+                                        ? SearchText.Normalize(
+                                            LocalizedTextService.GetPolicyNameIn(p, secondLang)
+                                        )
+                                        : string.Empty,
+                                    IdLower: SearchText.Normalize(p.UniqueID),
+                                    DescLower: SearchText.Normalize(p.DisplayExplanation)
+                                )
+                            )
+                            .ToList();
+                        searchIndexByIdLocal = new Dictionary<
+                            string,
+                            (
+                                PolicyPlusPolicy Policy,
+                                string NameLower,
+                                string SecondLower,
+                                string IdLower,
+                                string DescLower
+                            )
+                        >(StringComparer.OrdinalIgnoreCase);
+                        foreach (var e in searchIndexLocal)
+                            searchIndexByIdLocal[e.Policy.UniqueID] = e;
                     }
                     catch
                     {
-                        searchIndexLocal = new List<(PolicyPlusPolicy, string, string, string, string)>();
-                        searchIndexByIdLocal = new Dictionary<string, (PolicyPlusPolicy, string, string, string, string)>(StringComparer.OrdinalIgnoreCase);
+                        searchIndexLocal =
+                            new List<(PolicyPlusPolicy, string, string, string, string)>();
+                        searchIndexByIdLocal = new Dictionary<
+                            string,
+                            (PolicyPlusPolicy, string, string, string, string)
+                        >(StringComparer.OrdinalIgnoreCase);
                     }
                 });
 
@@ -623,8 +945,14 @@ namespace PolicyPlusPlus
                 _descIndexBuilt = false; // force rebuild or load from cache for description index
 
                 if (searchIndexLocal != null && searchIndexByIdLocal != null)
-                { _searchIndex = searchIndexLocal; _searchIndexById = searchIndexByIdLocal; }
-                else { RebuildSearchIndex(); }
+                {
+                    _searchIndex = searchIndexLocal;
+                    _searchIndexById = searchIndexByIdLocal;
+                }
+                else
+                {
+                    RebuildSearchIndex();
+                }
 
                 // Attempt to prime second-language NGram from cache; do not force rebuild if available.
                 if (useSecond)
@@ -632,7 +960,17 @@ namespace PolicyPlusPlus
                     try
                     {
                         var fp2 = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, secondLang);
-                        if (CacheService.TryLoadNGramSnapshot(_currentAdmxPath, secondLang, fp2, _secondIndex.N, "sec-" + secondLang, out var snap2) && snap2 != null)
+                        if (
+                            CacheService.TryLoadNGramSnapshot(
+                                _currentAdmxPath,
+                                secondLang,
+                                fp2,
+                                _secondIndex.N,
+                                "sec-" + secondLang,
+                                out var snap2
+                            )
+                            && snap2 != null
+                        )
                         {
                             _secondIndex.LoadSnapshot(snap2);
                             _secondIndexBuilt = true;
@@ -642,7 +980,10 @@ namespace PolicyPlusPlus
                             _secondIndexBuilt = false; // lazy build on demand
                         }
                     }
-                    catch { _secondIndexBuilt = false; }
+                    catch
+                    {
+                        _secondIndexBuilt = false;
+                    }
                 }
                 else
                 {
@@ -654,37 +995,54 @@ namespace PolicyPlusPlus
                 BuildCategoryTreeAsync();
 
                 if (failureCount > 0)
-                    ShowInfo($"ADMX load completed with {failureCount} issue(s).", InfoBarSeverity.Warning);
+                    ShowInfo(
+                        $"ADMX load completed with {failureCount} issue(s).",
+                        InfoBarSeverity.Warning
+                    );
                 else
                     ShowInfo($"ADMX loaded ({langPref}).");
 
                 RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
             }
-            finally { SetBusy(false); }
+            finally
+            {
+                SetBusy(false);
+            }
         }
 
         private void AppliesToSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_suppressAppliesToSelectionChanged) return;
+            if (_suppressAppliesToSelectionChanged)
+                return;
             var sel = (AppliesToSelector?.SelectedItem as ComboBoxItem)?.Content?.ToString();
-            _appliesFilter = sel switch { "Computer" => AdmxPolicySection.Machine, "User" => AdmxPolicySection.User, _ => AdmxPolicySection.Both };
+            _appliesFilter = sel switch
+            {
+                "Computer" => AdmxPolicySection.Machine,
+                "User" => AdmxPolicySection.User,
+                _ => AdmxPolicySection.Both,
+            };
             _navTyping = false;
             RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
             UpdateNavButtons();
         }
 
-        private void EnsureTempPolPaths() { /* legacy no-op: creation handled inside PolicySourceManager */ }
+        private void EnsureTempPolPaths() { /* legacy no-op: creation handled inside PolicySourceManager */
+        }
 
         private void PolicyList_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             try
             {
-                if (PolicyList == null) return;
+                if (PolicyList == null)
+                    return;
                 DependencyObject? dep = e.OriginalSource as DependencyObject;
                 DataGridRow? row = null;
                 while (dep != null && row == null)
                 {
-                    if (dep is DataGridRow dgRow) row = dgRow; else dep = VisualTreeHelper.GetParent(dep);
+                    if (dep is DataGridRow dgRow)
+                        row = dgRow;
+                    else
+                        dep = VisualTreeHelper.GetParent(dep);
                 }
                 if (row != null && row.DataContext != null)
                 {
@@ -695,16 +1053,30 @@ namespace PolicyPlusPlus
             catch { }
         }
 
-        private async System.Threading.Tasks.Task OpenEditDialogForPolicyInternalAsync(PolicyPlusPolicy representative, bool ensureFront)
+        private async System.Threading.Tasks.Task OpenEditDialogForPolicyInternalAsync(
+            PolicyPlusPolicy representative,
+            bool ensureFront
+        )
         {
-            try { SearchRankingService.RecordUsage(representative.UniqueID); } catch { }
+            try
+            {
+                SearchRankingService.RecordUsage(representative.UniqueID);
+            }
+            catch { }
             await this.OpenEditDialogForPolicyAsync(representative, ensureFront);
         }
 
         private void BtnViewFormatted_Click(object sender, RoutedEventArgs e)
         {
-            var row = PolicyList?.SelectedItem as PolicyListRow; var p = row?.Policy; if (p is null || _bundle is null) return;
-            try { SearchRankingService.RecordUsage(p.UniqueID); } catch { }
+            var row = PolicyList?.SelectedItem as PolicyListRow;
+            var p = row?.Policy;
+            if (p is null || _bundle is null)
+                return;
+            try
+            {
+                SearchRankingService.RecordUsage(p.UniqueID);
+            }
+            catch { }
             var ctx = PolicySourceAccessor.Acquire();
             var win = new DetailPolicyFormattedWindow();
             win.Initialize(p, _bundle, ctx.Comp, ctx.User, p.RawPolicy.Section);
@@ -714,12 +1086,26 @@ namespace PolicyPlusPlus
         private void BtnClearAll_Click(object sender, RoutedEventArgs e)
         {
             _navTyping = false;
-            SearchBox.Text = string.Empty; _selectedCategory = null; _configuredOnly = false; _bookmarksOnly = false;
-            if (ChkConfiguredOnly != null) ChkConfiguredOnly.IsChecked = false;
-            if (ChkBookmarksOnly != null) ChkBookmarksOnly.IsChecked = false;
-            try { SettingsService.Instance.UpdateConfiguredOnly(false); } catch { }
-            try { SettingsService.Instance.UpdateBookmarksOnly(false); } catch { }
-            UpdateSearchPlaceholder(); RunAsyncFilterAndBind();
+            SearchBox.Text = string.Empty;
+            _selectedCategory = null;
+            _configuredOnly = false;
+            _bookmarksOnly = false;
+            if (ChkConfiguredOnly != null)
+                ChkConfiguredOnly.IsChecked = false;
+            if (ChkBookmarksOnly != null)
+                ChkBookmarksOnly.IsChecked = false;
+            try
+            {
+                SettingsService.Instance.UpdateConfiguredOnly(false);
+            }
+            catch { }
+            try
+            {
+                SettingsService.Instance.UpdateBookmarksOnly(false);
+            }
+            catch { }
+            UpdateSearchPlaceholder();
+            RunAsyncFilterAndBind();
             UpdateNavButtons();
         }
 
@@ -735,13 +1121,15 @@ namespace PolicyPlusPlus
                 {
                     Title = "About Policy Plus Plus",
                     Content = txt,
-                    CloseButtonText = "Close"
+                    CloseButtonText = "Close",
                 };
-                if (Content is FrameworkElement fe) dlg.XamlRoot = fe.XamlRoot;
+                if (Content is FrameworkElement fe)
+                    dlg.XamlRoot = fe.XamlRoot;
                 await dlg.ShowAsync();
             }
             catch { }
         }
+
         private async void BtnLoadAdmxFolder_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -755,13 +1143,21 @@ namespace PolicyPlusPlus
                 dlg.FileTypeFilter.Add(".zip");
 
                 var file = await dlg.PickSingleFolderAsync();
-                if (file == null) return;
+                if (file == null)
+                    return;
                 SetBusy(true, "Loading ADMX folder...");
                 try
                 {
                     var path = file.Path;
                     var ok = true;
-                    try { ok = Directory.Exists(path); } catch { ok = false; }
+                    try
+                    {
+                        ok = Directory.Exists(path);
+                    }
+                    catch
+                    {
+                        ok = false;
+                    }
                     if (!ok)
                     {
                         ShowInfo("Folder not found. Please re-select.", InfoBarSeverity.Error);
@@ -769,9 +1165,21 @@ namespace PolicyPlusPlus
                     }
 
                     string? lastPath = null;
-                    try { lastPath = SettingsService.Instance.LoadSettings().AdmxSourcePath; } catch { }
+                    try
+                    {
+                        lastPath = SettingsService.Instance.LoadSettings().AdmxSourcePath;
+                    }
+                    catch { }
                     bool isSamePath = false;
-                    try { isSamePath = string.Equals(lastPath, path, StringComparison.OrdinalIgnoreCase); } catch { }
+                    try
+                    {
+                        isSamePath = string.Equals(
+                            lastPath,
+                            path,
+                            StringComparison.OrdinalIgnoreCase
+                        );
+                    }
+                    catch { }
 
                     await LoadAdmxFolderAsync(path);
 
@@ -781,15 +1189,24 @@ namespace PolicyPlusPlus
                         ContentDialog reloadDlg = new()
                         {
                             Title = "ADMX Load Complete",
-                            Content = "The selected ADMX folder has been loaded. Save changes to use it as the default source?",
+                            Content =
+                                "The selected ADMX folder has been loaded. Save changes to use it as the default source?",
                             PrimaryButtonText = "Save & Reload",
                             SecondaryButtonText = "Discard Changes",
                             CloseButtonText = "Cancel",
-                            DefaultButton = ContentDialogButton.Primary
+                            DefaultButton = ContentDialogButton.Primary,
                         };
-                        if (this.Content is FrameworkElement fe) reloadDlg.XamlRoot = fe.XamlRoot;
+                        if (this.Content is FrameworkElement fe)
+                            reloadDlg.XamlRoot = fe.XamlRoot;
                         ContentDialogResult res;
-                        try { res = await reloadDlg.ShowAsync(); } catch { res = ContentDialogResult.None; }
+                        try
+                        {
+                            res = await reloadDlg.ShowAsync();
+                        }
+                        catch
+                        {
+                            res = ContentDialogResult.None;
+                        }
                         if (res == ContentDialogResult.Primary)
                         {
                             // Save as new default
@@ -807,7 +1224,10 @@ namespace PolicyPlusPlus
                         }
                     }
                 }
-                finally { SetBusy(false); }
+                finally
+                {
+                    SetBusy(false);
+                }
             }
             catch (Exception ex)
             {
@@ -815,6 +1235,7 @@ namespace PolicyPlusPlus
                 ShowInfo("Failed to load ADMX folder: " + ex.Message, InfoBarSeverity.Error);
             }
         }
+
         private void ToggleLimitUnfilteredMenu_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -826,10 +1247,19 @@ namespace PolicyPlusPlus
             }
             catch { }
         }
+
         private void RebindConsideringAsync(string q)
         {
-            try { if (string.IsNullOrWhiteSpace(q)) RunAsyncFilterAndBind(); else RunAsyncSearchAndBind(q); } catch { }
+            try
+            {
+                if (string.IsNullOrWhiteSpace(q))
+                    RunAsyncFilterAndBind();
+                else
+                    RunAsyncSearchAndBind(q);
+            }
+            catch { }
         }
+
         private void UnsavedIndicator_Tapped(object sender, TappedRoutedEventArgs e)
         {
             // If no pending changes, act as a refresh
@@ -842,50 +1272,98 @@ namespace PolicyPlusPlus
             // Otherwise, show the pending changes window
             var win = new PendingChangesWindow();
             win.Activate();
-            try { WindowHelpers.BringToFront(win); } catch { }
+            try
+            {
+                WindowHelpers.BringToFront(win);
+            }
+            catch { }
         }
 
         private void ShowActiveSourceInfo()
         {
-            try { UpdateSourceStatusUnified(); } catch { }
+            try
+            {
+                UpdateSourceStatusUnified();
+            }
+            catch { }
         }
 
         private void PolicyList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             DependencyObject? dep = e.OriginalSource as DependencyObject;
-            if (dep != null && IsFromBookmarkButton(dep)) { e.Handled = true; return; }
+            if (dep != null && IsFromBookmarkButton(dep))
+            {
+                e.Handled = true;
+                return;
+            }
             object? item = null;
             var dgRow = FindAncestorDataGridRow(dep);
-            if (dgRow != null) item = dgRow.DataContext;
-            if (item == null) item = (e.OriginalSource as FrameworkElement)?.DataContext;
-            if (item == null) item = PolicyList?.SelectedItem;
-            if (item is PolicyListRow row && row.Policy is PolicyPlusPolicy pol) { e.Handled = true; _ = OpenEditDialogForPolicyInternalAsync(pol, true); return; }
-            if (item is PolicyListRow row2 && row2.Category is PolicyPlusCategory cat) { e.Handled = true; _selectedCategory = cat; UpdateSearchPlaceholder(); _navTyping = false; RebindConsideringAsync(SearchBox?.Text ?? string.Empty); SelectCategoryInTree(cat); UpdateNavButtons(); }
+            if (dgRow != null)
+                item = dgRow.DataContext;
+            if (item == null)
+                item = (e.OriginalSource as FrameworkElement)?.DataContext;
+            if (item == null)
+                item = PolicyList?.SelectedItem;
+            if (item is PolicyListRow row && row.Policy is PolicyPlusPolicy pol)
+            {
+                e.Handled = true;
+                _ = OpenEditDialogForPolicyInternalAsync(pol, true);
+                return;
+            }
+            if (item is PolicyListRow row2 && row2.Category is PolicyPlusCategory cat)
+            {
+                e.Handled = true;
+                _selectedCategory = cat;
+                UpdateSearchPlaceholder();
+                _navTyping = false;
+                RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                SelectCategoryInTree(cat);
+                UpdateNavButtons();
+            }
         }
+
         private static DataGridRow? FindAncestorDataGridRow(DependencyObject? start)
         {
             while (start != null)
             {
-                if (start is DataGridRow dgr) return dgr;
+                if (start is DataGridRow dgr)
+                    return dgr;
                 start = VisualTreeHelper.GetParent(start);
             }
             return null;
         }
+
         private void UpdateSearchPlaceholder()
         {
-            if (SearchBox == null) return;
-            SearchBox.PlaceholderText = _selectedCategory != null ? $"Search policies in {_selectedCategory.DisplayName}" : "Search policies";
-            try { var btn = RootGrid?.FindName("ClearCategoryFilterButton") as Button; if (btn != null) btn.IsEnabled = _selectedCategory != null; } catch { }
+            if (SearchBox == null)
+                return;
+            SearchBox.PlaceholderText =
+                _selectedCategory != null
+                    ? $"Search policies in {_selectedCategory.DisplayName}"
+                    : "Search policies";
+            try
+            {
+                var btn = RootGrid?.FindName("ClearCategoryFilterButton") as Button;
+                if (btn != null)
+                    btn.IsEnabled = _selectedCategory != null;
+            }
+            catch { }
         }
+
         private void ViewDetailsToggle_Click(object sender, RoutedEventArgs e)
         {
             if (sender is ToggleMenuFlyoutItem t)
             {
                 _showDetails = t.IsChecked;
-                try { SettingsService.Instance.UpdateShowDetails(_showDetails); } catch { }
+                try
+                {
+                    SettingsService.Instance.UpdateShowDetails(_showDetails);
+                }
+                catch { }
                 ApplyDetailsPaneVisibility();
             }
         }
+
         private async void BtnExportReg_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -893,10 +1371,14 @@ namespace PolicyPlusPlus
                 var picker = new FileSavePicker();
                 var hwnd = WindowNative.GetWindowHandle(this);
                 InitializeWithWindow.Initialize(picker, hwnd);
-                picker.FileTypeChoices.Add("Registry scripts", new System.Collections.Generic.List<string> { ".reg" });
+                picker.FileTypeChoices.Add(
+                    "Registry scripts",
+                    new System.Collections.Generic.List<string> { ".reg" }
+                );
                 picker.SuggestedFileName = "export";
                 var file = await picker.PickSaveFileAsync();
-                if (file is null) return;
+                if (file is null)
+                    return;
                 var reg = PolicySourceSnapshot.SnapshotAllPolicyToReg();
                 reg.Save(file.Path);
                 ShowInfo(".reg exported.", InfoBarSeverity.Success);
@@ -912,7 +1394,8 @@ namespace PolicyPlusPlus
             try
             {
                 var dlg = new ImportPolDialog();
-                if (this.Content is FrameworkElement root) dlg.XamlRoot = root.XamlRoot;
+                if (this.Content is FrameworkElement root)
+                    dlg.XamlRoot = root.XamlRoot;
                 var result = await dlg.ShowAsync();
                 if (result == ContentDialogResult.Primary && dlg.Pol != null)
                 {
@@ -930,57 +1413,96 @@ namespace PolicyPlusPlus
             try
             {
                 var dlg = new ImportRegDialog();
-                if (this.Content is FrameworkElement root) dlg.XamlRoot = root.XamlRoot;
+                if (this.Content is FrameworkElement root)
+                    dlg.XamlRoot = root.XamlRoot;
                 var result = await dlg.ShowAsync();
                 if (result == ContentDialogResult.Primary && dlg.ParsedReg != null)
                 {
                     SetBusy(true, "Saving...");
                     try
                     {
-                        bool tempMode = PolicySourceManager.Instance.Mode == PolicySourceMode.TempPol;
+                        bool tempMode =
+                            PolicySourceManager.Instance.Mode == PolicySourceMode.TempPol;
                         if (tempMode)
                         {
                             EnsureTempPolPaths();
-                            var (userPolNew, machinePolNew) = RegImportHelper.ToPolByHive(dlg.ParsedReg);
+                            var (userPolNew, machinePolNew) = RegImportHelper.ToPolByHive(
+                                dlg.ParsedReg
+                            );
                             if (!string.IsNullOrEmpty(_tempPolUserPath))
                             {
                                 var userPath = _tempPolUserPath!;
-                                var existingUser = File.Exists(userPath) ? PolFile.Load(userPath) : new PolFile();
+                                var existingUser = File.Exists(userPath)
+                                    ? PolFile.Load(userPath)
+                                    : new PolFile();
                                 userPolNew.Apply(existingUser);
                                 existingUser.Save(userPath);
                             }
                             if (!string.IsNullOrEmpty(_tempPolCompPath))
                             {
                                 var compPath = _tempPolCompPath!;
-                                var existingComp = File.Exists(compPath) ? PolFile.Load(compPath) : new PolFile();
+                                var existingComp = File.Exists(compPath)
+                                    ? PolFile.Load(compPath)
+                                    : new PolFile();
                                 machinePolNew.Apply(existingComp);
                                 existingComp.Save(compPath);
                             }
-                            ShowInfo(".reg imported to temp POLs (User/Machine).", InfoBarSeverity.Success);
+                            ShowInfo(
+                                ".reg imported to temp POLs (User/Machine).",
+                                InfoBarSeverity.Success
+                            );
                         }
                         else
                         {
                             var (userPol, machinePol) = RegImportHelper.ToPolByHive(dlg.ParsedReg);
-                            string? machineB64 = null, userB64 = null;
+                            string? machineB64 = null,
+                                userB64 = null;
                             if (machinePol != null)
                             {
-                                using var msM = new MemoryStream(); using var bwM = new BinaryWriter(msM, System.Text.Encoding.Unicode, true);
-                                machinePol.Save(bwM); msM.Position = 0; machineB64 = Convert.ToBase64String(msM.ToArray());
+                                using var msM = new MemoryStream();
+                                using var bwM = new BinaryWriter(
+                                    msM,
+                                    System.Text.Encoding.Unicode,
+                                    true
+                                );
+                                machinePol.Save(bwM);
+                                msM.Position = 0;
+                                machineB64 = Convert.ToBase64String(msM.ToArray());
                             }
                             if (userPol != null)
                             {
-                                using var msU = new MemoryStream(); using var bwU = new BinaryWriter(msU, System.Text.Encoding.Unicode, true);
-                                userPol.Save(bwU); msU.Position = 0; userB64 = Convert.ToBase64String(msU.ToArray());
+                                using var msU = new MemoryStream();
+                                using var bwU = new BinaryWriter(
+                                    msU,
+                                    System.Text.Encoding.Unicode,
+                                    true
+                                );
+                                userPol.Save(bwU);
+                                msU.Position = 0;
+                                userB64 = Convert.ToBase64String(msU.ToArray());
                             }
-                            var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(machineB64, userB64, triggerRefresh: true);
+                            var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(
+                                machineB64,
+                                userB64,
+                                triggerRefresh: true
+                            );
                             if (!res.Ok)
-                            { ShowInfo(".reg import failed: " + (res.Error ?? "elevation error"), InfoBarSeverity.Error); return; }
+                            {
+                                ShowInfo(
+                                    ".reg import failed: " + (res.Error ?? "elevation error"),
+                                    InfoBarSeverity.Error
+                                );
+                                return;
+                            }
                             RefreshLocalSources();
                             ShowInfo(".reg imported to Local GPO.");
                         }
                         RefreshVisibleRows();
                     }
-                    finally { SetBusy(false); }
+                    finally
+                    {
+                        SetBusy(false);
+                    }
                 }
             }
             catch (Exception ex)
@@ -999,7 +1521,10 @@ namespace PolicyPlusPlus
             catch { }
             try
             {
-                if (PolicyList != null && PolicyList.ItemsSource is System.Collections.IEnumerable visSeq)
+                if (
+                    PolicyList != null
+                    && PolicyList.ItemsSource is System.Collections.IEnumerable visSeq
+                )
                 {
                     var ids = visSeq
                         .OfType<PolicyListRow>()
@@ -1017,13 +1542,21 @@ namespace PolicyPlusPlus
                 }
                 EventHub.PublishPolicySourcesRefreshed(null);
             }
-            catch { EventHub.PublishPolicySourcesRefreshed(null); }
+            catch
+            {
+                EventHub.PublishPolicySourcesRefreshed(null);
+            }
         }
 
-        private FilterViewModel? FilterVM => (ScaleHost?.Resources?["FilterVM"] as FilterViewModel) ?? (RootGrid?.Resources?["FilterVM"] as FilterViewModel); // include ScaleHost resources (actual location)
+        private FilterViewModel? FilterVM =>
+            (ScaleHost?.Resources?["FilterVM"] as FilterViewModel)
+            ?? (RootGrid?.Resources?["FilterVM"] as FilterViewModel); // include ScaleHost resources (actual location)
+
         private void ObserveFilterOptions()
         {
-            var vm = FilterVM; if (vm == null) return;
+            var vm = FilterVM;
+            if (vm == null)
+                return;
             vm.PropertyChanged += (_, args) =>
             {
                 try
@@ -1068,7 +1601,8 @@ namespace PolicyPlusPlus
         {
             try
             {
-                if (!PendingChangesService.Instance.IsDirty) return;
+                if (!PendingChangesService.Instance.IsDirty)
+                    return;
                 e.Cancel = true; // we'll decide
                 var dlg = new ContentDialog
                 {
@@ -1077,19 +1611,30 @@ namespace PolicyPlusPlus
                     PrimaryButtonText = "Save",
                     SecondaryButtonText = "Discard",
                     CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Primary
+                    DefaultButton = ContentDialogButton.Primary,
                 };
-                if (Content is FrameworkElement fe) dlg.XamlRoot = fe.XamlRoot;
+                if (Content is FrameworkElement fe)
+                    dlg.XamlRoot = fe.XamlRoot;
                 ContentDialogResult res;
-                try { res = await dlg.ShowAsync(); } catch { res = ContentDialogResult.None; }
+                try
+                {
+                    res = await dlg.ShowAsync();
+                }
+                catch
+                {
+                    res = ContentDialogResult.None;
+                }
                 if (res == ContentDialogResult.Primary)
                 {
                     var pending = PendingChangesService.Instance.Pending.ToArray();
                     var (ok, err) = await SavePendingAsync(pending);
-                    if (ok) PendingChangesService.Instance.Applied(pending);
-                    else ShowInfo("Save failed: " + (err ?? "unknown"), InfoBarSeverity.Error);
+                    if (ok)
+                        PendingChangesService.Instance.Applied(pending);
+                    else
+                        ShowInfo("Save failed: " + (err ?? "unknown"), InfoBarSeverity.Error);
                     // proceed to close regardless of failure? only if saved ok
-                    if (!ok) return; // keep window open if failed
+                    if (!ok)
+                        return; // keep window open if failed
                 }
                 else if (res == ContentDialogResult.None)
                 {
@@ -1107,23 +1652,34 @@ namespace PolicyPlusPlus
             catch { }
         }
 
-        private string? _lastInfoMessage; private DateTime _lastInfoTime;
-        private void ShowInfoDedup(string message, InfoBarSeverity severity = InfoBarSeverity.Informational, int minIntervalMs = 1200)
+        private string? _lastInfoMessage;
+        private DateTime _lastInfoTime;
+
+        private void ShowInfoDedup(
+            string message,
+            InfoBarSeverity severity = InfoBarSeverity.Informational,
+            int minIntervalMs = 1200
+        )
         {
             try
             {
                 var now = DateTime.UtcNow;
-                if (string.Equals(_lastInfoMessage, message, StringComparison.OrdinalIgnoreCase) && (now - _lastInfoTime).TotalMilliseconds < minIntervalMs)
+                if (
+                    string.Equals(_lastInfoMessage, message, StringComparison.OrdinalIgnoreCase)
+                    && (now - _lastInfoTime).TotalMilliseconds < minIntervalMs
+                )
                 {
                     // Update existing bar severity only (avoid flicker)
                     if (StatusBar != null)
                     {
                         StatusBar.Severity = severity;
-                        if (!StatusBar.IsOpen) StatusBar.IsOpen = true;
+                        if (!StatusBar.IsOpen)
+                            StatusBar.IsOpen = true;
                     }
                     return;
                 }
-                _lastInfoMessage = message; _lastInfoTime = now;
+                _lastInfoMessage = message;
+                _lastInfoTime = now;
                 ShowInfo(message, severity);
             }
             catch { }
@@ -1131,7 +1687,8 @@ namespace PolicyPlusPlus
 
         private void UpdateSourceStatusUnified()
         {
-            var loaderInfo = GetLoaderInfo(); if (loaderInfo != null)
+            var loaderInfo = GetLoaderInfo();
+            if (loaderInfo != null)
             {
                 loaderInfo.Text = SourceStatusFormatter.FormatStatus();
             }
@@ -1156,7 +1713,10 @@ namespace PolicyPlusPlus
                     RefreshVisibleRows();
                 }
             }
-            catch { ShowInfo("Temp POL toggle failed", InfoBarSeverity.Error); }
+            catch
+            {
+                ShowInfo("Temp POL toggle failed", InfoBarSeverity.Error);
+            }
         }
     }
 }

@@ -1,5 +1,4 @@
 using System.IO;
-
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.ImportExport
@@ -10,7 +9,10 @@ namespace PolicyPlusModTests.WinUI3.ImportExport
         public void Preview_Shows_HKCU_Group()
         {
             var tmp = Path.GetTempFileName();
-            File.WriteAllText(tmp, "Windows Registry Editor Version 5.00\r\n\r\n[HKEY_CURRENT_USER\\Software\\Policies\\PolicyPlusTest]\r\n\"Test\"=dword:00000001\r\n");
+            File.WriteAllText(
+                tmp,
+                "Windows Registry Editor Version 5.00\r\n\r\n[HKEY_CURRENT_USER\\Software\\Policies\\PolicyPlusTest]\r\n\"Test\"=dword:00000001\r\n"
+            );
 
             var reg = RegFile.Load(tmp, "");
             var text = RegPreviewBuilder.BuildPreview(reg);

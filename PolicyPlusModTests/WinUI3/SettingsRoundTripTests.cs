@@ -1,7 +1,7 @@
-using PolicyPlusPlus.Services;
 using System;
 using System.IO;
 using System.Linq;
+using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
@@ -10,7 +10,11 @@ namespace PolicyPlusModTests.WinUI3
     {
         private string CreateTempDir()
         {
-            string d = Path.Combine(Path.GetTempPath(), "PolicyPlusModTests", Guid.NewGuid().ToString("N"));
+            string d = Path.Combine(
+                Path.GetTempPath(),
+                "PolicyPlusModTests",
+                Guid.NewGuid().ToString("N")
+            );
             Directory.CreateDirectory(d);
             return d;
         }
@@ -31,7 +35,7 @@ namespace PolicyPlusModTests.WinUI3
                 ShowApplies = true,
                 ShowSupported = true,
                 ShowBookmark = false,
-                ShowSecondName = true
+                ShowSecondName = true,
             };
             SettingsService.Instance.UpdateColumns(cols);
 
@@ -54,10 +58,34 @@ namespace PolicyPlusModTests.WinUI3
 
             var layout = new[]
             {
-                new ColumnState { Key = "Bookmark", Index = 0, Width = 20, Visible = true },
-                new ColumnState { Key = "Name", Index = 3, Width = 300, Visible = true },
-                new ColumnState { Key = "Id", Index = 5, Width = 200, Visible = true },
-                new ColumnState { Key = "Category", Index = 6, Width = 150, Visible = false }
+                new ColumnState
+                {
+                    Key = "Bookmark",
+                    Index = 0,
+                    Width = 20,
+                    Visible = true,
+                },
+                new ColumnState
+                {
+                    Key = "Name",
+                    Index = 3,
+                    Width = 300,
+                    Visible = true,
+                },
+                new ColumnState
+                {
+                    Key = "Id",
+                    Index = 5,
+                    Width = 200,
+                    Visible = true,
+                },
+                new ColumnState
+                {
+                    Key = "Category",
+                    Index = 6,
+                    Width = 150,
+                    Visible = false,
+                },
             };
             SettingsService.Instance.UpdateColumnLayout(layout.ToList());
 

@@ -1,9 +1,9 @@
-using PolicyPlusCore.Core;
-using PolicyPlusCore.Utilities;
-using PolicyPlusPlus.Logging; // logging
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.Utilities;
+using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus.Services
 {
@@ -16,13 +16,16 @@ namespace PolicyPlusPlus.Services
             public string[] ValueNamesLower { get; init; } = Array.Empty<string>();
         }
 
-        private static readonly ConcurrentDictionary<string, Cached> s_cache = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly ConcurrentDictionary<string, Cached> s_cache = new(
+            StringComparer.OrdinalIgnoreCase
+        );
 
         public static void Clear() => s_cache.Clear();
 
         public static Cached Get(PolicyPlusPolicy policy)
         {
-            if (policy == null) return new Cached();
+            if (policy == null)
+                return new Cached();
             var id = policy.UniqueID ?? string.Empty;
             return s_cache.GetOrAdd(id, _ => Build(policy));
         }
@@ -47,7 +50,10 @@ namespace PolicyPlusPlus.Services
             }
             catch (Exception ex)
             {
-                Log.Debug("RegRefCache", $"build failed policyId={(policy?.UniqueID ?? "(null)")}: {ex.GetType().Name} {ex.Message}");
+                Log.Debug(
+                    "RegRefCache",
+                    $"build failed policyId={(policy?.UniqueID ?? "(null)")}: {ex.GetType().Name} {ex.Message}"
+                );
                 return new Cached();
             }
         }

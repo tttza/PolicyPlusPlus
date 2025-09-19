@@ -1,5 +1,4 @@
 using System.IO;
-
 using Xunit;
 
 namespace PolicyPlusModTests.Core
@@ -9,7 +8,8 @@ namespace PolicyPlusModTests.Core
         [Fact(DisplayName = "Preview includes HKCU section for multi-hive .reg files")]
         public void Preview_Includes_HKCU_For_MultiHive()
         {
-            var content = "Windows Registry Editor Version 5.00\r\n\r\n"
+            var content =
+                "Windows Registry Editor Version 5.00\r\n\r\n"
                 + "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Peernet]\r\n\"Disabled\"=dword:00000000\r\n\r\n"
                 + "[HKEY_CURRENT_USER\\SOFTWARE\\Policies\\Microsoft\\Edge]\r\n\"EnterpriseModeSiteListManagerAllowed\"=dword:00000001\r\n";
             var tmp = Path.GetTempFileName();

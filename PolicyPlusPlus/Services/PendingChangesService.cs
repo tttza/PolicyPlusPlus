@@ -1,9 +1,9 @@
-using PolicyPlusCore.Core;
-using PolicyPlusPlus.Logging; // logging
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using PolicyPlusCore.Core;
+using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus.Services
 {
@@ -48,7 +48,13 @@ namespace PolicyPlusPlus.Services
         public bool IsDirty
         {
             get => _isDirty;
-            private set { if (value == _isDirty) return; _isDirty = value; DirtyChanged?.Invoke(this, EventArgs.Empty); }
+            private set
+            {
+                if (value == _isDirty)
+                    return;
+                _isDirty = value;
+                DirtyChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         private PendingChangesService() { }
@@ -57,29 +63,50 @@ namespace PolicyPlusPlus.Services
 
         private static Dictionary<string, object>? CloneOptions(Dictionary<string, object>? src)
         {
-            if (src == null) return null;
+            if (src == null)
+                return null;
             var clone = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
             foreach (var kv in src)
             {
                 var v = kv.Value;
-                if (v is null) clone[kv.Key] = string.Empty;
-                else if (v is string s) clone[kv.Key] = s;
-                else if (v is bool || v is int || v is long || v is uint || v is double) clone[kv.Key] = v;
-                else if (v is string[] arr) clone[kv.Key] = arr.ToArray();
-                else if (v is IEnumerable<string> strEnum) clone[kv.Key] = strEnum.ToList();
-                else if (v is List<string> strList) clone[kv.Key] = new List<string>(strList);
-                else if (v is IEnumerable<KeyValuePair<string, string>> kvps) clone[kv.Key] = kvps.Select(p => new KeyValuePair<string, string>(p.Key, p.Value)).ToList();
-                else clone[kv.Key] = v.ToString() ?? string.Empty;
+                if (v is null)
+                    clone[kv.Key] = string.Empty;
+                else if (v is string s)
+                    clone[kv.Key] = s;
+                else if (v is bool || v is int || v is long || v is uint || v is double)
+                    clone[kv.Key] = v;
+                else if (v is string[] arr)
+                    clone[kv.Key] = arr.ToArray();
+                else if (v is IEnumerable<string> strEnum)
+                    clone[kv.Key] = strEnum.ToList();
+                else if (v is List<string> strList)
+                    clone[kv.Key] = new List<string>(strList);
+                else if (v is IEnumerable<KeyValuePair<string, string>> kvps)
+                    clone[kv.Key] = kvps.Select(p => new KeyValuePair<string, string>(
+                            p.Key,
+                            p.Value
+                        ))
+                        .ToList();
+                else
+                    clone[kv.Key] = v.ToString() ?? string.Empty;
             }
             return clone;
         }
 
         public void Add(PendingChange change)
         {
-            if (change == null) return;
+            if (change == null)
+                return;
             var pid = change.PolicyId ?? string.Empty;
             var scope = change.Scope ?? string.Empty;
-            var existing = Pending.FirstOrDefault(p => string.Equals(p?.PolicyId ?? string.Empty, pid, StringComparison.OrdinalIgnoreCase) && string.Equals(p?.Scope ?? string.Empty, scope, StringComparison.OrdinalIgnoreCase));
+            var existing = Pending.FirstOrDefault(p =>
+                string.Equals(p?.PolicyId ?? string.Empty, pid, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(
+                    p?.Scope ?? string.Empty,
+                    scope,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            );
             bool isNew = existing == null;
             if (existing != null)
             {
@@ -96,13 +123,19 @@ namespace PolicyPlusPlus.Services
                     Pending.RemoveAt(idx);
                     Pending.Insert(idx, existing);
                 }
-                Log.Info("PendingChanges", $"Updated pending policy id={pid} scope={scope} action={existing.Action}");
+                Log.Info(
+                    "PendingChanges",
+                    $"Updated pending policy id={pid} scope={scope} action={existing.Action}"
+                );
             }
             else
             {
                 change.Options = CloneOptions(change.Options);
                 Pending.Add(change);
-                Log.Info("PendingChanges", $"Added pending policy id={pid} scope={scope} action={change.Action}");
+                Log.Info(
+                    "PendingChanges",
+                    $"Added pending policy id={pid} scope={scope} action={change.Action}"
+                );
             }
             UpdateDirtyFlag();
             try
@@ -116,11 +149,13 @@ namespace PolicyPlusPlus.Services
         // Discard: just remove pending entries
         public void Discard(params PendingChange[] changes)
         {
-            if (changes == null || changes.Length == 0) return;
+            if (changes == null || changes.Length == 0)
+                return;
             var removedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var c in changes)
             {
-                if (c == null) continue;
+                if (c == null)
+                    continue;
                 Pending.Remove(c);
                 removedIds.Add(c.PolicyId);
                 Log.Info("PendingChanges", $"Discarded policy id={c.PolicyId} scope={c.Scope}");
@@ -128,8 +163,16 @@ namespace PolicyPlusPlus.Services
             UpdateDirtyFlag();
             if (removedIds.Count > 0)
             {
-                try { EventHub.PublishPendingQueueDelta(Array.Empty<string>(), removedIds); } catch { }
-                try { EventHub.PublishPendingAppliedOrDiscarded(removedIds); } catch { }
+                try
+                {
+                    EventHub.PublishPendingQueueDelta(Array.Empty<string>(), removedIds);
+                }
+                catch { }
+                try
+                {
+                    EventHub.PublishPendingAppliedOrDiscarded(removedIds);
+                }
+                catch { }
             }
         }
 
@@ -139,7 +182,8 @@ namespace PolicyPlusPlus.Services
             while (History.Count > MaxHistoryEntries)
             {
                 var oldest = History.OrderBy(h => h.AppliedAt).FirstOrDefault();
-                if (oldest == null) break;
+                if (oldest == null)
+                    break;
                 History.Remove(oldest);
                 Log.Debug("PendingChanges", $"Trimmed oldest history id={oldest.PolicyId}");
             }
@@ -147,21 +191,38 @@ namespace PolicyPlusPlus.Services
 
         public void AddHistory(HistoryRecord record)
         {
-            if (record == null) return;
+            if (record == null)
+                return;
             History.Add(record);
-            Log.Info("PendingChanges", $"History add policy id={record.PolicyId} scope={record.Scope} action={record.Action} result={record.Result}");
+            Log.Info(
+                "PendingChanges",
+                $"History add policy id={record.PolicyId} scope={record.Scope} action={record.Action} result={record.Result}"
+            );
             TrimHistoryIfNeeded();
-            try { SettingsService.Instance.SaveHistory(History.ToList()); } catch (Exception ex) { Log.Warn("PendingChanges", "SaveHistory failed", ex); }
-            try { EventHub.PublishHistoryChanged(); } catch { }
+            try
+            {
+                SettingsService.Instance.SaveHistory(History.ToList());
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("PendingChanges", "SaveHistory failed", ex);
+            }
+            try
+            {
+                EventHub.PublishHistoryChanged();
+            }
+            catch { }
         }
 
         public void Applied(params PendingChange[] changes)
         {
-            if (changes == null || changes.Length == 0) return;
+            if (changes == null || changes.Length == 0)
+                return;
             var appliedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var c in changes)
             {
-                if (c == null) continue;
+                if (c == null)
+                    continue;
                 var rec = new HistoryRecord
                 {
                     PolicyId = c.PolicyId,
@@ -173,34 +234,58 @@ namespace PolicyPlusPlus.Services
                     DetailsFull = c.DetailsFull,
                     AppliedAt = DateTime.Now,
                     DesiredState = c.DesiredState,
-                    Options = CloneOptions(c.Options)
+                    Options = CloneOptions(c.Options),
                 };
                 AddHistory(rec);
                 Pending.Remove(c);
                 appliedIds.Add(c.PolicyId);
-                Log.Info("PendingChanges", $"Applied policy id={c.PolicyId} scope={c.Scope} action={c.Action} state={c.DesiredState}");
+                Log.Info(
+                    "PendingChanges",
+                    $"Applied policy id={c.PolicyId} scope={c.Scope} action={c.Action} state={c.DesiredState}"
+                );
             }
             UpdateDirtyFlag();
             if (appliedIds.Count > 0)
             {
-                try { EventHub.PublishPendingQueueDelta(Array.Empty<string>(), appliedIds); } catch { }
-                try { EventHub.PublishPendingAppliedOrDiscarded(appliedIds); } catch { }
+                try
+                {
+                    EventHub.PublishPendingQueueDelta(Array.Empty<string>(), appliedIds);
+                }
+                catch { }
+                try
+                {
+                    EventHub.PublishPendingAppliedOrDiscarded(appliedIds);
+                }
+                catch { }
             }
         }
 
         public void DiscardAll()
         {
             var count = Pending.Count;
-            if (count == 0) return;
+            if (count == 0)
+                return;
             var all = Pending.ToArray();
-            var removedIds = new HashSet<string>(all.Select(p => p.PolicyId), StringComparer.OrdinalIgnoreCase);
-            foreach (var c in all) Pending.Remove(c);
+            var removedIds = new HashSet<string>(
+                all.Select(p => p.PolicyId),
+                StringComparer.OrdinalIgnoreCase
+            );
+            foreach (var c in all)
+                Pending.Remove(c);
             Log.Info("PendingChanges", $"DiscardAll removed={count}");
             UpdateDirtyFlag();
             if (removedIds.Count > 0)
             {
-                try { EventHub.PublishPendingQueueDelta(Array.Empty<string>(), removedIds); } catch { }
-                try { EventHub.PublishPendingAppliedOrDiscarded(removedIds); } catch { }
+                try
+                {
+                    EventHub.PublishPendingQueueDelta(Array.Empty<string>(), removedIds);
+                }
+                catch { }
+                try
+                {
+                    EventHub.PublishPendingAppliedOrDiscarded(removedIds);
+                }
+                catch { }
             }
         }
     }

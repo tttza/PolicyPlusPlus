@@ -1,218 +1,305 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Window
-    x:Class="PolicyPlusPlus.Windows.PendingChangesWindow"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:controls="using:Microsoft.UI.Xaml.Controls"
-    xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls"
-    xmlns:conv="using:PolicyPlusPlus.Converters"
-    mc:Ignorable="d"
-    Title="Pending changes">
-
-    <Window.SystemBackdrop>
-        <MicaBackdrop />
-    </Window.SystemBackdrop>
-
-    <!-- Scale host for DPI-independent scaling -->
-    <Grid x:Name="ScaleHost">
-        <Grid x:Name="RootShell" Background="{ThemeResource WindowBackground}" Padding="12" MinWidth="720" MinHeight="480" KeyboardAcceleratorPlacementMode="Hidden">
-            <Grid.Resources>
-                <conv:BoolToVisibilityConverter x:Key="BoolToVisibility"/>
-                <conv:BoolToAngleConverter x:Key="BoolToAngle"/>
-                <Style x:Key="FlatToggle" TargetType="ToggleButton">
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="BorderThickness" Value="0"/>
-                    <Setter Property="Padding" Value="0"/>
-                    <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                    <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                </Style>
-            </Grid.Resources>
+  x:Class="PolicyPlusPlus.Windows.PendingChangesWindow"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+  xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls"
+  xmlns:conv="using:PolicyPlusPlus.Converters"
+  mc:Ignorable="d"
+  Title="Pending changes"
+>
+  <Window.SystemBackdrop>
+    <MicaBackdrop />
+  </Window.SystemBackdrop>
+  <!-- Scale host for DPI-independent scaling -->
+  <Grid x:Name="ScaleHost">
+    <Grid
+      x:Name="RootShell"
+      Background="{ThemeResource WindowBackground}"
+      Padding="12"
+      MinWidth="720"
+      MinHeight="480"
+      KeyboardAcceleratorPlacementMode="Hidden"
+    >
+      <Grid.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+        <conv:BoolToAngleConverter x:Key="BoolToAngle" />
+        <Style x:Key="FlatToggle" TargetType="ToggleButton">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="BorderThickness" Value="0" />
+          <Setter Property="Padding" Value="0" />
+          <Setter Property="HorizontalAlignment" Value="Stretch" />
+          <Setter Property="HorizontalContentAlignment" Value="Left" />
+        </Style>
+      </Grid.Resources>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <Grid.KeyboardAccelerators>
+        <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="Accel_SaveAll" />
+        <KeyboardAccelerator Key="Enter" Modifiers="Control" Invoked="Accel_SaveSelected" />
+        <KeyboardAccelerator Key="Delete" Invoked="Accel_DiscardSelected" />
+        <KeyboardAccelerator Key="D" Modifiers="Control" Invoked="Accel_DiscardAll" />
+        <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="Accel_FocusSearch" />
+        <KeyboardAccelerator Key="Number1" Modifiers="Control" Invoked="Accel_TabPending" />
+        <KeyboardAccelerator Key="Number2" Modifiers="Control" Invoked="Accel_TabHistory" />
+        <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="Accel_Close" />
+        <KeyboardAccelerator Key="Escape" Invoked="Accel_Close" />
+      </Grid.KeyboardAccelerators>
+      <controls:InfoBar
+        x:Name="LocalStatusBar"
+        Grid.RowSpan="4"
+        VerticalAlignment="Top"
+        HorizontalAlignment="Stretch"
+        Margin="12"
+        Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+        IsOpen="False"
+        Severity="Informational"
+        Canvas.ZIndex="5"
+      />
+      <!-- header and filters -->
+      <Grid Grid.Row="0" Margin="0,0,0,8">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Vertical" Spacing="2">
+          <TextBlock Text="Pending changes" FontSize="18" FontWeight="SemiBold" />
+          <TextBlock x:Name="SummaryText" Opacity="0.85" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Spacing="8">
+          <TextBlock Text="Scope:" VerticalAlignment="Center" />
+          <ComboBox
+            x:Name="ScopeFilter"
+            Width="140"
+            SelectionChanged="ScopeFilter_SelectionChanged"
+          >
+            <ComboBoxItem Content="Both" IsSelected="True" />
+            <ComboBoxItem Content="Computer" />
+            <ComboBoxItem Content="User" />
+          </ComboBox>
+          <TextBlock Text="Operation:" VerticalAlignment="Center" />
+          <ComboBox
+            x:Name="OperationFilter"
+            Width="180"
+            SelectionChanged="OperationFilter_SelectionChanged"
+          >
+            <ComboBoxItem Content="All" IsSelected="True" />
+            <ComboBoxItem Content="Enable" />
+            <ComboBoxItem Content="Disable" />
+            <ComboBoxItem Content="Clear" />
+          </ComboBox>
+        </StackPanel>
+      </Grid>
+      <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+        <AutoSuggestBox
+          x:Name="SearchBox"
+          Width="360"
+          QueryIcon="Find"
+          PlaceholderText="Search pending items (policy, path)"
+          TextChanged="SearchBox_TextChanged"
+        />
+        <Button x:Name="BtnClearFilters" Content="Clear filters" />
+      </StackPanel>
+      <controls:TabView
+        Grid.Row="2"
+        x:Name="MainTabs"
+        TabWidthMode="Equal"
+        IsAddTabButtonVisible="False"
+        CanReorderTabs="False"
+        CanDragTabs="False"
+        SelectedIndex="0"
+        SelectionChanged="MainTabs_SelectionChanged"
+      >
+        <controls:TabViewItem x:Name="PendingTab" Header="Pending" IsClosable="False">
+          <Grid Padding="4">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
+              <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-
-            <Grid.KeyboardAccelerators>
-                <KeyboardAccelerator Key="S" Modifiers="Control" Invoked="Accel_SaveAll"/>
-                <KeyboardAccelerator Key="Enter" Modifiers="Control" Invoked="Accel_SaveSelected"/>
-                <KeyboardAccelerator Key="Delete" Invoked="Accel_DiscardSelected"/>
-                <KeyboardAccelerator Key="D" Modifiers="Control" Invoked="Accel_DiscardAll"/>
-                <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="Accel_FocusSearch"/>
-                <KeyboardAccelerator Key="Number1" Modifiers="Control" Invoked="Accel_TabPending"/>
-                <KeyboardAccelerator Key="Number2" Modifiers="Control" Invoked="Accel_TabHistory"/>
-                <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="Accel_Close"/>
-                <KeyboardAccelerator Key="Escape" Invoked="Accel_Close"/>
-            </Grid.KeyboardAccelerators>
-
-            <controls:InfoBar x:Name="LocalStatusBar"
-                              Grid.RowSpan="4"
-                              VerticalAlignment="Top"
-                              HorizontalAlignment="Stretch"
-                              Margin="12"
-                              Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
-                              IsOpen="False"
-                              Severity="Informational"
-                              Canvas.ZIndex="5" />
-
-            <!-- header and filters -->
-            <Grid Grid.Row="0" Margin="0,0,0,8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Vertical" Spacing="2">
-                    <TextBlock Text="Pending changes" FontSize="18" FontWeight="SemiBold"/>
-                    <TextBlock x:Name="SummaryText" Opacity="0.85"/>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Spacing="8">
-                    <TextBlock Text="Scope:" VerticalAlignment="Center"/>
-                    <ComboBox x:Name="ScopeFilter" Width="140" SelectionChanged="ScopeFilter_SelectionChanged">
-                        <ComboBoxItem Content="Both" IsSelected="True"/>
-                        <ComboBoxItem Content="Computer"/>
-                        <ComboBoxItem Content="User"/>
-                    </ComboBox>
-                    <TextBlock Text="Operation:" VerticalAlignment="Center"/>
-                    <ComboBox x:Name="OperationFilter" Width="180" SelectionChanged="OperationFilter_SelectionChanged">
-                        <ComboBoxItem Content="All" IsSelected="True"/>
-                        <ComboBoxItem Content="Enable"/>
-                        <ComboBoxItem Content="Disable"/>
-                        <ComboBoxItem Content="Clear"/>
-                    </ComboBox>
-                </StackPanel>
-            </Grid>
-
-            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-                <AutoSuggestBox x:Name="SearchBox" Width="360" QueryIcon="Find" PlaceholderText="Search pending items (policy, path)" TextChanged="SearchBox_TextChanged"/>
-                <Button x:Name="BtnClearFilters" Content="Clear filters"/>
+            <toolkit:DataGrid
+              Grid.Row="0"
+              x:Name="PendingList"
+              AutoGenerateColumns="False"
+              IsReadOnly="True"
+              CanUserSortColumns="True"
+              SelectionMode="Extended"
+              RowDetailsVisibilityMode="VisibleWhenSelected"
+              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+              ScrollViewer.HorizontalScrollMode="Auto"
+              DoubleTapped="PendingList_DoubleTapped"
+            >
+              <toolkit:DataGrid.Columns>
+                <toolkit:DataGridTextColumn
+                  Header="Policy"
+                  Binding="{Binding PolicyName}"
+                  Width="300"
+                />
+                <toolkit:DataGridTextColumn
+                  Header="Action"
+                  Binding="{Binding Action}"
+                  Width="140"
+                />
+                <toolkit:DataGridTextColumn Header="Scope" Binding="{Binding Scope}" Width="120" />
+                <toolkit:DataGridTextColumn
+                  Header="Details"
+                  Binding="{Binding Details}"
+                  Width="360"
+                />
+              </toolkit:DataGrid.Columns>
+              <toolkit:DataGrid.RowDetailsTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85" />
+                </DataTemplate>
+              </toolkit:DataGrid.RowDetailsTemplate>
+              <toolkit:DataGrid.RowStyle>
+                <Style TargetType="toolkit:DataGridRow">
+                  <Setter Property="ContextFlyout">
+                    <Setter.Value>
+                      <MenuFlyout>
+                        <MenuFlyoutItem Text="Save" Click="Pending_ContextApply_Click" />
+                        <MenuFlyoutItem Text="Discard" Click="Pending_ContextDiscard_Click" />
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutItem
+                          Text="View formatted..."
+                          Click="Pending_ContextView_Click"
+                        />
+                        <MenuFlyoutItem
+                          Text="Copy registry path"
+                          Click="Pending_ContextCopyRegPath_Click"
+                        />
+                      </MenuFlyout>
+                    </Setter.Value>
+                  </Setter>
+                </Style>
+              </toolkit:DataGrid.RowStyle>
+            </toolkit:DataGrid>
+          </Grid>
+        </controls:TabViewItem>
+        <controls:TabViewItem x:Name="HistoryTab" Header="History" IsClosable="False">
+          <Grid Padding="4">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
+              <TextBlock Text="Time:" VerticalAlignment="Center" />
+              <ComboBox
+                x:Name="HistoryTimeRange"
+                Width="160"
+                SelectionChanged="HistoryFilter_Changed"
+              >
+                <ComboBoxItem Content="All" IsSelected="True" />
+                <ComboBoxItem Content="Today" />
+                <ComboBoxItem Content="Last 7 days" />
+                <ComboBoxItem Content="Last 30 days" />
+              </ComboBox>
+              <TextBlock Text="Type:" VerticalAlignment="Center" />
+              <ComboBox x:Name="HistoryType" Width="160" SelectionChanged="HistoryFilter_Changed">
+                <ComboBoxItem Content="All" IsSelected="True" />
+                <ComboBoxItem Content="Applied" />
+                <ComboBoxItem Content="Discarded" />
+                <ComboBoxItem Content="Reapplied" />
+              </ComboBox>
+              <AutoSuggestBox
+                x:Name="HistorySearch"
+                Width="280"
+                QueryIcon="Find"
+                PlaceholderText="Search history (policy, path)"
+                TextChanged="HistorySearch_TextChanged"
+              />
             </StackPanel>
-
-            <controls:TabView Grid.Row="2" x:Name="MainTabs" TabWidthMode="Equal" IsAddTabButtonVisible="False" CanReorderTabs="False" CanDragTabs="False" SelectedIndex="0" SelectionChanged="MainTabs_SelectionChanged">
-                <controls:TabViewItem x:Name="PendingTab" Header="Pending" IsClosable="False">
-                    <Grid Padding="4">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <toolkit:DataGrid Grid.Row="0"
-                                           x:Name="PendingList"
-                                           AutoGenerateColumns="False"
-                                           IsReadOnly="True"
-                                           CanUserSortColumns="True"
-                                           SelectionMode="Extended"
-                                           RowDetailsVisibilityMode="VisibleWhenSelected"
-                                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                           ScrollViewer.HorizontalScrollMode="Auto"
-                                           DoubleTapped="PendingList_DoubleTapped">
-                            <toolkit:DataGrid.Columns>
-                                <toolkit:DataGridTextColumn Header="Policy" Binding="{Binding PolicyName}" Width="300"/>
-                                <toolkit:DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="140"/>
-                                <toolkit:DataGridTextColumn Header="Scope" Binding="{Binding Scope}" Width="120"/>
-                                <toolkit:DataGridTextColumn Header="Details" Binding="{Binding Details}" Width="360"/>
-                            </toolkit:DataGrid.Columns>
-                            <toolkit:DataGrid.RowDetailsTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85"/>
-                                </DataTemplate>
-                            </toolkit:DataGrid.RowDetailsTemplate>
-                            <toolkit:DataGrid.RowStyle>
-                                <Style TargetType="toolkit:DataGridRow">
-                                    <Setter Property="ContextFlyout">
-                                        <Setter.Value>
-                                            <MenuFlyout>
-                                                <MenuFlyoutItem Text="Save" Click="Pending_ContextApply_Click"/>
-                                                <MenuFlyoutItem Text="Discard" Click="Pending_ContextDiscard_Click"/>
-                                                <MenuFlyoutSeparator/>
-                                                <MenuFlyoutItem Text="View formatted..." Click="Pending_ContextView_Click"/>
-                                                <MenuFlyoutItem Text="Copy registry path" Click="Pending_ContextCopyRegPath_Click"/>
-                                            </MenuFlyout>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </toolkit:DataGrid.RowStyle>
-                        </toolkit:DataGrid>
-                    </Grid>
-                </controls:TabViewItem>
-
-                <controls:TabViewItem x:Name="HistoryTab" Header="History" IsClosable="False">
-                    <Grid Padding="4">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
-                            <TextBlock Text="Time:" VerticalAlignment="Center"/>
-                            <ComboBox x:Name="HistoryTimeRange" Width="160" SelectionChanged="HistoryFilter_Changed">
-                                <ComboBoxItem Content="All" IsSelected="True"/>
-                                <ComboBoxItem Content="Today"/>
-                                <ComboBoxItem Content="Last 7 days"/>
-                                <ComboBoxItem Content="Last 30 days"/>
-                            </ComboBox>
-                            <TextBlock Text="Type:" VerticalAlignment="Center"/>
-                            <ComboBox x:Name="HistoryType" Width="160" SelectionChanged="HistoryFilter_Changed">
-                                <ComboBoxItem Content="All" IsSelected="True"/>
-                                <ComboBoxItem Content="Applied"/>
-                                <ComboBoxItem Content="Discarded"/>
-                                <ComboBoxItem Content="Reapplied"/>
-                            </ComboBox>
-                            <AutoSuggestBox x:Name="HistorySearch" Width="280" QueryIcon="Find" PlaceholderText="Search history (policy, path)" TextChanged="HistorySearch_TextChanged"/>
-                        </StackPanel>
-
-                        <toolkit:DataGrid Grid.Row="1"
-                                           x:Name="HistoryList"
-                                           AutoGenerateColumns="False"
-                                           IsReadOnly="True"
-                                           CanUserSortColumns="True"
-                                           SelectionMode="Extended"
-                                           RowDetailsVisibilityMode="VisibleWhenSelected"
-                                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                           ScrollViewer.HorizontalScrollMode="Auto"
-                                           DoubleTapped="HistoryList_DoubleTapped">
-                            <toolkit:DataGrid.Columns>
-                                <toolkit:DataGridTextColumn Header="Policy" Binding="{Binding PolicyName}" Width="300"/>
-                                <toolkit:DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="140"/>
-                                <toolkit:DataGridTextColumn Header="Scope" Binding="{Binding Scope}" Width="120"/>
-                                <toolkit:DataGridTextColumn Header="Applied at" Binding="{Binding AppliedAt}" Width="180"/>
-                                <toolkit:DataGridTextColumn Header="Details" Binding="{Binding Details}" Width="400"/>
-                            </toolkit:DataGrid.Columns>
-                            <toolkit:DataGrid.RowDetailsTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85"/>
-                                </DataTemplate>
-                            </toolkit:DataGrid.RowDetailsTemplate>
-                        </toolkit:DataGrid>
-                    </Grid>
-                </controls:TabViewItem>
-            </controls:TabView>
-
-            <Grid Grid.Row="3" Margin="0,8,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button x:Name="BtnApplySelected" Content="Save selected" Style="{StaticResource PrimaryButtonStyle}" Click="BtnApplySelected_Click"/>
-                    <Button x:Name="BtnDiscardSelected" Content="Discard selected" Click="BtnDiscardSelected_Click"/>
-                </StackPanel>
-                <Button x:Name="BtnApplyAll" Grid.Column="1" Content="Save all" Click="BtnSaveAll_Click"/>
-                <Button x:Name="BtnDiscardAll" Grid.Column="2" Content="Discard all" Click="BtnDiscardAll_Click"/>
-                <Button x:Name="BtnReapplySelected" Grid.Column="3" Content="Reapply &amp; Save selected" Click="BtnReapplySelected_Click"/>
-                <Button x:Name="BtnClose" Grid.Column="4" Content="Close"/>
-            </Grid>
-
-            <Grid x:Name="SavingOverlay" Background="#80000000" Visibility="Collapsed" Canvas.ZIndex="99">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-                    <controls:ProgressRing IsActive="True" Width="48" Height="48"/>
-                    <TextBlock Text="Saving..."/>
-                </StackPanel>
-            </Grid>
-        </Grid>
+            <toolkit:DataGrid
+              Grid.Row="1"
+              x:Name="HistoryList"
+              AutoGenerateColumns="False"
+              IsReadOnly="True"
+              CanUserSortColumns="True"
+              SelectionMode="Extended"
+              RowDetailsVisibilityMode="VisibleWhenSelected"
+              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+              ScrollViewer.HorizontalScrollMode="Auto"
+              DoubleTapped="HistoryList_DoubleTapped"
+            >
+              <toolkit:DataGrid.Columns>
+                <toolkit:DataGridTextColumn
+                  Header="Policy"
+                  Binding="{Binding PolicyName}"
+                  Width="300"
+                />
+                <toolkit:DataGridTextColumn
+                  Header="Action"
+                  Binding="{Binding Action}"
+                  Width="140"
+                />
+                <toolkit:DataGridTextColumn Header="Scope" Binding="{Binding Scope}" Width="120" />
+                <toolkit:DataGridTextColumn
+                  Header="Applied at"
+                  Binding="{Binding AppliedAt}"
+                  Width="180"
+                />
+                <toolkit:DataGridTextColumn
+                  Header="Details"
+                  Binding="{Binding Details}"
+                  Width="400"
+                />
+              </toolkit:DataGrid.Columns>
+              <toolkit:DataGrid.RowDetailsTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding DetailsFull}" TextWrapping="Wrap" Opacity="0.85" />
+                </DataTemplate>
+              </toolkit:DataGrid.RowDetailsTemplate>
+            </toolkit:DataGrid>
+          </Grid>
+        </controls:TabViewItem>
+      </controls:TabView>
+      <Grid Grid.Row="3" Margin="0,8,0,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button
+            x:Name="BtnApplySelected"
+            Content="Save selected"
+            Style="{StaticResource PrimaryButtonStyle}"
+            Click="BtnApplySelected_Click"
+          />
+          <Button
+            x:Name="BtnDiscardSelected"
+            Content="Discard selected"
+            Click="BtnDiscardSelected_Click"
+          />
+        </StackPanel>
+        <Button x:Name="BtnApplyAll" Grid.Column="1" Content="Save all" Click="BtnSaveAll_Click" />
+        <Button
+          x:Name="BtnDiscardAll"
+          Grid.Column="2"
+          Content="Discard all"
+          Click="BtnDiscardAll_Click"
+        />
+        <Button
+          x:Name="BtnReapplySelected"
+          Grid.Column="3"
+          Content="Reapply &amp; Save selected"
+          Click="BtnReapplySelected_Click"
+        />
+        <Button x:Name="BtnClose" Grid.Column="4" Content="Close" />
+      </Grid>
+      <Grid x:Name="SavingOverlay" Background="#80000000" Visibility="Collapsed" Canvas.ZIndex="99">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+          <controls:ProgressRing IsActive="True" Width="48" Height="48" />
+          <TextBlock Text="Saving..." />
+        </StackPanel>
+      </Grid>
     </Grid>
+  </Grid>
 </Window>

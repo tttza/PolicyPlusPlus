@@ -1,10 +1,10 @@
+using System;
+using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Utils;
-using System;
-using System.Linq;
 using Windows.ApplicationModel.DataTransfer;
 
 namespace PolicyPlusPlus.Windows
@@ -17,19 +17,43 @@ namespace PolicyPlusPlus.Windows
         {
             InitializeComponent();
             Title = "Manage Bookmark Lists";
-            try { SystemBackdrop = new MicaBackdrop(); } catch { }
+            try
+            {
+                SystemBackdrop = new MicaBackdrop();
+            }
+            catch { }
             ChildWindowCommon.Initialize(this, 460, 420, ApplyTheme);
-            try { if (RootShell != null) RootShell.Loaded += OnLoaded; else DispatcherQueue.TryEnqueue(() => OnLoaded(this, new RoutedEventArgs())); } catch { }
+            try
+            {
+                if (RootShell != null)
+                    RootShell.Loaded += OnLoaded;
+                else
+                    DispatcherQueue.TryEnqueue(() => OnLoaded(this, new RoutedEventArgs()));
+            }
+            catch { }
             Closed += (_, __) =>
             {
-                try { BookmarkService.Instance.ActiveListChanged -= Instance_ActiveListChanged; } catch { }
-                try { BookmarkService.Instance.Changed -= Instance_ActiveListChanged; } catch { }
+                try
+                {
+                    BookmarkService.Instance.ActiveListChanged -= Instance_ActiveListChanged;
+                }
+                catch { }
+                try
+                {
+                    BookmarkService.Instance.Changed -= Instance_ActiveListChanged;
+                }
+                catch { }
             };
 
             AddBtn.Click += (_, __) => AddList();
             RenameBtn.Click += (_, __) => RenameSelected();
             CloseBtn.Click += (_, __) => Close();
-            ListNames.SelectionChanged += (_, __) => { if (_suppressSelect) return; UpdateButtons(); };
+            ListNames.SelectionChanged += (_, __) =>
+            {
+                if (_suppressSelect)
+                    return;
+                UpdateButtons();
+            };
             ExportBtn.Click += (_, __) => ExportJson();
             ImportBtn.Click += async (_, __) => await ImportJsonAsync();
             ListNames.ContainerContentChanging += ListNames_ContainerContentChanging;
@@ -37,7 +61,10 @@ namespace PolicyPlusPlus.Windows
             NameBox.TextChanged += (_, __) => UpdateButtons();
         }
 
-        private void ListNames_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        private void ListNames_DoubleTapped(
+            object sender,
+            Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e
+        )
         {
             try
             {
@@ -52,7 +79,10 @@ namespace PolicyPlusPlus.Windows
             catch { }
         }
 
-        private void ListNames_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        private void ListNames_ContainerContentChanging(
+            ListViewBase sender,
+            ContainerContentChangingEventArgs args
+        )
         {
             try
             {
@@ -62,7 +92,11 @@ namespace PolicyPlusPlus.Windows
                     var icon = root?.FindName("ActiveIcon") as IconElement;
                     if (icon != null)
                     {
-                        bool isActive = string.Equals(name, BookmarkService.Instance.ActiveList, StringComparison.OrdinalIgnoreCase);
+                        bool isActive = string.Equals(
+                            name,
+                            BookmarkService.Instance.ActiveList,
+                            StringComparison.OrdinalIgnoreCase
+                        );
                         icon.Visibility = isActive ? Visibility.Visible : Visibility.Collapsed;
                     }
                 }
@@ -74,24 +108,49 @@ namespace PolicyPlusPlus.Windows
         {
             try
             {
-                if (RootShell == null) return;
+                if (RootShell == null)
+                    return;
                 var theme = App.CurrentTheme;
                 RootShell.RequestedTheme = theme;
-                if (Application.Current.Resources.TryGetValue("WindowBackground", out var bg) && bg is Brush b)
-                { RootShell.Background = b; try { (ScaleHost as Grid)!.Background = b; } catch { } }
+                if (
+                    Application.Current.Resources.TryGetValue("WindowBackground", out var bg)
+                    && bg is Brush b
+                )
+                {
+                    RootShell.Background = b;
+                    try
+                    {
+                        (ScaleHost as Grid)!.Background = b;
+                    }
+                    catch { }
+                }
             }
             catch { }
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            try { BookmarkService.Instance.ActiveListChanged += Instance_ActiveListChanged; } catch { }
-            try { BookmarkService.Instance.Changed += Instance_ActiveListChanged; } catch { }
+            try
+            {
+                BookmarkService.Instance.ActiveListChanged += Instance_ActiveListChanged;
+            }
+            catch { }
+            try
+            {
+                BookmarkService.Instance.Changed += Instance_ActiveListChanged;
+            }
+            catch { }
             Refresh();
         }
 
         private void Instance_ActiveListChanged(object? sender, EventArgs e)
-        { try { Refresh(); } catch { } }
+        {
+            try
+            {
+                Refresh();
+            }
+            catch { }
+        }
 
         private void UpdateRowButtons()
         {
@@ -101,16 +160,26 @@ namespace PolicyPlusPlus.Windows
                 var total = BookmarkService.Instance.ListNames.Count;
                 foreach (var item in ListNames.Items)
                 {
-                    var container = ListNames.ContainerFromItem(item) as ListViewItem; if (container == null) continue;
-                    var root = container.ContentTemplateRoot as FrameworkElement; if (root == null) continue;
+                    var container = ListNames.ContainerFromItem(item) as ListViewItem;
+                    if (container == null)
+                        continue;
+                    var root = container.ContentTemplateRoot as FrameworkElement;
+                    if (root == null)
+                        continue;
                     var actBtn = root.FindName("RowActivateBtn") as Button;
                     var delBtn = root.FindName("RowDeleteBtn") as Button;
                     // Ensure glyph content if not set
-                    if (actBtn != null && actBtn.Content == null) actBtn.Content = new FontIcon { Glyph = "\uE8FB" };
-                    if (delBtn != null && delBtn.Content == null) delBtn.Content = new FontIcon { Glyph = "\uE74D" };
+                    if (actBtn != null && actBtn.Content == null)
+                        actBtn.Content = new FontIcon { Glyph = "\uE8FB" };
+                    if (delBtn != null && delBtn.Content == null)
+                        delBtn.Content = new FontIcon { Glyph = "\uE74D" };
                     if (actBtn != null)
                     {
-                        bool isActive = string.Equals(item as string, active, StringComparison.OrdinalIgnoreCase);
+                        bool isActive = string.Equals(
+                            item as string,
+                            active,
+                            StringComparison.OrdinalIgnoreCase
+                        );
                         actBtn.IsEnabled = !isActive;
                         actBtn.Opacity = isActive ? 0.35 : 1.0;
                     }
@@ -134,19 +203,39 @@ namespace PolicyPlusPlus.Windows
                 foreach (var item in ListNames.Items)
                 {
                     var container = ListNames.ContainerFromItem(item) as ListViewItem;
-                    if (container == null) continue;
+                    if (container == null)
+                        continue;
                     var root = container.ContentTemplateRoot as FrameworkElement;
                     var icon = root?.FindName("ActiveIcon") as IconElement;
                     if (icon != null)
                     {
-                        bool isActive = string.Equals(item as string, active, StringComparison.OrdinalIgnoreCase);
+                        bool isActive = string.Equals(
+                            item as string,
+                            active,
+                            StringComparison.OrdinalIgnoreCase
+                        );
                         icon.Visibility = isActive ? Visibility.Visible : Visibility.Collapsed;
                     }
                 }
                 UpdateRowButtons();
-                if (ListNames.Items.Count > 0 && ListNames.Items.OfType<object>().Any(i => ListNames.ContainerFromItem(i) == null))
+                if (
+                    ListNames.Items.Count > 0
+                    && ListNames
+                        .Items.OfType<object>()
+                        .Any(i => ListNames.ContainerFromItem(i) == null)
+                )
                 {
-                    DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => { try { UpdateAllActiveIcons(); } catch { } });
+                    DispatcherQueue.TryEnqueue(
+                        Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                        () =>
+                        {
+                            try
+                            {
+                                UpdateAllActiveIcons();
+                            }
+                            catch { }
+                        }
+                    );
                 }
             }
             catch { }
@@ -157,13 +246,17 @@ namespace PolicyPlusPlus.Windows
             try
             {
                 var active = BookmarkService.Instance.ActiveList;
-                var names = BookmarkService.Instance.ListNames
-                    .OrderBy(n => string.Equals(n, "default", StringComparison.OrdinalIgnoreCase) ? "" : n)
+                var names = BookmarkService
+                    .Instance.ListNames.OrderBy(n =>
+                        string.Equals(n, "default", StringComparison.OrdinalIgnoreCase) ? "" : n
+                    )
                     .ThenBy(n => n)
                     .ToList();
                 _suppressSelect = true;
                 ListNames.ItemsSource = names;
-                ListNames.SelectedItem = names.FirstOrDefault(n => string.Equals(n, active, StringComparison.OrdinalIgnoreCase));
+                ListNames.SelectedItem = names.FirstOrDefault(n =>
+                    string.Equals(n, active, StringComparison.OrdinalIgnoreCase)
+                );
                 _suppressSelect = false;
                 ActiveLabel.Text = $"Active: {active}";
                 UpdateButtons();
@@ -192,26 +285,51 @@ namespace PolicyPlusPlus.Windows
             try
             {
                 var name = (NameBox.Text ?? string.Empty).Trim();
-                if (string.IsNullOrEmpty(name)) { SetStatus("Enter a name then press Add."); return; }
+                if (string.IsNullOrEmpty(name))
+                {
+                    SetStatus("Enter a name then press Add.");
+                    return;
+                }
                 BookmarkService.Instance.AddList(name);
                 NameBox.Text = string.Empty;
                 Refresh();
                 SetStatus("List added and activated.");
             }
-            catch { SetStatus("Add failed."); }
+            catch
+            {
+                SetStatus("Add failed.");
+            }
         }
 
         private void RenameSelected()
         {
             try
             {
-                var old = SelectedName; if (old == null) { SetStatus("Select a list to rename."); return; }
+                var old = SelectedName;
+                if (old == null)
+                {
+                    SetStatus("Select a list to rename.");
+                    return;
+                }
                 var name = (NameBox.Text ?? string.Empty).Trim();
-                if (string.IsNullOrEmpty(name)) { SetStatus("Type new name."); return; }
-                if (BookmarkService.Instance.RenameList(old, name)) { NameBox.Text = string.Empty; Refresh(); SetStatus("Renamed."); }
-                else SetStatus("Rename failed (default or duplicate).");
+                if (string.IsNullOrEmpty(name))
+                {
+                    SetStatus("Type new name.");
+                    return;
+                }
+                if (BookmarkService.Instance.RenameList(old, name))
+                {
+                    NameBox.Text = string.Empty;
+                    Refresh();
+                    SetStatus("Renamed.");
+                }
+                else
+                    SetStatus("Rename failed (default or duplicate).");
             }
-            catch { SetStatus("Rename failed."); }
+            catch
+            {
+                SetStatus("Rename failed.");
+            }
         }
 
         private void ExportJson()
@@ -220,10 +338,14 @@ namespace PolicyPlusPlus.Windows
             {
                 var json = BookmarkService.Instance.ExportJson();
                 var dp = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-                dp.SetText(json); Clipboard.SetContent(dp);
+                dp.SetText(json);
+                Clipboard.SetContent(dp);
                 SetStatus("Copied JSON to clipboard.");
             }
-            catch { SetStatus("Export failed."); }
+            catch
+            {
+                SetStatus("Export failed.");
+            }
         }
 
         private async System.Threading.Tasks.Task ImportJsonAsync()
@@ -235,22 +357,44 @@ namespace PolicyPlusPlus.Windows
                     XamlRoot = (Content as FrameworkElement)?.XamlRoot,
                     Title = "Import Bookmark JSON",
                     PrimaryButtonText = "Import",
-                    CloseButtonText = "Cancel"
+                    CloseButtonText = "Cancel",
                 };
-                var box = new TextBox { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinWidth = 320, MinHeight = 180, PlaceholderText = "Paste JSON here" };
+                var box = new TextBox
+                {
+                    AcceptsReturn = true,
+                    TextWrapping = TextWrapping.Wrap,
+                    MinWidth = 320,
+                    MinHeight = 180,
+                    PlaceholderText = "Paste JSON here",
+                };
                 dlg.Content = box;
                 var res = await dlg.ShowAsync();
                 if (res == ContentDialogResult.Primary)
                 {
                     var json = box.Text;
-                    if (BookmarkService.Instance.TryImportJson(json, out var err)) { SetStatus("Imported."); Refresh(); }
-                    else SetStatus(err ?? "Import failed.");
+                    if (BookmarkService.Instance.TryImportJson(json, out var err))
+                    {
+                        SetStatus("Imported.");
+                        Refresh();
+                    }
+                    else
+                        SetStatus(err ?? "Import failed.");
                 }
             }
-            catch { SetStatus("Import failed."); }
+            catch
+            {
+                SetStatus("Import failed.");
+            }
         }
 
-        private void SetStatus(string text) { try { StatusText.Text = text; } catch { } }
+        private void SetStatus(string text)
+        {
+            try
+            {
+                StatusText.Text = text;
+            }
+            catch { }
+        }
 
         private async void RowDelete_Click(object sender, RoutedEventArgs e)
         {
@@ -259,27 +403,39 @@ namespace PolicyPlusPlus.Windows
                 if (sender is Button btn && btn.Tag is string name)
                 {
                     // If would become zero lists after delete disallow
-                    if (BookmarkService.Instance.ListNames.Count <= 1) { SetStatus("Cannot delete the last list."); return; }
+                    if (BookmarkService.Instance.ListNames.Count <= 1)
+                    {
+                        SetStatus("Cannot delete the last list.");
+                        return;
+                    }
                     if (Content is FrameworkElement root)
                     {
                         var cd = new ContentDialog
                         {
                             XamlRoot = root.XamlRoot,
                             Title = "Delete list?",
-                            Content = new TextBlock { Text = $"Delete bookmark list '{name}'? This cannot be undone.", TextWrapping = TextWrapping.Wrap },
+                            Content = new TextBlock
+                            {
+                                Text = $"Delete bookmark list '{name}'? This cannot be undone.",
+                                TextWrapping = TextWrapping.Wrap,
+                            },
                             PrimaryButtonText = "Delete",
                             CloseButtonText = "Cancel",
-                            DefaultButton = ContentDialogButton.Close
+                            DefaultButton = ContentDialogButton.Close,
                         };
                         var res = await cd.ShowAsync();
-                        if (res != ContentDialogResult.Primary) return;
+                        if (res != ContentDialogResult.Primary)
+                            return;
                     }
                     BookmarkService.Instance.RemoveList(name);
                     Refresh();
                     SetStatus("Deleted.");
                 }
             }
-            catch { SetStatus("Delete failed."); }
+            catch
+            {
+                SetStatus("Delete failed.");
+            }
         }
 
         private void RowActivate_Click(object sender, RoutedEventArgs e)
@@ -287,7 +443,10 @@ namespace PolicyPlusPlus.Windows
             try
             {
                 if (sender is Button btn && btn.Tag is string name)
-                { BookmarkService.Instance.SetActive(name); SetStatus("Activated."); }
+                {
+                    BookmarkService.Instance.SetActive(name);
+                    SetStatus("Activated.");
+                }
             }
             catch { }
         }

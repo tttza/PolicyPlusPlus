@@ -1,5 +1,4 @@
 // Separated elevation host implementation
-using Microsoft.Win32;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
@@ -7,13 +6,17 @@ using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization; // for JsonPropertyName
+using Microsoft.Win32;
 
 namespace PolicyPPElevationHost
 {
     internal sealed class HostResponse
     {
-        [JsonPropertyName("ok")] public bool Ok { get; set; }
-        [JsonPropertyName("error")] public string? Error { get; set; }
+        [JsonPropertyName("ok")]
+        public bool Ok { get; set; }
+
+        [JsonPropertyName("error")]
+        public string? Error { get; set; }
     }
 
     internal static class ElevationHost
@@ -26,7 +29,8 @@ namespace PolicyPPElevationHost
         private static string? s_clientSid;
         private static string? s_authToken;
         private static readonly Encoding Utf8NoBom = new UTF8Encoding(false);
-        private static string HostLogPath => Path.Combine(Path.GetTempPath(), "PolicyPlus_host.log");
+        private static string HostLogPath =>
+            Path.Combine(Path.GetTempPath(), "PolicyPlus_host.log");
 
         private static void Log(string msg)
         {
@@ -36,12 +40,15 @@ namespace PolicyPPElevationHost
             {
                 File.AppendAllText(
                     HostLogPath,
-                    DateTime.Now.ToString("s") + "[" + Environment.ProcessId + "] " + msg + Environment.NewLine
+                    DateTime.Now.ToString("s")
+                        + "["
+                        + Environment.ProcessId
+                        + "] "
+                        + msg
+                        + Environment.NewLine
                 );
             }
-            catch
-            {
-            }
+            catch { }
         }
 
         public static int Run(string pipeName)
@@ -51,17 +58,21 @@ namespace PolicyPPElevationHost
                 var cmd = Environment.GetCommandLineArgs();
                 for (int i = 0; i < cmd.Length; i++)
                 {
-                    if (string.Equals(cmd[i], "--client-sid", StringComparison.OrdinalIgnoreCase) && i + 1 < cmd.Length)
+                    if (
+                        string.Equals(cmd[i], "--client-sid", StringComparison.OrdinalIgnoreCase)
+                        && i + 1 < cmd.Length
+                    )
                         s_clientSid = cmd[i + 1];
-                    if (string.Equals(cmd[i], "--auth", StringComparison.OrdinalIgnoreCase) && i + 1 < cmd.Length)
+                    if (
+                        string.Equals(cmd[i], "--auth", StringComparison.OrdinalIgnoreCase)
+                        && i + 1 < cmd.Length
+                    )
                         s_authToken = cmd[i + 1];
                     if (string.Equals(cmd[i], "--log", StringComparison.OrdinalIgnoreCase))
                         s_logEnabled = true;
                 }
             }
-            catch
-            {
-            }
+            catch { }
 
             if (string.IsNullOrEmpty(s_clientSid) || string.IsNullOrEmpty(s_authToken))
             {
@@ -76,18 +87,26 @@ namespace PolicyPPElevationHost
                 try
                 {
                     var sid = new SecurityIdentifier(s_clientSid);
-                    ps.AddAccessRule(new PipeAccessRule(
-                        sid,
-                        PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance | PipeAccessRights.Synchronize,
-                        AccessControlType.Allow));
+                    ps.AddAccessRule(
+                        new PipeAccessRule(
+                            sid,
+                            PipeAccessRights.ReadWrite
+                                | PipeAccessRights.CreateNewInstance
+                                | PipeAccessRights.Synchronize,
+                            AccessControlType.Allow
+                        )
+                    );
 
                     var me = WindowsIdentity.GetCurrent();
                     if (me?.User != null)
                     {
-                        ps.AddAccessRule(new PipeAccessRule(
-                            me.User,
-                            PipeAccessRights.FullControl,
-                            AccessControlType.Allow));
+                        ps.AddAccessRule(
+                            new PipeAccessRule(
+                                me.User,
+                                PipeAccessRights.FullControl,
+                                AccessControlType.Allow
+                            )
+                        );
                     }
                 }
                 catch (Exception ex)
@@ -104,17 +123,24 @@ namespace PolicyPPElevationHost
                     PipeOptions.Asynchronous,
                     4096,
                     4096,
-                    ps);
+                    ps
+                );
 
                 Log("Server created, waiting for client...");
                 server.WaitForConnection();
                 Log("Client connected.");
 
-                using var reader = new StreamReader(server, Encoding.UTF8, false, 4096, leaveOpen: true);
+                using var reader = new StreamReader(
+                    server,
+                    Encoding.UTF8,
+                    false,
+                    4096,
+                    leaveOpen: true
+                );
                 using var writer = new StreamWriter(server, Encoding.UTF8, 4096, leaveOpen: true)
                 {
                     AutoFlush = true,
-                    NewLine = "\n"
+                    NewLine = "\n",
                 };
 
                 const int MaxChars = 12 * 1024 * 1024;
@@ -131,15 +157,13 @@ namespace PolicyPPElevationHost
                     {
                         try
                         {
-                            writer.WriteLine(JsonSerializer.Serialize(new HostResponse
-                            {
-                                Ok = false,
-                                Error = "request too large"
-                            }));
+                            writer.WriteLine(
+                                JsonSerializer.Serialize(
+                                    new HostResponse { Ok = false, Error = "request too large" }
+                                )
+                            );
                         }
-                        catch
-                        {
-                        }
+                        catch { }
                         continue;
                     }
 
@@ -156,11 +180,18 @@ namespace PolicyPPElevationHost
                         }
 
                         var op = root.GetProperty("op").GetString();
-                        if (string.Equals(op, "write-local-gpo", StringComparison.OrdinalIgnoreCase))
+                        if (
+                            string.Equals(op, "write-local-gpo", StringComparison.OrdinalIgnoreCase)
+                        )
                         {
-                            string? machineBytes = root.TryGetProperty("machineBytes", out var mb) ? mb.GetString() : null;
-                            string? userBytes = root.TryGetProperty("userBytes", out var ub) ? ub.GetString() : null;
-                            bool refresh = root.TryGetProperty("refresh", out var r) && r.GetBoolean();
+                            string? machineBytes = root.TryGetProperty("machineBytes", out var mb)
+                                ? mb.GetString()
+                                : null;
+                            string? userBytes = root.TryGetProperty("userBytes", out var ub)
+                                ? ub.GetString()
+                                : null;
+                            bool refresh =
+                                root.TryGetProperty("refresh", out var r) && r.GetBoolean();
                             var (ok, error) = WriteLocalGpo(machineBytes, userBytes);
                             var resp = new HostResponse { Ok = ok, Error = error };
                             writer.WriteLine(JsonSerializer.Serialize(resp));
@@ -183,9 +214,7 @@ namespace PolicyPPElevationHost
                                     {
                                         await Task.Delay(100).ConfigureAwait(false);
                                     }
-                                    catch
-                                    {
-                                    }
+                                    catch { }
 
                                     try
                                     {
@@ -199,40 +228,50 @@ namespace PolicyPPElevationHost
                                 });
                             }
                         }
-                        else if (string.Equals(op, "open-regedit", StringComparison.OrdinalIgnoreCase))
+                        else if (
+                            string.Equals(op, "open-regedit", StringComparison.OrdinalIgnoreCase)
+                        )
                         {
-                            string hive = root.TryGetProperty("hive", out var hv) ? hv.GetString() ?? string.Empty : string.Empty;
-                            string key = root.TryGetProperty("subKey", out var sk) ? sk.GetString() ?? string.Empty : string.Empty;
+                            string hive = root.TryGetProperty("hive", out var hv)
+                                ? hv.GetString() ?? string.Empty
+                                : string.Empty;
+                            string key = root.TryGetProperty("subKey", out var sk)
+                                ? sk.GetString() ?? string.Empty
+                                : string.Empty;
                             var (ok, error) = OpenRegeditAt(hive, key);
-                            writer.WriteLine(JsonSerializer.Serialize(new HostResponse { Ok = ok, Error = error }));
+                            writer.WriteLine(
+                                JsonSerializer.Serialize(
+                                    new HostResponse { Ok = ok, Error = error }
+                                )
+                            );
                         }
                         else if (string.Equals(op, "shutdown", StringComparison.OrdinalIgnoreCase))
                         {
-                            writer.WriteLine(JsonSerializer.Serialize(new HostResponse { Ok = true }));
+                            writer.WriteLine(
+                                JsonSerializer.Serialize(new HostResponse { Ok = true })
+                            );
                             break;
                         }
                         else
                         {
-                            writer.WriteLine(JsonSerializer.Serialize(new HostResponse
-                            {
-                                Ok = false,
-                                Error = "unknown op"
-                            }));
+                            writer.WriteLine(
+                                JsonSerializer.Serialize(
+                                    new HostResponse { Ok = false, Error = "unknown op" }
+                                )
+                            );
                         }
                     }
                     catch (Exception ex)
                     {
                         try
                         {
-                            writer.WriteLine(JsonSerializer.Serialize(new HostResponse
-                            {
-                                Ok = false,
-                                Error = ex.ToString()
-                            }));
+                            writer.WriteLine(
+                                JsonSerializer.Serialize(
+                                    new HostResponse { Ok = false, Error = ex.ToString() }
+                                )
+                            );
                         }
-                        catch
-                        {
-                        }
+                        catch { }
                     }
                 }
             }
@@ -247,14 +286,17 @@ namespace PolicyPPElevationHost
         }
 
         private static bool IsPolBytes(byte[] bytes) =>
-            bytes != null &&
-            bytes.Length >= 8 &&
-            bytes[0] == 'P' &&
-            bytes[1] == 'R' &&
-            bytes[2] == 'e' &&
-            bytes[3] == 'g';
+            bytes != null
+            && bytes.Length >= 8
+            && bytes[0] == 'P'
+            && bytes[1] == 'R'
+            && bytes[2] == 'e'
+            && bytes[3] == 'g';
 
-        private static (bool ok, string? error) WriteLocalGpo(string? machineBytes, string? userBytes)
+        private static (bool ok, string? error) WriteLocalGpo(
+            string? machineBytes,
+            string? userBytes
+        )
         {
             try
             {
@@ -275,7 +317,12 @@ namespace PolicyPPElevationHost
                     if (!IsPolBytes(bytes))
                         return (false, "invalid machine pol bytes");
 
-                    using var fs = new FileStream(machinePol, FileMode.Create, FileAccess.Write, FileShare.None);
+                    using var fs = new FileStream(
+                        machinePol,
+                        FileMode.Create,
+                        FileAccess.Write,
+                        FileShare.None
+                    );
                     fs.Write(bytes, 0, bytes.Length);
                     fs.Flush(true);
                     wroteMachine = true;
@@ -287,7 +334,12 @@ namespace PolicyPPElevationHost
                     if (!IsPolBytes(bytes))
                         return (false, "invalid user pol bytes");
 
-                    using var fs = new FileStream(userPol, FileMode.Create, FileAccess.Write, FileShare.None);
+                    using var fs = new FileStream(
+                        userPol,
+                        FileMode.Create,
+                        FileAccess.Write,
+                        FileShare.None
+                    );
                     fs.Write(bytes, 0, bytes.Length);
                     fs.Flush(true);
                     wroteUser = true;
@@ -305,8 +357,10 @@ namespace PolicyPPElevationHost
 
         private static void UpdateGptIni(string gptIniPath, bool bumpMachine, bool bumpUser)
         {
-            const string MachExtensionsLine = "gPCMachineExtensionNames=[{35378EAC-683F-11D2-A89A-00C04FBBCFA2}{D02B1F72-3407-48AE-BA88-E8213C6761F1}]";
-            const string UserExtensionsLine = "gPCUserExtensionNames=[{35378EAC-683F-11D2-A89A-00C04FBBCFA2}{D02B1F73-3407-48AE-BA88-E8213C6761F1}]";
+            const string MachExtensionsLine =
+                "gPCMachineExtensionNames=[{35378EAC-683F-11D2-A89A-00C04FBBCFA2}{D02B1F72-3407-48AE-BA88-E8213C6761F1}]";
+            const string UserExtensionsLine =
+                "gPCUserExtensionNames=[{35378EAC-683F-11D2-A89A-00C04FBBCFA2}{D02B1F73-3407-48AE-BA88-E8213C6761F1}]";
 
             var dir = Path.GetDirectoryName(gptIniPath) ?? string.Empty;
             if (!Directory.Exists(dir))
@@ -352,9 +406,19 @@ namespace PolicyPPElevationHost
                     else
                     {
                         f.WriteLine(line);
-                        if (line.StartsWith("gPCMachineExtensionNames=", StringComparison.InvariantCultureIgnoreCase))
+                        if (
+                            line.StartsWith(
+                                "gPCMachineExtensionNames=",
+                                StringComparison.InvariantCultureIgnoreCase
+                            )
+                        )
                             seenMachExts = true;
-                        if (line.StartsWith("gPCUserExtensionNames=", StringComparison.InvariantCultureIgnoreCase))
+                        if (
+                            line.StartsWith(
+                                "gPCUserExtensionNames=",
+                                StringComparison.InvariantCultureIgnoreCase
+                            )
+                        )
                             seenUserExts = true;
                     }
                 }
@@ -391,9 +455,13 @@ namespace PolicyPPElevationHost
                 string hiveName = NormalizeHive(hive);
                 string normalizedSub = NormalizeKey(subKey ?? string.Empty);
                 string existing = GetDeepestExistingSubKey(hiveName, normalizedSub);
-                string targetPath = string.IsNullOrEmpty(existing) ? hiveName : (hiveName + "\\" + existing);
+                string targetPath = string.IsNullOrEmpty(existing)
+                    ? hiveName
+                    : (hiveName + "\\" + existing);
 
-                using var regedit = Registry.CurrentUser.CreateSubKey(@"Software\\Microsoft\\Windows\\CurrentVersion\\Applets\\Regedit");
+                using var regedit = Registry.CurrentUser.CreateSubKey(
+                    @"Software\\Microsoft\\Windows\\CurrentVersion\\Applets\\Regedit"
+                );
                 if (regedit == null)
                     return (false, "regedit key unavailable");
 
@@ -405,7 +473,7 @@ namespace PolicyPPElevationHost
                 {
                     FileName = "regedit.exe",
                     Arguments = "/m",
-                    UseShellExecute = true
+                    UseShellExecute = true,
                 };
                 System.Diagnostics.Process.Start(psi);
                 return (true, null);
@@ -424,9 +492,7 @@ namespace PolicyPPElevationHost
                 if (val.StartsWith("Computer\\", StringComparison.OrdinalIgnoreCase))
                     return "Computer\\";
             }
-            catch
-            {
-            }
+            catch { }
             return string.Empty;
         }
 
@@ -446,9 +512,7 @@ namespace PolicyPPElevationHost
 
         private static string NormalizeKey(string key)
         {
-            key = (key ?? string.Empty)
-                .Replace('/', '\\')
-                .Trim();
+            key = (key ?? string.Empty).Replace('/', '\\').Trim();
             if (key.StartsWith("\\"))
                 key = key.TrimStart('\\');
             return key;
@@ -458,7 +522,10 @@ namespace PolicyPPElevationHost
         {
             try
             {
-                using var baseKey = hiveName.Equals("HKEY_LOCAL_MACHINE", StringComparison.OrdinalIgnoreCase)
+                using var baseKey = hiveName.Equals(
+                    "HKEY_LOCAL_MACHINE",
+                    StringComparison.OrdinalIgnoreCase
+                )
                     ? RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default)
                     : RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Default);
 

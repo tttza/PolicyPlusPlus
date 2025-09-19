@@ -1,6 +1,6 @@
+using System;
 using Microsoft.UI.Xaml;
 using PolicyPlusPlus.Logging; // logging
-using System;
 
 namespace PolicyPlusPlus.Utils
 {
@@ -12,13 +12,86 @@ namespace PolicyPlusPlus.Utils
     {
         public static void Initialize(Window window, int width, int height, Action? applyTheme)
         {
-            if (window == null) return;
-            try { applyTheme?.Invoke(); } catch (Exception ex) { Log.Warn("ChildWindow", "applyTheme invoke failed", ex); }
-            try { App.ThemeChanged += (s, e) => { try { applyTheme?.Invoke(); } catch (Exception ex2) { Log.Warn("ChildWindow", "applyTheme invoke failed (ThemeChanged)", ex2); } }; } catch (Exception ex) { Log.Warn("ChildWindow", "ThemeChanged subscription failed", ex); }
-            try { WindowHelpers.ResizeForDisplayScale(window, width, height); } catch (Exception ex) { Log.Warn("ChildWindow", "ResizeForDisplayScale failed", ex); }
-            try { window.Activated += (s, e) => { try { WindowHelpers.BringToFront(window); } catch (Exception ex2) { Log.Warn("ChildWindow", "BringToFront failed (Activated)", ex2); } }; } catch (Exception ex) { Log.Warn("ChildWindow", "Activated subscription failed", ex); }
-            try { window.Closed += (s, e) => { try { App.UnregisterWindow(window); } catch (Exception ex2) { Log.Warn("ChildWindow", "UnregisterWindow failed (Closed)", ex2); } }; } catch (Exception ex) { Log.Warn("ChildWindow", "Closed subscription failed", ex); }
-            try { App.RegisterWindow(window); } catch (Exception ex) { Log.Warn("ChildWindow", "RegisterWindow failed", ex); }
+            if (window == null)
+                return;
+            try
+            {
+                applyTheme?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("ChildWindow", "applyTheme invoke failed", ex);
+            }
+            try
+            {
+                App.ThemeChanged += (s, e) =>
+                {
+                    try
+                    {
+                        applyTheme?.Invoke();
+                    }
+                    catch (Exception ex2)
+                    {
+                        Log.Warn("ChildWindow", "applyTheme invoke failed (ThemeChanged)", ex2);
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("ChildWindow", "ThemeChanged subscription failed", ex);
+            }
+            try
+            {
+                WindowHelpers.ResizeForDisplayScale(window, width, height);
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("ChildWindow", "ResizeForDisplayScale failed", ex);
+            }
+            try
+            {
+                window.Activated += (s, e) =>
+                {
+                    try
+                    {
+                        WindowHelpers.BringToFront(window);
+                    }
+                    catch (Exception ex2)
+                    {
+                        Log.Warn("ChildWindow", "BringToFront failed (Activated)", ex2);
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("ChildWindow", "Activated subscription failed", ex);
+            }
+            try
+            {
+                window.Closed += (s, e) =>
+                {
+                    try
+                    {
+                        App.UnregisterWindow(window);
+                    }
+                    catch (Exception ex2)
+                    {
+                        Log.Warn("ChildWindow", "UnregisterWindow failed (Closed)", ex2);
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("ChildWindow", "Closed subscription failed", ex);
+            }
+            try
+            {
+                App.RegisterWindow(window);
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("ChildWindow", "RegisterWindow failed", ex);
+            }
 
             void TryAttachScale()
             {
@@ -39,11 +112,21 @@ namespace PolicyPlusPlus.Utils
                         }
                         if (scaleHost != null && rootShell != null)
                         {
-                            try { ScaleHelper.Attach(window, scaleHost, rootShell); } catch (Exception ex) { Log.Warn("ChildWindow", "ScaleHelper.Attach failed", ex); }
+                            try
+                            {
+                                ScaleHelper.Attach(window, scaleHost, rootShell);
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Warn("ChildWindow", "ScaleHelper.Attach failed", ex);
+                            }
                         }
                     }
                 }
-                catch (Exception ex) { Log.Warn("ChildWindow", "TryAttachScale root failure", ex); }
+                catch (Exception ex)
+                {
+                    Log.Warn("ChildWindow", "TryAttachScale root failure", ex);
+                }
             }
             // Immediate attempt then again on Loaded (content tree ready)
             TryAttachScale();
@@ -54,7 +137,10 @@ namespace PolicyPlusPlus.Utils
                     fe2.Loaded += (s, e) => TryAttachScale();
                 }
             }
-            catch (Exception ex) { Log.Warn("ChildWindow", "Loaded subscription failed", ex); }
+            catch (Exception ex)
+            {
+                Log.Warn("ChildWindow", "Loaded subscription failed", ex);
+            }
         }
     }
 }

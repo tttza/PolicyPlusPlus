@@ -6,7 +6,12 @@ namespace PolicyPlusModTests.Testing
     // Helper factory for building test policies to reduce duplication in test classes
     public static class TestPolicyFactory
     {
-        public static PolicyPlusPolicy CreateSimpleTogglePolicy(string uniqueId = "MACHINE:TestPolicy", string displayName = "Test Policy", string regKey = "Software\\PolicyPlusTest", string regValue = "TestValue")
+        public static PolicyPlusPolicy CreateSimpleTogglePolicy(
+            string uniqueId = "MACHINE:TestPolicy",
+            string displayName = "Test Policy",
+            string regKey = "Software\\PolicyPlusTest",
+            string regValue = "TestValue"
+        )
         {
             var rawPolicy = new AdmxPolicy
             {
@@ -14,13 +19,13 @@ namespace PolicyPlusModTests.Testing
                 RegistryValue = regValue,
                 Section = AdmxPolicySection.Machine,
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
                 RawPolicy = rawPolicy,
                 UniqueID = uniqueId,
-                DisplayName = displayName
+                DisplayName = displayName,
             };
         }
 
@@ -32,7 +37,7 @@ namespace PolicyPlusModTests.Testing
                 ElementType = "text",
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "TextValue",
-                MaxLength = 100
+                MaxLength = 100,
             };
             var rawPolicy = new AdmxPolicy
             {
@@ -41,7 +46,7 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { textElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
@@ -57,10 +62,10 @@ namespace PolicyPlusModTests.Testing
                             ID = "TextElem",
                             ElementType = "textBox",
                             Label = "Text Label",
-                            DefaultValue = string.Empty
-                        }
-                    }
-                }
+                            DefaultValue = string.Empty,
+                        },
+                    },
+                },
             };
         }
 
@@ -73,7 +78,7 @@ namespace PolicyPlusModTests.Testing
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "ListPrefix",
                 HasPrefix = true,
-                UserProvidesNames = false
+                UserProvidesNames = false,
             };
             var rawPolicy = new AdmxPolicy
             {
@@ -82,7 +87,7 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { listElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
@@ -97,10 +102,10 @@ namespace PolicyPlusModTests.Testing
                         {
                             ID = "ListElem",
                             ElementType = "listBox",
-                            Label = "List Label"
-                        }
-                    }
-                }
+                            Label = "List Label",
+                        },
+                    },
+                },
             };
         }
 
@@ -114,9 +119,25 @@ namespace PolicyPlusModTests.Testing
                 RegistryValue = "EnumValue",
                 Items = new List<EnumPolicyElementItem>
                 {
-                    new EnumPolicyElementItem { Value = new PolicyRegistryValue { NumberValue = 1U, RegistryType = PolicyRegistryValueType.Numeric }, DisplayCode = "One" },
-                    new EnumPolicyElementItem { Value = new PolicyRegistryValue { NumberValue = 2U, RegistryType = PolicyRegistryValueType.Numeric }, DisplayCode = "Two" }
-                }
+                    new EnumPolicyElementItem
+                    {
+                        Value = new PolicyRegistryValue
+                        {
+                            NumberValue = 1U,
+                            RegistryType = PolicyRegistryValueType.Numeric,
+                        },
+                        DisplayCode = "One",
+                    },
+                    new EnumPolicyElementItem
+                    {
+                        Value = new PolicyRegistryValue
+                        {
+                            NumberValue = 2U,
+                            RegistryType = PolicyRegistryValueType.Numeric,
+                        },
+                        DisplayCode = "Two",
+                    },
+                },
             };
             var rawPolicy = new AdmxPolicy
             {
@@ -125,7 +146,7 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { enumElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
@@ -142,21 +163,23 @@ namespace PolicyPlusModTests.Testing
                             ElementType = "dropdownList",
                             Label = "Enum Label",
                             NoSort = true,
-                            DefaultItemID = 0
-                        }
-                    }
-                }
+                            DefaultItemID = 0,
+                        },
+                    },
+                },
             };
         }
 
-        public static PolicyPlusPolicy CreateMultiTextPolicy(string uniqueId = "MACHINE:MultiTextPolicy")
+        public static PolicyPlusPolicy CreateMultiTextPolicy(
+            string uniqueId = "MACHINE:MultiTextPolicy"
+        )
         {
             var multiTextElem = new MultiTextPolicyElement
             {
                 ID = "MultiTextElem",
                 ElementType = "multiText",
                 RegistryKey = "Software\\PolicyPlusTest",
-                RegistryValue = "MultiTextValue"
+                RegistryValue = "MultiTextValue",
             };
             var rawPolicy = new AdmxPolicy
             {
@@ -165,7 +188,7 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { multiTextElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
@@ -180,14 +203,16 @@ namespace PolicyPlusModTests.Testing
                         {
                             ID = "MultiTextElem",
                             ElementType = "multiTextBox",
-                            Label = "MultiText Label"
-                        }
-                    }
-                }
+                            Label = "MultiText Label",
+                        },
+                    },
+                },
             };
         }
 
-        public static PolicyPlusPolicy CreateDecimalPolicy(string uniqueId = "MACHINE:DecimalPolicy")
+        public static PolicyPlusPolicy CreateDecimalPolicy(
+            string uniqueId = "MACHINE:DecimalPolicy"
+        )
         {
             var decElem = new DecimalPolicyElement
             {
@@ -196,7 +221,7 @@ namespace PolicyPlusModTests.Testing
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "DecimalValue",
                 Minimum = 0,
-                Maximum = 500
+                Maximum = 500,
             };
             var rawPolicy = new AdmxPolicy
             {
@@ -205,7 +230,7 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { decElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
@@ -223,10 +248,10 @@ namespace PolicyPlusModTests.Testing
                             Label = "Decimal Label",
                             DefaultValue = 100,
                             HasSpinner = true,
-                            SpinnerIncrement = 10
-                        }
-                    }
-                }
+                            SpinnerIncrement = 10,
+                        },
+                    },
+                },
             };
         }
 
@@ -239,13 +264,13 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = null!,
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
                 RawPolicy = rawPolicy,
                 UniqueID = uniqueId,
-                DisplayName = "Binary Policy"
+                DisplayName = "Binary Policy",
             };
         }
 
@@ -258,17 +283,19 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = null!,
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
                 RawPolicy = rawPolicy,
                 UniqueID = uniqueId,
-                DisplayName = "Qword Policy"
+                DisplayName = "Qword Policy",
             };
         }
 
-        public static PolicyPlusPolicy CreateExpandStringPolicy(string uniqueId = "MACHINE:ExpandStringPolicy")
+        public static PolicyPlusPolicy CreateExpandStringPolicy(
+            string uniqueId = "MACHINE:ExpandStringPolicy"
+        )
         {
             var rawPolicy = new AdmxPolicy
             {
@@ -277,13 +304,13 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = null!,
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
                 RawPolicy = rawPolicy,
                 UniqueID = uniqueId,
-                DisplayName = "ExpandString Policy"
+                DisplayName = "ExpandString Policy",
             };
         }
 
@@ -296,17 +323,19 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = null!,
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
                 RawPolicy = rawPolicy,
                 UniqueID = uniqueId,
-                DisplayName = "Delete Policy"
+                DisplayName = "Delete Policy",
             };
         }
 
-        public static PolicyPlusPolicy CreateClearKeyPolicy(string uniqueId = "MACHINE:ClearKeyPolicy")
+        public static PolicyPlusPolicy CreateClearKeyPolicy(
+            string uniqueId = "MACHINE:ClearKeyPolicy"
+        )
         {
             var rawPolicy = new AdmxPolicy
             {
@@ -315,17 +344,19 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = null!,
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
                 RawPolicy = rawPolicy,
                 UniqueID = uniqueId,
-                DisplayName = "ClearKey Policy"
+                DisplayName = "ClearKey Policy",
             };
         }
 
-        public static PolicyPlusPolicy CreateNamedListPolicy(string uniqueId = "MACHINE:NamedListPolicy")
+        public static PolicyPlusPolicy CreateNamedListPolicy(
+            string uniqueId = "MACHINE:NamedListPolicy"
+        )
         {
             var listElem = new ListPolicyElement
             {
@@ -334,7 +365,7 @@ namespace PolicyPlusModTests.Testing
                 RegistryKey = "Software\\PolicyPlusTest\\NamedList",
                 RegistryValue = string.Empty,
                 HasPrefix = false,
-                UserProvidesNames = true
+                UserProvidesNames = true,
             };
             var rawPolicy = new AdmxPolicy
             {
@@ -343,7 +374,7 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { listElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
@@ -358,14 +389,16 @@ namespace PolicyPlusModTests.Testing
                         {
                             ID = "NamedListElem",
                             ElementType = "listBox",
-                            Label = "Named List Label"
-                        }
-                    }
-                }
+                            Label = "Named List Label",
+                        },
+                    },
+                },
             };
         }
 
-        public static PolicyPlusPolicy CreateExpandableTextElementPolicy(string uniqueId = "MACHINE:ExpandableTextElemPolicy")
+        public static PolicyPlusPolicy CreateExpandableTextElementPolicy(
+            string uniqueId = "MACHINE:ExpandableTextElemPolicy"
+        )
         {
             var textElem = new TextPolicyElement
             {
@@ -374,7 +407,7 @@ namespace PolicyPlusModTests.Testing
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "ExpandTextValue",
                 MaxLength = 200,
-                RegExpandSz = true
+                RegExpandSz = true,
             };
             var rawPolicy = new AdmxPolicy
             {
@@ -383,7 +416,7 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { textElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
@@ -399,14 +432,16 @@ namespace PolicyPlusModTests.Testing
                             ID = "ExpTextElem",
                             ElementType = "textBox",
                             Label = "Expandable Text Label",
-                            DefaultValue = string.Empty
-                        }
-                    }
-                }
+                            DefaultValue = string.Empty,
+                        },
+                    },
+                },
             };
         }
 
-        public static PolicyPlusPolicy CreateRequiredTextPolicy(string uniqueId = "MACHINE:RequiredTextPolicy")
+        public static PolicyPlusPolicy CreateRequiredTextPolicy(
+            string uniqueId = "MACHINE:RequiredTextPolicy"
+        )
         {
             var textElem = new TextPolicyElement
             {
@@ -415,7 +450,7 @@ namespace PolicyPlusModTests.Testing
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "ReqTextValue",
                 MaxLength = 50,
-                Required = true
+                Required = true,
             };
             var raw = new AdmxPolicy
             {
@@ -424,7 +459,7 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { textElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
@@ -440,14 +475,17 @@ namespace PolicyPlusModTests.Testing
                             ID = "ReqTextElem",
                             ElementType = "textBox",
                             Label = "Required Text",
-                            DefaultValue = string.Empty
-                        }
-                    }
-                }
+                            DefaultValue = string.Empty,
+                        },
+                    },
+                },
             };
         }
 
-        public static PolicyPlusPolicy CreateMaxLengthTextPolicy(string uniqueId = "MACHINE:MaxLenTextPolicy", int maxLen = 5)
+        public static PolicyPlusPolicy CreateMaxLengthTextPolicy(
+            string uniqueId = "MACHINE:MaxLenTextPolicy",
+            int maxLen = 5
+        )
         {
             var textElem = new TextPolicyElement
             {
@@ -455,7 +493,7 @@ namespace PolicyPlusModTests.Testing
                 ElementType = "text",
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "MaxLenTextValue",
-                MaxLength = maxLen
+                MaxLength = maxLen,
             };
             var raw = new AdmxPolicy
             {
@@ -464,7 +502,7 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { textElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
@@ -480,14 +518,16 @@ namespace PolicyPlusModTests.Testing
                             ID = "MaxLenTextElem",
                             ElementType = "textBox",
                             Label = "MaxLen Text",
-                            DefaultValue = string.Empty
-                        }
-                    }
-                }
+                            DefaultValue = string.Empty,
+                        },
+                    },
+                },
             };
         }
 
-        public static PolicyPlusPolicy CreateComboBoxTextPolicy(string uniqueId = "MACHINE:ComboBoxTextPolicy")
+        public static PolicyPlusPolicy CreateComboBoxTextPolicy(
+            string uniqueId = "MACHINE:ComboBoxTextPolicy"
+        )
         {
             var textElem = new TextPolicyElement
             {
@@ -495,7 +535,7 @@ namespace PolicyPlusModTests.Testing
                 ElementType = "text",
                 RegistryKey = "Software\\PolicyPlusTest",
                 RegistryValue = "ComboTextValue",
-                MaxLength = 100
+                MaxLength = 100,
             };
             var raw = new AdmxPolicy
             {
@@ -504,7 +544,7 @@ namespace PolicyPlusModTests.Testing
                 Section = AdmxPolicySection.Machine,
                 Elements = new List<PolicyElement> { textElem },
                 AffectedValues = new PolicyRegistryList(),
-                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" }
+                DefinedIn = new AdmxFile { SourceFile = "dummy.admx" },
             };
             return new PolicyPlusPolicy
             {
@@ -521,11 +561,11 @@ namespace PolicyPlusModTests.Testing
                             ElementType = "comboBox",
                             Label = "Combo Text",
                             DefaultText = "DefaultCombo",
-                            Suggestions = new List<string>{"Sug1","Sug2"},
-                            NoSort = true
-                        }
-                    }
-                }
+                            Suggestions = new List<string> { "Sug1", "Sug2" },
+                            NoSort = true,
+                        },
+                    },
+                },
             };
         }
     }
