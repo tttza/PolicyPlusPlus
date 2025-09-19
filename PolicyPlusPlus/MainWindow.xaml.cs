@@ -1597,57 +1597,14 @@ namespace PolicyPlusPlus
             _limitUnfilteredTo1000 = vm.LimitUnfilteredTo1000;
         }
 
-        private async void AppWindow_Closing(object? sender, AppWindowClosingEventArgs e)
+        private void AppWindow_Closing(object? sender, AppWindowClosingEventArgs e)
         {
             try
             {
-                if (!PendingChangesService.Instance.IsDirty)
-                    return;
-                e.Cancel = true; // we'll decide
-                var dlg = new ContentDialog
+                if (PendingChangesService.Instance.IsDirty)
                 {
-                    Title = "Unsaved Changes",
-                    Content = "There are pending policy changes. Save before exiting?",
-                    PrimaryButtonText = "Save",
-                    SecondaryButtonText = "Discard",
-                    CloseButtonText = "Cancel",
-                    DefaultButton = ContentDialogButton.Primary,
-                };
-                if (Content is FrameworkElement fe)
-                    dlg.XamlRoot = fe.XamlRoot;
-                ContentDialogResult res;
-                try
-                {
-                    res = await dlg.ShowAsync();
-                }
-                catch
-                {
-                    res = ContentDialogResult.None;
-                }
-                if (res == ContentDialogResult.Primary)
-                {
-                    var pending = PendingChangesService.Instance.Pending.ToArray();
-                    var (ok, err) = await SavePendingAsync(pending);
-                    if (ok)
-                        PendingChangesService.Instance.Applied(pending);
-                    else
-                        ShowInfo("Save failed: " + (err ?? "unknown"), InfoBarSeverity.Error);
-                    // proceed to close regardless of failure? only if saved ok
-                    if (!ok)
-                        return; // keep window open if failed
-                }
-                else if (res == ContentDialogResult.None)
-                {
-                    // cancel close
-                    return;
-                }
-                else if (res == ContentDialogResult.Secondary)
-                {
-                    // discard
                     PendingChangesService.Instance.DiscardAll();
                 }
-                this.AppWindow.Closing -= AppWindow_Closing; // avoid re-entry
-                Close();
             }
             catch { }
         }
