@@ -339,8 +339,29 @@ public class SettingsPersistenceTests : IClassFixture<TestAppFixture>
 
         var themeRoot = EnsureSubMenu("Appearance", "Theme");
         Invoke(themeRoot);
-        var darkTheme = WaitForGlobal("Dark");
-        var lightTheme = WaitForGlobal("Light");
+        // Give the submenu a brief moment to render before searching
+        Thread.Sleep(120);
+        AutomationElement? darkTheme = null;
+        AutomationElement? lightTheme = null;
+        try
+        {
+            darkTheme = WaitForElementByName(window, "Dark", ControlType.MenuItem, PopupTimeoutMs);
+        }
+        catch { }
+        try
+        {
+            lightTheme = WaitForElementByName(
+                window,
+                "Light",
+                ControlType.MenuItem,
+                PopupTimeoutMs
+            );
+        }
+        catch { }
+        if (darkTheme == null)
+            darkTheme = WaitForGlobal("Dark");
+        if (lightTheme == null)
+            lightTheme = WaitForGlobal("Light");
         string currentTheme = IsChecked(darkTheme)
             ? "Dark"
             : (IsChecked(lightTheme) ? "Light" : "System");

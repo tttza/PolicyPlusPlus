@@ -152,7 +152,12 @@ namespace PolicyPlusPlus.Services
             // Broadcast fine-grained change for live UI sync (QuickEdit <-> EditSetting)
             try
             {
-                EventHub.PublishPolicyChangeQueued(pid, scope, effectiveState, effectiveOptionsClone);
+                EventHub.PublishPolicyChangeQueued(
+                    pid,
+                    scope,
+                    effectiveState,
+                    effectiveOptionsClone
+                );
             }
             catch { }
         }

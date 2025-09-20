@@ -7,6 +7,10 @@
     <IsTestProject>true</IsTestProject>
     <OutputType>Library</OutputType>
     <Platforms>x64</Platforms>
+    <EnableMsixTooling>false</EnableMsixTooling>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <DisableProjectPriGeneration>true</DisableProjectPriGeneration>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
@@ -23,6 +27,7 @@
     </PackageReference>
     <PackageReference Include="FlaUI.Core" Version="4.0.0" />
     <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.*" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PolicyPlusPlus\PolicyPlusPlus.csproj" />

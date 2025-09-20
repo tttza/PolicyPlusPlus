@@ -193,19 +193,53 @@ public sealed class TestAppHost : IDisposable
             ?? Path.Combine(Path.GetTempPath(), "PolicyPlusUITest_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testDataDirectory);
 
-        // Pre-create settings.json enabling CustomPol so saves use custom .pol instead of elevation host.
+        // Ensure settings.json has CustomPol configured for tests, but do not clobber pre-seeded settings.
         try
         {
             var compPath = Path.Combine(_testDataDirectory, "custom_machine.pol");
             var userPath = Path.Combine(_testDataDirectory, "custom_user.pol");
             var settingsPath = Path.Combine(_testDataDirectory, "settings.json");
-            var json =
-                "{\"CustomPol\":{\"EnableComputer\":true,\"EnableUser\":true,\"ComputerPath\":\""
-                + compPath.Replace("\\", "\\\\")
-                + "\",\"UserPath\":\""
-                + userPath.Replace("\\", "\\\\")
-                + "\",\"Active\":true}}";
-            File.WriteAllText(settingsPath, json, Encoding.UTF8);
+            if (File.Exists(settingsPath))
+            {
+                // Merge: if CustomPol is missing, add it; otherwise preserve existing content.
+                try
+                {
+                    var text = File.ReadAllText(settingsPath, Encoding.UTF8);
+                    // Fast path: if already contains the key, assume present and valid.
+                    if (!text.Contains("\"CustomPol\"", StringComparison.Ordinal))
+                    {
+                        // Minimal JSON merge using JsonNode to avoid losing other properties.
+                        var node =
+                            System.Text.Json.Nodes.JsonNode.Parse(text)
+                            as System.Text.Json.Nodes.JsonObject;
+                        node ??= new System.Text.Json.Nodes.JsonObject();
+                        node["CustomPol"] = new System.Text.Json.Nodes.JsonObject
+                        {
+                            ["EnableComputer"] = true,
+                            ["EnableUser"] = true,
+                            ["ComputerPath"] = compPath,
+                            ["UserPath"] = userPath,
+                            ["Active"] = true,
+                        };
+                        var merged = System.Text.Json.JsonSerializer.Serialize(
+                            node,
+                            new System.Text.Json.JsonSerializerOptions { WriteIndented = true }
+                        );
+                        File.WriteAllText(settingsPath, merged, Encoding.UTF8);
+                    }
+                }
+                catch { }
+            }
+            else
+            {
+                var json =
+                    "{\"CustomPol\":{\"EnableComputer\":true,\"EnableUser\":true,\"ComputerPath\":\""
+                    + compPath.Replace("\\", "\\\\")
+                    + "\",\"UserPath\":\""
+                    + userPath.Replace("\\", "\\\\")
+                    + "\",\"Active\":true}}";
+                File.WriteAllText(settingsPath, json, Encoding.UTF8);
+            }
         }
         catch { }
 

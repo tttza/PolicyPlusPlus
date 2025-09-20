@@ -10,6 +10,7 @@ namespace PolicyPlusPlus.Services
     internal sealed class EffectivePolicyStateService
     {
         public static EffectivePolicyStateService Instance { get; } = new();
+
         private EffectivePolicyStateService() { }
 
         private PendingChange? FindPending(string policyId, string scope)
@@ -21,7 +22,10 @@ namespace PolicyPlusPlus.Services
                     && string.Equals(p.Scope, scope, StringComparison.OrdinalIgnoreCase)
                 );
             }
-            catch { return null; }
+            catch
+            {
+                return null;
+            }
         }
 
         private (PolicyState state, Dictionary<string, object>? options) GetBase(
@@ -45,7 +49,10 @@ namespace PolicyPlusPlus.Services
                 }
                 return (st, null);
             }
-            catch { return (PolicyState.Unknown, null); }
+            catch
+            {
+                return (PolicyState.Unknown, null);
+            }
         }
 
         public void ApplyEffectiveToRow(
@@ -74,13 +81,21 @@ namespace PolicyPlusPlus.Services
             }
         }
 
-        public void ApplyPendingOverlay(IEnumerable<QuickEditRow> rows, PolicyPlusCore.IO.IPolicySource compSource, PolicyPlusCore.IO.IPolicySource userSource)
+        public void ApplyPendingOverlay(
+            IEnumerable<QuickEditRow> rows,
+            PolicyPlusCore.IO.IPolicySource compSource,
+            PolicyPlusCore.IO.IPolicySource userSource
+        )
         {
             if (rows == null)
                 return;
             foreach (var r in rows)
             {
-                try { ApplyEffectiveToRow(r, compSource, userSource); } catch { }
+                try
+                {
+                    ApplyEffectiveToRow(r, compSource, userSource);
+                }
+                catch { }
             }
         }
     }

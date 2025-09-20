@@ -135,6 +135,16 @@ namespace PolicyPlusPlus
                 Log.Warn("App", $"settings init failed", ex);
             }
 
+            // Initialize ADMX cache + watcher in background
+            try
+            {
+                await AdmxCacheHostService.Instance.StartAsync();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("App", $"Admx cache host start failed: {ex.Message}");
+            }
+
             var customPolVm = new ViewModels.CustomPolViewModel(
                 SettingsService.Instance,
                 SettingsService.Instance.LoadSettings().CustomPol
@@ -176,6 +186,14 @@ namespace PolicyPlusPlus
                 catch (Exception ex)
                 {
                     Log.Debug("App", $"save search stats failed: {ex.Message}");
+                }
+                try
+                {
+                    await AdmxCacheHostService.Instance.StopAsync();
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug("App", $"Admx cache host stop failed: {ex.Message}");
                 }
                 try
                 {

@@ -35,11 +35,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001">
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.*">
       <IncludeAssets>runtime;native;contentfiles</IncludeAssets>
       <ExcludeAssets>build;buildTransitive;analyzers</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" ExcludeAssets="all" PrivateAssets="all" />
+  <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3179.45" ExcludeAssets="all" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

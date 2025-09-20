@@ -481,6 +481,18 @@ namespace PolicyPlusPlus
                     {
                         ChkBookmarksOnly.IsChecked = _bookmarksOnly;
                     }
+                    // Also push into the bound FilterViewModel to guarantee consistency even if bindings
+                    // have not propagated yet when UI tests attach immediately after launch.
+                    try
+                    {
+                        var fvm = FilterVM;
+                        if (fvm != null)
+                        {
+                            fvm.ConfiguredOnly = _configuredOnly;
+                            fvm.BookmarksOnly = _bookmarksOnly;
+                        }
+                    }
+                    catch { }
                 }
                 catch { }
 
@@ -495,6 +507,17 @@ namespace PolicyPlusPlus
                 try
                 {
                     ViewDetailsToggle.IsChecked = _showDetails;
+                }
+                catch { }
+                // Keep FilterViewModel in sync for menu-driven flags as well.
+                try
+                {
+                    var fvm2 = FilterVM;
+                    if (fvm2 != null)
+                    {
+                        fvm2.HideEmptyCategories = _hideEmptyCategories;
+                        fvm2.ShowDetails = _showDetails;
+                    }
                 }
                 catch { }
                 ApplyDetailsPaneVisibility();

@@ -164,7 +164,11 @@ namespace PolicyPlusPlus.Windows
                     {
                         try
                         {
-                            EffectivePolicyStateService.Instance.ApplyEffectiveToRow(r, _compSource, _userSource);
+                            EffectivePolicyStateService.Instance.ApplyEffectiveToRow(
+                                r,
+                                _compSource,
+                                _userSource
+                            );
                         }
                         catch { }
                     }
@@ -283,7 +287,11 @@ namespace PolicyPlusPlus.Windows
                 if (row != null)
                 {
                     // ensure row reflects effective state first
-                    EffectivePolicyStateService.Instance.ApplyEffectiveToRow(row, _compSource, _userSource);
+                    EffectivePolicyStateService.Instance.ApplyEffectiveToRow(
+                        row,
+                        _compSource,
+                        _userSource
+                    );
                     win.OverlayFromQuickEdit(row);
                 }
             }
@@ -385,7 +393,11 @@ namespace PolicyPlusPlus.Windows
             try
             {
                 // Instead of raw source only, apply effective state (base + pending overlay)
-                EffectivePolicyStateService.Instance.ApplyEffectiveToRow(row, _compSource, _userSource);
+                EffectivePolicyStateService.Instance.ApplyEffectiveToRow(
+                    row,
+                    _compSource,
+                    _userSource
+                );
             }
             catch (Exception ex)
             {

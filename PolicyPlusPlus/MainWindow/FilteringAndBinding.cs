@@ -970,10 +970,62 @@ namespace PolicyPlusPlus
                 List<string> suggestions;
                 try
                 {
+                    // Try cache-backed search first
                     var baseSeq = BaseSequenceForFilters(snap);
                     baseSeq = ApplyBookmarkFilterIfNeeded(baseSeq);
-                    matches = MatchPolicies(q, baseSeq, out var allowedSet);
-                    suggestions = BuildSuggestions(q, allowedSet);
+                    var allowedSet = new HashSet<string>(
+                        baseSeq.Select(p => p.UniqueID),
+                        StringComparer.OrdinalIgnoreCase
+                    );
+
+                    List<PolicyPlusPolicy> cacheMatches = new();
+                    List<string> cacheSuggestions = new();
+                    try
+                    {
+                        var cul = System.Globalization.CultureInfo.CurrentUICulture.Name;
+                        var hits = await AdmxCacheHostService
+                            .Instance.Cache.SearchAsync(q, cul, 300, token)
+                            .ConfigureAwait(false);
+                        if (hits != null && hits.Count > 0)
+                        {
+                            // Map to policies and filter by current allowed set
+                            var byId = _allPolicies.ToDictionary(
+                                p => p.UniqueID,
+                                StringComparer.OrdinalIgnoreCase
+                            );
+                            foreach (var h in hits)
+                            {
+                                if (
+                                    !string.IsNullOrEmpty(h.UniqueId)
+                                    && allowedSet.Contains(h.UniqueId)
+                                    && byId.TryGetValue(h.UniqueId, out var pol)
+                                )
+                                    cacheMatches.Add(pol);
+                            }
+                            // Suggestions from top names
+                            cacheSuggestions = hits.Take(10)
+                                .Select(h => h.DisplayName ?? string.Empty)
+                                .Where(s => !string.IsNullOrWhiteSpace(s))
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .ToList();
+                        }
+                    }
+                    catch { }
+
+                    if (cacheMatches.Count > 0)
+                    {
+                        matches = cacheMatches;
+                        suggestions =
+                            cacheSuggestions.Count > 0
+                                ? cacheSuggestions
+                                : BuildSuggestions(q, allowedSet);
+                    }
+                    else
+                    {
+                        // Fallback to in-memory search
+                        matches = MatchPolicies(q, baseSeq, out var allowed2);
+                        suggestions = BuildSuggestions(q, allowed2);
+                    }
                 }
                 catch
                 {
