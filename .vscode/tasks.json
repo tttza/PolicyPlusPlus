@@ -4,7 +4,7 @@
 		{
 			"label": "Build PolicyPlusMod solution",
 			"type": "shell",
-			"command": "msbuild PolicyPlusMod.sln /t:Rebuild /p:Configuration=Debug",
+			"command": "msbuild PolicyPlusMod.sln /t:Rebuild /p:Configuration=Debug-Unpackaged /p:Platform=\"x64\"",
 			"isBackground": false,
 			"problemMatcher": [
 				"$msCompile"
@@ -19,88 +19,10 @@
 				"build",
 				"PolicyPlusMod.sln",
 				"-c",
-				"Debug"
+				"Debug-Unpackaged"
 			],
 			"problemMatcher": [
 				"$msCompile"
-			],
-			"group": "build"
-		},
-		{
-			"label": "dotnet build (Debug)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"PolicyPlusMod.sln",
-				"-c",
-				"Debug"
-			],
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build"
-		},
-		{
-			"label": "dotnet build (Debug)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"PolicyPlusMod.sln",
-				"-c",
-				"Debug"
-			],
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build"
-		},
-		{
-			"label": "dotnet build (Debug)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"PolicyPlusMod.sln",
-				"-c",
-				"Debug"
-			],
-			"group": "build"
-		},
-		{
-			"label": "dotnet build (Debug)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"PolicyPlusMod.sln",
-				"-c",
-				"Debug"
-			],
-			"group": "build"
-		},
-		{
-			"label": "dotnet build (Debug)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"PolicyPlusMod.sln",
-				"-c",
-				"Debug"
-			],
-			"group": "build"
-		},
-		{
-			"label": "dotnet build (Debug)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"PolicyPlusMod.sln",
-				"-c",
-				"Debug"
 			],
 			"group": "build"
 		}
