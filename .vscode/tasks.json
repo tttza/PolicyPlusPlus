@@ -2,16 +2,6 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Build PolicyPlusMod solution",
-			"type": "shell",
-			"command": "msbuild PolicyPlusMod.sln /t:Rebuild /p:Configuration=Debug-Unpackaged /p:Platform=\"x64\"",
-			"isBackground": false,
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build"
-		},
-		{
 			"label": "dotnet build (Debug)",
 			"type": "shell",
 			"command": "dotnet",
@@ -19,12 +9,33 @@
 				"build",
 				"PolicyPlusMod.sln",
 				"-c",
-				"Debug-Unpackaged"
-			],
-			"problemMatcher": [
-				"$msCompile"
+				"Debug-Unpackaged",
 			],
 			"group": "build"
+		},
+		{
+			"label": "dotnet test (Unit)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"test",
+				"PolicyPlusModTest/PolicyPlusModTests.csproj",
+				"-c",
+				"Debug-Unpackaged"
+			],
+			"group": "test"
+		},
+		{
+			"label": "dotnet test (UI)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"test",
+				"PolicyPlusPlus.Tests.UI/PolicyPlus.Tests.UI.csproj",
+				"-c",
+				"Debug-Unpackaged"
+			],
+			"group": "test"
 		}
 	]
 }
