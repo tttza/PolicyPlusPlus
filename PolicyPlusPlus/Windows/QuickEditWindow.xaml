@@ -13,6 +13,10 @@
       VerticalAlignment="Top"
       KeyboardAcceleratorPlacementMode="Hidden"
     >
+      <Grid.KeyboardAccelerators>
+        <KeyboardAccelerator Key="W" Modifiers="Control" />
+        <KeyboardAccelerator Key="Escape" />
+      </Grid.KeyboardAccelerators>
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
         <RowDefinition Height="Auto" />

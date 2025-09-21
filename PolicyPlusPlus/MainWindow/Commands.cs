@@ -118,6 +118,19 @@ namespace PolicyPlusPlus
             args.Handled = true;
         }
 
+        private void OpenHistoryAccelerator_Invoked(
+            KeyboardAccelerator sender,
+            KeyboardAcceleratorInvokedEventArgs args
+        )
+        {
+            try
+            {
+                BtnHistoryChanges_Click(this, new RoutedEventArgs());
+            }
+            catch { }
+            args.Handled = true;
+        }
+
         private void ToggleDetailsAccelerator_Invoked(
             KeyboardAccelerator sender,
             KeyboardAcceleratorInvokedEventArgs args

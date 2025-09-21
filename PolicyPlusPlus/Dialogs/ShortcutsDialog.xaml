@@ -23,6 +23,7 @@
           <TextBlock Text="Alt+Right — Forward (history)" />
           <TextBlock Text="Ctrl+F — Focus search box" />
           <TextBlock Text="Ctrl+P — Open Pending Changes window" />
+          <TextBlock Text="Ctrl+H — Open History window" />
           <TextBlock Text="Ctrl+L — Load ADMX folder" />
           <TextBlock Text="Ctrl+G — Load Local GPO (Computer)" />
           <TextBlock Text="Ctrl+E — Export .reg" />
@@ -36,6 +37,8 @@
         <TextBlock Text="QuickEditWindow" FontWeight="SemiBold" Margin="0,12,0,0" />
         <StackPanel>
           <TextBlock Text="Ctrl+S — Save changes" />
+          <TextBlock Text="Ctrl+W — Close" />
+          <TextBlock Text="Esc — Close" />
         </StackPanel>
         <!-- Pending/History window (PendingChangesWindow) -->
         <TextBlock Text="Pending/History window" FontWeight="SemiBold" Margin="0,12,0,0" />

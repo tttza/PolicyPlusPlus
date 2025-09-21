@@ -37,6 +37,7 @@
         <KeyboardAccelerator Key="Right" Modifiers="Menu" Invoked="GoForwardAccelerator_Invoked" />
         <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="FindAccelerator_Invoked" />
         <KeyboardAccelerator Key="P" Modifiers="Control" Invoked="OpenPendingAccelerator_Invoked" />
+        <KeyboardAccelerator Key="H" Modifiers="Control" Invoked="OpenHistoryAccelerator_Invoked" />
         <KeyboardAccelerator Key="L" Modifiers="Control" Invoked="LoadAdmxAccelerator_Invoked" />
         <KeyboardAccelerator
           Key="G"

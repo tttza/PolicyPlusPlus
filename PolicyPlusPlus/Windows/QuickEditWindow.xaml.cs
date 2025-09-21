@@ -52,6 +52,7 @@ namespace PolicyPlusPlus.Windows
                 _saveButton.Click += async (_, __) => await SaveAsync();
             if (_closeButton != null)
                 _closeButton.Click += (_, __) => Close();
+            // Keyboard shortcuts
             var saveAccel = new KeyboardAccelerator
             {
                 Key = global::Windows.System.VirtualKey.S,
@@ -66,6 +67,34 @@ namespace PolicyPlusPlus.Windows
                 }
             };
             RootShell?.KeyboardAccelerators.Add(saveAccel);
+            // Close accelerators: Ctrl+W and Esc
+            var closeAccelCtrlW = new KeyboardAccelerator
+            {
+                Key = global::Windows.System.VirtualKey.W,
+                Modifiers = global::Windows.System.VirtualKeyModifiers.Control,
+            };
+            closeAccelCtrlW.Invoked += (a, b) =>
+            {
+                if (!_isSaving)
+                {
+                    Close();
+                    b.Handled = true;
+                }
+            };
+            var closeAccelEsc = new KeyboardAccelerator
+            {
+                Key = global::Windows.System.VirtualKey.Escape,
+            };
+            closeAccelEsc.Invoked += (a, b) =>
+            {
+                if (!_isSaving)
+                {
+                    Close();
+                    b.Handled = true;
+                }
+            };
+            RootShell?.KeyboardAccelerators.Add(closeAccelCtrlW);
+            RootShell?.KeyboardAccelerators.Add(closeAccelEsc);
             try
             {
                 App.ScaleChanged += (_, __) => ScheduleSize();
