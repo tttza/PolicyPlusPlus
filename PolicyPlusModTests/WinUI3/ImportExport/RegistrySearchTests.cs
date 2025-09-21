@@ -1,5 +1,5 @@
 using PolicyPlusModTests.Testing;
-using PolicyPlusPlus.Dialogs;
+using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.ImportExport
@@ -19,10 +19,10 @@ namespace PolicyPlusModTests.WinUI3.ImportExport
             );
 
             Assert.False(
-                FindByRegistryWinUI.SearchRegistryValueNameOnly(pol, "edge", allowSubstring: true)
+                RegistrySearch.SearchRegistryValueNameOnly(pol, "edge", allowSubstring: true)
             );
             Assert.False(
-                FindByRegistryWinUI.SearchRegistryValueNameOnly(pol, "*edge*", allowSubstring: true)
+                RegistrySearch.SearchRegistryValueNameOnly(pol, "*edge*", allowSubstring: true)
             );
         }
 
@@ -37,13 +37,13 @@ namespace PolicyPlusModTests.WinUI3.ImportExport
             );
 
             Assert.True(
-                FindByRegistryWinUI.SearchRegistryValueNameOnly(pol, "edge", allowSubstring: true)
+                RegistrySearch.SearchRegistryValueNameOnly(pol, "edge", allowSubstring: true)
             );
             Assert.True(
-                FindByRegistryWinUI.SearchRegistryValueNameOnly(pol, "*Edge*", allowSubstring: true)
+                RegistrySearch.SearchRegistryValueNameOnly(pol, "*Edge*", allowSubstring: true)
             );
             Assert.True(
-                FindByRegistryWinUI.SearchRegistryValueNameOnly(
+                RegistrySearch.SearchRegistryValueNameOnly(
                     pol,
                     "EdgeSettingEnabled",
                     allowSubstring: false
@@ -62,7 +62,7 @@ namespace PolicyPlusModTests.WinUI3.ImportExport
             );
 
             Assert.True(
-                FindByRegistryWinUI.SearchRegistry(
+                RegistrySearch.SearchRegistry(
                     pol,
                     keyName: "edge",
                     valName: string.Empty,
@@ -70,7 +70,7 @@ namespace PolicyPlusModTests.WinUI3.ImportExport
                 )
             );
             Assert.True(
-                FindByRegistryWinUI.SearchRegistry(
+                RegistrySearch.SearchRegistry(
                     pol,
                     keyName: "*edge*",
                     valName: string.Empty,

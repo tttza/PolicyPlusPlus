@@ -2,11 +2,13 @@ using System;
 using System.Linq;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.Utilities;
-using PolicyPlusPlus.Services;
 
-namespace PolicyPlusPlus.Dialogs
+namespace PolicyPlusPlus.Services
 {
-    public static class FindByRegistryWinUI
+    /// <summary>
+    /// Registry reference search helpers used by UI filtering and tests.
+    /// </summary>
+    public static class RegistrySearch
     {
         public static bool WildcardMatch(string input, string pattern)
         {
@@ -19,7 +21,7 @@ namespace PolicyPlusPlus.Dialogs
         }
 
         public static bool SearchRegistry(
-            PolicyPlusPolicy Policy,
+            PolicyPlusPolicy policy,
             string keyName,
             string valName,
             bool allowSubstring = true
@@ -27,7 +29,7 @@ namespace PolicyPlusPlus.Dialogs
         {
             var keyPat = keyName ?? string.Empty;
             var valPat = valName ?? string.Empty;
-            var cached = RegistryReferenceCache.Get(Policy);
+            var cached = RegistryReferenceCache.Get(policy);
 
             // Normalize patterns once
             var keyPatNorm = SearchText.Normalize(keyPat);

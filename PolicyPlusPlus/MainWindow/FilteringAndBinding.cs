@@ -631,12 +631,12 @@ namespace PolicyPlusPlus
             {
                 if (
                     _searchInRegistryKey
-                    && FindByRegistryWinUI.SearchRegistry(e.Policy, qLower, string.Empty, true)
+                    && Services.RegistrySearch.SearchRegistry(e.Policy, qLower, string.Empty, true)
                 )
                     return true;
                 if (
                     _searchInRegistryValue
-                    && FindByRegistryWinUI.SearchRegistryValueNameOnly(e.Policy, qLower, true)
+                    && Services.RegistrySearch.SearchRegistryValueNameOnly(e.Policy, qLower, true)
                 )
                     return true;
             }
