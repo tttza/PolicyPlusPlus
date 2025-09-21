@@ -183,6 +183,7 @@ namespace PolicyPlusPlus
                     && !string.IsNullOrEmpty(secondLang)
                     && !string.Equals(secondLang, currentLang, StringComparison.OrdinalIgnoreCase);
 
+                // Build search index: keep primary DisplayName for display; keep secondary language normalized only for matching.
                 _searchIndex = _allPolicies
                     .Select(p =>
                         (

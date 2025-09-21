@@ -872,7 +872,10 @@ namespace PolicyPlusPlus
                         && descScore <= -1000
                     )
                         return;
-                    score += Math.Max(0, Math.Max(nameScore, secondScore)) * 3;
+                    // Favor primary language name over second-language match when both match
+                    // by weighting primary name slightly higher and second slightly lower.
+                    score += Math.Max(0, nameScore) * 4; // primary name weight
+                    score += Math.Max(0, secondScore) * 2; // secondary name weight
                     score += Math.Max(0, idScore) * 2;
                     score += Math.Max(0, descScore);
                 }
@@ -988,13 +991,14 @@ namespace PolicyPlusPlus
                         string primary = !string.IsNullOrWhiteSpace(st.Language)
                             ? st.Language!
                             : System.Globalization.CultureInfo.CurrentUICulture.Name;
+                        // Prefer primary for both matching and display; fall back to second, then en-US if enabled.
                         var tryLangs = new List<string>(3);
+                        tryLangs.Add(primary);
                         if (
                             st.SecondLanguageEnabled == true
                             && !string.IsNullOrWhiteSpace(st.SecondLanguage)
                         )
                             tryLangs.Add(st.SecondLanguage!);
-                        tryLangs.Add(primary);
                         if (st.PrimaryLanguageFallbackEnabled == true)
                             tryLangs.Add("en-US");
 
@@ -1043,9 +1047,22 @@ namespace PolicyPlusPlus
                                 if (seenUnique.Add(uid))
                                     cacheMatches.Add(pol);
                             }
-                            // Suggestions from top names
+                            // Suggestions from top names. Prefer current policy DisplayName (primary language)
+                            // and fall back to the hit's localized DisplayName when unavailable.
                             cacheSuggestions = hits.Take(10)
-                                .Select(h => h.DisplayName ?? string.Empty)
+                                .Select(h =>
+                                {
+                                    if (
+                                        !string.IsNullOrEmpty(h.UniqueId)
+                                        && byId.TryGetValue(h.UniqueId, out var pol)
+                                    )
+                                    {
+                                        var n = pol.DisplayName ?? string.Empty;
+                                        if (!string.IsNullOrWhiteSpace(n))
+                                            return n;
+                                    }
+                                    return h.DisplayName ?? string.Empty;
+                                })
                                 .Where(s => !string.IsNullOrWhiteSpace(s))
                                 .Distinct(StringComparer.OrdinalIgnoreCase)
                                 .ToList();
