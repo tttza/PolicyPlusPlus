@@ -105,7 +105,10 @@
 				"-c",
 				"Debug-Unpackaged",
 				"-r",
-				"win-x64"
+				"win-x64",
+				"--",
+				"--stop-on-fail",
+				"on"
 			],
 			"group": "test"
 		}

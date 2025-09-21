@@ -105,7 +105,7 @@ Handy commands (cmd.exe):
 dotnet test PolicyPlusModTests/PolicyPlusModTests.csproj -c Debug-Unpackaged
 
 # UI tests only (heavy / only when needed)
-dotnet test PolicyPlusPlus.Tests.UI/PolicyPlus.Tests.UI.csproj -c Debug-Unpackaged
+dotnet test PolicyPlusPlus.Tests.UI/PolicyPlus.Tests.UI.csproj -c Debug-Unpackaged -- --stop-on-fail on
 ```
 
 ## 9. Performance & Edge Cases

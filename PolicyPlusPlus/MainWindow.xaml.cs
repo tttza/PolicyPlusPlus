@@ -175,7 +175,13 @@ namespace PolicyPlusPlus
                             : "ADMX change detected. Rebuilding cache...",
                         _ => "Rebuilding ADMX cache...",
                     };
-                    try { DispatcherQueue.TryEnqueue(() => ShowInfo(msg, InfoBarSeverity.Informational)); } catch { }
+                    try
+                    {
+                        DispatcherQueue.TryEnqueue(() =>
+                            ShowInfo(msg, InfoBarSeverity.Informational)
+                        );
+                    }
+                    catch { }
                 };
                 EventHub.AdmxCacheRebuildCompleted += reason =>
                 {
@@ -188,7 +194,11 @@ namespace PolicyPlusPlus
                         "watcher" => "ADMX cache rebuilt.",
                         _ => "ADMX cache rebuilt.",
                     };
-                    try { DispatcherQueue.TryEnqueue(() => ShowInfo(done, InfoBarSeverity.Success)); } catch { }
+                    try
+                    {
+                        DispatcherQueue.TryEnqueue(() => ShowInfo(done, InfoBarSeverity.Success));
+                    }
+                    catch { }
                 };
             }
             catch { }
@@ -231,7 +241,11 @@ namespace PolicyPlusPlus
             try
             {
                 // Stop ADMX cache host to release SQLite handles so files can be deleted.
-                try { await Services.AdmxCacheHostService.Instance.StopAsync(); } catch { }
+                try
+                {
+                    await Services.AdmxCacheHostService.Instance.StopAsync();
+                }
+                catch { }
                 ok = await SettingsService.Instance.ClearCacheDirectoryAsync();
                 // Restart in background only if cache is enabled; rebuild will be kicked off by CacheCleared event.
                 try
@@ -242,7 +256,10 @@ namespace PolicyPlusPlus
                 }
                 catch { }
             }
-            catch { ok = false; }
+            catch
+            {
+                ok = false;
+            }
             try
             {
                 if (ok)
@@ -292,13 +309,23 @@ namespace PolicyPlusPlus
                 {
                     // Start cache host (non-blocking)
                     _ = Services.AdmxCacheHostService.Instance.StartAsync();
-                    ShowInfo("ADMX cache enabled. Building in background...", InfoBarSeverity.Informational);
+                    ShowInfo(
+                        "ADMX cache enabled. Building in background...",
+                        InfoBarSeverity.Informational
+                    );
                 }
                 else
                 {
                     // Stop cache host and clear pooled handles
-                    try { await Services.AdmxCacheHostService.Instance.StopAsync(); } catch { }
-                    ShowInfo("ADMX cache disabled. Using legacy in-memory search.", InfoBarSeverity.Informational);
+                    try
+                    {
+                        await Services.AdmxCacheHostService.Instance.StopAsync();
+                    }
+                    catch { }
+                    ShowInfo(
+                        "ADMX cache disabled. Using legacy in-memory search.",
+                        InfoBarSeverity.Informational
+                    );
                 }
             }
             catch { }
@@ -1485,16 +1512,7 @@ namespace PolicyPlusPlus
         {
             try
             {
-                var txt = "Policy Plus Plus\n\n" + BuildInfo.Version + "\n\n";
-                txt += "Copyright 2023 Policy Plus Software Ltd.\n\n";
-                txt += "https://wwwPolicyPlusPlus.com\n\n";
-
-                var dlg = new ContentDialog
-                {
-                    Title = "About Policy Plus Plus",
-                    Content = txt,
-                    CloseButtonText = "Close",
-                };
+                var dlg = new PolicyPlusPlus.Dialogs.AboutDialog();
                 if (Content is FrameworkElement fe)
                     dlg.XamlRoot = fe.XamlRoot;
                 await dlg.ShowAsync();
