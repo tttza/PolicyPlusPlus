@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.UI.Dispatching;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
 using PolicyPlusPlus.ViewModels;
@@ -12,6 +15,12 @@ namespace PolicyPlusPlus.Services
         public static EffectivePolicyStateService Instance { get; } = new();
 
         private EffectivePolicyStateService() { }
+
+        // Background evaluation control
+        private CancellationTokenSource? _overlayCts;
+        private readonly object _gate = new();
+        private readonly TimeSpan _debounce = TimeSpan.FromMilliseconds(100);
+        private readonly int _maxDegree = Math.Max(1, Environment.ProcessorCount - 1);
 
         private PendingChange? FindPending(string policyId, string scope)
         {
@@ -89,14 +98,135 @@ namespace PolicyPlusPlus.Services
         {
             if (rows == null)
                 return;
-            foreach (var r in rows)
+            var snapshot = rows.ToList();
+            CancellationToken token;
+            lock (_gate)
             {
                 try
                 {
-                    ApplyEffectiveToRow(r, compSource, userSource);
+                    _overlayCts?.Cancel();
                 }
                 catch { }
+                _overlayCts = new CancellationTokenSource();
+                token = _overlayCts.Token;
             }
+
+            _ = Task.Run(
+                async () =>
+                {
+                    try
+                    {
+                        // Debounce multiple rapid calls
+                        await Task.Delay(_debounce, token).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        return;
+                    }
+
+                    var sem = new SemaphoreSlim(_maxDegree, _maxDegree);
+                    var tasks = new List<Task>();
+                    foreach (var row in snapshot)
+                    {
+                        if (row == null)
+                            continue;
+                        try
+                        {
+                            await sem.WaitAsync(token).ConfigureAwait(false);
+                        }
+                        catch
+                        {
+                            break;
+                        }
+
+                        tasks.Add(
+                            Task.Run(
+                                () =>
+                                {
+                                    try
+                                    {
+                                        if (token.IsCancellationRequested)
+                                            return;
+                                        // Compute off-UI-thread
+                                        (
+                                            PolicyState state,
+                                            Dictionary<string, object>? options
+                                        ) compState = (PolicyState.Unknown, null);
+                                        (
+                                            PolicyState state,
+                                            Dictionary<string, object>? options
+                                        ) userState = (PolicyState.Unknown, null);
+                                        if (row.SupportsComputer && compSource != null)
+                                            compState = GetBase(compSource, row.Policy);
+                                        if (row.SupportsUser && userSource != null)
+                                            userState = GetBase(userSource, row.Policy);
+
+                                        // Overlay pending
+                                        if (row.SupportsComputer)
+                                        {
+                                            var pendC = FindPending(
+                                                row.Policy.UniqueID,
+                                                "Computer"
+                                            );
+                                            var stateC = pendC?.DesiredState ?? compState.state;
+                                            var optsC = pendC?.Options ?? compState.options;
+                                            TryDispatch(() =>
+                                                row.ApplyExternal("Computer", stateC, optsC)
+                                            );
+                                        }
+                                        if (row.SupportsUser)
+                                        {
+                                            var pendU = FindPending(row.Policy.UniqueID, "User");
+                                            var stateU = pendU?.DesiredState ?? userState.state;
+                                            var optsU = pendU?.Options ?? userState.options;
+                                            TryDispatch(() =>
+                                                row.ApplyExternal("User", stateU, optsU)
+                                            );
+                                        }
+                                    }
+                                    catch { }
+                                    finally
+                                    {
+                                        try
+                                        {
+                                            sem.Release();
+                                        }
+                                        catch { }
+                                    }
+                                },
+                                token
+                            )
+                        );
+                    }
+
+                    try
+                    {
+                        await Task.WhenAll(tasks).ConfigureAwait(false);
+                    }
+                    catch { }
+                    try
+                    {
+                        sem.Dispose();
+                    }
+                    catch { }
+                },
+                token
+            );
+        }
+
+        private static void TryDispatch(Action action)
+        {
+            try
+            {
+                var dq = App.Window?.DispatcherQueue;
+                if (dq == null)
+                {
+                    action();
+                    return;
+                }
+                dq.TryEnqueue(() => action());
+            }
+            catch { }
         }
     }
 }

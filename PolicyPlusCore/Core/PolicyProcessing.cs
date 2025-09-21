@@ -33,6 +33,8 @@ namespace PolicyPlusCore.Core
             PolicyPlusPolicy Policy
         )
         {
+            // Wrap PolicySource with a tiny memoizer to reduce repeated lookups during a single evaluation.
+            var cached = new CachedPolicySource(PolicySource);
             if (Policy == null)
                 return PolicyState.NotConfigured; // defensive
             var rawpol = Policy.RawPolicy;
@@ -54,7 +56,7 @@ namespace PolicyPlusCore.Core
                         rawpol.AffectedValues.OnValue is object
                         && ValuePresent(
                             rawpol.AffectedValues.OnValue,
-                            PolicySource,
+                            cached,
                             rawpol.RegistryKey,
                             rawpol.RegistryValue
                         )
@@ -64,7 +66,7 @@ namespace PolicyPlusCore.Core
                         rawpol.AffectedValues.OnValueList is object
                         && ValueListPresent(
                             rawpol.AffectedValues.OnValueList,
-                            PolicySource,
+                            cached,
                             rawpol.RegistryKey,
                             rawpol.RegistryValue
                         )
@@ -74,7 +76,7 @@ namespace PolicyPlusCore.Core
                         rawpol.AffectedValues.OffValue is object
                         && ValuePresent(
                             rawpol.AffectedValues.OffValue,
-                            PolicySource,
+                            cached,
                             rawpol.RegistryKey,
                             rawpol.RegistryValue
                         )
@@ -84,7 +86,7 @@ namespace PolicyPlusCore.Core
                         rawpol.AffectedValues.OffValueList is object
                         && ValueListPresent(
                             rawpol.AffectedValues.OffValueList,
-                            PolicySource,
+                            cached,
                             rawpol.RegistryKey,
                             rawpol.RegistryValue
                         )
@@ -119,7 +121,7 @@ namespace PolicyPlusCore.Core
                                 be.AffectedRegistry.OnValue is object
                                 && ValuePresent(
                                     be.AffectedRegistry.OnValue,
-                                    PolicySource,
+                                    cached,
                                     elemKey,
                                     elem.RegistryValue
                                 )
@@ -129,7 +131,7 @@ namespace PolicyPlusCore.Core
                                 be.AffectedRegistry.OnValueList is object
                                 && ValueListPresent(
                                     be.AffectedRegistry.OnValueList,
-                                    PolicySource,
+                                    cached,
                                     elemKey,
                                     elem.RegistryValue
                                 )
@@ -139,7 +141,7 @@ namespace PolicyPlusCore.Core
                                 be.AffectedRegistry.OffValue is object
                                 && ValuePresent(
                                     be.AffectedRegistry.OffValue,
-                                    PolicySource,
+                                    cached,
                                     elemKey,
                                     elem.RegistryValue
                                 )
@@ -149,7 +151,7 @@ namespace PolicyPlusCore.Core
                                 be.AffectedRegistry.OffValueList is object
                                 && ValueListPresent(
                                     be.AffectedRegistry.OffValueList,
-                                    PolicySource,
+                                    cached,
                                     elemKey,
                                     elem.RegistryValue
                                 )
@@ -168,20 +170,13 @@ namespace PolicyPlusCore.Core
                             var ee = (EnumPolicyElement)elem;
                             foreach (var item in ee.Items)
                             {
-                                if (
-                                    ValuePresent(
-                                        item.Value,
-                                        PolicySource,
-                                        elemKey,
-                                        elem.RegistryValue
-                                    )
-                                )
+                                if (ValuePresent(item.Value, cached, elemKey, elem.RegistryValue))
                                 {
                                     if (
                                         item.ValueList is null
                                         || ValueListPresent(
                                             item.ValueList,
-                                            PolicySource,
+                                            cached,
                                             elemKey,
                                             elem.RegistryValue
                                         )
@@ -225,7 +220,7 @@ namespace PolicyPlusCore.Core
                     return;
                 try
                 {
-                    if (ValuePresent(Value, PolicySource, Key, ValueName))
+                    if (ValuePresent(Value, cached, Key, ValueName))
                         EvidenceVar += 1m;
                 }
                 catch (Exception ex)
@@ -336,13 +331,13 @@ namespace PolicyPlusCore.Core
                         if (elem.ElementType == "list")
                         {
                             int neededValues = 0;
-                            if (PolicySource.WillDeleteValue(elemKey, ""))
+                            if (cached.WillDeleteValue(elemKey, ""))
                             {
                                 deletedElements += 1m;
                                 neededValues = 1;
                             }
 
-                            if (PolicySource.GetValueNames(elemKey).Count > 0)
+                            if (cached.GetValueNames(elemKey).Count > 0)
                             {
                                 deletedElements -= neededValues;
                                 presentElements += 1m;
@@ -351,7 +346,7 @@ namespace PolicyPlusCore.Core
                         else if (elem.ElementType == "boolean")
                         {
                             BooleanPolicyElement booleanElem = (BooleanPolicyElement)elem;
-                            if (PolicySource.WillDeleteValue(elemKey, elem.RegistryValue))
+                            if (cached.WillDeleteValue(elemKey, elem.RegistryValue))
                             {
                                 deletedElements += 1m;
                             }
@@ -383,14 +378,14 @@ namespace PolicyPlusCore.Core
                                 );
                             }
                         }
-                        else if (PolicySource.WillDeleteValue(elemKey, elem.RegistryValue))
+                        else if (cached.WillDeleteValue(elemKey, elem.RegistryValue))
                         {
                             if (!hasRegistryValue)
                             {
                                 deletedElements += 1m;
                             }
                         }
-                        else if (PolicySource.ContainsValue(elemKey, elem.RegistryValue))
+                        else if (cached.ContainsValue(elemKey, elem.RegistryValue))
                         {
                             if (!hasRegistryValue)
                             {
@@ -560,6 +555,85 @@ namespace PolicyPlusCore.Core
                 string entryKey = string.IsNullOrEmpty(e.RegistryKey) ? sublistKey : e.RegistryKey;
                 return ValuePresent(e.Value, Source, entryKey, e.RegistryValue);
             });
+        }
+
+        private sealed class CachedPolicySource : IPolicySource
+        {
+            private readonly IPolicySource _inner;
+
+            // Cache maps lower-cased tuple keys for exact lookups
+            private readonly Dictionary<(string key, string value), bool> _contains = new();
+            private readonly Dictionary<(string key, string value), bool> _willDelete = new();
+            private readonly Dictionary<(string key, string value), object?> _values = new();
+            private readonly Dictionary<string, List<string>> _valueNames = new(
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            public CachedPolicySource(IPolicySource inner)
+            {
+                _inner = inner;
+            }
+
+            private static (string, string) NKey(string k, string v) =>
+                ((k ?? string.Empty).ToLowerInvariant(), (v ?? string.Empty).ToLowerInvariant());
+
+            private static string NKeyOnly(string k) => (k ?? string.Empty);
+
+            public bool ContainsValue(string Key, string Value)
+            {
+                var tk = NKey(Key, Value);
+                if (_contains.TryGetValue(tk, out var b))
+                    return b;
+                b = _inner.ContainsValue(Key, Value);
+                _contains[tk] = b;
+                return b;
+            }
+
+            public object? GetValue(string Key, string Value)
+            {
+                var tk = NKey(Key, Value);
+                if (_values.TryGetValue(tk, out var o))
+                    return o;
+                o = _inner.GetValue(Key, Value);
+                _values[tk] = o;
+                return o;
+            }
+
+            public bool WillDeleteValue(string Key, string Value)
+            {
+                var tk = NKey(Key, Value);
+                if (_willDelete.TryGetValue(tk, out var b))
+                    return b;
+                b = _inner.WillDeleteValue(Key, Value);
+                _willDelete[tk] = b;
+                return b;
+            }
+
+            public List<string> GetValueNames(string Key)
+            {
+                var k = NKeyOnly(Key);
+                if (_valueNames.TryGetValue(k, out var list))
+                    return list;
+                list = _inner.GetValueNames(Key);
+                _valueNames[k] = list;
+                return list;
+            }
+
+            // Mutators are not used within GetPolicyState; forward for completeness.
+            public void SetValue(
+                string Key,
+                string Value,
+                object Data,
+                Microsoft.Win32.RegistryValueKind DataType
+            ) => _inner.SetValue(Key, Value, Data, DataType);
+
+            public void ForgetValue(string Key, string Value) => _inner.ForgetValue(Key, Value);
+
+            public void DeleteValue(string Key, string Value) => _inner.DeleteValue(Key, Value);
+
+            public void ClearKey(string Key) => _inner.ClearKey(Key);
+
+            public void ForgetKeyClearance(string Key) => _inner.ForgetKeyClearance(Key);
         }
 
         public static int DeduplicatePolicies(AdmxBundle Workspace)

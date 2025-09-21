@@ -23,6 +23,176 @@ namespace PolicyPlusCore.IO
         private readonly Dictionary<string, string> CasePreservation =
             new Dictionary<string, string>();
 
+        // Per-key index to accelerate prefix lookups.
+        // Keyed by lower-cased registry key (without value name); stores value-name level metadata.
+        private readonly Dictionary<string, PolKeyIndex> _keyIndex = new Dictionary<
+            string,
+            PolKeyIndex
+        >(StringComparer.Ordinal);
+
+        // Child key names indexed by parent lower-cased key
+        private readonly Dictionary<string, HashSet<string>> _childKeys = new Dictionary<
+            string,
+            HashSet<string>
+        >(StringComparer.Ordinal);
+
+        private sealed class PolKeyIndex
+        {
+            // Normal (non-special) value names under this key; lower-cased.
+            public HashSet<string> NormalValues = new HashSet<string>(StringComparer.Ordinal);
+
+            // All special entries (value names beginning with "**"); lower-cased.
+            public HashSet<string> SpecialValues = new HashSet<string>(StringComparer.Ordinal);
+
+            // For entries of form "**del.<value>"; stores affected <value> names, lower-cased.
+            public HashSet<string> DelSpecific = new HashSet<string>(StringComparer.Ordinal);
+
+            // True when any "**delvals" entry exists for this key.
+            public bool HasDelVals;
+
+            // Parsed list from "**deletevalues" if present (semicolon-separated); lower-cased.
+            public HashSet<string> DeleteValuesListed = new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        private static string GetKeyLower(string Key) => (Key ?? string.Empty).ToLowerInvariant();
+
+        private static string GetValueLower(string Value) =>
+            (Value ?? string.Empty).ToLowerInvariant();
+
+        private PolKeyIndex GetOrCreateIndex(string keyLower)
+        {
+            if (!_keyIndex.TryGetValue(keyLower, out var idx))
+            {
+                idx = new PolKeyIndex();
+                _keyIndex[keyLower] = idx;
+            }
+            return idx;
+        }
+
+        private static void SplitDictKey(
+            string dictKeyLower,
+            out string keyLower,
+            out string valueLower
+        )
+        {
+            // dictKeyLower format: "<key>\\\\<value>" (lower-cased)
+            int sep = dictKeyLower.IndexOf("\\\\", StringComparison.Ordinal);
+            if (sep < 0)
+            {
+                keyLower = dictKeyLower;
+                valueLower = string.Empty;
+                return;
+            }
+            keyLower = dictKeyLower.Substring(0, sep);
+            valueLower = dictKeyLower.Substring(sep + 2);
+        }
+
+        private void IndexAdd(string dictKeyLower, PolEntryData ped)
+        {
+            SplitDictKey(dictKeyLower, out var keyLower, out var valueLower);
+            var idx = GetOrCreateIndex(keyLower);
+            if (valueLower.StartsWith("**", StringComparison.Ordinal))
+            {
+                idx.SpecialValues.Add(valueLower);
+                if (valueLower.StartsWith("**del.", StringComparison.Ordinal))
+                {
+                    // "**del.<valueName>" targets a specific value.
+                    var target = valueLower.Substring("**del.".Length);
+                    if (!string.IsNullOrEmpty(target))
+                        idx.DelSpecific.Add(target);
+                }
+                else if (valueLower.StartsWith("**delvals", StringComparison.Ordinal))
+                {
+                    idx.HasDelVals = true;
+                }
+                else if (valueLower.Equals("**deletevalues", StringComparison.Ordinal))
+                {
+                    try
+                    {
+                        var list = ped.AsString()
+                            .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(s => s.Trim().ToLowerInvariant());
+                        idx.DeleteValuesListed = new HashSet<string>(list, StringComparer.Ordinal);
+                    }
+                    catch
+                    {
+                        idx.DeleteValuesListed.Clear();
+                    }
+                }
+            }
+            else
+            {
+                idx.NormalValues.Add(valueLower);
+            }
+
+            // Maintain child key map: parent path of 'keyLower' contains all segments before last '\\'
+            // This is approximate but effective: for GetKeyNames we only need direct children under provided 'Key'.
+            int lastSep = keyLower.LastIndexOf('\\');
+            string parent = lastSep >= 0 ? keyLower.Substring(0, lastSep) : string.Empty;
+            string local = lastSep >= 0 ? keyLower.Substring(lastSep + 1) : keyLower;
+            if (!_childKeys.TryGetValue(parent, out var set))
+            {
+                set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                _childKeys[parent] = set;
+            }
+            set.Add(local);
+        }
+
+        private void IndexRemove(string dictKeyLower)
+        {
+            if (string.IsNullOrEmpty(dictKeyLower))
+                return;
+            SplitDictKey(dictKeyLower, out var keyLower, out var valueLower);
+            if (!_keyIndex.TryGetValue(keyLower, out var idx))
+                return;
+            if (valueLower.StartsWith("**", StringComparison.Ordinal))
+            {
+                if (idx.SpecialValues.Remove(valueLower))
+                {
+                    if (valueLower.StartsWith("**del.", StringComparison.Ordinal))
+                    {
+                        var target = valueLower.Substring("**del.".Length);
+                        if (!string.IsNullOrEmpty(target))
+                            idx.DelSpecific.Remove(target);
+                    }
+                    else if (valueLower.StartsWith("**delvals", StringComparison.Ordinal))
+                    {
+                        // Recompute since multiple delvals variants may exist
+                        idx.HasDelVals = idx.SpecialValues.Any(v =>
+                            v.StartsWith("**delvals", StringComparison.Ordinal)
+                        );
+                    }
+                    else if (valueLower.Equals("**deletevalues", StringComparison.Ordinal))
+                    {
+                        idx.DeleteValuesListed.Clear();
+                    }
+                }
+            }
+            else
+            {
+                idx.NormalValues.Remove(valueLower);
+            }
+
+            // Best-effort child key cleanup: cannot reliably know when last entry for a key was removed without reference counting.
+            // Skip removing child mapping here to avoid O(n) scans; stale child entries are harmless and filtered by CasePreservation on return.
+        }
+
+        private void AddEntry(string dictKeyLower, PolEntryData ped)
+        {
+            Entries.Add(dictKeyLower, ped);
+            IndexAdd(dictKeyLower, ped);
+        }
+
+        private bool TryRemoveEntry(string dictKeyLower)
+        {
+            if (Entries.Remove(dictKeyLower))
+            {
+                IndexRemove(dictKeyLower);
+                return true;
+            }
+            return false;
+        }
+
         private string GetDictKey(string Key, string Value)
         {
             string origCase = Key + @"\\" + Value;
@@ -78,7 +248,7 @@ namespace PolicyPlusCore.IO
                 Stream.Read(data, 0, (int)length);
                 ped.Data = data;
                 Stream.BaseStream.Position += 2L;
-                pol.Entries.Add(pol.GetDictKey(key, value), ped);
+                pol.AddEntry(pol.GetDictKey(key, value), ped);
             }
 
             return pol;
@@ -128,41 +298,38 @@ namespace PolicyPlusCore.IO
             if (!WillDeleteValue(Key, Value))
             {
                 var ped = PolEntryData.FromDword(32U);
-                Entries.Add(GetDictKey(Key, "**del." + Value), ped);
+                AddEntry(GetDictKey(Key, "**del." + Value), ped);
             }
         }
 
         public void ForgetValue(string Key, string Value)
         {
             string dictKey = GetDictKey(Key, Value);
-            if (Entries.ContainsKey(dictKey))
-                Entries.Remove(dictKey);
+            TryRemoveEntry(dictKey);
             string deleterKey = GetDictKey(Key, "**del." + Value);
-            if (Entries.ContainsKey(deleterKey))
-                Entries.Remove(deleterKey);
+            TryRemoveEntry(deleterKey);
         }
 
         public void SetValue(string Key, string Value, object Data, RegistryValueKind DataType)
         {
             string dictKey = GetDictKey(Key, Value);
-            if (Entries.ContainsKey(dictKey))
-                Entries.Remove(dictKey);
+            TryRemoveEntry(dictKey);
             if (DataType == RegistryValueKind.MultiString)
             {
                 if (Data is string[] arr)
-                    Entries.Add(dictKey, PolEntryData.FromMultiString(arr));
+                    AddEntry(dictKey, PolEntryData.FromMultiString(arr));
                 else if (Data is IEnumerable<string> lines)
-                    Entries.Add(dictKey, PolEntryData.FromMultiString(lines.ToArray()));
+                    AddEntry(dictKey, PolEntryData.FromMultiString(lines.ToArray()));
                 else if (Data != null)
-                    Entries.Add(
+                    AddEntry(
                         dictKey,
                         PolEntryData.FromMultiString(new[] { Data?.ToString() ?? string.Empty })
                     );
                 else
-                    Entries.Add(dictKey, PolEntryData.FromMultiString(Array.Empty<string>()));
+                    AddEntry(dictKey, PolEntryData.FromMultiString(Array.Empty<string>()));
                 return;
             }
-            Entries.Add(dictKey, PolEntryData.FromArbitrary(Data, DataType));
+            AddEntry(dictKey, PolEntryData.FromArbitrary(Data, DataType));
         }
 
         public bool ContainsValue(string Key, string Value)
@@ -184,34 +351,22 @@ namespace PolicyPlusCore.IO
 
         public bool WillDeleteValue(string Key, string Value)
         {
-            bool willDelete = false;
-            string keyRoot = GetDictKey(Key, "");
-            foreach (var kv in Entries.Where(e => e.Key.StartsWith(keyRoot)))
-            {
-                if ((kv.Key ?? "") == (GetDictKey(Key, "**del." + Value) ?? ""))
-                {
-                    willDelete = true;
-                }
-                else if ((kv.Key ?? string.Empty).StartsWith(GetDictKey(Key, "**delvals")))
-                {
-                    willDelete = true;
-                }
-                else if ((kv.Key ?? "") == (GetDictKey(Key, "**deletevalues") ?? ""))
-                {
-                    string lowerVal = Value.ToLowerInvariant();
-                    var deletedValues = kv
-                        .Value.AsString()
-                        .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (deletedValues.Any(s => (s.ToLowerInvariant() ?? "") == (lowerVal ?? "")))
-                        willDelete = true;
-                }
-                else if ((kv.Key ?? "") == (GetDictKey(Key, Value) ?? ""))
-                {
-                    willDelete = false;
-                }
-            }
+            string keyLower = GetKeyLower(Key);
+            string valueLower = GetValueLower(Value);
+            // Presence of exact value overrides deletions
+            if (Entries.ContainsKey(GetDictKey(Key, Value)))
+                return false;
 
-            return willDelete;
+            if (_keyIndex.TryGetValue(keyLower, out var idx))
+            {
+                if (idx.DelSpecific.Contains(valueLower))
+                    return true;
+                if (idx.DeleteValuesListed.Contains(valueLower))
+                    return true;
+                if (idx.HasDelVals)
+                    return true;
+            }
+            return false;
         }
 
         public List<string> GetValueNames(string Key)
@@ -221,20 +376,23 @@ namespace PolicyPlusCore.IO
 
         public List<string> GetValueNames(string Key, bool OnlyValues)
         {
-            string prefix = GetDictKey(Key, "");
-            var valNames = new List<string>();
-            foreach (var k in Entries.Keys)
+            string keyLower = GetKeyLower(Key);
+            if (!_keyIndex.TryGetValue(keyLower, out var idx))
+                return new List<string>();
+            IEnumerable<string> candidateLower = OnlyValues
+                ? idx.NormalValues
+                : idx.NormalValues.Concat(idx.SpecialValues);
+            var result = new List<string>();
+            foreach (var vLower in candidateLower)
             {
-                if (k.StartsWith(prefix))
-                {
-                    string valName = CasePreservation[k]
-                        .Split(new[] { "\\\\" }, 2, StringSplitOptions.None)[1];
-                    if (!(OnlyValues & valName.StartsWith("**")))
-                        valNames.Add(valName);
-                }
+                string fullLower = keyLower + "\\\\" + vLower;
+                if (!CasePreservation.TryGetValue(fullLower, out var cased))
+                    continue; // Defensive; should not happen
+                string valName = cased.Split(new[] { "\\\\" }, 2, StringSplitOptions.None)[1];
+                if (!(OnlyValues & valName.StartsWith("**")))
+                    result.Add(valName);
             }
-
-            return valNames;
+            return result;
         }
 
         public void ApplyDifference(PolFile? OldVersion, IPolicySource Target)
@@ -303,40 +461,84 @@ namespace PolicyPlusCore.IO
             foreach (var value in GetValueNames(Key, false))
                 ForgetValue(Key, value);
             var ped = PolEntryData.FromString(" ");
-            Entries.Add(GetDictKey(Key, "**delvals."), ped);
+            AddEntry(GetDictKey(Key, "**delvals."), ped);
         }
 
         public void ForgetKeyClearance(string Key)
         {
-            string keyDeleter = GetDictKey(Key, "**delvals");
-            foreach (var kv in Entries.Where(e => e.Key.StartsWith(keyDeleter)).ToList())
-                Entries.Remove(kv.Key);
+            string keyLower = GetKeyLower(Key);
+            if (!_keyIndex.TryGetValue(keyLower, out var idx))
+                return;
+            var toRemove = idx
+                .SpecialValues.Where(v => v.StartsWith("**delvals", StringComparison.Ordinal))
+                .ToList();
+            foreach (var v in toRemove)
+            {
+                string fullLower = keyLower + "\\\\" + v;
+                TryRemoveEntry(fullLower);
+            }
         }
 
         public List<string> GetKeyNames(string Key)
         {
-            var subkeyNames = new List<string>();
-            string prefix = string.IsNullOrEmpty(Key) ? "" : Key + @"\";
-            foreach (
-                var entry in Entries.Keys.Where(e =>
-                    e.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase)
-                )
-            )
+            var result = new List<string>();
+            string keyLower = GetKeyLower(Key);
+            // Fast path: use child key index
+            if (_childKeys.TryGetValue(keyLower, out var children) && children.Count > 0)
             {
-                if (entry.StartsWith(prefix + @"\", StringComparison.InvariantCultureIgnoreCase))
+                foreach (var child in children)
+                {
+                    string fullLower = (
+                        keyLower.Length == 0
+                            ? child.ToLowerInvariant()
+                            : keyLower + "\\" + child.ToLowerInvariant()
+                    );
+                    // reconstruct a sample dict key with any value name; CasePreservation dictionary is keyed on key\\\\value
+                    // We need only the proper cased key portion, so search for any entry that begins with this keyLower\\\\
+                    string prefix = fullLower + "\\\\";
+                    // Use SortedDictionary view by enumerating from the lower bound to reduce scanning
+                    foreach (var kv in Entries)
+                    {
+                        if (kv.Key.StartsWith(prefix, StringComparison.Ordinal))
+                        {
+                            var proper = CasePreservation[kv.Key]
+                                .Split(new[] { "\\\\" }, 2, StringSplitOptions.None)[0];
+                            string properLocal = proper
+                                .Substring(Key?.Length ?? 0)
+                                .TrimStart('\\')
+                                .Split(new[] { '\\' }, 2)[0];
+                            if (
+                                !result.Contains(
+                                    properLocal,
+                                    StringComparer.InvariantCultureIgnoreCase
+                                )
+                            )
+                                result.Add(properLocal);
+                            break; // found one representative for this child
+                        }
+                    }
+                }
+                return result;
+            }
+
+            // Fallback: limited range scan under prefix using StartsWith but will short-circuit by first segment
+            string rangePrefix = string.IsNullOrEmpty(Key) ? "" : Key + @"\";
+            foreach (var kv in Entries)
+            {
+                var entry = kv.Key;
+                if (!entry.StartsWith(rangePrefix, StringComparison.InvariantCultureIgnoreCase))
                     continue;
                 string properCased = CasePreservation[entry]
                     .Split(new[] { "\\\\" }, 2, StringSplitOptions.None)[0];
-                if (prefix.Length >= properCased.Length)
+                if (rangePrefix.Length >= properCased.Length)
                     continue;
-                string localKeyName = properCased.Substring(prefix.Length).Split(new[] { '\\' }, 2)[
-                    0
-                ];
-                if (!subkeyNames.Contains(localKeyName, StringComparer.InvariantCultureIgnoreCase))
-                    subkeyNames.Add(localKeyName);
+                string localKeyName = properCased
+                    .Substring(rangePrefix.Length)
+                    .Split(new[] { '\\' }, 2)[0];
+                if (!result.Contains(localKeyName, StringComparer.InvariantCultureIgnoreCase))
+                    result.Add(localKeyName);
             }
-
-            return subkeyNames;
+            return result;
         }
 
         public RegistryValueKind GetValueKind(string Key, string Value)
