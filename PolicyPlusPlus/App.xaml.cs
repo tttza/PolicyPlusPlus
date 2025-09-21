@@ -107,14 +107,18 @@ namespace PolicyPlusPlus
             }
         }
 
-        protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             try
             {
                 SettingsService.Instance.Initialize();
                 var appSettings = SettingsService.Instance.LoadSettings();
                 // Opportunistic cache maintenance: purge entries older than 30 days.
-                try { SettingsService.Instance.PurgeOldCacheEntries(TimeSpan.FromDays(30)); } catch { }
+                try
+                {
+                    SettingsService.Instance.PurgeOldCacheEntries(TimeSpan.FromDays(30));
+                }
+                catch { }
                 if (!string.IsNullOrEmpty(appSettings.Theme))
                     SetGlobalTheme(
                         appSettings.Theme switch
@@ -177,19 +181,8 @@ namespace PolicyPlusPlus
             ApplyThemeTo(Window);
             TryApplyIconTo(Window);
 
-            // Await async UI initialization (ADMX load etc.) before first Activate where possible.
-            try
-            {
-                if (Window is MainWindow mw)
-                {
-                    await mw.EnsureInitializedAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug("App", $"async init failed: {ex.Message}");
-            }
-
+            // Show the window first, then run initialization in the background so startup feels instant.
+            // Busy overlay inside MainWindow will indicate progress while ADMX loads.
             Window.Closed += async (s, e) =>
             {
                 try
@@ -219,7 +212,22 @@ namespace PolicyPlusPlus
                 }
                 CloseAllSecondaryWindows();
             };
+
+            // Activate the window before triggering heavy initialization
             Window.Activate();
+
+            // Kick off initialization without awaiting to avoid blocking first paint
+            try
+            {
+                if (Window is MainWindow mw)
+                {
+                    _ = mw.EnsureInitializedAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("App", $"async init failed: {ex.Message}");
+            }
         }
 
         private static void TryApplyIconTo(Window w)
