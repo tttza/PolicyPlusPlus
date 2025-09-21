@@ -21,9 +21,20 @@ public sealed class AdmxCache : IAdmxCache
 
     public AdmxCache()
     {
-        var baseDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var cacheDir = Path.Combine(baseDir, "PolicyPlusPlus", "Cache");
-        var dbPath = Path.Combine(cacheDir, "admxcache.sqlite");
+        // Allow tests or advanced scenarios to override cache location via env var.
+        var overrideDir = Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_DIR");
+        string dbPath;
+        if (!string.IsNullOrWhiteSpace(overrideDir))
+        {
+            try { Directory.CreateDirectory(overrideDir!); } catch { }
+            dbPath = Path.Combine(overrideDir!, "admxcache.sqlite");
+        }
+        else
+        {
+            var baseDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var cacheDir = Path.Combine(baseDir, "PolicyPlusPlus", "Cache");
+            dbPath = Path.Combine(cacheDir, "admxcache.sqlite");
+        }
         _store = new AdmxCacheStore(dbPath);
     }
 

@@ -4,9 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using PolicyPlusCore.Core;
 using Xunit;
+using PolicyPlusModTests.TestHelpers;
 
 namespace PolicyPlusModTests.Core;
 
+// Ensure this test class also uses isolated cache so runs are hermetic.
+[Collection("AdmxCache.Isolated")]
 public class AdmxCacheTests
 {
     [Fact]
