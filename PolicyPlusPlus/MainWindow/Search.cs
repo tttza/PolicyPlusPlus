@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -14,6 +15,7 @@ using PolicyPlusPlus.Logging;
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.ViewModels;
 using Windows.System;
+using Windows.UI.Core;
 
 namespace PolicyPlusPlus
 {
@@ -467,6 +469,58 @@ namespace PolicyPlusPlus
                 )
                 {
                     _navigatingSuggestions = true;
+                }
+
+                // When Tab is pressed in the search box, move focus to the policy list
+                // and select its first item so users can immediately navigate with arrow keys.
+                if (e.Key is VirtualKey.Tab)
+                {
+                    // If Shift is held, let default reverse-tab behavior occur.
+                    bool shiftDown = false;
+                    try
+                    {
+                        var state = InputKeyboardSource.GetKeyStateForCurrentThread(
+                            VirtualKey.Shift
+                        );
+                        shiftDown =
+                            (state & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
+                    }
+                    catch
+                    {
+                        // Best-effort; if API unavailable, treat as no-shift.
+                        shiftDown = false;
+                    }
+                    if (!shiftDown)
+                    {
+                        try
+                        {
+                            if (SearchBox != null)
+                                SearchBox.IsSuggestionListOpen = false;
+                        }
+                        catch { }
+
+                        if (PolicyList != null)
+                        {
+                            object? first = null;
+                            if (PolicyList.ItemsSource is System.Collections.IEnumerable seq)
+                            {
+                                foreach (var it in seq)
+                                {
+                                    first = it;
+                                    break;
+                                }
+                            }
+                            if (first != null)
+                            {
+                                PolicyList.SelectedItem = first;
+                            }
+                            // Move focus to the list regardless of whether it's empty.
+                            PolicyList.Focus(FocusState.Keyboard);
+                        }
+
+                        e.Handled = true;
+                        return;
+                    }
                 }
             }
             catch (Exception ex)
