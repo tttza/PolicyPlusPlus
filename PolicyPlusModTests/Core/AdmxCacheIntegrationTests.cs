@@ -67,6 +67,29 @@ public class AdmxCacheIntegrationTests
     }
 
     [Fact]
+    public async Task Changing_SecondLanguage_At_Runtime_Reindexes_Without_Freeze()
+    {
+        var admxRoot = FindAdmxRoot();
+        IAdmxCache cache = new AdmxCache();
+        await cache.InitializeAsync();
+        cache.SetSourceRoot(admxRoot);
+
+        // Initial scan: only en-US
+        await cache.ScanAndUpdateAsync(new[] { "en-US" });
+        var hitsEn = await cache.SearchAsync("Dummy", "en-US", SearchFields.Name | SearchFields.Id | SearchFields.Registry, 50);
+        Assert.NotNull(hitsEn);
+
+        // Simulate runtime settings change: add fr-FR, then rescan. Should not block/hang and should index fr-FR.
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        await cache.ScanAndUpdateAsync(new[] { "fr-FR", "en-US" });
+        sw.Stop();
+        Assert.True(sw.ElapsedMilliseconds < 10000, $"Rescan took too long: {sw.ElapsedMilliseconds}ms");
+
+        var hitsFr = await cache.SearchAsync("Dummy", "fr-FR", SearchFields.Name | SearchFields.Id | SearchFields.Registry, 50);
+        Assert.NotNull(hitsFr);
+    }
+
+    [Fact]
     public async Task Changing_SourceRoot_Reindexes_And_Affects_HitCounts()
     {
         var fullRoot = FindAdmxRoot();

@@ -9,7 +9,9 @@
 				"build",
 				"PolicyPlusMod.sln",
 				"-c",
-				"Debug-Unpackaged"
+				"Debug-Unpackaged",
+				"-r",
+				"win-x64"
 			],
 			"group": "build"
 		},
@@ -21,7 +23,9 @@
 				"build",
 				"PolicyPlusMod.sln",
 				"-c",
-				"Release-Unpackaged"
+				"Release-Unpackaged",
+				"-r",
+				"win-x64"
 			],
 			"group": "build"
 		},
@@ -33,7 +37,9 @@
 				"test",
 				"PolicyPlusModTests/PolicyPlusModTests.csproj",
 				"-c",
-				"Debug-Unpackaged"
+				"Debug-Unpackaged",
+				"-r",
+				"win-x64"
 			],
 			"group": "test"
 		},
@@ -45,7 +51,9 @@
 				"test",
 				"PolicyPlusPlus.Tests.UI/PolicyPlus.Tests.UI.csproj",
 				"-c",
-				"Debug-Unpackaged"
+				"Debug-Unpackaged",
+				"-r",
+				"win-x64"
 			],
 			"group": "test"
 		}

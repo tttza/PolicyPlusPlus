@@ -68,45 +68,52 @@ namespace PolicyPlusPlus.Services
                 // React to runtime language preference changes to refresh cache as needed.
                 try
                 {
-                    SettingsService.Instance.LanguagesChanged += async () =>
+                    SettingsService.Instance.LanguagesChanged += () =>
                     {
-                        try
+                        // Run heavy work off the UI thread.
+                        _ = Task.Run(async () =>
                         {
-                            var st2 = SettingsService.Instance.LoadSettings();
-                            // Update source root as it may have changed via settings UI
-                            try { _cache.SetSourceRoot(string.IsNullOrWhiteSpace(st2.AdmxSourcePath) ? null : st2.AdmxSourcePath); } catch { }
-                            string primary2 = !string.IsNullOrWhiteSpace(st2.Language)
-                                ? st2.Language!
-                                : CultureInfo.CurrentUICulture.Name;
-                            var cultures2 = new List<string>(3);
-                            if (st2.SecondLanguageEnabled == true && !string.IsNullOrWhiteSpace(st2.SecondLanguage))
-                                cultures2.Add(st2.SecondLanguage!);
-                            cultures2.Add(primary2);
-                            if (st2.PrimaryLanguageFallbackEnabled == true)
-                                cultures2.Add("en-US");
-                            var ordered2 = new List<string>(cultures2.Count);
-                            var seen2 = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                            foreach (var c in cultures2)
-                                if (seen2.Add(c)) ordered2.Add(c);
-                            _culturesForScan = ordered2;
-                            await _cache.ScanAndUpdateAsync(_culturesForScan).ConfigureAwait(false);
-                        }
-                        catch { }
-                        try { EventHub.PublishPolicySourcesRefreshed(null); } catch { }
+                            try
+                            {
+                                var st2 = SettingsService.Instance.LoadSettings();
+                                // Update source root as it may have changed via settings UI
+                                try { _cache.SetSourceRoot(string.IsNullOrWhiteSpace(st2.AdmxSourcePath) ? null : st2.AdmxSourcePath); } catch { }
+                                string primary2 = !string.IsNullOrWhiteSpace(st2.Language)
+                                    ? st2.Language!
+                                    : CultureInfo.CurrentUICulture.Name;
+                                var cultures2 = new List<string>(3);
+                                if (st2.SecondLanguageEnabled == true && !string.IsNullOrWhiteSpace(st2.SecondLanguage))
+                                    cultures2.Add(st2.SecondLanguage!);
+                                cultures2.Add(primary2);
+                                if (st2.PrimaryLanguageFallbackEnabled == true)
+                                    cultures2.Add("en-US");
+                                var ordered2 = new List<string>(cultures2.Count);
+                                var seen2 = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                                foreach (var c in cultures2)
+                                    if (seen2.Add(c)) ordered2.Add(c);
+                                _culturesForScan = ordered2;
+                                await _cache.ScanAndUpdateAsync(_culturesForScan).ConfigureAwait(false);
+                            }
+                            catch { }
+                            try { EventHub.PublishPolicySourcesRefreshed(null); } catch { }
+                        });
                     };
-                    SettingsService.Instance.SourcesRootChanged += async () =>
+                    SettingsService.Instance.SourcesRootChanged += () =>
                     {
-                        try
+                        _ = Task.Run(async () =>
                         {
-                            var st3 = SettingsService.Instance.LoadSettings();
-                            try { _cache.SetSourceRoot(string.IsNullOrWhiteSpace(st3.AdmxSourcePath) ? null : st3.AdmxSourcePath); } catch { }
-                            var langs = _culturesForScan;
-                            if (langs == null || langs.Count == 0)
-                                langs = new[] { CultureInfo.CurrentUICulture.Name };
-                            await _cache.ScanAndUpdateAsync(langs).ConfigureAwait(false);
-                        }
-                        catch { }
-                        try { EventHub.PublishPolicySourcesRefreshed(null); } catch { }
+                            try
+                            {
+                                var st3 = SettingsService.Instance.LoadSettings();
+                                try { _cache.SetSourceRoot(string.IsNullOrWhiteSpace(st3.AdmxSourcePath) ? null : st3.AdmxSourcePath); } catch { }
+                                var langs = _culturesForScan;
+                                if (langs == null || langs.Count == 0)
+                                    langs = new[] { CultureInfo.CurrentUICulture.Name };
+                                await _cache.ScanAndUpdateAsync(langs).ConfigureAwait(false);
+                            }
+                            catch { }
+                            try { EventHub.PublishPolicySourcesRefreshed(null); } catch { }
+                        });
                     };
                 }
                 catch { }

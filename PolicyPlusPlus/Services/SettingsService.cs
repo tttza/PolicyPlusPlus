@@ -22,12 +22,13 @@ namespace PolicyPlusPlus.Services
         private string BookmarkPath => Path.Combine(_baseDir, "bookmarks.json");
         public string CacheDirectory => Path.Combine(_baseDir, "Cache");
         private AppSettings? _cachedSettings;
-        
+
         // Raised when any language preference affecting the ADMX cache may have changed.
         // Subscribers can trigger rescans. Event is best-effort and may coalesce rapid updates.
         public event Action? LanguagesChanged;
-    // Raised when the ADMX/ADML source root path changes.
-    public event Action? SourcesRootChanged;
+
+        // Raised when the ADMX/ADML source root path changes.
+        public event Action? SourcesRootChanged;
 
         private static readonly JsonSerializerOptions PrettyIgnoreNull = new()
         {
@@ -222,6 +223,8 @@ namespace PolicyPlusPlus.Services
 
         public void SaveSettings(AppSettings s)
         {
+            bool fireLang = false;
+            bool fireSrc = false;
             _sem.Wait();
             try
             {
@@ -250,24 +253,33 @@ namespace PolicyPlusPlus.Services
                     after.PrimaryLanguageFallbackEnabled ?? false
                 );
                 var afterPath = after.AdmxSourcePath ?? string.Empty;
-                if (!beforeLang.Equals(afterLang))
-                {
-                    try { LanguagesChanged?.Invoke(); } catch { }
-                }
-                if (!string.Equals(beforePath, afterPath, StringComparison.OrdinalIgnoreCase))
-                {
-                    try { SourcesRootChanged?.Invoke(); } catch { }
-                }
+                fireLang = !beforeLang.Equals(afterLang);
+                fireSrc = !string.Equals(beforePath, afterPath, StringComparison.OrdinalIgnoreCase);
             }
             catch { }
             finally
             {
                 _sem.Release();
             }
+            // Fire events outside the lock to avoid deadlocks with handlers calling back into SettingsService.
+            try
+            {
+                if (fireLang)
+                    LanguagesChanged?.Invoke();
+            }
+            catch { }
+            try
+            {
+                if (fireSrc)
+                    SourcesRootChanged?.Invoke();
+            }
+            catch { }
         }
 
         private void Update(Action<AppSettings> mutator)
         {
+            bool fireLang = false;
+            bool fireSrc = false;
             _sem.Wait();
             try
             {
@@ -285,7 +297,7 @@ namespace PolicyPlusPlus.Services
                     SettingsPath,
                     JsonSerializer.Serialize(s, AppJsonContext.Default.AppSettings)
                 );
-                // Fire change notification only when language-related fields differ.
+                // Determine change notifications only; actual invocation happens after releasing the lock.
                 var afterLang = (
                     s.Language ?? string.Empty,
                     s.SecondLanguageEnabled ?? false,
@@ -293,20 +305,27 @@ namespace PolicyPlusPlus.Services
                     s.PrimaryLanguageFallbackEnabled ?? false
                 );
                 var afterPath = s.AdmxSourcePath ?? string.Empty;
-                if (!beforeLang.Equals(afterLang))
-                {
-                    try { LanguagesChanged?.Invoke(); } catch { }
-                }
-                if (!string.Equals(beforePath, afterPath, StringComparison.OrdinalIgnoreCase))
-                {
-                    try { SourcesRootChanged?.Invoke(); } catch { }
-                }
+                fireLang = !beforeLang.Equals(afterLang);
+                fireSrc = !string.Equals(beforePath, afterPath, StringComparison.OrdinalIgnoreCase);
             }
             catch { }
             finally
             {
                 _sem.Release();
             }
+            // Fire events outside the lock to avoid deadlocks with handlers calling back into SettingsService.
+            try
+            {
+                if (fireLang)
+                    LanguagesChanged?.Invoke();
+            }
+            catch { }
+            try
+            {
+                if (fireSrc)
+                    SourcesRootChanged?.Invoke();
+            }
+            catch { }
         }
 
         public void ReloadFromDisk()
