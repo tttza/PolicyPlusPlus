@@ -6,14 +6,17 @@
     <Platforms>x86;x64;ARM64</Platforms>
     <UseWinUI>true</UseWinUI>
     <Nullable>enable</Nullable>
-	<ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <AssemblyName>PolicyPlusPlus</AssemblyName>
     <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
     <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
-	<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <Configurations>Debug;Release;Debug-Unpackaged;Release-Unpackaged</Configurations>
     <Packaged>true</Packaged>
-    <Packaged Condition="'$(Configuration)' == 'Debug-Unpackaged' Or '$(Configuration)' == 'Release-Unpackaged'">false</Packaged>
+    <Packaged
+      Condition="'$(Configuration)' == 'Debug-Unpackaged' Or '$(Configuration)' == 'Release-Unpackaged'"
+      >false</Packaged
+    >
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
@@ -25,52 +28,44 @@
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
   </PropertyGroup>
-
   <!-- Unpackaged (non Store) build: enable Velopack based updating -->
   <PropertyGroup Condition="'$(Packaged)' != 'true'">
-  <EnableMsixTooling>false</EnableMsixTooling>
-	<WindowsPackageType>None</WindowsPackageType>
-	<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-	<PublishProfile>Properties\PublishProfiles\win-$(Platform)-standalone.pubxml</PublishProfile>
+    <EnableMsixTooling>false</EnableMsixTooling>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <PublishProfile>Properties\PublishProfiles\win-$(Platform)-standalone.pubxml</PublishProfile>
     <DefineConstants>$(DefineConstants);USE_VELOPACK</DefineConstants>
   </PropertyGroup>
-
   <!-- Packaged (Store) build: use Store update mechanism -->
   <PropertyGroup Condition="'$(Packaged)' == 'true'">
-	<EnableMsixTooling>true</EnableMsixTooling>
-	<WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
-	<PublishProfile>Properties\PublishProfiles\win-$(Platform).pubxml</PublishProfile>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <PublishProfile>Properties\PublishProfiles\win-$(Platform).pubxml</PublishProfile>
     <DefineConstants>$(DefineConstants);USE_STORE_UPDATE</DefineConstants>
   </PropertyGroup>
-
-	<PropertyGroup Condition="'$(WindowsAppSDKSelfContained)'=='true'">
-		<WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
-	</PropertyGroup>
-	
-    <ItemGroup>
-      <EmbeddedResource Include="Assets\AppIcon.ico">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </EmbeddedResource>
-    </ItemGroup>
-
+  <PropertyGroup Condition="'$(WindowsAppSDKSelfContained)'=='true'">
+    <WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\AppIcon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
   <!-- Common packages -->
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.250402" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.2.0" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4948" />
-  <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.*" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.*" />
   </ItemGroup>
-
   <!-- Velopack referenced only for unpackaged builds -->
   <ItemGroup Condition="'$(Packaged)' != 'true'">
     <PackageReference Include="Velopack" Version="0.0.1298" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\PolicyPlusCore\PolicyPlusCore.csproj" />
   </ItemGroup>
-
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <PublishReadyToRun>False</PublishReadyToRun>
     <PublishTrimmed>False</PublishTrimmed>
@@ -128,16 +123,18 @@
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <Optimize>True</Optimize>
   </PropertyGroup>
-
-	
-	<ItemGroup>
-		<ProjectReference Include="..\PolicyPPElevationHost\PolicyPPElevationHost.csproj" ReferenceOutputAssembly="false" OutputItemType="Content" CopyToOutputDirectory="PreserveNewest" />
-	</ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference
+      Include="..\PolicyPPElevationHost\PolicyPPElevationHost.csproj"
+      ReferenceOutputAssembly="false"
+      OutputItemType="Content"
+      CopyToOutputDirectory="PreserveNewest"
+    />
+  </ItemGroup>
   <Target Name="RemoveFoldersWithMuiFiles" AfterTargets="Build">
     <ItemGroup>
       <RemovingFiles Include="$(OutDir)*\*.mui" Exclude="$(OutDir)en-us\*.mui" />
-      <RemovingFolders Include="@(RemovingFiles->'%(RootDir)%(Directory)')" />
+      <RemovingFolders Include="@(RemovingFiles-&gt;'%(RootDir)%(Directory)')" />
     </ItemGroup>
     <RemoveDir Directories="@(RemovingFolders)" />
   </Target>
@@ -145,7 +142,10 @@
     <PropertyGroup>
       <_GitVersionFile>$(IntermediateOutputPath)gitversion.txt</_GitVersionFile>
     </PropertyGroup>
-    <Exec Command="git describe --tags --always --dirty &gt; &quot;$(_GitVersionFile)&quot;" IgnoreExitCode="true" />
+    <Exec
+      Command="git describe --tags --always --dirty &gt; &quot;$(_GitVersionFile)&quot;"
+      IgnoreExitCode="true"
+    />
     <ReadLinesFromFile File="$(_GitVersionFile)">
       <Output TaskParameter="Lines" PropertyName="GitVersionRaw" />
     </ReadLinesFromFile>
@@ -153,12 +153,29 @@
       <GitVersion Condition="'$(GitVersionRaw)'==''">dev</GitVersion>
       <GitVersion Condition="'$(GitVersionRaw)'!=''">$(GitVersionRaw)</GitVersion>
     </PropertyGroup>
-    <WriteLinesToFile File="$(IntermediateOutputPath)gitversion.runtime.txt" Overwrite="true" Lines="$(GitVersion)" />
+    <WriteLinesToFile
+      File="$(IntermediateOutputPath)gitversion.runtime.txt"
+      Overwrite="true"
+      Lines="$(GitVersion)"
+    />
     <ItemGroup>
       <None Include="$(IntermediateOutputPath)gitversion.runtime.txt">
         <Link>gitversion.txt</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
     </ItemGroup>
+  </Target>
+  <Target Name="Husky" BeforeTargets="Restore;CollectPackageReferences" Condition="'$(HUSKY)' != 0">
+    <Exec
+      Command="dotnet tool restore"
+      StandardOutputImportance="Low"
+      StandardErrorImportance="High"
+    />
+    <Exec
+      Command="dotnet husky install"
+      StandardOutputImportance="Low"
+      StandardErrorImportance="High"
+      WorkingDirectory=".."
+    />
   </Target>
 </Project>
