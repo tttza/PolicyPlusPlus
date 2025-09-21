@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -12,11 +13,14 @@ using PolicyPlusCore.Utilities;
 using PolicyPlusPlus.Logging;
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.ViewModels;
+using Windows.System;
 
 namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {
+        // When true, user is navigating the suggestion list with arrow keys.
+        private bool _navigatingSuggestions;
         private List<(
             PolicyPlusPolicy Policy,
             string NameLower,
@@ -284,6 +288,35 @@ namespace PolicyPlusPlus
             }
         }
 
+        private void SearchBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // When focused with no input, show baseline suggestions (history/ranking-based)
+                var q = (SearchBox?.Text ?? string.Empty).Trim();
+                if (string.IsNullOrEmpty(q))
+                {
+                    ShowBaselineSuggestions();
+                    try
+                    {
+                        if (SearchBox != null)
+                        {
+                            // Try to open the suggestion list explicitly if supported
+                            SearchBox.IsSuggestionListOpen = true;
+                        }
+                    }
+                    catch
+                    {
+                        // Some WinUI versions expose IsSuggestionListOpen as read-only; ignore failures.
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("MainSearch", "SearchBox_GotFocus failed", ex);
+            }
+        }
+
         private void HideBuiltInSearchClearButton()
         {
             try
@@ -334,6 +367,11 @@ namespace PolicyPlusPlus
             try
             {
                 var q = (SearchBox?.Text ?? string.Empty).Trim();
+                // If arrow-key navigating suggestions, avoid recomputing suggestions or committing
+                if (SearchBox != null && SearchBox.IsSuggestionListOpen && _navigatingSuggestions)
+                {
+                    return;
+                }
                 if (string.IsNullOrEmpty(q))
                 {
                     _navTyping = false;
@@ -365,11 +403,14 @@ namespace PolicyPlusPlus
                     catch { }
                     return;
                 }
-                if (
-                    e.Reason
-                    is AutoSuggestionBoxTextChangeReason.UserInput
-                        or AutoSuggestionBoxTextChangeReason.ProgrammaticChange
-                )
+                // Commit only when: user typed, or when a suggestion has been explicitly chosen
+                if (e.Reason is AutoSuggestionBoxTextChangeReason.SuggestionChosen)
+                {
+                    _navTyping = false;
+                    RunAsyncSearchAndBind(q);
+                    MaybePushCurrentState();
+                }
+                else if (e.Reason is AutoSuggestionBoxTextChangeReason.UserInput)
                 {
                     _navTyping = true;
                     RunAsyncSearchAndBind(q);
@@ -381,6 +422,48 @@ namespace PolicyPlusPlus
             }
         }
 
+        private void SearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            try
+            {
+                if (
+                    e.Key
+                    is VirtualKey.Down
+                        or VirtualKey.Up
+                        or VirtualKey.PageDown
+                        or VirtualKey.PageUp
+                )
+                {
+                    _navigatingSuggestions = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("MainSearch", "SearchBox_KeyDown failed", ex);
+            }
+        }
+
+        private void SearchBox_KeyUp(object sender, KeyRoutedEventArgs e)
+        {
+            try
+            {
+                if (
+                    e.Key
+                    is VirtualKey.Down
+                        or VirtualKey.Up
+                        or VirtualKey.PageDown
+                        or VirtualKey.PageUp
+                )
+                {
+                    _navigatingSuggestions = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("MainSearch", "SearchBox_KeyUp failed", ex);
+            }
+        }
+
         // XAML event proxies
         private void SearchBox_QuerySubmitted(
             AutoSuggestBox sender,
@@ -389,12 +472,36 @@ namespace PolicyPlusPlus
         {
             try
             {
-                var q = (args.QueryText ?? string.Empty).Trim();
-                if (!string.IsNullOrEmpty(q))
+                // Prefer the chosen suggestion text when available; otherwise use the raw query text
+                string commitText = string.Empty;
+                if (args.ChosenSuggestion is string chosen && !string.IsNullOrWhiteSpace(chosen))
+                    commitText = chosen.Trim();
+                else
+                    commitText = (args.QueryText ?? string.Empty).Trim();
+
+                if (!string.IsNullOrEmpty(commitText))
                 {
                     _navTyping = false;
-                    RunAsyncSearchAndBind(q);
+                    try
+                    {
+                        // Make sure the box reflects the committed text even when UpdateTextOnSelect is false
+                        if (
+                            SearchBox != null
+                            && !string.Equals(
+                                SearchBox.Text?.Trim(),
+                                commitText,
+                                StringComparison.Ordinal
+                            )
+                        )
+                            SearchBox.Text = commitText;
+                    }
+                    catch { }
+                    RunAsyncSearchAndBind(commitText);
                     MaybePushCurrentState();
+                }
+                else
+                {
+                    // If Enter pressed on empty query while suggestions are open, do nothing (prevent accidental commit)
                 }
             }
             catch (Exception ex)
@@ -410,14 +517,7 @@ namespace PolicyPlusPlus
         {
             try
             {
-                if (args.SelectedItem != null)
-                {
-                    var chosen = args.SelectedItem.ToString() ?? string.Empty;
-                    sender.Text = chosen;
-                    _navTyping = false;
-                    RunAsyncSearchAndBind(chosen);
-                    MaybePushCurrentState();
-                }
+                // No-op: commit is handled in TextChanged when Reason == SuggestionChosen.
             }
             catch (Exception ex)
             {

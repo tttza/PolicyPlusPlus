@@ -426,10 +426,15 @@
                 AutomationProperties.AutomationId="SearchBox"
                 Padding="0,0,28,0"
                 PlaceholderText="Search policies"
+                 UpdateTextOnSelect="False"
                 Loaded="SearchBox_Loaded"
+                 GotFocus="SearchBox_GotFocus"
                 TextChanged="SearchBox_TextChanged"
+                KeyDown="SearchBox_KeyDown"
+                KeyUp="SearchBox_KeyUp"
                 QuerySubmitted="SearchBox_QuerySubmitted"
                 SuggestionChosen="SearchBox_SuggestionChosen"
+                AutoMaximizeSuggestionArea="True"
               />
               <Grid
                 x:Name="SearchClearBtn"
