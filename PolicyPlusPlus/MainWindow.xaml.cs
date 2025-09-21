@@ -96,9 +96,7 @@ namespace PolicyPlusPlus
         private bool _doubleTapHooked; // used by HookDoubleTapHandlers
         private bool _initialized; // guard to run initialization once
         private AppSettings? _settingsCache; // cached settings snapshot
-#if USE_VELOPACK
-        // UpdateManager handled by UpdateHelper now.
-#endif
+
         public MainWindow()
         {
             this.InitializeComponent();

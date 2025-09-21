@@ -5,6 +5,7 @@ using Windows.System;
 #endif
 #if USE_VELOPACK
 using Velopack;
+using Velopack.Sources;
 using PolicyPlusPlus.Logging;
 #endif
 
@@ -60,7 +61,9 @@ namespace PolicyPlusPlus.Services
                 return;
             try
             {
-                _updateManager = new UpdateManager(UpdateConfig.VelopackUpdateUrl);
+                _updateManager = new UpdateManager(
+                    new GithubSource(UpdateConfig.VelopackUpdateUrl, null, false)
+                );
             }
             catch (Exception ex)
             {
