@@ -72,6 +72,30 @@ public sealed class AdmxCache : IAdmxCache
         if (cultureList.Count == 0)
             cultureList.Add(CultureInfo.CurrentUICulture.Name);
 
+        // Decide whether to perform a global rebuild based on source root changes.
+        bool needGlobalRebuild = await NeedsGlobalRebuildAsync(root, ct).ConfigureAwait(false);
+
+        // If a global rebuild is required (e.g., legacy DB without meta), include any cultures already present
+        // in the DB so we don't lose them during the rebuild, even if the caller only asked for a subset.
+        if (needGlobalRebuild)
+        {
+            try
+            {
+                var existing = await GetExistingCulturesAsync(ct).ConfigureAwait(false);
+                if (existing.Count > 0)
+                {
+                    var set = new HashSet<string>(cultureList, StringComparer.OrdinalIgnoreCase);
+                    foreach (var ec in existing)
+                    {
+                        if (!set.Contains(ec)) cultureList.Add(ec);
+                    }
+                }
+            }
+            catch { }
+        }
+        bool didGlobalRebuild = false;
+
+        int i = 0;
         foreach (var cul in cultureList.Select(NormalizeCultureName))
         {
             var bundle = new AdmxBundle();
@@ -87,7 +111,17 @@ public sealed class AdmxCache : IAdmxCache
                 // Ignore malformed files during scan; individual failures are non-fatal for the cache build.
             }
 
-            await DiffAndApplyAsync(bundle, cul, allowGlobalRebuild: (cul == cultureList.First()), ct).ConfigureAwait(false);
+            bool allowGlobalRebuild = needGlobalRebuild && (i == 0);
+            if (allowGlobalRebuild)
+                didGlobalRebuild = true;
+            await DiffAndApplyAsync(bundle, cul, allowGlobalRebuild, ct).ConfigureAwait(false);
+            i++;
+        }
+
+        // If we performed a global rebuild, persist the source root into Meta for future comparisons.
+        if (didGlobalRebuild)
+        {
+            try { await SetMetaAsync("source_root", root, ct).ConfigureAwait(false); } catch { }
         }
     }
 
@@ -138,6 +172,63 @@ public sealed class AdmxCache : IAdmxCache
         {
             try { await tx.RollbackAsync(ct).ConfigureAwait(false); } catch { }
         }
+    }
+
+    private async Task<bool> NeedsGlobalRebuildAsync(string currentRoot, CancellationToken ct)
+    {
+        try
+        {
+            using var conn = _store.OpenConnection();
+            await conn.OpenAsync(ct).ConfigureAwait(false);
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT value FROM Meta WHERE key='source_root' LIMIT 1";
+            var obj = await cmd.ExecuteScalarAsync(ct).ConfigureAwait(false);
+            var stored = obj as string;
+            if (string.IsNullOrWhiteSpace(stored))
+                return true; // first run
+            // Compare case-insensitively and with normalized full paths where possible
+            try
+            {
+                var a = Path.GetFullPath(stored);
+                var b = Path.GetFullPath(currentRoot);
+                return !string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return !string.Equals(stored, currentRoot, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        catch
+        {
+            // On any error, fall back to global rebuild to be safe
+            return true;
+        }
+    }
+
+    private async Task SetMetaAsync(string key, string value, CancellationToken ct)
+    {
+        using var conn = _store.OpenConnection();
+        await conn.OpenAsync(ct).ConfigureAwait(false);
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "INSERT INTO Meta(key, value) VALUES(@k,@v) ON CONFLICT(key) DO UPDATE SET value=excluded.value";
+        cmd.Parameters.AddWithValue("@k", key);
+        cmd.Parameters.AddWithValue("@v", value);
+        await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    private async Task<IReadOnlyList<string>> GetExistingCulturesAsync(CancellationToken ct)
+    {
+        var list = new List<string>(4);
+        using var conn = _store.OpenConnection();
+        await conn.OpenAsync(ct).ConfigureAwait(false);
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT DISTINCT culture FROM PolicyI18n ORDER BY culture";
+        using var rdr = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await rdr.ReadAsync(ct).ConfigureAwait(false))
+        {
+            if (!rdr.IsDBNull(0)) list.Add(rdr.GetString(0));
+        }
+        return list;
     }
 
     private static string GetRegistryPath(string hive, string? key, string? value)
@@ -287,23 +378,24 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
     var norm = TextNormalization.ToNGramTokens(TextNormalization.NormalizeStrict(query));
     var loose = TextNormalization.ToNGramTokens(TextNormalization.NormalizeLoose(query));
 
-        bool useId = (fields & SearchFields.Id) != 0;
-        bool useReg = (fields & SearchFields.Registry) != 0;
+    bool useId = (fields & SearchFields.Id) != 0;
+    // Only include registry-path FTS fields when the query looks like a registry path to reduce false positives
+    bool useReg = (fields & SearchFields.Registry) != 0 && LooksLikeRegistryQuery(query);
         bool useName = (fields & SearchFields.Name) != 0;
         bool useDesc = (fields & SearchFields.Description) != 0;
         bool enableFts = useName || useDesc || useReg || useId;
 
         var ftsNormCols = new List<string>();
-        if (useName) ftsNormCols.Add("title_norm");
-        if (useDesc) ftsNormCols.Add("desc_norm");
-        if (useId) ftsNormCols.Add("tags");
-        if (useReg) ftsNormCols.Add("registry_path");
+    if (useName) ftsNormCols.Add("title_norm");
+    if (useDesc) ftsNormCols.Add("desc_norm");
+    if (useId && LooksLikeIdQuery(query)) ftsNormCols.Add("tags");
+    if (useReg) ftsNormCols.Add("registry_path");
 
         var ftsLooseCols = new List<string>();
-        if (useName) ftsLooseCols.Add("title_loose");
-        if (useDesc) ftsLooseCols.Add("desc_loose");
-        if (useId) ftsLooseCols.Add("tags");
-        if (useReg) ftsLooseCols.Add("registry_path");
+    if (useName) ftsLooseCols.Add("title_loose");
+    if (useDesc) ftsLooseCols.Add("desc_loose");
+    if (useId && LooksLikeIdQuery(query)) ftsLooseCols.Add("tags");
+    if (useReg) ftsLooseCols.Add("registry_path");
 
         // Build FTS5 MATCH expressions. Each selected column is prefixed in the MATCH query, combined via OR.
         static string EscapeSqlSingle(string s) => s.Replace("'", "''");
@@ -337,7 +429,7 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             sb.AppendLine("  FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id AND s.culture=@culture");
             sb.AppendLine("  WHERE p.policy_name LIKE @q_prefix");
         }
-        if (useReg)
+        if ((fields & SearchFields.Registry) != 0 && LooksLikeRegistryQuery(query))
         {
             sb.AppendLine("  UNION ALL");
             sb.AppendLine("  SELECT p.id, @culture, s.display_name, 1000");
@@ -462,6 +554,22 @@ WHERE (p.hive||'\\'||p.reg_key||'\\'||p.reg_value) = @rp LIMIT 1";
         return MapDetail(rdr);
     }
 
+    private static bool LooksLikeRegistryQuery(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return false;
+        var q = query.Trim();
+        // Quick signals for registry-like input
+        if (q.Contains('\\')) return true; // e.g., HKCU\Software\...
+        var ql = q.Replace("_", string.Empty).Replace(" ", string.Empty).ToUpperInvariant();
+        if (ql.StartsWith("HKCU") || ql.StartsWith("HKLM") || ql.StartsWith("HKEYCURRENTUSER") || ql.StartsWith("HKEYLOCALMACHINE"))
+            return true;
+        // Common hive + branch keywords
+        var qll = q.ToLowerInvariant();
+        if (qll.Contains("policies\\") || qll.Contains("software\\") || qll.Contains("system\\") || qll.Contains("microsoft\\"))
+            return true;
+        return false;
+    }
+
     private static PolicyDetail MapDetail(SqliteDataReader rdr)
     {
         var policyId = rdr.GetInt64(0);
@@ -497,5 +605,13 @@ WHERE (p.hive||'\\'||p.reg_key||'\\'||p.reg_value) = @rp LIMIT 1";
             // Fallback: preserve as-is but trim
             return culture.Trim();
         }
+    }
+
+    private static bool LooksLikeIdQuery(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return false;
+        // Unique IDs are typically in the form namespace:PolicyName
+        // Keep heuristic lightweight to avoid slowing hot path.
+        return query.Contains(':');
     }
 }
