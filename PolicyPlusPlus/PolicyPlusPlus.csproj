@@ -35,6 +35,8 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <PublishProfile>Properties\PublishProfiles\win-$(Platform)-standalone.pubxml</PublishProfile>
     <DefineConstants>$(DefineConstants);USE_VELOPACK</DefineConstants>
+    <!-- Ensure a default RID is set when building project directly without -r -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)'==''">win-$(Platform)</RuntimeIdentifier>
   </PropertyGroup>
   <!-- Packaged (Store) build: use Store update mechanism -->
   <PropertyGroup Condition="'$(Packaged)' == 'true'">

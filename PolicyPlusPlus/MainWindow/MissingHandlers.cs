@@ -1,11 +1,16 @@
 using System;
 using CommunityToolkit.WinUI.UI.Controls;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using PolicyPlusPlus.Dialogs;
 using PolicyPlusPlus.Models; // for PolicyListRow
 using PolicyPlusPlus.Services;
+using Windows.System;
+// Alias to avoid namespace resolution issues inside PolicyPlusPlus namespace
+using CoreKeyStates = global::Windows.UI.Core.CoreVirtualKeyStates;
 
 namespace PolicyPlusPlus
 {
@@ -154,6 +159,54 @@ namespace PolicyPlusPlus
 
         private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
+            // Type-to-search: when user types A-Z anywhere, focus SearchBox and start typing immediately.
+            try
+            {
+                var key = e.Key;
+                bool isLetter = key >= VirtualKey.A && key <= VirtualKey.Z;
+                if (isLetter)
+                {
+                    // Ignore when Alt is down or Control is down (don't steal accelerators)
+                    bool altDown = e.KeyStatus.IsMenuKeyDown;
+                    bool ctrlDown =
+                        (
+                            InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control)
+                            & CoreKeyStates.Down
+                        ) == CoreKeyStates.Down;
+                    if (!altDown && !ctrlDown)
+                    {
+                        // Do not steal keys while a text input control already has focus (including inside SearchBox)
+                        var focused = FocusManager.GetFocusedElement() as DependencyObject;
+                        bool inSearchBox = SearchBox != null && IsWithin(focused, SearchBox);
+                        bool focusedIsTextInput =
+                            focused is TextBox || focused is RichEditBox || focused is PasswordBox;
+                        if (!inSearchBox && !focusedIsTextInput && SearchBox != null)
+                        {
+                            // Focus the search box and place caret at the end; let the original key input type the first character.
+                            try
+                            {
+                                SearchBox.Focus(FocusState.Keyboard);
+                            }
+                            catch { }
+                            try
+                            {
+                                var innerTb = FindDescendantByName(SearchBox, "TextBox") as TextBox;
+                                if (innerTb != null)
+                                {
+                                    int len = innerTb.Text?.Length ?? 0;
+                                    innerTb.SelectionStart = len;
+                                    innerTb.SelectionLength = 0;
+                                }
+                            }
+                            catch { }
+                            // Do not mark handled: let this key press flow into the now-focused search box so the first character appears once.
+                            return;
+                        }
+                    }
+                }
+            }
+            catch { }
+
             if (e.Key == global::Windows.System.VirtualKey.Enter)
             {
                 try
@@ -178,6 +231,19 @@ namespace PolicyPlusPlus
                 }
                 catch { }
             }
+        }
+
+        private static bool IsWithin(DependencyObject? node, DependencyObject ancestor)
+        {
+            // Returns true if 'node' is within the visual tree subtree of 'ancestor'.
+            var current = node;
+            while (current != null)
+            {
+                if (ReferenceEquals(current, ancestor))
+                    return true;
+                current = VisualTreeHelper.GetParent(current);
+            }
+            return false;
         }
     }
 }

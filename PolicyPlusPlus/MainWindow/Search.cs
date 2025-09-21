@@ -107,7 +107,13 @@ namespace PolicyPlusPlus
                 );
 
                 var list = BuildSuggestions(string.Empty, allowed);
-                SearchBox.ItemsSource = list;
+                bool show = list != null && list.Count > 1;
+                SearchBox.ItemsSource = show ? list : Array.Empty<string>();
+                try
+                {
+                    SearchBox.IsSuggestionListOpen = show;
+                }
+                catch { }
             }
             catch (Exception ex)
             {
@@ -294,21 +300,11 @@ namespace PolicyPlusPlus
             {
                 // When focused with no input, show baseline suggestions (history/ranking-based)
                 var q = (SearchBox?.Text ?? string.Empty).Trim();
+                // No longer skipping baseline suggestions on first focus.
                 if (string.IsNullOrEmpty(q))
                 {
                     ShowBaselineSuggestions();
-                    try
-                    {
-                        if (SearchBox != null)
-                        {
-                            // Try to open the suggestion list explicitly if supported
-                            SearchBox.IsSuggestionListOpen = true;
-                        }
-                    }
-                    catch
-                    {
-                        // Some WinUI versions expose IsSuggestionListOpen as read-only; ignore failures.
-                    }
+                    // ShowBaselineSuggestions already opened/closed based on count
                 }
             }
             catch (Exception ex)
@@ -367,11 +363,13 @@ namespace PolicyPlusPlus
             try
             {
                 var q = (SearchBox?.Text ?? string.Empty).Trim();
+                var reason = e?.Reason ?? AutoSuggestionBoxTextChangeReason.UserInput;
                 // If arrow-key navigating suggestions, avoid recomputing suggestions or committing
                 if (SearchBox != null && SearchBox.IsSuggestionListOpen && _navigatingSuggestions)
                 {
                     return;
                 }
+                // No startup suppression: baseline suggestion behavior follows typing normally.
                 if (string.IsNullOrEmpty(q))
                 {
                     _navTyping = false;
@@ -404,13 +402,19 @@ namespace PolicyPlusPlus
                     return;
                 }
                 // Commit only when: user typed, or when a suggestion has been explicitly chosen
-                if (e.Reason is AutoSuggestionBoxTextChangeReason.SuggestionChosen)
+                if (reason is AutoSuggestionBoxTextChangeReason.SuggestionChosen)
                 {
                     _navTyping = false;
                     RunAsyncSearchAndBind(q);
                     MaybePushCurrentState();
+                    try
+                    {
+                        if (SearchBox != null)
+                            SearchBox.IsSuggestionListOpen = false;
+                    }
+                    catch { }
                 }
-                else if (e.Reason is AutoSuggestionBoxTextChangeReason.UserInput)
+                else if (reason is AutoSuggestionBoxTextChangeReason.UserInput)
                 {
                     _navTyping = true;
                     RunAsyncSearchAndBind(q);
@@ -498,6 +502,12 @@ namespace PolicyPlusPlus
                     catch { }
                     RunAsyncSearchAndBind(commitText);
                     MaybePushCurrentState();
+                    try
+                    {
+                        if (SearchBox != null)
+                            SearchBox.IsSuggestionListOpen = false;
+                    }
+                    catch { }
                 }
                 else
                 {

@@ -1087,7 +1087,18 @@ namespace PolicyPlusPlus
                     }
                     try
                     {
-                        SearchBox.ItemsSource = suggestions;
+                        // Hide suggestions when 0 or 1 item to reduce distraction
+                        bool showSuggestions = suggestions != null && suggestions.Count > 1;
+                        // No forced-close behavior; showSuggestions follows computed value.
+                        SearchBox.ItemsSource = showSuggestions
+                            ? suggestions
+                            : Array.Empty<string>();
+                        try
+                        {
+                            SearchBox.IsSuggestionListOpen = showSuggestions;
+                        }
+                        catch { }
+                        // _forceCloseSuggestionsOnce removed
                         if (_navTyping && matches.Count > LargeResultThreshold)
                         {
                             var partial = matches.Take(LargeResultThreshold).ToList();
