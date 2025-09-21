@@ -9,10 +9,10 @@ PolicyPlusMod loads Administrative Template (ADMX/ADML) definitions, lets users 
 - Language: C# (.NET 8; legacy VB already removed)
 - Projects / Targets:
   - Core: `PolicyPlusCore` → `net8.0-windows`
-  - WinUI 3 UI: `PolicyPlusPlus` → `net8.0-windows10.0.19041.0`
+  - WinUI 3 UI: `PolicyPlusPlus` → `net8.0-windows10.0.17763.0` (desktop app)
   - Elevation Host: `PolicyPPElevationHost` → `net8.0-windows` (console/elevation helper)
-  - Tests: `PolicyPlusModTests`, `PolicyPlusModWinUI3Tests` (xUnit)
-- Windows App SDK 1.7; CommunityToolkit WinUI controls
+  - Tests: `PolicyPlusModTests`, `PolicyPlusPlus.Tests.UI` (xUnit)
+- Windows App SDK 1.8; CommunityToolkit WinUI controls
 - SDK pinned by `global.json` (8.0.413) – do not drift
 - Packaging: Unpackaged (Debug/Release + *-Unpackaged configs). Future MSIX / Velopack packaging must be documented before adoption.
 
@@ -25,7 +25,7 @@ PolicyPlusCore/            Domain models & policy processing
 PolicyPlusPlus/            WinUI 3 UI
 PolicyPPElevationHost/     Elevation helper process
 PolicyPlusModTests/        Core + limited UI logic tests
-PolicyPlusModWinUI3Tests/  WinUI 3 focused tests
+PolicyPlusPlus.Tests.UI/   WinUI 3 focused tests
 Docs/                      Architecture & terminology
 .github/                   Automation & this guide
 ```
@@ -42,12 +42,12 @@ Generated output: `artifacts/`, `obj/`, `bin/`.
 ```
 dotnet --version
 dotnet restore PolicyPlusMod.sln
-dotnet build PolicyPlusMod.sln -c Debug
-dotnet run --project PolicyPlusPlus/PolicyPlusPlus.csproj -c Debug
+dotnet build PolicyPlusMod.sln -c Debug-Unpackaged
+dotnet run --project PolicyPlusPlus/PolicyPlusPlus.csproj -c Debug-Unpackaged
 ```
 Release build:
 ```
-dotnet build PolicyPlusMod.sln -c Release
+dotnet build PolicyPlusMod.sln -c Release-Unpackaged
 ```
 (Add packaging instructions here once a packaging format is adopted.)
 
@@ -83,12 +83,30 @@ Comment style (strict):
 
 ## 8. Test Guidance
 ```
-dotnet test PolicyPlusMod.sln -c Debug
+dotnet test PolicyPlusMod.sln -c Debug-Unpackaged
 ```
 - Mock `IPolicySource` for persistence tests.
 - Parser tests: minimal synthetic ADMX/ADML fixtures; assert structural shape.
 - Pending changes: verify queue apply/discard/reapply retains element values (lists, enums, numeric, multi-line text).
 - Regression tests required before altering policy evaluation semantics.
+
+UI test re-run policy (time saver):
+- UI tests assume unit tests are passing. Always run unit tests first; if unit tests are failing, do not run UI tests.
+- If only unit tests are failing and the latest UI tests have already passed, do not re-run UI tests.
+- Run UI tests only when:
+  - There are changes in `PolicyPlusPlus/` (XAML, code-behind, ViewModel/Service UI integration).
+  - Changes touch resources affecting visual tree/navigation/bindings (`Resources/`, `Converters/`, `Dialogs/`, etc.).
+  - Public contracts or evaluation semantics in `PolicyPlusCore` have changed with potential UI impact.
+  - UI tests have not been executed for the latest commit.
+
+Handy commands (cmd.exe):
+```
+# Unit tests only (fast)
+dotnet test PolicyPlusModTests/PolicyPlusModTests.csproj -c Debug-Unpackaged
+
+# UI tests only (heavy / only when needed)
+dotnet test PolicyPlusPlus.Tests.UI/PolicyPlus.Tests.UI.csproj -c Debug-Unpackaged
+```
 
 ## 9. Performance & Edge Cases
 - Large ADMX sets: maintain O(n) passes; pre-index by policy ID / registry path.
@@ -99,7 +117,6 @@ dotnet test PolicyPlusMod.sln -c Debug
 - Batch UI updates to avoid redraw storms (e.g., DataGrid refresh throttling).
 
 ## 10. Patterns / Conventions
-- Version stamping remains external (`version.bat`) if still invoked.
 - Registry mutation models remain small & immutable (name, type, data triple patterns).
 - Explicit method names: `GetPolicyState`, `QueuePendingChange`, `ApplyPendingAsync`.
 - Use `StringComparer.OrdinalIgnoreCase` where ADMX spec is case-insensitive.
@@ -126,11 +143,11 @@ During:
 
 After:
 ```
-dotnet build PolicyPlusMod.sln -c Debug
-dotnet test PolicyPlusMod.sln -c Debug
-dotnet build PolicyPlusMod.sln -c Release
+dotnet build PolicyPlusMod.sln -c Debug-Unpackaged
+dotnet test PolicyPlusMod.sln -c Debug-Unpackaged
+dotnet build PolicyPlusMod.sln -c Release-Unpackaged
 ```
-Optionally run UI smoke (launch, open a policy, view pending changes window).
+Optionally run a quick UI smoke (launch app, open a policy, view the pending changes window).
 
 ## 13. Sample Feature Walkthrough (Illustrative)
 Goal: Add helper `PolicyLookup.FindPolicy(bundle, uniqueId)`.
@@ -160,6 +177,8 @@ Steps:
 - Feature degrades gracefully when optional data absent (no crashes).
 - No prohibited comment patterns.
 - Performance on large ADMX set not regressed (spot check typical operations).
+- Avoid unnecessary UI test re-runs (see Section 8).
+ - UI tests are executed only after unit tests pass (Section 8).
 
 ## 16. Comment Style Examples
 Good:
@@ -189,5 +208,3 @@ Rephrase or omit.
 - Tests updated for semantic changes?
 - Public surface minimized?
 - Reflection avoided in hot paths?
-
-(End)

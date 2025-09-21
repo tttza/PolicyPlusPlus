@@ -9,7 +9,19 @@
 				"build",
 				"PolicyPlusMod.sln",
 				"-c",
-				"Debug-Unpackaged",
+				"Debug-Unpackaged"
+			],
+			"group": "build"
+		},
+		{
+			"label": "dotnet build (Release)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"PolicyPlusMod.sln",
+				"-c",
+				"Release-Unpackaged"
 			],
 			"group": "build"
 		},
@@ -19,7 +31,7 @@
 			"command": "dotnet",
 			"args": [
 				"test",
-				"PolicyPlusModTest/PolicyPlusModTests.csproj",
+				"PolicyPlusModTests/PolicyPlusModTests.csproj",
 				"-c",
 				"Debug-Unpackaged"
 			],
