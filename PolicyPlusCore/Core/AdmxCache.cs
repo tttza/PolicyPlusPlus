@@ -26,7 +26,11 @@ public sealed class AdmxCache : IAdmxCache
         string dbPath;
         if (!string.IsNullOrWhiteSpace(overrideDir))
         {
-            try { Directory.CreateDirectory(overrideDir!); } catch { }
+            try
+            {
+                Directory.CreateDirectory(overrideDir!);
+            }
+            catch { }
             dbPath = Path.Combine(overrideDir!, "admxcache.sqlite");
         }
         else
@@ -62,13 +66,18 @@ public sealed class AdmxCache : IAdmxCache
         await ScanAndUpdateAsync(new[] { culture }, ct).ConfigureAwait(false);
     }
 
-    public async Task ScanAndUpdateAsync(IEnumerable<string> cultures, CancellationToken ct = default)
+    public async Task ScanAndUpdateAsync(
+        IEnumerable<string> cultures,
+        CancellationToken ct = default
+    )
     {
-        string root = _sourceRoot ?? Environment.ExpandEnvironmentVariables(@"%WINDIR%\PolicyDefinitions");
+        string root =
+            _sourceRoot ?? Environment.ExpandEnvironmentVariables(@"%WINDIR%\PolicyDefinitions");
         if (!Directory.Exists(root))
             return;
 
-        var cultureList = cultures?.ToList() ?? new List<string> { CultureInfo.CurrentUICulture.Name };
+        var cultureList =
+            cultures?.ToList() ?? new List<string> { CultureInfo.CurrentUICulture.Name };
         if (cultureList.Count == 0)
             cultureList.Add(CultureInfo.CurrentUICulture.Name);
 
@@ -87,7 +96,8 @@ public sealed class AdmxCache : IAdmxCache
                     var set = new HashSet<string>(cultureList, StringComparer.OrdinalIgnoreCase);
                     foreach (var ec in existing)
                     {
-                        if (!set.Contains(ec)) cultureList.Add(ec);
+                        if (!set.Contains(ec))
+                            cultureList.Add(ec);
                     }
                 }
             }
@@ -101,7 +111,13 @@ public sealed class AdmxCache : IAdmxCache
             var bundle = new AdmxBundle();
             try
             {
-                foreach (var admx in Directory.EnumerateFiles(root, "*.admx", SearchOption.TopDirectoryOnly))
+                foreach (
+                    var admx in Directory.EnumerateFiles(
+                        root,
+                        "*.admx",
+                        SearchOption.TopDirectoryOnly
+                    )
+                )
                 {
                     _ = bundle.LoadFile(admx, cul);
                 }
@@ -121,11 +137,20 @@ public sealed class AdmxCache : IAdmxCache
         // If we performed a global rebuild, persist the source root into Meta for future comparisons.
         if (didGlobalRebuild)
         {
-            try { await SetMetaAsync("source_root", root, ct).ConfigureAwait(false); } catch { }
+            try
+            {
+                await SetMetaAsync("source_root", root, ct).ConfigureAwait(false);
+            }
+            catch { }
         }
     }
 
-    private async Task DiffAndApplyAsync(AdmxBundle bundle, string culture, bool allowGlobalRebuild, CancellationToken ct)
+    private async Task DiffAndApplyAsync(
+        AdmxBundle bundle,
+        string culture,
+        bool allowGlobalRebuild,
+        CancellationToken ct
+    )
     {
         // Serialize writers across processes to avoid WAL write conflicts and cache deletion races.
         using var writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(30));
@@ -137,13 +162,15 @@ public sealed class AdmxCache : IAdmxCache
 
         using var conn = _store.OpenConnection();
         await conn.OpenAsync(ct).ConfigureAwait(false);
-        using var tx = await conn.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted).ConfigureAwait(false);
+        using var tx = await conn.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted)
+            .ConfigureAwait(false);
         try
         {
             if (allowGlobalRebuild)
             {
                 using var purge = conn.CreateCommand();
-                purge.CommandText = "DELETE FROM PolicyIndex; DELETE FROM PolicyIndexMap; DELETE FROM PolicyI18n; DELETE FROM PolicyDeps; DELETE FROM PolicyStringsDeps; DELETE FROM Policies;";
+                purge.CommandText =
+                    "DELETE FROM PolicyIndex; DELETE FROM PolicyIndexMap; DELETE FROM PolicyI18n; DELETE FROM PolicyDeps; DELETE FROM PolicyStringsDeps; DELETE FROM Policies;";
                 await purge.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
             else
@@ -156,7 +183,8 @@ public sealed class AdmxCache : IAdmxCache
                 }
                 using (var delIdx = conn.CreateCommand())
                 {
-                    delIdx.CommandText = "DELETE FROM PolicyIndex WHERE rowid IN (SELECT rowid FROM PolicyIndexMap WHERE culture=@c); DELETE FROM PolicyIndexMap WHERE culture=@c;";
+                    delIdx.CommandText =
+                        "DELETE FROM PolicyIndex WHERE rowid IN (SELECT rowid FROM PolicyIndexMap WHERE culture=@c); DELETE FROM PolicyIndexMap WHERE culture=@c;";
                     delIdx.Parameters.AddWithValue("@c", culture);
                     await delIdx.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
                 }
@@ -178,7 +206,11 @@ public sealed class AdmxCache : IAdmxCache
         }
         catch
         {
-            try { await tx.RollbackAsync(ct).ConfigureAwait(false); } catch { }
+            try
+            {
+                await tx.RollbackAsync(ct).ConfigureAwait(false);
+            }
+            catch { }
         }
     }
 
@@ -218,7 +250,8 @@ public sealed class AdmxCache : IAdmxCache
         using var conn = _store.OpenConnection();
         await conn.OpenAsync(ct).ConfigureAwait(false);
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "INSERT INTO Meta(key, value) VALUES(@k,@v) ON CONFLICT(key) DO UPDATE SET value=excluded.value";
+        cmd.CommandText =
+            "INSERT INTO Meta(key, value) VALUES(@k,@v) ON CONFLICT(key) DO UPDATE SET value=excluded.value";
         cmd.Parameters.AddWithValue("@k", key);
         cmd.Parameters.AddWithValue("@v", value);
         await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -234,7 +267,8 @@ public sealed class AdmxCache : IAdmxCache
         using var rdr = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await rdr.ReadAsync(ct).ConfigureAwait(false))
         {
-            if (!rdr.IsDBNull(0)) list.Add(rdr.GetString(0));
+            if (!rdr.IsDBNull(0))
+                list.Add(rdr.GetString(0));
         }
         return list;
     }
@@ -252,9 +286,12 @@ public sealed class AdmxCache : IAdmxCache
             return string.Join('+', raw.Elements.Select(e => e.GetType().Name));
         var reg = raw.AffectedValues;
         var parts = new List<string>(2);
-        if (reg.OnValue is not null) parts.Add(reg.OnValue.RegistryType.ToString());
-        if (reg.OffValue is not null) parts.Add(reg.OffValue.RegistryType.ToString());
-        if (reg.OnValueList is not null || reg.OffValueList is not null) parts.Add("List");
+        if (reg.OnValue is not null)
+            parts.Add(reg.OnValue.RegistryType.ToString());
+        if (reg.OffValue is not null)
+            parts.Add(reg.OffValue.RegistryType.ToString());
+        if (reg.OnValueList is not null || reg.OffValueList is not null)
+            parts.Add("List");
         return parts.Count > 0 ? string.Join('+', parts) : "Flag";
     }
 
@@ -273,15 +310,21 @@ public sealed class AdmxCache : IAdmxCache
         return string.Join("/", stack);
     }
 
-    
-
-    private async Task UpsertOnePolicyAsync(SqliteConnection conn, PolicyPlusPolicy pol, string culture, CancellationToken ct)
+    private async Task UpsertOnePolicyAsync(
+        SqliteConnection conn,
+        PolicyPlusPolicy pol,
+        string culture,
+        CancellationToken ct
+    )
     {
         var raw = pol.RawPolicy;
         var ns = raw.DefinedIn.AdmxNamespace;
         var policyName = raw.ID;
         var catKey = pol.Category?.UniqueID ?? string.Empty;
-        var hive = raw.Section == AdmxPolicySection.Machine ? "HKLM" : raw.Section == AdmxPolicySection.User ? "HKCU" : string.Empty;
+        var hive =
+            raw.Section == AdmxPolicySection.Machine ? "HKLM"
+            : raw.Section == AdmxPolicySection.User ? "HKCU"
+            : string.Empty;
         var regKey = raw.RegistryKey;
         var regVal = raw.RegistryValue;
         var vtype = InferValueType(raw);
@@ -290,7 +333,8 @@ public sealed class AdmxCache : IAdmxCache
         long policyId;
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = @"INSERT INTO Policies(ns, policy_name, category_key, hive, reg_key, reg_value, value_type, supported_min, supported_max, deprecated, product_hint)
+            cmd.CommandText =
+                @"INSERT INTO Policies(ns, policy_name, category_key, hive, reg_key, reg_value, value_type, supported_min, supported_max, deprecated, product_hint)
 VALUES(@ns,@name,@cat,@hive,@rkey,@rval,@vtype,'','',0,@ph)
 ON CONFLICT(ns,policy_name) DO UPDATE SET category_key=excluded.category_key, hive=excluded.hive, reg_key=excluded.reg_key, reg_value=excluded.reg_value, value_type=excluded.value_type, product_hint=excluded.product_hint;
 SELECT id FROM Policies WHERE ns=@ns AND policy_name=@name;";
@@ -313,7 +357,8 @@ SELECT id FROM Policies WHERE ns=@ns AND policy_name=@name;";
 
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = @"INSERT OR REPLACE INTO PolicyI18n(policy_id, culture, display_name, explain_text, category_path, reading_kana, presentation_json)
+            cmd.CommandText =
+                @"INSERT OR REPLACE INTO PolicyI18n(policy_id, culture, display_name, explain_text, category_path, reading_kana, presentation_json)
 VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             cmd.Parameters.AddWithValue("@pid", policyId);
             cmd.Parameters.AddWithValue("@culture", culture);
@@ -332,13 +377,19 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         var descNorm = TextNormalization.ToNGramTokens(TextNormalization.NormalizeStrict(desc));
         var titleLoose = TextNormalization.ToNGramTokens(TextNormalization.NormalizeLoose(dname));
         var descLoose = TextNormalization.ToNGramTokens(TextNormalization.NormalizeLoose(desc));
-        var regPath = TextNormalization.ToNGramTokens(TextNormalization.NormalizeStrict(GetRegistryPath(hive, regKey, regVal)));
-        var tags = string.Join(' ', new[] { ns, vtype, productHint, policyName }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        var regPath = TextNormalization.ToNGramTokens(
+            TextNormalization.NormalizeStrict(GetRegistryPath(hive, regKey, regVal))
+        );
+        var tags = string.Join(
+            ' ',
+            new[] { ns, vtype, productHint, policyName }.Where(s => !string.IsNullOrWhiteSpace(s))
+        );
 
         long rowid;
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = @"INSERT INTO PolicyIndex(title_norm,desc_norm,title_loose,desc_loose,registry_path,tags) VALUES(@tn,@dn,@tl,@dl,@rp,@tags); SELECT last_insert_rowid();";
+            cmd.CommandText =
+                @"INSERT INTO PolicyIndex(title_norm,desc_norm,title_loose,desc_loose,registry_path,tags) VALUES(@tn,@dn,@tl,@dl,@rp,@tags); SELECT last_insert_rowid();";
             cmd.Parameters.AddWithValue("@tn", titleNorm);
             cmd.Parameters.AddWithValue("@dn", descNorm);
             cmd.Parameters.AddWithValue("@tl", titleLoose);
@@ -351,7 +402,8 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
 
         using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText = "INSERT INTO PolicyIndexMap(rowid,policy_id,culture) VALUES(@rowid,@pid,@culture)";
+            cmd.CommandText =
+                "INSERT INTO PolicyIndexMap(rowid,policy_id,culture) VALUES(@rowid,@pid,@culture)";
             cmd.Parameters.AddWithValue("@rowid", rowid);
             cmd.Parameters.AddWithValue("@pid", policyId);
             cmd.Parameters.AddWithValue("@culture", culture);
@@ -359,20 +411,38 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         }
     }
 
-    public Task<IReadOnlyList<PolicyHit>> SearchAsync(string query, string culture, int limit = 50, CancellationToken ct = default)
+    public Task<IReadOnlyList<PolicyHit>> SearchAsync(
+        string query,
+        string culture,
+        int limit = 50,
+        CancellationToken ct = default
+    )
     {
         var fields = SearchFields.Name | SearchFields.Id | SearchFields.Registry;
         return SearchAsync(query, culture, fields, limit, ct);
     }
 
-    public Task<IReadOnlyList<PolicyHit>> SearchAsync(string query, string culture, bool includeDescription, int limit = 50, CancellationToken ct = default)
+    public Task<IReadOnlyList<PolicyHit>> SearchAsync(
+        string query,
+        string culture,
+        bool includeDescription,
+        int limit = 50,
+        CancellationToken ct = default
+    )
     {
         var fields = SearchFields.Name | SearchFields.Id | SearchFields.Registry;
-        if (includeDescription) fields |= SearchFields.Description;
+        if (includeDescription)
+            fields |= SearchFields.Description;
         return SearchAsync(query, culture, fields, limit, ct);
     }
 
-    public async Task<IReadOnlyList<PolicyHit>> SearchAsync(string query, string culture, SearchFields fields, int limit = 50, CancellationToken ct = default)
+    public async Task<IReadOnlyList<PolicyHit>> SearchAsync(
+        string query,
+        string culture,
+        SearchFields fields,
+        int limit = 50,
+        CancellationToken ct = default
+    )
     {
         if (string.IsNullOrWhiteSpace(query) || fields == SearchFields.None)
             return Array.Empty<PolicyHit>();
@@ -383,35 +453,48 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
 
         var qExact = query;
         var qPrefix = query + "%";
-    var norm = TextNormalization.ToNGramTokens(TextNormalization.NormalizeStrict(query));
-    var loose = TextNormalization.ToNGramTokens(TextNormalization.NormalizeLoose(query));
+        var norm = TextNormalization.ToNGramTokens(TextNormalization.NormalizeStrict(query));
+        var loose = TextNormalization.ToNGramTokens(TextNormalization.NormalizeLoose(query));
 
-    bool useId = (fields & SearchFields.Id) != 0;
-    // Only include registry-path FTS fields when the query looks like a registry path to reduce false positives
-    bool useReg = (fields & SearchFields.Registry) != 0 && LooksLikeRegistryQuery(query);
+        bool useId = (fields & SearchFields.Id) != 0;
+        // Only include registry-path FTS fields when the query looks like a registry path to reduce false positives
+        bool useReg = (fields & SearchFields.Registry) != 0 && LooksLikeRegistryQuery(query);
         bool useName = (fields & SearchFields.Name) != 0;
         bool useDesc = (fields & SearchFields.Description) != 0;
         bool enableFts = useName || useDesc || useReg || useId;
 
         var ftsNormCols = new List<string>();
-    if (useName) ftsNormCols.Add("title_norm");
-    if (useDesc) ftsNormCols.Add("desc_norm");
-    if (useId && LooksLikeIdQuery(query)) ftsNormCols.Add("tags");
-    if (useReg) ftsNormCols.Add("registry_path");
+        if (useName)
+            ftsNormCols.Add("title_norm");
+        if (useDesc)
+            ftsNormCols.Add("desc_norm");
+        if (useId && LooksLikeIdQuery(query))
+            ftsNormCols.Add("tags");
+        if (useReg)
+            ftsNormCols.Add("registry_path");
 
         var ftsLooseCols = new List<string>();
-    if (useName) ftsLooseCols.Add("title_loose");
-    if (useDesc) ftsLooseCols.Add("desc_loose");
-    if (useId && LooksLikeIdQuery(query)) ftsLooseCols.Add("tags");
-    if (useReg) ftsLooseCols.Add("registry_path");
+        if (useName)
+            ftsLooseCols.Add("title_loose");
+        if (useDesc)
+            ftsLooseCols.Add("desc_loose");
+        if (useId && LooksLikeIdQuery(query))
+            ftsLooseCols.Add("tags");
+        if (useReg)
+            ftsLooseCols.Add("registry_path");
 
         // Build FTS5 MATCH expressions. Each selected column is prefixed in the MATCH query, combined via OR.
         static string EscapeSqlSingle(string s) => s.Replace("'", "''");
         static string BuildMatch(string grams, List<string> cols)
         {
-            if (cols.Count == 0 || string.IsNullOrWhiteSpace(grams)) return string.Empty;
-            var tokens = grams.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            if (tokens.Length == 0) return string.Empty;
+            if (cols.Count == 0 || string.IsNullOrWhiteSpace(grams))
+                return string.Empty;
+            var tokens = grams.Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+            );
+            if (tokens.Length == 0)
+                return string.Empty;
             // Quote each token to suppress FTS5 parser treating ':' or other punctuation specially.
             var quoted = tokens.Select(t => "\"" + t.Replace("\"", "\"\"") + "\"");
             var inside = string.Join(' ', quoted);
@@ -430,23 +513,31 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         {
             sb.AppendLine("  UNION ALL");
             sb.AppendLine("  SELECT p.id, @culture AS culture, s.display_name, 1200 AS score");
-            sb.AppendLine("  FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id AND s.culture=@culture");
+            sb.AppendLine(
+                "  FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id AND s.culture=@culture"
+            );
             sb.AppendLine("  WHERE p.policy_name = @q_exact");
             sb.AppendLine("  UNION ALL");
             sb.AppendLine("  SELECT p.id, @culture, s.display_name, 300");
-            sb.AppendLine("  FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id AND s.culture=@culture");
+            sb.AppendLine(
+                "  FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id AND s.culture=@culture"
+            );
             sb.AppendLine("  WHERE p.policy_name LIKE @q_prefix");
         }
         if ((fields & SearchFields.Registry) != 0 && LooksLikeRegistryQuery(query))
         {
             sb.AppendLine("  UNION ALL");
             sb.AppendLine("  SELECT p.id, @culture, s.display_name, 1000");
-            sb.AppendLine("  FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id AND s.culture=@culture");
+            sb.AppendLine(
+                "  FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id AND s.culture=@culture"
+            );
             sb.AppendLine("  WHERE (p.hive||'\\\\'||p.reg_key||'\\\\'||p.reg_value) = @q_exact");
         }
         sb.AppendLine(") ,");
-    sb.AppendLine("F1 AS (");
-        sb.AppendLine("  SELECT m.policy_id AS id, m.culture, s.display_name, (100 - bm25(PolicyIndex)) AS score");
+        sb.AppendLine("F1 AS (");
+        sb.AppendLine(
+            "  SELECT m.policy_id AS id, m.culture, s.display_name, (100 - bm25(PolicyIndex)) AS score"
+        );
         sb.AppendLine("  FROM PolicyIndex");
         sb.AppendLine("  JOIN PolicyIndexMap m ON m.rowid = PolicyIndex.rowid");
         sb.AppendLine("  JOIN PolicyI18n s ON s.policy_id=m.policy_id AND s.culture=@culture");
@@ -463,7 +554,9 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         }
         sb.AppendLine(") ,");
         sb.AppendLine("F2 AS (");
-        sb.AppendLine("  SELECT m.policy_id AS id, m.culture, s.display_name, (60 - bm25(PolicyIndex)) AS score");
+        sb.AppendLine(
+            "  SELECT m.policy_id AS id, m.culture, s.display_name, (60 - bm25(PolicyIndex)) AS score"
+        );
         sb.AppendLine("  FROM PolicyIndex");
         sb.AppendLine("  JOIN PolicyIndexMap m ON m.rowid = PolicyIndex.rowid");
         sb.AppendLine("  JOIN PolicyI18n s ON s.policy_id=m.policy_id AND s.culture=@culture");
@@ -480,12 +573,20 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         }
         sb.AppendLine(")");
         sb.AppendLine("SELECT Z.id, Z.culture,");
-        sb.AppendLine("       (SELECT ns||':'||policy_name FROM Policies P WHERE P.id = Z.id) AS unique_id,");
+        sb.AppendLine(
+            "       (SELECT ns||':'||policy_name FROM Policies P WHERE P.id = Z.id) AS unique_id,"
+        );
         sb.AppendLine("       MAX(Z.score) AS score,");
         sb.AppendLine("       Z.display_name,");
-        sb.AppendLine("       (SELECT hive||'\\\\'||reg_key||'\\\\'||reg_value FROM Policies P2 WHERE P2.id = Z.id) AS registry_path,");
-        sb.AppendLine("       (SELECT product_hint FROM Policies P3 WHERE P3.id = Z.id) AS product_hint,");
-        sb.AppendLine("       (SELECT value_type FROM Policies P4 WHERE P4.id = Z.id) AS value_type");
+        sb.AppendLine(
+            "       (SELECT hive||'\\\\'||reg_key||'\\\\'||reg_value FROM Policies P2 WHERE P2.id = Z.id) AS registry_path,"
+        );
+        sb.AppendLine(
+            "       (SELECT product_hint FROM Policies P3 WHERE P3.id = Z.id) AS product_hint,"
+        );
+        sb.AppendLine(
+            "       (SELECT value_type FROM Policies P4 WHERE P4.id = Z.id) AS value_type"
+        );
         sb.AppendLine("FROM (");
         sb.AppendLine("    SELECT id, culture, display_name, score FROM K1");
         sb.AppendLine("    UNION ALL SELECT id, culture, display_name, score FROM F1");
@@ -501,7 +602,7 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         cmd.Parameters.AddWithValue("@culture", culture);
         cmd.Parameters.AddWithValue("@q_exact", qExact);
         cmd.Parameters.AddWithValue("@q_prefix", qPrefix);
-        
+
         cmd.Parameters.AddWithValue("@limit", limit);
         cmd.Parameters.AddWithValue("@enableFts", enableFts ? 1 : 0);
 
@@ -521,12 +622,18 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         return list;
     }
 
-    public async Task<PolicyDetail?> GetByPolicyNameAsync(string ns, string policyName, string culture, CancellationToken ct = default)
+    public async Task<PolicyDetail?> GetByPolicyNameAsync(
+        string ns,
+        string policyName,
+        string culture,
+        CancellationToken ct = default
+    )
     {
         culture = NormalizeCultureName(culture);
         using var conn = _store.OpenConnection();
         await conn.OpenAsync(ct).ConfigureAwait(false);
-        const string sql = @"SELECT p.id, @culture AS culture, p.ns, p.policy_name, s.display_name, s.explain_text,
+        const string sql =
+            @"SELECT p.id, @culture AS culture, p.ns, p.policy_name, s.display_name, s.explain_text,
  s.category_path, p.hive, p.reg_key, p.reg_value, p.value_type, s.presentation_json,
  p.supported_min, p.supported_max, p.deprecated, p.product_hint
 FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id AND s.culture=@culture
@@ -542,12 +649,17 @@ WHERE p.ns=@ns AND p.policy_name=@name LIMIT 1";
         return MapDetail(rdr);
     }
 
-    public async Task<PolicyDetail?> GetByRegistryPathAsync(string registryPath, string culture, CancellationToken ct = default)
+    public async Task<PolicyDetail?> GetByRegistryPathAsync(
+        string registryPath,
+        string culture,
+        CancellationToken ct = default
+    )
     {
         culture = NormalizeCultureName(culture);
         using var conn = _store.OpenConnection();
         await conn.OpenAsync(ct).ConfigureAwait(false);
-        const string sql = @"SELECT p.id, @culture AS culture, p.ns, p.policy_name, s.display_name, s.explain_text,
+        const string sql =
+            @"SELECT p.id, @culture AS culture, p.ns, p.policy_name, s.display_name, s.explain_text,
  s.category_path, p.hive, p.reg_key, p.reg_value, p.value_type, s.presentation_json,
  p.supported_min, p.supported_max, p.deprecated, p.product_hint
 FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id AND s.culture=@culture
@@ -564,16 +676,28 @@ WHERE (p.hive||'\\'||p.reg_key||'\\'||p.reg_value) = @rp LIMIT 1";
 
     private static bool LooksLikeRegistryQuery(string query)
     {
-        if (string.IsNullOrWhiteSpace(query)) return false;
+        if (string.IsNullOrWhiteSpace(query))
+            return false;
         var q = query.Trim();
         // Quick signals for registry-like input
-        if (q.Contains('\\')) return true; // e.g., HKCU\Software\...
+        if (q.Contains('\\'))
+            return true; // e.g., HKCU\Software\...
         var ql = q.Replace("_", string.Empty).Replace(" ", string.Empty).ToUpperInvariant();
-        if (ql.StartsWith("HKCU") || ql.StartsWith("HKLM") || ql.StartsWith("HKEYCURRENTUSER") || ql.StartsWith("HKEYLOCALMACHINE"))
+        if (
+            ql.StartsWith("HKCU")
+            || ql.StartsWith("HKLM")
+            || ql.StartsWith("HKEYCURRENTUSER")
+            || ql.StartsWith("HKEYLOCALMACHINE")
+        )
             return true;
         // Common hive + branch keywords
         var qll = q.ToLowerInvariant();
-        if (qll.Contains("policies\\") || qll.Contains("software\\") || qll.Contains("system\\") || qll.Contains("microsoft\\"))
+        if (
+            qll.Contains("policies\\")
+            || qll.Contains("software\\")
+            || qll.Contains("system\\")
+            || qll.Contains("microsoft\\")
+        )
             return true;
         return false;
     }
@@ -596,7 +720,24 @@ WHERE (p.hive||'\\'||p.reg_key||'\\'||p.reg_value) = @rp LIMIT 1";
         var smax = rdr.IsDBNull(13) ? null : rdr.GetString(13);
         var deprecated = !rdr.IsDBNull(14) && rdr.GetInt32(14) != 0;
         var productHint = rdr.IsDBNull(15) ? string.Empty : rdr.GetString(15);
-        return new PolicyDetail(policyId, culture, ns, policyName, displayName, explain, catPath, hive, regKey, regVal, vtype, presJson, smin, smax, deprecated, productHint);
+        return new PolicyDetail(
+            policyId,
+            culture,
+            ns,
+            policyName,
+            displayName,
+            explain,
+            catPath,
+            hive,
+            regKey,
+            regVal,
+            vtype,
+            presJson,
+            smin,
+            smax,
+            deprecated,
+            productHint
+        );
     }
 
     private static string NormalizeCultureName(string culture)
@@ -617,9 +758,57 @@ WHERE (p.hive||'\\'||p.reg_key||'\\'||p.reg_value) = @rp LIMIT 1";
 
     private static bool LooksLikeIdQuery(string query)
     {
-        if (string.IsNullOrWhiteSpace(query)) return false;
+        if (string.IsNullOrWhiteSpace(query))
+            return false;
         // Unique IDs are typically in the form namespace:PolicyName
         // Keep heuristic lightweight to avoid slowing hot path.
         return query.Contains(':');
+    }
+
+    public async Task<IReadOnlyCollection<string>> GetPolicyUniqueIdsByCategoriesAsync(
+        IEnumerable<string> categoryKeys,
+        CancellationToken ct = default
+    )
+    {
+        if (categoryKeys is null)
+            return Array.Empty<string>();
+        var list = categoryKeys
+            .Where(k => !string.IsNullOrWhiteSpace(k))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (list.Count == 0)
+            return Array.Empty<string>();
+
+        using var conn = _store.OpenConnection();
+        await conn.OpenAsync(ct).ConfigureAwait(false);
+        var sb = new StringBuilder();
+        sb.Append("SELECT ns||':'||policy_name AS uid FROM Policies WHERE ");
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (i > 0)
+                sb.Append(" OR ");
+            sb.Append("LOWER(category_key) = LOWER(@k");
+            sb.Append(i.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            sb.Append(")");
+        }
+        sb.Append(";");
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = sb.ToString();
+        for (int i = 0; i < list.Count; i++)
+        {
+            cmd.Parameters.AddWithValue(
+                "@k" + i.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                list[i]
+            );
+        }
+        var result = new List<string>(256);
+        using var rdr = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await rdr.ReadAsync(ct).ConfigureAwait(false))
+        {
+            if (!rdr.IsDBNull(0))
+                result.Add(rdr.GetString(0));
+        }
+        return result;
     }
 }

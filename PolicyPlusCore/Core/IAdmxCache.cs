@@ -9,15 +9,16 @@ namespace PolicyPlusCore.Core;
 public enum SearchFields
 {
     None = 0,
-    Name = 1 << 0,          // Display name (title_* columns)
-    Description = 1 << 1,   // Explain text (desc_* columns)
-    Id = 1 << 2,            // Policy raw ID / namespace via tags
-    Registry = 1 << 3,      // Registry path (hive/key/value) via registry_path tokens
+    Name = 1 << 0, // Display name (title_* columns)
+    Description = 1 << 1, // Explain text (desc_* columns)
+    Id = 1 << 2, // Policy raw ID / namespace via tags
+    Registry = 1 << 3, // Registry path (hive/key/value) via registry_path tokens
 }
 
 public interface IAdmxCache
 {
     Task InitializeAsync(CancellationToken ct = default);
+
     // Sets the base directory where ADMX/ADML files are loaded from. If null or empty, implementation uses defaults (e.g., %WINDIR%\PolicyDefinitions).
     void SetSourceRoot(string? baseDirectory);
     Task ScanAndUpdateAsync(CancellationToken ct = default);
@@ -58,6 +59,13 @@ public interface IAdmxCache
     Task<PolicyDetail?> GetByRegistryPathAsync(
         string registryPath,
         string culture,
+        CancellationToken ct = default
+    );
+
+    // Returns policy UniqueIds (ns:policy_name) whose category_key is any of the provided categoryKeys.
+    // Caller should pass category UniqueIDs; include subcategories by passing all descendant category keys.
+    Task<IReadOnlyCollection<string>> GetPolicyUniqueIdsByCategoriesAsync(
+        IEnumerable<string> categoryKeys,
         CancellationToken ct = default
     );
 }

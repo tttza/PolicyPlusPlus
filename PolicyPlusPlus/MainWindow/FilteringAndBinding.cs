@@ -989,7 +989,10 @@ namespace PolicyPlusPlus
                             ? st.Language!
                             : System.Globalization.CultureInfo.CurrentUICulture.Name;
                         var tryLangs = new List<string>(3);
-                        if (st.SecondLanguageEnabled == true && !string.IsNullOrWhiteSpace(st.SecondLanguage))
+                        if (
+                            st.SecondLanguageEnabled == true
+                            && !string.IsNullOrWhiteSpace(st.SecondLanguage)
+                        )
                             tryLangs.Add(st.SecondLanguage!);
                         tryLangs.Add(primary);
                         if (st.PrimaryLanguageFallbackEnabled == true)
@@ -999,10 +1002,14 @@ namespace PolicyPlusPlus
                         foreach (var lang in tryLangs.Distinct(StringComparer.OrdinalIgnoreCase))
                         {
                             var fields = SearchFields.None;
-                            if (_searchInName) fields |= SearchFields.Name;
-                            if (_searchInId) fields |= SearchFields.Id;
-                            if (_searchInRegistryKey || _searchInRegistryValue) fields |= SearchFields.Registry;
-                            if (_searchInDescription) fields |= SearchFields.Description;
+                            if (_searchInName)
+                                fields |= SearchFields.Name;
+                            if (_searchInId)
+                                fields |= SearchFields.Id;
+                            if (_searchInRegistryKey || _searchInRegistryValue)
+                                fields |= SearchFields.Registry;
+                            if (_searchInDescription)
+                                fields |= SearchFields.Description;
 
                             if (fields == SearchFields.None)
                             {
@@ -1010,8 +1017,8 @@ namespace PolicyPlusPlus
                                 continue;
                             }
 
-                            hits = await AdmxCacheHostService.Instance.Cache
-                                .SearchAsync(q, lang, fields, 300, token)
+                            hits = await AdmxCacheHostService
+                                .Instance.Cache.SearchAsync(q, lang, fields, 300, token)
                                 .ConfigureAwait(false);
                             if (hits != null && hits.Count > 0)
                                 break;
@@ -1027,9 +1034,12 @@ namespace PolicyPlusPlus
                             foreach (var h in hits)
                             {
                                 var uid = h.UniqueId;
-                                if (string.IsNullOrEmpty(uid)) continue;
-                                if (!allowedSet.Contains(uid)) continue;
-                                if (!byId.TryGetValue(uid, out var pol)) continue;
+                                if (string.IsNullOrEmpty(uid))
+                                    continue;
+                                if (!allowedSet.Contains(uid))
+                                    continue;
+                                if (!byId.TryGetValue(uid, out var pol))
+                                    continue;
                                 if (seenUnique.Add(uid))
                                     cacheMatches.Add(pol);
                             }
@@ -1166,7 +1176,48 @@ namespace PolicyPlusPlus
                         comp,
                         user
                     );
-                    items = ApplyBookmarkFilterIfNeeded(BaseSequenceForFilters(snap)).ToList();
+                    IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(snap);
+                    // Optional cache-backed prefilter by category for performance
+                    try
+                    {
+                        var st = SettingsService.Instance.LoadSettings();
+                        if (snap.Category != null && (st.AdmxCacheEnabled ?? true) == true)
+                        {
+                            // Build category key set respecting IncludeSubcategories
+                            var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            void AddKeysRecursive(PolicyPlusCategory c)
+                            {
+                                if (!string.IsNullOrEmpty(c.UniqueID))
+                                    keys.Add(c.UniqueID);
+                                if (snap.IncludeSubcategories)
+                                {
+                                    foreach (var ch in c.Children)
+                                        AddKeysRecursive(ch);
+                                }
+                            }
+                            AddKeysRecursive(snap.Category);
+
+                            if (keys.Count > 0)
+                            {
+                                var uids = await Services
+                                    .AdmxCacheHostService.Instance.Cache.GetPolicyUniqueIdsByCategoriesAsync(
+                                        keys,
+                                        token
+                                    )
+                                    .ConfigureAwait(false);
+                                if (uids.Count > 0)
+                                {
+                                    var allowed = new HashSet<string>(
+                                        uids,
+                                        StringComparer.OrdinalIgnoreCase
+                                    );
+                                    seq = seq.Where(p => allowed.Contains(p.UniqueID));
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                    items = ApplyBookmarkFilterIfNeeded(seq).ToList();
                 }
                 catch
                 {
