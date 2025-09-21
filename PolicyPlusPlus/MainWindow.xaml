@@ -161,6 +161,7 @@
             </controls:MenuBarItem>
             <controls:MenuBarItem Title="Options">
               <MenuFlyoutItem Text="Language..." Click="BtnLanguage_Click" />
+              <MenuFlyoutSeparator />
               <ToggleMenuFlyoutItem
                 x:Name="ToggleTempPolMenu"
                 Text="Hide empty categories"
@@ -177,6 +178,8 @@
                 Text="Limit unfiltered to 1000"
                 IsChecked="{Binding LimitUnfilteredTo1000, Source={StaticResource FilterVM}, Mode=TwoWay}"
               />
+              <MenuFlyoutSeparator />
+              <MenuFlyoutItem Text="Clear Cache and Rebuild" Click="BtnClearCacheRebuild_Click" />
             </controls:MenuBarItem>
             <controls:MenuBarItem Title="Columns">
               <ToggleMenuFlyoutItem

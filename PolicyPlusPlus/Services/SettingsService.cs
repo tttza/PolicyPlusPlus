@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -29,6 +30,9 @@ namespace PolicyPlusPlus.Services
 
         // Raised when the ADMX/ADML source root path changes.
         public event Action? SourcesRootChanged;
+
+    // Raised after the entire cache directory is cleared.
+    public event Action? CacheCleared;
 
         private static readonly JsonSerializerOptions PrettyIgnoreNull = new()
         {
@@ -340,6 +344,159 @@ namespace PolicyPlusPlus.Services
             {
                 _sem.Release();
             }
+        }
+
+        // Best-effort purge for files in the Cache directory older than the provided age.
+        // Uses both LastWriteTimeUtc and LastAccessTimeUtc where available to avoid deleting
+        // recently touched files. Failures are ignored.
+        public void PurgeOldCacheEntries(TimeSpan olderThan)
+        {
+            try
+            {
+                void PurgeOne(string dir)
+                {
+                    if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir))
+                        return;
+                    var threshold = DateTime.UtcNow - olderThan;
+                    foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+                    {
+                        try
+                        {
+                            var fi = new FileInfo(file);
+                            var w = fi.LastWriteTimeUtc;
+                            DateTime a;
+                            try { a = fi.LastAccessTimeUtc; } catch { a = w; }
+                            if (w < threshold && a < threshold)
+                            {
+                                File.SetAttributes(file, System.IO.FileAttributes.Normal);
+                                File.Delete(file);
+                            }
+                        }
+                        catch { }
+                    }
+                    // Attempt to remove any now-empty directories under Cache
+                    try
+                    {
+                        foreach (var subdir in Directory.EnumerateDirectories(dir, "*", SearchOption.AllDirectories).OrderByDescending(p => p.Length))
+                        {
+                            try
+                            {
+                                if (Directory.Exists(subdir) && !Directory.EnumerateFileSystemEntries(subdir).Any())
+                                    Directory.Delete(subdir);
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+                }
+
+                var uiDir = CacheDirectory;
+                PurgeOne(uiDir);
+                // Also purge Core's cache location used by AdmxCache (LocalAppData\PolicyPlusPlus\Cache)
+                try
+                {
+                    var coreDir = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "PolicyPlusPlus",
+                        "Cache"
+                    );
+                    if (!string.Equals(coreDir, uiDir, StringComparison.OrdinalIgnoreCase))
+                        PurgeOne(coreDir);
+                }
+                catch { }
+            }
+            catch { }
+        }
+
+        // Deletes the entire Cache directory and recreates it, then notifies subscribers.
+        public async Task<bool> ClearCacheDirectoryAsync()
+        {
+            string uiDir = CacheDirectory;
+            string? coreDir = null;
+            try
+            {
+                coreDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "PolicyPlusPlus",
+                    "Cache"
+                );
+            }
+            catch { coreDir = null; }
+            try
+            {
+                // Proactively clear SQLite connection pools to release file handles.
+                try { PolicyPlusCore.Core.AdmxCacheRuntime.ReleaseSqliteHandles(); } catch { }
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        if (Directory.Exists(uiDir))
+                        {
+                            // Make files deletable
+                            foreach (var f in Directory.EnumerateFiles(uiDir, "*", SearchOption.AllDirectories))
+                            {
+                                try { File.SetAttributes(f, System.IO.FileAttributes.Normal); } catch { }
+                            }
+                            // Try delete with a few small retries to avoid transient locks
+                            for (int attempt = 0; attempt < 3; attempt++)
+                            {
+                                try
+                                {
+                                    Directory.Delete(uiDir, recursive: true);
+                                    break;
+                                }
+                                catch
+                                {
+                                    if (attempt == 2) throw;
+                                    try { Thread.Sleep(120); } catch { }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                    try { Directory.CreateDirectory(uiDir); } catch { }
+
+                    // Also clear Core cache dir if different
+                    if (!string.IsNullOrWhiteSpace(coreDir))
+                    {
+                        try
+                        {
+                            if (!string.Equals(coreDir, uiDir, StringComparison.OrdinalIgnoreCase))
+                            {
+                                try
+                                {
+                                    if (Directory.Exists(coreDir))
+                                    {
+                                        foreach (var f in Directory.EnumerateFiles(coreDir, "*", SearchOption.AllDirectories))
+                                        {
+                                            try { File.SetAttributes(f, System.IO.FileAttributes.Normal); } catch { }
+                                        }
+                                        for (int attempt = 0; attempt < 3; attempt++)
+                                        {
+                                            try
+                                            {
+                                                Directory.Delete(coreDir, recursive: true);
+                                                break;
+                                            }
+                                            catch
+                                            {
+                                                if (attempt == 2) throw;
+                                                try { Thread.Sleep(120); } catch { }
+                                            }
+                                        }
+                                    }
+                                }
+                                catch { }
+                                try { Directory.CreateDirectory(coreDir); } catch { }
+                            }
+                        }
+                        catch { }
+                    }
+                });
+            }
+            catch { return false; }
+            try { CacheCleared?.Invoke(); } catch { }
+            return true;
         }
 
         // Bookmark lists

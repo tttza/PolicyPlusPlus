@@ -113,6 +113,8 @@ namespace PolicyPlusPlus
             {
                 SettingsService.Instance.Initialize();
                 var appSettings = SettingsService.Instance.LoadSettings();
+                // Opportunistic cache maintenance: purge entries older than 30 days.
+                try { SettingsService.Instance.PurgeOldCacheEntries(TimeSpan.FromDays(30)); } catch { }
                 if (!string.IsNullOrEmpty(appSettings.Theme))
                     SetGlobalTheme(
                         appSettings.Theme switch

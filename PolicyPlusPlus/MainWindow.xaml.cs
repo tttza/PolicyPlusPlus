@@ -181,6 +181,33 @@ namespace PolicyPlusPlus
             AppWindow.Closing += AppWindow_Closing;
         }
 
+        private async void BtnClearCacheRebuild_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                ShowInfo("Clearing cache...", InfoBarSeverity.Informational);
+            }
+            catch { }
+            bool ok = false;
+            try
+            {
+                // Stop ADMX cache host to release SQLite handles so files can be deleted.
+                try { await Services.AdmxCacheHostService.Instance.StopAsync(); } catch { }
+                ok = await SettingsService.Instance.ClearCacheDirectoryAsync();
+                // Restart in background; rebuild will be kicked off by CacheCleared event.
+                _ = Services.AdmxCacheHostService.Instance.StartAsync();
+            }
+            catch { ok = false; }
+            try
+            {
+                if (ok)
+                    ShowInfo("Cache cleared. Rebuilding in background...", InfoBarSeverity.Success);
+                else
+                    ShowInfo("Failed to clear cache.", InfoBarSeverity.Error);
+            }
+            catch { }
+        }
+
         private void InitUpdateMenuVisibility()
         {
             try

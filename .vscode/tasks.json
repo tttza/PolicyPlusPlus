@@ -10,8 +10,6 @@
 				"PolicyPlusMod.sln",
 				"-c",
 				"Debug-Unpackaged",
-				"-r",
-				"win-x64"
 			],
 			"group": "build"
 		},
@@ -22,6 +20,60 @@
 			"args": [
 				"build",
 				"PolicyPlusMod.sln",
+				"-c",
+				"Release-Unpackaged",
+			],
+			"group": "build"
+		},
+		{
+			"label": "dotnet build PolicyPlusPlus (Debug, win-x64)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"PolicyPlusPlus/PolicyPlusPlus.csproj",
+				"-c",
+				"Debug-Unpackaged",
+				"-r",
+				"win-x64"
+			],
+			"group": "build"
+		},
+		{
+			"label": "dotnet build PolicyPlusPlus (Release, win-x64)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"PolicyPlusPlus/PolicyPlusPlus.csproj",
+				"-c",
+				"Release-Unpackaged",
+				"-r",
+				"win-x64"
+			],
+			"group": "build"
+		},
+		{
+			"label": "dotnet build ElevationHost (Debug, win-x64)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"PolicyPPElevationHost/PolicyPPElevationHost.csproj",
+				"-c",
+				"Debug-Unpackaged",
+				"-r",
+				"win-x64"
+			],
+			"group": "build"
+		},
+		{
+			"label": "dotnet build ElevationHost (Release, win-x64)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"PolicyPPElevationHost/PolicyPPElevationHost.csproj",
 				"-c",
 				"Release-Unpackaged",
 				"-r",
