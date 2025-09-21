@@ -1518,6 +1518,18 @@ namespace PolicyPlusPlus
             catch { }
         }
 
+        private async void ShortcutsMenu_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dlg = new PolicyPlusPlus.Dialogs.ShortcutsDialog();
+                if (Content is FrameworkElement fe)
+                    dlg.XamlRoot = fe.XamlRoot;
+                await dlg.ShowAsync();
+            }
+            catch { }
+        }
+
         private async void BtnLoadAdmxFolder_Click(object sender, RoutedEventArgs e)
         {
             try

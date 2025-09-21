@@ -299,6 +299,7 @@
               />
             </controls:MenuBarItem>
             <controls:MenuBarItem Title="Help">
+              <MenuFlyoutItem Text="Keyboard Shortcuts..." Click="ShortcutsMenu_Click" />
               <MenuFlyoutItem Text="About..." Click="AboutMenu_Click" />
               <MenuFlyoutItem Text="View Logs..." Click="BtnViewLogs_Click" />
               <MenuFlyoutSeparator />

@@ -1,0 +1,56 @@
+<ContentDialog
+  x:Class="PolicyPlusPlus.Dialogs.ShortcutsDialog"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  Title="Keyboard Shortcuts"
+  PrimaryButtonText="OK"
+  DefaultButton="Primary"
+  MinWidth="520"
+>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    <TextBlock Text="Active keyboard shortcuts" FontWeight="SemiBold" Margin="0,0,0,8" />
+    <ScrollViewer Grid.Row="1">
+      <StackPanel Spacing="6">
+        <!-- MainWindow scope -->
+        <TextBlock Text="MainWindow" FontWeight="SemiBold" Margin="0,4,0,0" />
+        <StackPanel>
+          <TextBlock Text="Ctrl+S — Save" />
+          <TextBlock Text="Alt+Left — Back (history)" />
+          <TextBlock Text="Alt+Right — Forward (history)" />
+          <TextBlock Text="Ctrl+F — Focus search box" />
+          <TextBlock Text="Ctrl+P — Open Pending Changes window" />
+          <TextBlock Text="Ctrl+L — Load ADMX folder" />
+          <TextBlock Text="Ctrl+G — Load Local GPO (Computer)" />
+          <TextBlock Text="Ctrl+E — Export .reg" />
+          <TextBlock Text="Ctrl+I — Import .reg" />
+          <TextBlock Text="Ctrl+D — Toggle details pane" />
+          <TextBlock Text="F5 — Refresh list / rebind" />
+          <TextBlock Text="Ctrl+B — Toggle bookmark for selected policy" />
+          <TextBlock Text="Enter — Edit selected policy (navigate if category row)" />
+        </StackPanel>
+        <!-- QuickEditWindow scope -->
+        <TextBlock Text="QuickEditWindow" FontWeight="SemiBold" Margin="0,12,0,0" />
+        <StackPanel>
+          <TextBlock Text="Ctrl+S — Save changes" />
+        </StackPanel>
+        <!-- Pending/History window (PendingChangesWindow) -->
+        <TextBlock Text="Pending/History window" FontWeight="SemiBold" Margin="0,12,0,0" />
+        <StackPanel>
+          <TextBlock Text="Ctrl+S — Save all" />
+          <TextBlock Text="Ctrl+Enter — Save selected" />
+          <TextBlock Text="Delete — Discard selected" />
+          <TextBlock Text="Ctrl+D — Discard all" />
+          <TextBlock Text="Ctrl+F — Focus search" />
+          <TextBlock Text="Ctrl+1 — Switch to Pending tab" />
+          <TextBlock Text="Ctrl+2 — Switch to History tab" />
+          <TextBlock Text="Ctrl+W — Close" />
+          <TextBlock Text="Esc — Close" />
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</ContentDialog>
