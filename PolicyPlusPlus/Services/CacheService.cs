@@ -322,51 +322,8 @@ namespace PolicyPlusPlus.Services
             out NGramTextIndex.NGramSnapshot? snapshot
         )
         {
+            // N-gram disk cache disabled: always bypass on-disk snapshots.
             snapshot = null;
-            try
-            {
-                var baseName = GetBaseName(admxPath, language, fingerprint, n, kind);
-                var binGz = GetBinGzPath(baseName);
-                if (TryLoadBinaryGz(binGz, out snapshot) && snapshot != null)
-                    return true;
-
-                var bin = GetBinPath(baseName);
-                if (TryLoadBinary(bin, out snapshot) && snapshot != null)
-                    return true;
-
-                var gz = GetJsonGzPath(baseName);
-                if (TryLoadJsonGz(gz, out snapshot) && snapshot != null)
-                    return true;
-
-                var json = GetJsonPath(baseName);
-                if (File.Exists(json))
-                {
-                    var txt = File.ReadAllText(json);
-                    snapshot =
-                        System.Text.Json.JsonSerializer.Deserialize<NGramTextIndex.NGramSnapshot>(
-                            txt
-                        );
-                    if (snapshot != null)
-                        return true;
-                }
-
-                // Legacy JSON
-                var legacy = GetLegacyJsonPath(admxPath, language, n);
-                if (File.Exists(legacy))
-                {
-                    var txt = File.ReadAllText(legacy);
-                    snapshot =
-                        System.Text.Json.JsonSerializer.Deserialize<NGramTextIndex.NGramSnapshot>(
-                            txt
-                        );
-                    if (snapshot != null)
-                        return true;
-                }
-            }
-            catch
-            {
-                snapshot = null;
-            }
             return false;
         }
 
@@ -377,8 +334,9 @@ namespace PolicyPlusPlus.Services
             out NGramTextIndex.NGramSnapshot? snapshot
         )
         {
-            var fp = ComputeAdmxFingerprint(admxPath, language);
-            return TryLoadNGramSnapshot(admxPath, language, fp, n, "desc", out snapshot);
+            // N-gram disk cache disabled.
+            snapshot = null;
+            return false;
         }
 
         public static void SaveNGramSnapshot(
@@ -389,16 +347,7 @@ namespace PolicyPlusPlus.Services
             NGramTextIndex.NGramSnapshot snapshot
         )
         {
-            try
-            {
-                var baseName = GetBaseName(admxPath, language, fingerprint, snapshot?.N ?? 2, kind);
-                var binGz = GetBinGzPath(baseName);
-                SaveBinaryGz(binGz, snapshot);
-                // Optionally also write plain binary or gz JSON for debugging
-                // var bin = GetBinPath(baseName); SaveBinary(bin, snapshot);
-                // var gz = GetJsonGzPath(baseName); SaveJsonGz(gz, snapshot);
-            }
-            catch { }
+            // N-gram disk cache disabled: do not persist snapshots.
         }
 
         public static void SaveNGramSnapshot(
@@ -408,7 +357,7 @@ namespace PolicyPlusPlus.Services
             NGramTextIndex.NGramSnapshot snapshot
         )
         {
-            SaveNGramSnapshot(admxPath, language, fingerprint, "desc", snapshot);
+            // N-gram disk cache disabled.
         }
 
         public static void SaveNGramSnapshot(
@@ -417,8 +366,7 @@ namespace PolicyPlusPlus.Services
             NGramTextIndex.NGramSnapshot snapshot
         )
         {
-            var fp = ComputeAdmxFingerprint(admxPath, language);
-            SaveNGramSnapshot(admxPath, language, fp, "desc", snapshot);
+            // N-gram disk cache disabled.
         }
     }
 }
