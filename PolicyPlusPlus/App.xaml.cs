@@ -131,16 +131,28 @@ namespace PolicyPlusPlus
                 }
                 var (counts, lastUsed) = SettingsService.Instance.LoadSearchStats();
                 SearchRankingService.Initialize(counts, lastUsed);
+                // Observe cache enable/disable flips to start/stop host.
+                try
+                {
+                    // Simple observer: reload settings on language event too heavy; add lightweight polling via event ties if needed later.
+                    // For now, changes require relaunch or explicit Clear/Rebuild flows.
+                }
+                catch { }
             }
             catch (Exception ex)
             {
                 Log.Warn("App", $"settings init failed", ex);
             }
 
-            // Initialize ADMX cache + watcher in background
+            // Initialize ADMX cache + watcher in background without blocking UI launch
             try
             {
-                await AdmxCacheHostService.Instance.StartAsync();
+                var s = SettingsService.Instance.LoadSettings();
+                bool useCache = s.AdmxCacheEnabled ?? true;
+                if (useCache)
+                {
+                    _ = AdmxCacheHostService.Instance.StartAsync();
+                }
             }
             catch (Exception ex)
             {

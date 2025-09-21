@@ -970,7 +970,7 @@ namespace PolicyPlusPlus
                 List<string> suggestions;
                 try
                 {
-                    // Try cache-backed search first
+                    // Try cache-backed search first (if enabled)
                     var baseSeq = BaseSequenceForFilters(snap);
                     baseSeq = ApplyBookmarkFilterIfNeeded(baseSeq);
                     var allowedSet = new HashSet<string>(
@@ -983,6 +983,8 @@ namespace PolicyPlusPlus
                     try
                     {
                         var st = SettingsService.Instance.LoadSettings();
+                        if ((st.AdmxCacheEnabled ?? true) == false)
+                            throw new InvalidOperationException("ADMX cache disabled");
                         string primary = !string.IsNullOrWhiteSpace(st.Language)
                             ? st.Language!
                             : System.Globalization.CultureInfo.CurrentUICulture.Name;

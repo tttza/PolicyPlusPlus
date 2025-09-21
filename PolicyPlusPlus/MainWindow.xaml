@@ -163,6 +163,13 @@
               <MenuFlyoutItem Text="Language..." Click="BtnLanguage_Click" />
               <MenuFlyoutSeparator />
               <ToggleMenuFlyoutItem
+                x:Name="ToggleAdmxCacheMenu"
+                Text="Use ADMX cache (faster search)"
+                IsChecked="True"
+                Click="ToggleAdmxCacheMenu_Click"
+              />
+              <MenuFlyoutSeparator />
+              <ToggleMenuFlyoutItem
                 x:Name="ToggleTempPolMenu"
                 Text="Hide empty categories"
                 IsChecked="{Binding HideEmptyCategories, Source={StaticResource FilterVM}, Mode=TwoWay}"

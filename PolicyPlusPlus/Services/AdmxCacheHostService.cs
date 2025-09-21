@@ -28,6 +28,16 @@ namespace PolicyPlusPlus.Services
 
         public async Task StartAsync()
         {
+            // Respect setting: allow disabling ADMX cache. Default is enabled.
+            try
+            {
+                var st0 = SettingsService.Instance.LoadSettings();
+                if ((st0.AdmxCacheEnabled ?? true) == false)
+                {
+                    return; // cache disabled by user settings
+                }
+            }
+            catch { }
             lock (_gate)
             {
                 if (_started)
@@ -58,6 +68,7 @@ namespace PolicyPlusPlus.Services
                 try { EventHub.PublishAdmxCacheRebuildStarted("initial", null); } catch { }
                 await _cache.ScanAndUpdateAsync(_culturesForScan).ConfigureAwait(false);
                 try { EventHub.PublishAdmxCacheRebuildCompleted("initial"); } catch { }
+                try { EventHub.PublishPolicySourcesRefreshed(null); } catch { }
 
                 // React to runtime language preference changes to refresh cache as needed.
                 try

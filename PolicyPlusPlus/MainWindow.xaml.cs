@@ -233,8 +233,14 @@ namespace PolicyPlusPlus
                 // Stop ADMX cache host to release SQLite handles so files can be deleted.
                 try { await Services.AdmxCacheHostService.Instance.StopAsync(); } catch { }
                 ok = await SettingsService.Instance.ClearCacheDirectoryAsync();
-                // Restart in background; rebuild will be kicked off by CacheCleared event.
-                _ = Services.AdmxCacheHostService.Instance.StartAsync();
+                // Restart in background only if cache is enabled; rebuild will be kicked off by CacheCleared event.
+                try
+                {
+                    var s = Services.SettingsService.Instance.LoadSettings();
+                    if ((s.AdmxCacheEnabled ?? true) == true)
+                        _ = Services.AdmxCacheHostService.Instance.StartAsync();
+                }
+                catch { }
             }
             catch { ok = false; }
             try
@@ -253,12 +259,47 @@ namespace PolicyPlusPlus
             {
                 if (Content is not FrameworkElement fe)
                     return;
+                // Initialize ADMX cache toggle from settings
+                try
+                {
+                    var toggle = fe.FindName("ToggleAdmxCacheMenu") as ToggleMenuFlyoutItem;
+                    if (toggle != null)
+                    {
+                        var s = SettingsService.Instance.LoadSettings();
+                        toggle.IsChecked = s.AdmxCacheEnabled ?? true;
+                    }
+                }
+                catch { }
                 var checkItem = fe.FindName("MenuCheckForUpdates") as MenuFlyoutItem;
                 var storeItem = fe.FindName("MenuOpenStorePage") as MenuFlyoutItem;
                 if (UpdateHelper.IsVelopackAvailable && checkItem != null)
                     checkItem.Visibility = Visibility.Visible;
                 if (UpdateHelper.IsStoreBuild && storeItem != null)
                     storeItem.Visibility = Visibility.Visible;
+            }
+            catch { }
+        }
+
+        private async void ToggleAdmxCacheMenu_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is not ToggleMenuFlyoutItem t)
+                    return;
+                bool enabled = t.IsChecked;
+                SettingsService.Instance.UpdateAdmxCacheEnabled(enabled);
+                if (enabled)
+                {
+                    // Start cache host (non-blocking)
+                    _ = Services.AdmxCacheHostService.Instance.StartAsync();
+                    ShowInfo("ADMX cache enabled. Building in background...", InfoBarSeverity.Informational);
+                }
+                else
+                {
+                    // Stop cache host and clear pooled handles
+                    try { await Services.AdmxCacheHostService.Instance.StopAsync(); } catch { }
+                    ShowInfo("ADMX cache disabled. Using legacy in-memory search.", InfoBarSeverity.Informational);
+                }
             }
             catch { }
         }

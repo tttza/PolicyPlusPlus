@@ -785,6 +785,9 @@ namespace PolicyPlusPlus.Services
 
         public void UpdatePrimaryLanguageFallback(bool enabled) =>
             Update(s => s.PrimaryLanguageFallbackEnabled = enabled);
+
+        public void UpdateAdmxCacheEnabled(bool enabled) =>
+            Update(s => s.AdmxCacheEnabled = enabled);
     }
 
     public partial class AppSettings
@@ -794,6 +797,8 @@ namespace PolicyPlusPlus.Services
         public string? UIScale { get; set; }
         public string? Language { get; set; }
         public string? AdmxSourcePath { get; set; }
+        // When null, treated as enabled by default.
+        public bool? AdmxCacheEnabled { get; set; }
         public bool? HideEmptyCategories { get; set; }
         public bool? ShowDetails { get; set; }
         public ColumnsOptions? Columns { get; set; }
