@@ -1,35 +1,109 @@
-name: Publish
+name: build & release
 
 on:
-  # Tag push trigger disabled (legacy build). Manual dispatch only.
+  push:
+    branches:
+      - 'upgrade-to-WinUI3' # for test purpose
   workflow_dispatch:
+    inputs:
+      prerelease:
+        description: 'Mark GitHub Release as pre-release (for manual runs)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
 
 jobs:
-  BuildLatest:
+  pack-and-release:
     runs-on: windows-latest
+
+    env:
+      PACK_ID: dev.tttza.PolicyPlusPlus
+      PACK_TITLE: Policy++
+      PACK_AUTHORS: tttza.dev
+      ENTRY_EXE: PolicyPlusPlus.exe
+      PROJECT: PolicyPlusPlus/PolicyPlusPlus.csproj
+      CHANNEL: win
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          fetch-depth: 0
+          global-json-file: global.json
 
-      - name: Set up MSBuild
-        uses: microsoft/setup-msbuild@v1.0.2
-        
-      - name: Compile
-        working-directory: ./PolicyPlus
-        run: msbuild.exe -t:build -restore -p:RestorePackagesConfig=true PolicyPlus.sln /p:platform="Any CPU" /p:configuration="Release" 
-      
-      - name: Rename
-        run: Move-Item -Path "PolicyPlus\bin\Release\Policy Plus.exe" `
-          -Destination "PolicyPlusMod.exe" 
+      - name: Resolve version
+        id: ver
+        shell: bash
+        run: |
+          ref="${GITHUB_REF_NAME}"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${ref}" =~ ^v([0-9]+\.[0-9]+\.[0-9]+([\-\.][0-9A-Za-z\.\-]+)?)$ ]]; then
+            echo "version=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          else
+            echo "version=2.0.0-alpha.${GITHUB_RUN_NUMBER}" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          fi
+          echo "tagref=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
 
-      - name: GH Release
-        uses: softprops/action-gh-release@v0.1.14
-        with:
-          files: |
-            PolicyPlusMod.exe
+      - name: Publish (win-x64)
+        run: dotnet publish $env:PROJECT -c Release-Unpackaged -o publish/win-x64 -r win-x64 --self-contained true
+        shell: pwsh
 
+      - name: Publish (win-arm64)
+        run: dotnet publish $env:PROJECT -c Release-Unpackaged -o publish/win-arm64 -r win-arm64 --self-contained true
+        shell: pwsh
 
-  
+      - name: Install vpk (Velopack CLI)
+        run: dotnet tool install -g vpk
+        shell: pwsh
+
+      - name: Download previous release (if any)
+        run: |
+          vpk download github --repoUrl https://github.com/${{ github.repository }} || echo "no previous"
+        shell: pwsh
+
+      - name: vpk pack (x64)
+        run: >
+          vpk pack
+          --packId $env:PACK_ID
+          --packTitle "$env:PACK_TITLE"
+          --packAuthors "$env:PACK_AUTHORS"
+          --packVersion ${{ steps.ver.outputs.version }}
+          --runtime win-x64
+          --packDir publish/win-x64
+          --mainExe $env:ENTRY_EXE
+          -o Releases
+          -c $env:CHANNEL
+        shell: pwsh
+
+      - name: vpk pack (arm64)
+        run: >
+          vpk pack
+          --packId $env:PACK_ID
+          --packTitle "$env:PACK_TITLE"
+          --packAuthors "$env:PACK_AUTHORS"
+          --packVersion ${{ steps.ver.outputs.version }}
+          --runtime win-arm64
+          --packDir publish/win-arm64
+          --mainExe $env:ENTRY_EXE
+          -o Releases
+          -c $env:CHANNEL
+        shell: pwsh
+
+      - name: Upload to GitHub Releases
+        env:
+          IS_PRERELEASE: ${{ inputs.prerelease != '' && inputs.prerelease || steps.ver.outputs.prerelease }}
+        run: |
+          $pre = "$env:IS_PRERELEASE"
+          $tag = if ("${{ github.ref_type }}" -eq "tag") { "${{ steps.ver.outputs.tagref }}" } else { "ci-${{ github.run_id }}" }
+          $name = "$env:PACK_TITLE ${{ steps.ver.outputs.version }}"
+          if ($pre -eq "true") {
+            vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --prerelease --releaseName "$name" --tag "$tag"
+          } else {
+            vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --releaseName "$name" --tag "$tag"
+          }
+        shell: pwsh
