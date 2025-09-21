@@ -429,6 +429,8 @@
                  UpdateTextOnSelect="False"
                 Loaded="SearchBox_Loaded"
                  GotFocus="SearchBox_GotFocus"
+                LostFocus="SearchBox_LostFocus"
+                GettingFocus="SearchBox_GettingFocus"
                 PointerPressed="SearchBox_PointerPressed"
                 TextChanged="SearchBox_TextChanged"
                 KeyDown="SearchBox_KeyDown"

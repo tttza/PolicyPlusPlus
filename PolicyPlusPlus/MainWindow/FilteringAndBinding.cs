@@ -1152,7 +1152,7 @@ namespace PolicyPlusPlus
             }
         }
 
-        private void RunAsyncFilterAndBind()
+        private void RunAsyncFilterAndBind(bool showBaselineOnEmpty = true)
         {
             _searchDebounceCts?.Cancel();
             _searchDebounceCts = new System.Threading.CancellationTokenSource();
@@ -1268,9 +1268,13 @@ namespace PolicyPlusPlus
                         BindSequenceEnhanced(items, decision);
                         RestorePositionOrSelection();
                         UpdateNavButtons();
-                        if (string.IsNullOrWhiteSpace(SearchBox?.Text))
+                        if (showBaselineOnEmpty && string.IsNullOrWhiteSpace(SearchBox?.Text))
                         {
-                            ShowBaselineSuggestions();
+                            try
+                            {
+                                ShowBaselineSuggestions(onlyIfFocused: true);
+                            }
+                            catch { }
                         }
                     }
                     finally
@@ -1296,7 +1300,7 @@ namespace PolicyPlusPlus
             }
         }
 
-        private void RunImmediateFilterAndBind()
+        private void RunImmediateFilterAndBind(bool showBaselineOnEmpty = true)
         {
             try
             {
@@ -1306,7 +1310,8 @@ namespace PolicyPlusPlus
                 seq = ApplyBookmarkFilterIfNeeded(seq);
                 BindSequenceEnhanced(seq, decision);
                 UpdateSearchClearButtonVisibility();
-                ShowBaselineSuggestions();
+                if (showBaselineOnEmpty)
+                    ShowBaselineSuggestions();
             }
             catch { }
         }

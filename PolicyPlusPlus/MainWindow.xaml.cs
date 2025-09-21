@@ -1638,12 +1638,12 @@ namespace PolicyPlusPlus
             catch { }
         }
 
-        private void RebindConsideringAsync(string q)
+        private void RebindConsideringAsync(string q, bool showBaselineOnEmpty = true)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(q))
-                    RunAsyncFilterAndBind();
+                    RunAsyncFilterAndBind(showBaselineOnEmpty);
                 else
                     RunAsyncSearchAndBind(q);
             }

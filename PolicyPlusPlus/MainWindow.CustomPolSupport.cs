@@ -352,7 +352,7 @@ namespace PolicyPlusPlus
                 )
                     return;
                 var sb = GetSearchBox();
-                RebindConsideringAsync(sb?.Text ?? string.Empty);
+                RebindConsideringAsync(sb?.Text ?? string.Empty, showBaselineOnEmpty: false);
                 if (notify)
                     UpdateSourceStatusUnified();
             }

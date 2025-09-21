@@ -98,13 +98,22 @@ namespace PolicyPlusPlus
             SyncSearchFlagsFromViewModel();
         }
 
-        private void ShowBaselineSuggestions()
+        private void ShowBaselineSuggestions(bool onlyIfFocused = false)
         {
             try
             {
                 // Build baseline (empty query) suggestions limited to currently loaded policies.
                 if (SearchBox == null)
                     return;
+                if (onlyIfFocused)
+                {
+                    try
+                    {
+                        if (SearchBox.FocusState == FocusState.Unfocused)
+                            return;
+                    }
+                    catch { }
+                }
 
                 var allowed = new HashSet<string>(
                     _allPolicies.Select(p => p.UniqueID),
@@ -304,32 +313,65 @@ namespace PolicyPlusPlus
         {
             try
             {
-                // Avoid taking focus immediately after startup unless user explicitly asked for it.
-                if (_suppressInitialSearchBoxFocus)
-                {
-                    try
-                    {
-                        // Prefer focusing the main list; fall back to the root grid if needed.
-                        if (PolicyList != null)
-                            PolicyList.Focus(FocusState.Programmatic);
-                        else
-                            RootGrid?.Focus(FocusState.Programmatic);
-                    }
-                    catch { }
-                    return;
-                }
                 // When focused with no input, show baseline suggestions (history/ranking-based)
                 var q = (SearchBox?.Text ?? string.Empty).Trim();
                 // No longer skipping baseline suggestions on first focus.
                 if (string.IsNullOrEmpty(q))
                 {
-                    ShowBaselineSuggestions();
+                    // On focus, always show baseline suggestions immediately.
+                    ShowBaselineSuggestions(onlyIfFocused: false);
                     // ShowBaselineSuggestions already opened/closed based on count
                 }
             }
             catch (Exception ex)
             {
                 Log.Warn("MainSearch", "SearchBox_GotFocus failed", ex);
+            }
+        }
+
+        private void SearchBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (SearchBox != null)
+                    SearchBox.IsSuggestionListOpen = false;
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("MainSearch", "SearchBox_LostFocus failed", ex);
+            }
+        }
+
+        private void SearchBox_GettingFocus(UIElement sender, GettingFocusEventArgs e)
+        {
+            try
+            {
+                if (_suppressInitialSearchBoxFocus)
+                {
+                    // Allow explicit user initiation (mouse/touch/keyboard). Cancel only programmatic.
+                    bool userInitiated =
+                        e.FocusState == FocusState.Pointer
+                        || e.FocusState == FocusState.Keyboard
+                        || e.InputDevice
+                            is FocusInputDeviceKind.Mouse
+                                or FocusInputDeviceKind.Pen
+                                or FocusInputDeviceKind.Touch
+                                or FocusInputDeviceKind.Keyboard;
+
+                    if (!userInitiated)
+                    {
+                        e.TryCancel();
+                        _suppressInitialSearchBoxFocus = false; // one-shot
+                        return;
+                    }
+
+                    // User explicitly focusing: allow and turn off suppression.
+                    _suppressInitialSearchBoxFocus = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("MainSearch", "SearchBox_GettingFocus failed", ex);
             }
         }
 
@@ -418,7 +460,7 @@ namespace PolicyPlusPlus
                     }
                     try
                     {
-                        ShowBaselineSuggestions();
+                        ShowBaselineSuggestions(onlyIfFocused: true);
                     }
                     catch (Exception ex2)
                     {
