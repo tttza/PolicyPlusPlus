@@ -982,10 +982,38 @@ namespace PolicyPlusPlus
                     List<string> cacheSuggestions = new();
                     try
                     {
-                        var cul = System.Globalization.CultureInfo.CurrentUICulture.Name;
-                        var hits = await AdmxCacheHostService
-                            .Instance.Cache.SearchAsync(q, cul, 300, token)
-                            .ConfigureAwait(false);
+                        var st = SettingsService.Instance.LoadSettings();
+                        string primary = !string.IsNullOrWhiteSpace(st.Language)
+                            ? st.Language!
+                            : System.Globalization.CultureInfo.CurrentUICulture.Name;
+                        var tryLangs = new List<string>(3);
+                        if (st.SecondLanguageEnabled == true && !string.IsNullOrWhiteSpace(st.SecondLanguage))
+                            tryLangs.Add(st.SecondLanguage!);
+                        tryLangs.Add(primary);
+                        if (st.PrimaryLanguageFallbackEnabled == true)
+                            tryLangs.Add("en-US");
+
+                        IReadOnlyList<PolicyPlusCore.Core.PolicyHit>? hits = null;
+                        foreach (var lang in tryLangs.Distinct(StringComparer.OrdinalIgnoreCase))
+                        {
+                            var fields = SearchFields.None;
+                            if (_searchInName) fields |= SearchFields.Name;
+                            if (_searchInId) fields |= SearchFields.Id;
+                            if (_searchInRegistryKey || _searchInRegistryValue) fields |= SearchFields.Registry;
+                            if (_searchInDescription) fields |= SearchFields.Description;
+
+                            if (fields == SearchFields.None)
+                            {
+                                hits = Array.Empty<PolicyPlusCore.Core.PolicyHit>();
+                                continue;
+                            }
+
+                            hits = await AdmxCacheHostService.Instance.Cache
+                                .SearchAsync(q, lang, fields, 300, token)
+                                .ConfigureAwait(false);
+                            if (hits != null && hits.Count > 0)
+                                break;
+                        }
                         if (hits != null && hits.Count > 0)
                         {
                             // Map to policies and filter by current allowed set
@@ -993,13 +1021,14 @@ namespace PolicyPlusPlus
                                 p => p.UniqueID,
                                 StringComparer.OrdinalIgnoreCase
                             );
+                            var seenUnique = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                             foreach (var h in hits)
                             {
-                                if (
-                                    !string.IsNullOrEmpty(h.UniqueId)
-                                    && allowedSet.Contains(h.UniqueId)
-                                    && byId.TryGetValue(h.UniqueId, out var pol)
-                                )
+                                var uid = h.UniqueId;
+                                if (string.IsNullOrEmpty(uid)) continue;
+                                if (!allowedSet.Contains(uid)) continue;
+                                if (!byId.TryGetValue(uid, out var pol)) continue;
+                                if (seenUnique.Add(uid))
                                     cacheMatches.Add(pol);
                             }
                             // Suggestions from top names

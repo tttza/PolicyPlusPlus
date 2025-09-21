@@ -73,6 +73,21 @@ internal sealed class AdmxCacheStore
 
     private static async Task CreateSchemaAsync(SqliteConnection conn, CancellationToken ct)
     {
+        // Ensure FTS table supports column queries; migrate from detail=none if present.
+        try
+        {
+            using var chk = conn.CreateCommand();
+            chk.CommandText = "SELECT sql FROM sqlite_master WHERE type='table' AND name='PolicyIndex'";
+            var existingSql = (string?)await chk.ExecuteScalarAsync(ct).ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(existingSql) && existingSql.IndexOf("detail=none", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                using var drop = conn.CreateCommand();
+                drop.CommandText = "DROP TABLE IF EXISTS PolicyIndex; DROP TABLE IF EXISTS PolicyIndexMap;";
+                await drop.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
+        }
+        catch { }
+
         var sb = new StringBuilder();
         sb.AppendLine("CREATE TABLE IF NOT EXISTS Meta( key TEXT PRIMARY KEY, value TEXT );");
         sb.AppendLine(
@@ -95,7 +110,7 @@ internal sealed class AdmxCacheStore
             "CREATE TABLE IF NOT EXISTS PolicyStringsDeps( policy_id INTEGER, culture TEXT, adml_source_id INTEGER );"
         );
         sb.AppendLine(
-            "CREATE VIRTUAL TABLE IF NOT EXISTS PolicyIndex USING fts5( title_norm, desc_norm, title_loose, desc_loose, registry_path, tags, tokenize='unicode61', detail=none, content='' );"
+            "CREATE VIRTUAL TABLE IF NOT EXISTS PolicyIndex USING fts5( title_norm, desc_norm, title_loose, desc_loose, registry_path, tags, tokenize='unicode61', detail=column, content='' );"
         );
         sb.AppendLine(
             "CREATE TABLE IF NOT EXISTS PolicyIndexMap( rowid INTEGER PRIMARY KEY, policy_id INTEGER, culture TEXT );"

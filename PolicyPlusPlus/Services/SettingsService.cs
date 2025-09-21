@@ -22,6 +22,12 @@ namespace PolicyPlusPlus.Services
         private string BookmarkPath => Path.Combine(_baseDir, "bookmarks.json");
         public string CacheDirectory => Path.Combine(_baseDir, "Cache");
         private AppSettings? _cachedSettings;
+        
+        // Raised when any language preference affecting the ADMX cache may have changed.
+        // Subscribers can trigger rescans. Event is best-effort and may coalesce rapid updates.
+        public event Action? LanguagesChanged;
+    // Raised when the ADMX/ADML source root path changes.
+    public event Action? SourcesRootChanged;
 
         private static readonly JsonSerializerOptions PrettyIgnoreNull = new()
         {
@@ -219,12 +225,39 @@ namespace PolicyPlusPlus.Services
             _sem.Wait();
             try
             {
+                // Compare language-related tuple before persist to decide whether to raise event.
+                var before = GetSettingsInternal();
+                var beforeLang = (
+                    before.Language ?? string.Empty,
+                    before.SecondLanguageEnabled ?? false,
+                    before.SecondLanguage ?? string.Empty,
+                    before.PrimaryLanguageFallbackEnabled ?? false
+                );
+                var beforePath = before.AdmxSourcePath ?? string.Empty;
+
                 MigrateIfNeeded_NoLock(s);
                 _cachedSettings = s ?? new AppSettings();
                 File.WriteAllText(
                     SettingsPath,
                     JsonSerializer.Serialize(_cachedSettings, AppJsonContext.Default.AppSettings)
                 );
+
+                var after = _cachedSettings;
+                var afterLang = (
+                    after.Language ?? string.Empty,
+                    after.SecondLanguageEnabled ?? false,
+                    after.SecondLanguage ?? string.Empty,
+                    after.PrimaryLanguageFallbackEnabled ?? false
+                );
+                var afterPath = after.AdmxSourcePath ?? string.Empty;
+                if (!beforeLang.Equals(afterLang))
+                {
+                    try { LanguagesChanged?.Invoke(); } catch { }
+                }
+                if (!string.Equals(beforePath, afterPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    try { SourcesRootChanged?.Invoke(); } catch { }
+                }
             }
             catch { }
             finally
@@ -239,11 +272,35 @@ namespace PolicyPlusPlus.Services
             try
             {
                 var s = GetSettingsInternal();
+                // Snapshot relevant language tuple before mutation.
+                var beforeLang = (
+                    s.Language ?? string.Empty,
+                    s.SecondLanguageEnabled ?? false,
+                    s.SecondLanguage ?? string.Empty,
+                    s.PrimaryLanguageFallbackEnabled ?? false
+                );
+                var beforePath = s.AdmxSourcePath ?? string.Empty;
                 mutator(s);
                 File.WriteAllText(
                     SettingsPath,
                     JsonSerializer.Serialize(s, AppJsonContext.Default.AppSettings)
                 );
+                // Fire change notification only when language-related fields differ.
+                var afterLang = (
+                    s.Language ?? string.Empty,
+                    s.SecondLanguageEnabled ?? false,
+                    s.SecondLanguage ?? string.Empty,
+                    s.PrimaryLanguageFallbackEnabled ?? false
+                );
+                var afterPath = s.AdmxSourcePath ?? string.Empty;
+                if (!beforeLang.Equals(afterLang))
+                {
+                    try { LanguagesChanged?.Invoke(); } catch { }
+                }
+                if (!string.Equals(beforePath, afterPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    try { SourcesRootChanged?.Invoke(); } catch { }
+                }
             }
             catch { }
             finally
