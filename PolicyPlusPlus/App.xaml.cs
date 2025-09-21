@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Microsoft.UI.Xaml;
-using PolicyPlusPlus.Logging; // logging
+using PolicyPlusPlus.Logging;
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Utils;
 using PolicyPlusPlus.Windows;
@@ -76,6 +76,7 @@ namespace PolicyPlusPlus
             // Store update checks are not performed at startup (manual trigger only).
 #endif
             InitializeComponent();
+            Log.Info("App", "Application constructing");
             this.UnhandledException += (s, e) =>
             {
                 try
@@ -109,6 +110,7 @@ namespace PolicyPlusPlus
 
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
+            Log.Info("App", "OnLaunched start");
             try
             {
                 SettingsService.Instance.Initialize();
@@ -228,6 +230,7 @@ namespace PolicyPlusPlus
             {
                 Log.Debug("App", $"async init failed: {ex.Message}");
             }
+            Log.Info("App", "MainWindow activated");
         }
 
         private static void TryApplyIconTo(Window w)
