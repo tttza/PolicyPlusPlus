@@ -34,7 +34,9 @@ internal sealed class AdmxCacheStore
         {
             DataSource = _dbPath,
             Mode = SqliteOpenMode.ReadWriteCreate,
-            Cache = SqliteCacheMode.Shared,
+            // Avoid shared cache mode; default private cache is safer across processes.
+            // Set a reasonable default timeout for commands to wait for locks.
+            DefaultTimeout = 30,
         }.ToString();
 
     public async Task InitializeAsync(CancellationToken ct)
@@ -54,6 +56,7 @@ internal sealed class AdmxCacheStore
         {
             "PRAGMA journal_mode=WAL;",
             "PRAGMA synchronous=NORMAL;",
+            "PRAGMA busy_timeout=30000;",
             "PRAGMA page_size=4096;",
             // mmap_size may not be supported; ignore failure
             "PRAGMA mmap_size=3000000000;",

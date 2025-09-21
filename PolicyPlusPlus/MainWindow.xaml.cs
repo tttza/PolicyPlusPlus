@@ -161,6 +161,39 @@ namespace PolicyPlusPlus
             catch { }
             try
             {
+                // Notify user when ADMX cache rebuild starts/completes.
+                EventHub.AdmxCacheRebuildStarted += (reason, changed) =>
+                {
+                    string msg = reason switch
+                    {
+                        "initial" => "Building ADMX cache...",
+                        "languages" => "Rebuilding ADMX cache for language change...",
+                        "sourcesRoot" => "Rebuilding ADMX cache for folder change...",
+                        "cacheCleared" => "Rebuilding ADMX cache after clearing...",
+                        "watcher" => changed != null && changed.Count > 0
+                            ? $"ADMX change detected ({changed.Count}). Rebuilding cache..."
+                            : "ADMX change detected. Rebuilding cache...",
+                        _ => "Rebuilding ADMX cache...",
+                    };
+                    try { DispatcherQueue.TryEnqueue(() => ShowInfo(msg, InfoBarSeverity.Informational)); } catch { }
+                };
+                EventHub.AdmxCacheRebuildCompleted += reason =>
+                {
+                    string done = reason switch
+                    {
+                        "initial" => "ADMX cache built.",
+                        "languages" => "ADMX cache rebuilt for language change.",
+                        "sourcesRoot" => "ADMX cache rebuilt for folder change.",
+                        "cacheCleared" => "ADMX cache rebuilt after clearing.",
+                        "watcher" => "ADMX cache rebuilt.",
+                        _ => "ADMX cache rebuilt.",
+                    };
+                    try { DispatcherQueue.TryEnqueue(() => ShowInfo(done, InfoBarSeverity.Success)); } catch { }
+                };
+            }
+            catch { }
+            try
+            {
                 Closed += (s, e) =>
                 {
                     try
@@ -173,6 +206,12 @@ namespace PolicyPlusPlus
                     {
                         PendingChangesService.Instance.DirtyChanged -= (_, __) =>
                             UpdateUnsavedIndicator();
+                    }
+                    catch { }
+                    try
+                    {
+                        EventHub.AdmxCacheRebuildStarted -= null; // no-op safeguard
+                        EventHub.AdmxCacheRebuildCompleted -= null; // no-op safeguard
                     }
                     catch { }
                 };

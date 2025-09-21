@@ -9,6 +9,10 @@ namespace PolicyPlusPlus.Services
     internal static class EventHub
     {
         public static event Action<IReadOnlyCollection<string>?>? PolicySourcesRefreshed; // null => full refresh
+        // Fired when ADMX cache rebuild starts; reason may be "initial", "languages", "sourcesRoot", "cacheCleared", or "watcher".
+        public static event Action<string?, IReadOnlyCollection<string>?>? AdmxCacheRebuildStarted;
+        // Fired when ADMX cache rebuild completes; reason mirrors the start event.
+        public static event Action<string?>? AdmxCacheRebuildCompleted;
         public static event Action<
             IReadOnlyCollection<string>,
             IReadOnlyCollection<string>
@@ -48,6 +52,16 @@ namespace PolicyPlusPlus.Services
             }
             if (!EnsureTimer())
                 FlushAggregated();
+        }
+
+        public static void PublishAdmxCacheRebuildStarted(string? reason, IReadOnlyCollection<string>? changedPaths)
+        {
+            TryInvoke(() => AdmxCacheRebuildStarted?.Invoke(reason, changedPaths));
+        }
+
+        public static void PublishAdmxCacheRebuildCompleted(string? reason)
+        {
+            TryInvoke(() => AdmxCacheRebuildCompleted?.Invoke(reason));
         }
 
         public static void PublishPendingQueueDelta(

@@ -426,18 +426,22 @@ namespace PolicyPlusPlus.Services
             {
                 // Proactively clear SQLite connection pools to release file handles.
                 try { PolicyPlusCore.Core.AdmxCacheRuntime.ReleaseSqliteHandles(); } catch { }
+                using var writerLock = PolicyPlusCore.Core.AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(10));
+                if (writerLock is null)
+                {
+                    // Another instance is updating the cache; refuse to clear now.
+                    return false;
+                }
                 await Task.Run(() =>
                 {
                     try
                     {
                         if (Directory.Exists(uiDir))
                         {
-                            // Make files deletable
                             foreach (var f in Directory.EnumerateFiles(uiDir, "*", SearchOption.AllDirectories))
                             {
                                 try { File.SetAttributes(f, System.IO.FileAttributes.Normal); } catch { }
                             }
-                            // Try delete with a few small retries to avoid transient locks
                             for (int attempt = 0; attempt < 3; attempt++)
                             {
                                 try
@@ -456,7 +460,6 @@ namespace PolicyPlusPlus.Services
                     catch { }
                     try { Directory.CreateDirectory(uiDir); } catch { }
 
-                    // Also clear Core cache dir if different
                     if (!string.IsNullOrWhiteSpace(coreDir))
                     {
                         try

@@ -55,7 +55,9 @@ namespace PolicyPlusPlus.Services
                 foreach (var c in cultures)
                     if (seen.Add(c)) ordered.Add(c);
                 _culturesForScan = ordered;
+                try { EventHub.PublishAdmxCacheRebuildStarted("initial", null); } catch { }
                 await _cache.ScanAndUpdateAsync(_culturesForScan).ConfigureAwait(false);
+                try { EventHub.PublishAdmxCacheRebuildCompleted("initial"); } catch { }
 
                 // React to runtime language preference changes to refresh cache as needed.
                 try
@@ -67,6 +69,7 @@ namespace PolicyPlusPlus.Services
                         if (!shouldRun) return;
                         RunAndTrack(async () =>
                         {
+                            try { EventHub.PublishAdmxCacheRebuildStarted("languages", null); } catch { }
                             try { SettingsService.Instance.PurgeOldCacheEntries(TimeSpan.FromDays(30)); } catch { }
                             var st2 = SettingsService.Instance.LoadSettings();
                             try { _cache.SetSourceRoot(string.IsNullOrWhiteSpace(st2.AdmxSourcePath) ? null : st2.AdmxSourcePath); } catch { }
@@ -84,6 +87,7 @@ namespace PolicyPlusPlus.Services
                             _culturesForScan = ordered2;
                             await _cache.ScanAndUpdateAsync(_culturesForScan).ConfigureAwait(false);
                             try { EventHub.PublishPolicySourcesRefreshed(null); } catch { }
+                            try { EventHub.PublishAdmxCacheRebuildCompleted("languages"); } catch { }
                         });
                     };
                     SettingsService.Instance.SourcesRootChanged += () =>
@@ -93,6 +97,7 @@ namespace PolicyPlusPlus.Services
                         if (!shouldRun) return;
                         RunAndTrack(async () =>
                         {
+                            try { EventHub.PublishAdmxCacheRebuildStarted("sourcesRoot", null); } catch { }
                             try { SettingsService.Instance.PurgeOldCacheEntries(TimeSpan.FromDays(30)); } catch { }
                             var st3 = SettingsService.Instance.LoadSettings();
                             try { _cache.SetSourceRoot(string.IsNullOrWhiteSpace(st3.AdmxSourcePath) ? null : st3.AdmxSourcePath); } catch { }
@@ -101,6 +106,7 @@ namespace PolicyPlusPlus.Services
                                 langs = new[] { CultureInfo.CurrentUICulture.Name };
                             await _cache.ScanAndUpdateAsync(langs).ConfigureAwait(false);
                             try { EventHub.PublishPolicySourcesRefreshed(null); } catch { }
+                            try { EventHub.PublishAdmxCacheRebuildCompleted("sourcesRoot"); } catch { }
                         });
                     };
                     // When the cache directory is cleared, allow services to decide if/how to rebuild.
@@ -111,6 +117,7 @@ namespace PolicyPlusPlus.Services
                         if (!shouldRun) return;
                         RunAndTrack(async () =>
                         {
+                            try { EventHub.PublishAdmxCacheRebuildStarted("cacheCleared", null); } catch { }
                             var st4 = SettingsService.Instance.LoadSettings();
                             try { _cache.SetSourceRoot(string.IsNullOrWhiteSpace(st4.AdmxSourcePath) ? null : st4.AdmxSourcePath); } catch { }
                             var langs = _culturesForScan;
@@ -118,6 +125,7 @@ namespace PolicyPlusPlus.Services
                                 langs = new[] { CultureInfo.CurrentUICulture.Name };
                             await _cache.ScanAndUpdateAsync(langs).ConfigureAwait(false);
                             try { EventHub.PublishPolicySourcesRefreshed(null); } catch { }
+                            try { EventHub.PublishAdmxCacheRebuildCompleted("cacheCleared"); } catch { }
                         });
                     };
                 }
@@ -143,6 +151,7 @@ namespace PolicyPlusPlus.Services
                         {
                             RunAndTrack(async () =>
                             {
+                                try { EventHub.PublishAdmxCacheRebuildStarted("watcher", _); } catch { }
                                 var langs = _culturesForScan;
                                 if (langs == null || langs.Count == 0)
                                 {
@@ -150,6 +159,7 @@ namespace PolicyPlusPlus.Services
                                 }
                                 await _cache.ScanAndUpdateAsync(langs).ConfigureAwait(false);
                                 try { EventHub.PublishPolicySourcesRefreshed(null); } catch { }
+                                try { EventHub.PublishAdmxCacheRebuildCompleted("watcher"); } catch { }
                             });
                             await Task.Yield();
                         }

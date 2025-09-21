@@ -127,9 +127,17 @@ public sealed class AdmxCache : IAdmxCache
 
     private async Task DiffAndApplyAsync(AdmxBundle bundle, string culture, bool allowGlobalRebuild, CancellationToken ct)
     {
+        // Serialize writers across processes to avoid WAL write conflicts and cache deletion races.
+        using var writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(30));
+        if (writerLock is null)
+        {
+            // Give up quietly if we cannot obtain the writer lock; readers can continue using existing data.
+            return;
+        }
+
         using var conn = _store.OpenConnection();
         await conn.OpenAsync(ct).ConfigureAwait(false);
-        using var tx = await conn.BeginTransactionAsync(ct).ConfigureAwait(false);
+        using var tx = await conn.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted).ConfigureAwait(false);
         try
         {
             if (allowGlobalRebuild)
