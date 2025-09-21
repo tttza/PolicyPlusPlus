@@ -185,6 +185,7 @@ namespace PolicyPlusPlus
                             // Focus the search box and place caret at the end; let the original key input type the first character.
                             try
                             {
+                                _suppressInitialSearchBoxFocus = false; // user started typing; allow search focus
                                 SearchBox.Focus(FocusState.Keyboard);
                             }
                             catch { }

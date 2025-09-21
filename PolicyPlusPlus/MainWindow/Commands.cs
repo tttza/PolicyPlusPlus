@@ -33,6 +33,7 @@ namespace PolicyPlusPlus
         {
             try
             {
+                _suppressInitialSearchBoxFocus = false; // explicit user intent to focus search
                 SearchBox?.Focus(FocusState.Programmatic);
             }
             catch { }

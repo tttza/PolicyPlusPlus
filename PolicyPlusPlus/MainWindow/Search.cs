@@ -21,6 +21,9 @@ namespace PolicyPlusPlus
     {
         // When true, user is navigating the suggestion list with arrow keys.
         private bool _navigatingSuggestions;
+
+        // Suppress SearchBox grabbing focus right after startup until explicit user interaction.
+        private bool _suppressInitialSearchBoxFocus = true;
         private List<(
             PolicyPlusPolicy Policy,
             string NameLower,
@@ -299,6 +302,20 @@ namespace PolicyPlusPlus
         {
             try
             {
+                // Avoid taking focus immediately after startup unless user explicitly asked for it.
+                if (_suppressInitialSearchBoxFocus)
+                {
+                    try
+                    {
+                        // Prefer focusing the main list; fall back to the root grid if needed.
+                        if (PolicyList != null)
+                            PolicyList.Focus(FocusState.Programmatic);
+                        else
+                            RootGrid?.Focus(FocusState.Programmatic);
+                    }
+                    catch { }
+                    return;
+                }
                 // When focused with no input, show baseline suggestions (history/ranking-based)
                 var q = (SearchBox?.Text ?? string.Empty).Trim();
                 // No longer skipping baseline suggestions on first focus.
@@ -312,6 +329,16 @@ namespace PolicyPlusPlus
             {
                 Log.Warn("MainSearch", "SearchBox_GotFocus failed", ex);
             }
+        }
+
+        private void SearchBox_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            try
+            {
+                // User explicitly clicked the box; allow it to keep focus hereafter.
+                _suppressInitialSearchBoxFocus = false;
+            }
+            catch { }
         }
 
         private void HideBuiltInSearchClearButton()
