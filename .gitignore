@@ -7,6 +7,7 @@ Version.vb
 # User-specific files
 *.suo
 *.user
+*.csproj.user
 *.userosscache
 *.sln.docstates
 
@@ -46,6 +47,9 @@ dlldata.c
 # DNX
 project.lock.json
 artifacts/
+
+# Ad-hoc solution-level outputs
+win-*/
 
 *_i.c
 *_p.c
@@ -172,10 +176,12 @@ csx/
 ecf/
 rcf/
 
-# Windows Store app package directories and files
+# Windows app package directories and files
 AppPackages/
+**/AppPackages/
 BundleArtifacts/
 Package.StoreAssociation.xml
+**/Package.StoreAssociation.xml
 _pkginfo.txt
 
 # Visual Studio cache files

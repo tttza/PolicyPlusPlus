@@ -44,10 +44,10 @@ namespace PolicyPlusPlus.ViewModels
                     return en;
                 return en switch
                 {
-                    "Key" => "ƒL[",
-                    "Name" => "–¼‘O",
-                    "Type" => "í—Ş",
-                    "Value" => "’l",
+                    "Key" => "ã‚­ãƒ¼",
+                    "Name" => "åå‰",
+                    "Type" => "ç¨®é¡",
+                    "Value" => "å€¤",
                     _ => en,
                 };
             }
@@ -57,7 +57,7 @@ namespace PolicyPlusPlus.ViewModels
                     return en;
                 return en switch
                 {
-                    "(no referenced registry values)" => "(QÆ‚³‚ê‚Ä‚¢‚éƒŒƒWƒXƒgƒŠ’l‚ª‚ ‚è‚Ü‚¹‚ñ)",
+                    "(no referenced registry values)" => "(å‚ç…§ã•ã‚Œã¦ã„ã‚‹ãƒ¬ã‚¸ã‚¹ãƒˆãƒªå€¤ã¯ã‚ã‚Šã¾ã›ã‚“)",
                     _ => en,
                 };
             }
