@@ -426,9 +426,9 @@
                 AutomationProperties.AutomationId="SearchBox"
                 Padding="0,0,28,0"
                 PlaceholderText="Search policies"
-                 UpdateTextOnSelect="False"
+                UpdateTextOnSelect="False"
                 Loaded="SearchBox_Loaded"
-                 GotFocus="SearchBox_GotFocus"
+                GotFocus="SearchBox_GotFocus"
                 LostFocus="SearchBox_LostFocus"
                 GettingFocus="SearchBox_GettingFocus"
                 PointerPressed="SearchBox_PointerPressed"
@@ -458,6 +458,14 @@
                 />
               </Grid>
             </Grid>
+            <!-- Quick AND toggle beside the search box -->
+            <ToggleButton
+              x:Name="AndToggle"
+              Content="∩"
+              VerticalAlignment="Center"
+              ToolTipService.ToolTip="AND search (spaces = AND)"
+              IsChecked="{Binding UseAndMode, Source={StaticResource SearchOptionsVM}, Mode=TwoWay}"
+            />
             <Button
               x:Name="SearchOptionsBtn"
               Style="{StaticResource NavIconButtonStyle}"
@@ -502,6 +510,17 @@
                       x:Name="SearchOptRegValue"
                       Content="Search registry value name"
                       IsChecked="{Binding InRegistryValue, Source={StaticResource SearchOptionsVM}, Mode=TwoWay}"
+                    />
+                    <!-- Divider -->
+                    <Border
+                      Height="1"
+                      Background="{ThemeResource ControlStrokeColorDefaultBrush}"
+                      Margin="0,6,0,6"
+                    />
+                    <CheckBox
+                      x:Name="SearchOptAndMode"
+                      Content="Enable AND search (spaces = AND)"
+                      IsChecked="{Binding UseAndMode, Source={StaticResource SearchOptionsVM}, Mode=TwoWay}"
                     />
                   </StackPanel>
                 </Flyout>

@@ -31,8 +31,8 @@ namespace PolicyPlusPlus.Services
         // Raised when the ADMX/ADML source root path changes.
         public event Action? SourcesRootChanged;
 
-    // Raised after the entire cache directory is cleared.
-    public event Action? CacheCleared;
+        // Raised after the entire cache directory is cleared.
+        public event Action? CacheCleared;
 
         private static readonly JsonSerializerOptions PrettyIgnoreNull = new()
         {
@@ -358,14 +358,23 @@ namespace PolicyPlusPlus.Services
                     if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir))
                         return;
                     var threshold = DateTime.UtcNow - olderThan;
-                    foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+                    foreach (
+                        var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories)
+                    )
                     {
                         try
                         {
                             var fi = new FileInfo(file);
                             var w = fi.LastWriteTimeUtc;
                             DateTime a;
-                            try { a = fi.LastAccessTimeUtc; } catch { a = w; }
+                            try
+                            {
+                                a = fi.LastAccessTimeUtc;
+                            }
+                            catch
+                            {
+                                a = w;
+                            }
                             if (w < threshold && a < threshold)
                             {
                                 File.SetAttributes(file, System.IO.FileAttributes.Normal);
@@ -377,11 +386,18 @@ namespace PolicyPlusPlus.Services
                     // Attempt to remove any now-empty directories under Cache
                     try
                     {
-                        foreach (var subdir in Directory.EnumerateDirectories(dir, "*", SearchOption.AllDirectories).OrderByDescending(p => p.Length))
+                        foreach (
+                            var subdir in Directory
+                                .EnumerateDirectories(dir, "*", SearchOption.AllDirectories)
+                                .OrderByDescending(p => p.Length)
+                        )
                         {
                             try
                             {
-                                if (Directory.Exists(subdir) && !Directory.EnumerateFileSystemEntries(subdir).Any())
+                                if (
+                                    Directory.Exists(subdir)
+                                    && !Directory.EnumerateFileSystemEntries(subdir).Any()
+                                )
                                     Directory.Delete(subdir);
                             }
                             catch { }
@@ -421,12 +437,21 @@ namespace PolicyPlusPlus.Services
                     "Cache"
                 );
             }
-            catch { coreDir = null; }
+            catch
+            {
+                coreDir = null;
+            }
             try
             {
                 // Proactively clear SQLite connection pools to release file handles.
-                try { PolicyPlusCore.Core.AdmxCacheRuntime.ReleaseSqliteHandles(); } catch { }
-                using var writerLock = PolicyPlusCore.Core.AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(10));
+                try
+                {
+                    PolicyPlusCore.Core.AdmxCacheRuntime.ReleaseSqliteHandles();
+                }
+                catch { }
+                using var writerLock = PolicyPlusCore.Core.AdmxCacheRuntime.TryAcquireWriterLock(
+                    TimeSpan.FromSeconds(10)
+                );
                 if (writerLock is null)
                 {
                     // Another instance is updating the cache; refuse to clear now.
@@ -438,9 +463,19 @@ namespace PolicyPlusPlus.Services
                     {
                         if (Directory.Exists(uiDir))
                         {
-                            foreach (var f in Directory.EnumerateFiles(uiDir, "*", SearchOption.AllDirectories))
+                            foreach (
+                                var f in Directory.EnumerateFiles(
+                                    uiDir,
+                                    "*",
+                                    SearchOption.AllDirectories
+                                )
+                            )
                             {
-                                try { File.SetAttributes(f, System.IO.FileAttributes.Normal); } catch { }
+                                try
+                                {
+                                    File.SetAttributes(f, System.IO.FileAttributes.Normal);
+                                }
+                                catch { }
                             }
                             for (int attempt = 0; attempt < 3; attempt++)
                             {
@@ -451,14 +486,23 @@ namespace PolicyPlusPlus.Services
                                 }
                                 catch
                                 {
-                                    if (attempt == 2) throw;
-                                    try { Thread.Sleep(120); } catch { }
+                                    if (attempt == 2)
+                                        throw;
+                                    try
+                                    {
+                                        Thread.Sleep(120);
+                                    }
+                                    catch { }
                                 }
                             }
                         }
                     }
                     catch { }
-                    try { Directory.CreateDirectory(uiDir); } catch { }
+                    try
+                    {
+                        Directory.CreateDirectory(uiDir);
+                    }
+                    catch { }
 
                     if (!string.IsNullOrWhiteSpace(coreDir))
                     {
@@ -470,9 +514,22 @@ namespace PolicyPlusPlus.Services
                                 {
                                     if (Directory.Exists(coreDir))
                                     {
-                                        foreach (var f in Directory.EnumerateFiles(coreDir, "*", SearchOption.AllDirectories))
+                                        foreach (
+                                            var f in Directory.EnumerateFiles(
+                                                coreDir,
+                                                "*",
+                                                SearchOption.AllDirectories
+                                            )
+                                        )
                                         {
-                                            try { File.SetAttributes(f, System.IO.FileAttributes.Normal); } catch { }
+                                            try
+                                            {
+                                                File.SetAttributes(
+                                                    f,
+                                                    System.IO.FileAttributes.Normal
+                                                );
+                                            }
+                                            catch { }
                                         }
                                         for (int attempt = 0; attempt < 3; attempt++)
                                         {
@@ -483,22 +540,38 @@ namespace PolicyPlusPlus.Services
                                             }
                                             catch
                                             {
-                                                if (attempt == 2) throw;
-                                                try { Thread.Sleep(120); } catch { }
+                                                if (attempt == 2)
+                                                    throw;
+                                                try
+                                                {
+                                                    Thread.Sleep(120);
+                                                }
+                                                catch { }
                                             }
                                         }
                                     }
                                 }
                                 catch { }
-                                try { Directory.CreateDirectory(coreDir); } catch { }
+                                try
+                                {
+                                    Directory.CreateDirectory(coreDir);
+                                }
+                                catch { }
                             }
                         }
                         catch { }
                     }
                 });
             }
-            catch { return false; }
-            try { CacheCleared?.Invoke(); } catch { }
+            catch
+            {
+                return false;
+            }
+            try
+            {
+                CacheCleared?.Invoke();
+            }
+            catch { }
             return true;
         }
 
@@ -797,6 +870,7 @@ namespace PolicyPlusPlus.Services
         public string? UIScale { get; set; }
         public string? Language { get; set; }
         public string? AdmxSourcePath { get; set; }
+
         // When null, treated as enabled by default.
         public bool? AdmxCacheEnabled { get; set; }
         public bool? HideEmptyCategories { get; set; }
@@ -861,6 +935,7 @@ namespace PolicyPlusPlus.Services
         public bool InRegistryValue { get; set; } = true;
         public bool InDescription { get; set; }
         public bool InComments { get; set; }
+        public bool UseAndMode { get; set; } // When true, treat spaces as AND between tokens
     }
 
     public class SearchStats

@@ -11,6 +11,7 @@
             "**/*.props",
             "**/*.targets",
             "**/*.xml",
+            "**/*.xaml",
             "**/*.config"
         ]
     }]

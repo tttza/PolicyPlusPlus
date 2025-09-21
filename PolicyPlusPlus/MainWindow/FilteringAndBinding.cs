@@ -643,6 +643,67 @@ namespace PolicyPlusPlus
             return false;
         }
 
+        // Check a single token across enabled fields (used in AND mode)
+        private bool PolicyMatchesToken(
+            (
+                PolicyPlusPolicy Policy,
+                string NameLower,
+                string SecondLower,
+                string IdLower,
+                string DescLower
+            ) e,
+            string token,
+            HashSet<string>? descCandidates = null
+        )
+        {
+            if (_searchInName)
+            {
+                if (e.NameLower.Contains(token))
+                    return true;
+                if (!string.IsNullOrEmpty(e.SecondLower) && e.SecondLower.Contains(token))
+                    return true;
+            }
+            if (_searchInId && e.IdLower.Contains(token))
+                return true;
+            if (_searchInDescription)
+            {
+                bool allowDesc =
+                    descCandidates == null || descCandidates.Contains(e.Policy.UniqueID);
+                if (allowDesc && e.DescLower.Contains(token))
+                    return true;
+            }
+            if (_searchInComments)
+            {
+                if (
+                    (
+                        _compComments.TryGetValue(e.Policy.UniqueID, out var c1)
+                        && !string.IsNullOrEmpty(c1)
+                        && SearchText.Normalize(c1).Contains(token)
+                    )
+                    || (
+                        _userComments.TryGetValue(e.Policy.UniqueID, out var c2)
+                        && !string.IsNullOrEmpty(c2)
+                        && SearchText.Normalize(c2).Contains(token)
+                    )
+                )
+                    return true;
+            }
+            if (_searchInRegistryKey || _searchInRegistryValue)
+            {
+                if (
+                    _searchInRegistryKey
+                    && Services.RegistrySearch.SearchRegistry(e.Policy, token, string.Empty, true)
+                )
+                    return true;
+                if (
+                    _searchInRegistryValue
+                    && Services.RegistrySearch.SearchRegistryValueNameOnly(e.Policy, token, true)
+                )
+                    return true;
+            }
+            return false;
+        }
+
         private void BindSequenceEnhanced(
             IEnumerable<PolicyPlusPolicy> seq,
             FilterDecisionResult decision
@@ -748,6 +809,73 @@ namespace PolicyPlusPlus
                 baseSeq.Select(p => p.UniqueID),
                 StringComparer.OrdinalIgnoreCase
             );
+            // AND mode: split by spaces (half/full width unified by Normalize)
+            if (_useAndModeFlag)
+            {
+                var tokens = qLower.Split(
+                    new[] { ' ' },
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                );
+                if (tokens.Length > 1)
+                {
+                    HashSet<string>? descCandidatesAnd = null;
+                    if (_searchInDescription)
+                    {
+                        EnsureDescIndex();
+                        // For AND semantics, we don't pre-intersect description; we'll check per item
+                        // but we can still get candidates for each token when available.
+                    }
+
+                    // Intersect text candidates for each token to minimize scan
+                    HashSet<string>? intersectAnd = null;
+                    foreach (var t in tokens)
+                    {
+                        var cand = GetTextCandidates(t);
+                        if (cand == null || cand.Count == 0)
+                            continue;
+                        if (intersectAnd == null)
+                            intersectAnd = new HashSet<string>(
+                                cand,
+                                StringComparer.OrdinalIgnoreCase
+                            );
+                        else
+                            intersectAnd.IntersectWith(cand);
+                        if (intersectAnd.Count == 0)
+                            break;
+                    }
+
+                    var scanSetAnd =
+                        (intersectAnd != null && intersectAnd.Count > 0)
+                            ? new HashSet<string>(
+                                intersectAnd.Where(allowedSet.Contains),
+                                StringComparer.OrdinalIgnoreCase
+                            )
+                            : allowedSet;
+
+                    var matchedAnd = new List<PolicyPlusPolicy>();
+                    bool smallSubsetAnd =
+                        scanSetAnd.Count > 0 && scanSetAnd.Count < (_allPolicies.Count / 2);
+                    if (smallSubsetAnd)
+                    {
+                        foreach (var id in scanSetAnd)
+                            if (
+                                _searchIndexById.TryGetValue(id, out var e)
+                                && tokens.All(t => PolicyMatchesToken(e, t, descCandidatesAnd))
+                            )
+                                matchedAnd.Add(e.Policy);
+                    }
+                    else
+                    {
+                        foreach (var e in _searchIndex)
+                            if (
+                                scanSetAnd.Contains(e.Policy.UniqueID)
+                                && tokens.All(t => PolicyMatchesToken(e, t, descCandidatesAnd))
+                            )
+                                matchedAnd.Add(e.Policy);
+                    }
+                    return matchedAnd;
+                }
+            }
             var matched = new List<PolicyPlusPolicy>();
             HashSet<string>? baseCandidates = GetTextCandidates(qLower);
             HashSet<string>? descCandidates = null;
@@ -840,6 +968,13 @@ namespace PolicyPlusPlus
         private List<string> BuildSuggestions(string q, HashSet<string> allowed)
         {
             var qLower = SearchText.Normalize(q);
+            // Tokenize when AND mode is enabled
+            string[] tokens = Array.Empty<string>();
+            if (_useAndModeFlag && !string.IsNullOrEmpty(qLower))
+                tokens = qLower.Split(
+                    new[] { ' ' },
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                );
             var bestByName = new Dictionary<string, (int score, string name)>(
                 StringComparer.OrdinalIgnoreCase
             );
@@ -859,25 +994,58 @@ namespace PolicyPlusPlus
                 int score = 0;
                 if (!string.IsNullOrEmpty(qLower))
                 {
-                    int nameScore = ScoreMatch(e.NameLower, qLower);
-                    int secondScore = string.IsNullOrEmpty(e.SecondLower)
-                        ? -1000
-                        : ScoreMatch(e.SecondLower, qLower);
-                    int idScore = ScoreMatch(e.IdLower, qLower);
-                    int descScore = _searchInDescription ? ScoreMatch(e.DescLower, qLower) : -1000;
-                    if (
-                        nameScore <= -1000
-                        && secondScore <= -1000
-                        && idScore <= -1000
-                        && descScore <= -1000
-                    )
-                        return;
-                    // Favor primary language name over second-language match when both match
-                    // by weighting primary name slightly higher and second slightly lower.
-                    score += Math.Max(0, nameScore) * 4; // primary name weight
-                    score += Math.Max(0, secondScore) * 2; // secondary name weight
-                    score += Math.Max(0, idScore) * 2;
-                    score += Math.Max(0, descScore);
+                    if (_useAndModeFlag && tokens.Length > 0)
+                    {
+                        // AND suggestions: require each token to match at least one enabled field.
+                        foreach (var t in tokens)
+                        {
+                            int tokenBest = int.MinValue;
+                            if (_searchInName)
+                            {
+                                tokenBest = Math.Max(tokenBest, ScoreMatch(e.NameLower, t));
+                                if (!string.IsNullOrEmpty(e.SecondLower))
+                                    tokenBest = Math.Max(tokenBest, ScoreMatch(e.SecondLower, t));
+                            }
+                            if (_searchInId)
+                                tokenBest = Math.Max(tokenBest, ScoreMatch(e.IdLower, t));
+                            if (_searchInDescription)
+                                tokenBest = Math.Max(tokenBest, ScoreMatch(e.DescLower, t));
+                            // comments/registry are expensive; keep suggestions focused to text fields
+                            if (tokenBest <= -1000)
+                                return; // this token didn't match any text field -> exclude from suggestions
+                            // weight primary name more by scaling positive tokenBest observed via name
+                            score += Math.Max(0, tokenBest);
+                        }
+                        // Slight boost when name starts with the first token (common UX expectation)
+                        if (
+                            !string.IsNullOrEmpty(e.NameLower)
+                            && e.NameLower.StartsWith(tokens[0], StringComparison.Ordinal)
+                        )
+                            score += 5;
+                    }
+                    else
+                    {
+                        // Default (OR-like) suggestion model for single token
+                        int nameScore = ScoreMatch(e.NameLower, qLower);
+                        int secondScore = string.IsNullOrEmpty(e.SecondLower)
+                            ? -1000
+                            : ScoreMatch(e.SecondLower, qLower);
+                        int idScore = ScoreMatch(e.IdLower, qLower);
+                        int descScore = _searchInDescription
+                            ? ScoreMatch(e.DescLower, qLower)
+                            : -1000;
+                        if (
+                            nameScore <= -1000
+                            && secondScore <= -1000
+                            && idScore <= -1000
+                            && descScore <= -1000
+                        )
+                            return;
+                        score += Math.Max(0, nameScore) * 4; // primary name weight
+                        score += Math.Max(0, secondScore) * 2; // secondary name weight
+                        score += Math.Max(0, idScore) * 2;
+                        score += Math.Max(0, descScore);
+                    }
                 }
                 score += SearchRankingService.GetBoost(e.Policy.UniqueID);
                 var name = e.Policy.DisplayName ?? string.Empty;
@@ -981,10 +1149,16 @@ namespace PolicyPlusPlus
                         StringComparer.OrdinalIgnoreCase
                     );
 
+                    // In AND mode with multi-token query, skip cache for consistent semantics
+                    bool skipCacheForAnd =
+                        _useAndModeFlag && (q.IndexOf(' ') >= 0 || q.IndexOf('\u3000') >= 0);
+
                     List<PolicyPlusPolicy> cacheMatches = new();
                     List<string> cacheSuggestions = new();
                     try
                     {
+                        if (skipCacheForAnd)
+                            throw new InvalidOperationException("skip cache for AND");
                         var st = SettingsService.Instance.LoadSettings();
                         if ((st.AdmxCacheEnabled ?? true) == false)
                             throw new InvalidOperationException("ADMX cache disabled");
@@ -1080,7 +1254,7 @@ namespace PolicyPlusPlus
                     }
                     else
                     {
-                        // Fallback to in-memory search
+                        // Fallback to in-memory search (AND mode always comes here when multi-token)
                         matches = MatchPolicies(q, baseSeq, out var allowed2);
                         suggestions = BuildSuggestions(q, allowed2);
                     }

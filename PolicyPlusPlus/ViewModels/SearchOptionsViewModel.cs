@@ -12,6 +12,7 @@ namespace PolicyPlusPlus.ViewModels
         private bool _inRegistryValue = true;
         private bool _inDescription;
         private bool _inComments;
+        private bool _useAndMode;
         private bool _loaded;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -32,6 +33,7 @@ namespace PolicyPlusPlus.ViewModels
                     _inRegistryValue = s.InRegistryValue;
                     _inDescription = s.InDescription;
                     _inComments = s.InComments;
+                    _useAndMode = s.UseAndMode;
                 }
                 _loaded = true;
             }
@@ -53,6 +55,7 @@ namespace PolicyPlusPlus.ViewModels
                         InRegistryValue = _inRegistryValue,
                         InDescription = _inDescription,
                         InComments = _inComments,
+                        UseAndMode = _useAndMode,
                     }
                 );
             }
@@ -127,6 +130,19 @@ namespace PolicyPlusPlus.ViewModels
                 if (value == _inComments)
                     return;
                 _inComments = value;
+                Notify();
+                Persist();
+            }
+        }
+
+        public bool UseAndMode
+        {
+            get => _useAndMode;
+            set
+            {
+                if (value == _useAndMode)
+                    return;
+                _useAndMode = value;
                 Notify();
                 Persist();
             }

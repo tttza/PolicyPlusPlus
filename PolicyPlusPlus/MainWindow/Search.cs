@@ -56,6 +56,7 @@ namespace PolicyPlusPlus
         private readonly Dictionary<string, string> _userComments = new(
             StringComparer.OrdinalIgnoreCase
         );
+        private bool _useAndModeFlag = false; // AND mode flag
 
         private SearchOptionsViewModel? SearchOptionsVM =>
             (ScaleHost?.Resources?["SearchOptionsVM"] as SearchOptionsViewModel)
@@ -72,6 +73,7 @@ namespace PolicyPlusPlus
             _searchInRegistryValue = vm.InRegistryValue;
             _searchInDescription = vm.InDescription;
             _searchInComments = vm.InComments;
+            _useAndModeFlag = vm.UseAndMode;
         }
 
         private void ObserveSearchOptions()
