@@ -75,7 +75,6 @@ namespace PolicyPlusPlus
                 try
                 {
                     SyncToggleFromVm();
-                    // Persist snapshot so next launch reflects current toggle/paths/activation.
                     try
                     {
                         SettingsService.Instance.UpdateCustomPol(vm.Snapshot());
@@ -83,9 +82,9 @@ namespace PolicyPlusPlus
                     catch { }
                     if (!vm.Active)
                     {
-                        // Restore previous non-custom mode.
                         RestorePreviousMode();
-                        RefreshVisibleRows();
+                        // Full rebind for symmetry with entering custom mode (filters/search may differ)
+                        RebindConsideringAsync(GetSearchBox()?.Text ?? string.Empty);
                         return;
                     }
                     // Active but not configured -> prompt
@@ -225,11 +224,11 @@ namespace PolicyPlusPlus
             if (!desired)
             {
                 if (vm.Active)
-                    vm.Active = false;
+                    vm.Active = false; // state change handler performs rebind
                 else
                 {
                     RestorePreviousMode();
-                    RefreshVisibleRows();
+                    RebindConsideringAsync(GetSearchBox()?.Text ?? string.Empty);
                 }
                 return;
             }
