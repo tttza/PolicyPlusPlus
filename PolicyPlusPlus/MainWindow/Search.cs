@@ -142,6 +142,8 @@ namespace PolicyPlusPlus
         {
             try
             {
+                if (_descIndexBuilt)
+                    return; // already loaded from cache
                 var path = _currentAdmxPath;
                 var lang = _currentLanguage;
                 var fp =
@@ -165,7 +167,7 @@ namespace PolicyPlusPlus
                         if (!string.IsNullOrEmpty(path) && !string.IsNullOrEmpty(lang))
                         {
                             if (!string.IsNullOrEmpty(fp))
-                                CacheService.SaveNGramSnapshot(path!, lang!, fp, snap);
+                                CacheService.SaveNGramSnapshot(path!, lang!, fp, "desc", snap);
                             else
                                 CacheService.SaveNGramSnapshot(path!, lang!, snap);
                         }

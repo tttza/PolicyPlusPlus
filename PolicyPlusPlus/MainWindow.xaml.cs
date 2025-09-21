@@ -97,6 +97,10 @@ namespace PolicyPlusPlus
         private bool _initialized; // guard to run initialization once
         private AppSettings? _settingsCache; // cached settings snapshot
 
+        // Warm snapshot state: when true, UI is running with warm-only bundle and a full background rebuild is in progress.
+        private bool _isWarmOnly; // guarded by UI thread access
+        private TaskCompletionSource<bool>? _fullBundleReadyTcs; // completed when full bundle swap-in finished
+
         public MainWindow()
         {
             this.InitializeComponent();
@@ -1045,30 +1049,44 @@ namespace PolicyPlusPlus
                 >? searchIndexByIdLocal = null;
                 List<AdmxLoadFailure>? failuresLocal = null; // capture detailed failures
 
-                await System.Threading.Tasks.Task.Run(() =>
+                // Try warm snapshot first (skip XML parsing on cold start if unchanged)
+                var fpCurrent = CacheService.ComputeAdmxFingerprint(path, langPref);
+                bool usedWarm = false;
+                if (
+                    !string.IsNullOrEmpty(fpCurrent)
+                    && CacheService.TryLoadAdmxWarmSnapshot(path, langPref, fpCurrent, out var warm)
+                    && warm != null
+                )
                 {
-                    var b = new AdmxBundle();
                     try
                     {
-                        bool allowPrimaryFallback = true;
-                        try
+                        var compiled = warm.ToCompiled();
+                        newBundle = new AdmxBundle();
+                        // Populate minimal structures into bundle for UI usage
+                        newBundle.Policies = compiled.policies.ToDictionary(
+                            p => p.UniqueID,
+                            StringComparer.OrdinalIgnoreCase
+                        );
+                        newBundle.FlatCategories = compiled.cats.ToDictionary(
+                            kv => kv.Key,
+                            kv => kv.Value,
+                            StringComparer.OrdinalIgnoreCase
+                        );
+                        // Derive top-level categories
+                        newBundle.Categories = new Dictionary<string, PolicyPlusCategory>(
+                            StringComparer.OrdinalIgnoreCase
+                        );
+                        foreach (var c in compiled.cats.Values)
                         {
-                            allowPrimaryFallback = settings.PrimaryLanguageFallbackEnabled ?? true;
+                            if (c.Parent == null)
+                                newBundle.Categories[c.UniqueID] = c;
                         }
-                        catch { }
-                        b.EnableLanguageFallback = allowPrimaryFallback; // propagate user preference
-                    }
-                    catch { }
-                    var fails = b.LoadFolder(path, langPref);
-                    failuresLocal = fails.ToList();
-                    newBundle = b;
-                    failureCount = failuresLocal.Count;
-                    allLocal = b.Policies.Values.ToList();
-                    totalGroupsLocal = allLocal
-                        .GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
-                        .Count();
-                    try
-                    {
+                        // Products/Support empty for now (not needed for listing)
+                        allLocal = compiled.policies.ToList();
+                        totalGroupsLocal = allLocal
+                            .GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
+                            .Count();
+                        // Build search vectors
                         searchIndexLocal = allLocal
                             .Select(p =>
                                 (
@@ -1096,17 +1114,88 @@ namespace PolicyPlusPlus
                         >(StringComparer.OrdinalIgnoreCase);
                         foreach (var e in searchIndexLocal)
                             searchIndexByIdLocal[e.Policy.UniqueID] = e;
+                        usedWarm = true;
                     }
                     catch
                     {
-                        searchIndexLocal =
-                            new List<(PolicyPlusPolicy, string, string, string, string)>();
-                        searchIndexByIdLocal = new Dictionary<
-                            string,
-                            (PolicyPlusPolicy, string, string, string, string)
-                        >(StringComparer.OrdinalIgnoreCase);
+                        usedWarm = false;
                     }
-                });
+                }
+
+                // If no warm snapshot, do the full XML load in background thread
+                if (!usedWarm)
+                {
+                    await System.Threading.Tasks.Task.Run(() =>
+                    {
+                        var b = new AdmxBundle();
+                        try
+                        {
+                            bool allowPrimaryFallback = true;
+                            try
+                            {
+                                allowPrimaryFallback =
+                                    settings.PrimaryLanguageFallbackEnabled ?? true;
+                            }
+                            catch { }
+                            b.EnableLanguageFallback = allowPrimaryFallback;
+                        }
+                        catch { }
+                        var fails = b.LoadFolder(path, langPref);
+                        failuresLocal = fails.ToList();
+                        newBundle = b;
+                        failureCount = failuresLocal.Count;
+                        allLocal = b.Policies.Values.ToList();
+                        totalGroupsLocal = allLocal
+                            .GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
+                            .Count();
+                        try
+                        {
+                            searchIndexLocal = allLocal
+                                .Select(p =>
+                                    (
+                                        Policy: p,
+                                        NameLower: SearchText.Normalize(p.DisplayName),
+                                        SecondLower: useSecond
+                                            ? SearchText.Normalize(
+                                                LocalizedTextService.GetPolicyNameIn(p, secondLang)
+                                            )
+                                            : string.Empty,
+                                        IdLower: SearchText.Normalize(p.UniqueID),
+                                        DescLower: SearchText.Normalize(p.DisplayExplanation)
+                                    )
+                                )
+                                .ToList();
+                            searchIndexByIdLocal = new Dictionary<
+                                string,
+                                (
+                                    PolicyPlusPolicy Policy,
+                                    string NameLower,
+                                    string SecondLower,
+                                    string IdLower,
+                                    string DescLower
+                                )
+                            >(StringComparer.OrdinalIgnoreCase);
+                            foreach (var e in searchIndexLocal)
+                                searchIndexByIdLocal[e.Policy.UniqueID] = e;
+                        }
+                        catch
+                        {
+                            searchIndexLocal =
+                                new List<(PolicyPlusPolicy, string, string, string, string)>();
+                            searchIndexByIdLocal = new Dictionary<
+                                string,
+                                (PolicyPlusPolicy, string, string, string, string)
+                            >(StringComparer.OrdinalIgnoreCase);
+                        }
+                    });
+                    // We have a full bundle ready, mark as not warm-only
+                    _isWarmOnly = false;
+                    try
+                    {
+                        _fullBundleReadyTcs?.TrySetResult(true);
+                    }
+                    catch { }
+                }
 
                 // Log detailed failures (if any)
                 if (failuresLocal != null && failuresLocal.Count > 0)
@@ -1328,6 +1417,26 @@ namespace PolicyPlusPlus
                     RebuildSearchIndex();
                 }
 
+                // Save a warm snapshot on the full-load path to guarantee warm reuse next startup
+                try
+                {
+                    if (!usedWarm && newBundle != null)
+                    {
+                        var fpToSave = fpCurrent;
+                        if (string.IsNullOrEmpty(fpToSave))
+                            fpToSave = CacheService.ComputeAdmxFingerprint(path, langPref);
+                        if (!string.IsNullOrEmpty(fpToSave))
+                        {
+                            var snap = PolicyPlusCore.Core.AdmxWarmSnapshot.FromBundle(
+                                newBundle,
+                                langPref
+                            );
+                            CacheService.SaveAdmxWarmSnapshot(path, langPref, fpToSave!, snap);
+                        }
+                    }
+                }
+                catch { }
+
                 // Attempt to prime second-language NGram from cache; do not force rebuild if available.
                 if (useSecond)
                 {
@@ -1368,6 +1477,137 @@ namespace PolicyPlusPlus
 
                 BuildCategoryTreeAsync();
 
+                // If we loaded from warm snapshot, rebuild the full bundle in background and swap-in + persist warm snapshot for future runs.
+                if (usedWarm)
+                {
+                    // initialize warm-only tracking
+                    _isWarmOnly = true;
+                    _fullBundleReadyTcs = new TaskCompletionSource<bool>(
+                        TaskCreationOptions.RunContinuationsAsynchronously
+                    );
+                    _ = System.Threading.Tasks.Task.Run(() =>
+                    {
+                        try
+                        {
+                            var b = new AdmxBundle();
+                            bool allowPrimaryFallback = true;
+                            try
+                            {
+                                allowPrimaryFallback =
+                                    settings.PrimaryLanguageFallbackEnabled ?? true;
+                            }
+                            catch { }
+                            b.EnableLanguageFallback = allowPrimaryFallback;
+                            var fails = b.LoadFolder(path, langPref);
+                            var fp2 = CacheService.ComputeAdmxFingerprint(path, langPref);
+                            if (!string.IsNullOrEmpty(fp2))
+                            {
+                                var warm2 = PolicyPlusCore.Core.AdmxWarmSnapshot.FromBundle(
+                                    b,
+                                    langPref
+                                );
+                                CacheService.SaveAdmxWarmSnapshot(path, langPref, fp2, warm2);
+                            }
+                            // Swap-in completed bundle on UI thread
+                            var fullPolicies = b.Policies.Values.ToList();
+                            var fullSearchIndex = fullPolicies
+                                .Select(p =>
+                                    (
+                                        Policy: p,
+                                        NameLower: SearchText.Normalize(p.DisplayName),
+                                        SecondLower: useSecond
+                                            ? SearchText.Normalize(
+                                                LocalizedTextService.GetPolicyNameIn(p, secondLang)
+                                            )
+                                            : string.Empty,
+                                        IdLower: SearchText.Normalize(p.UniqueID),
+                                        DescLower: SearchText.Normalize(p.DisplayExplanation)
+                                    )
+                                )
+                                .ToList();
+                            var fullIndexById = new Dictionary<
+                                string,
+                                (
+                                    PolicyPlusPolicy Policy,
+                                    string NameLower,
+                                    string SecondLower,
+                                    string IdLower,
+                                    string DescLower
+                                )
+                            >(StringComparer.OrdinalIgnoreCase);
+                            foreach (var e in fullSearchIndex)
+                                fullIndexById[e.Policy.UniqueID] = e;
+                            var dq = this.DispatcherQueue;
+                            if (dq != null)
+                            {
+                                dq.TryEnqueue(
+                                    new Microsoft.UI.Dispatching.DispatcherQueueHandler(() =>
+                                    {
+                                        _bundle = b;
+                                        _allPolicies = fullPolicies;
+                                        _searchIndex = fullSearchIndex;
+                                        _searchIndexById = fullIndexById;
+                                        _totalGroupCount = _allPolicies
+                                            .GroupBy(
+                                                p => p.DisplayName,
+                                                StringComparer.InvariantCultureIgnoreCase
+                                            )
+                                            .Count();
+                                        // Rebuild category tree to reflect full data if it differs
+                                        BuildCategoryTreeAsync();
+                                        // mark warm-only finished
+                                        _isWarmOnly = false;
+                                        try
+                                        {
+                                            _fullBundleReadyTcs?.TrySetResult(true);
+                                        }
+                                        catch { }
+                                        try
+                                        {
+                                            RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                                        }
+                                        catch { }
+                                    })
+                                );
+                            }
+                            else
+                            {
+                                // Fallback if DispatcherQueue is not available
+                                _bundle = b;
+                                _allPolicies = fullPolicies;
+                                _searchIndex = fullSearchIndex;
+                                _searchIndexById = fullIndexById;
+                                _totalGroupCount = _allPolicies
+                                    .GroupBy(
+                                        p => p.DisplayName,
+                                        StringComparer.InvariantCultureIgnoreCase
+                                    )
+                                    .Count();
+                                BuildCategoryTreeAsync();
+                                _isWarmOnly = false;
+                                try
+                                {
+                                    _fullBundleReadyTcs?.TrySetResult(true);
+                                }
+                                catch { }
+                                try
+                                {
+                                    RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                                }
+                                catch { }
+                            }
+                        }
+                        catch
+                        {
+                            try
+                            {
+                                _fullBundleReadyTcs?.TrySetResult(true);
+                            }
+                            catch { }
+                        }
+                    });
+                }
+
                 if (failureCount > 0)
                 {
                     // Summarize failure types for user
@@ -1405,6 +1645,19 @@ namespace PolicyPlusPlus
             {
                 SetBusy(false);
             }
+        }
+
+        // Ensure that the full ADMX bundle (with raw/presentation) is ready; await the warm->full swap if currently warming
+        public async Task EnsureFullBundleAsync()
+        {
+            try
+            {
+                var tcs = _fullBundleReadyTcs;
+                if (!_isWarmOnly || tcs == null)
+                    return;
+                await tcs.Task.ConfigureAwait(true);
+            }
+            catch { }
         }
 
         private void AppliesToSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)

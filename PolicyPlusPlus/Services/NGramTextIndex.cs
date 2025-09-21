@@ -29,23 +29,61 @@ namespace PolicyPlusPlus.Services
         public void Build(IEnumerable<(string id, string normalizedText)> items)
         {
             _postings.Clear();
-            foreach (var (id, text) in items)
+            if (_n == 2)
             {
-                var s = text ?? string.Empty;
-                if (s.Length < _n)
-                    continue;
-                var seen = new HashSet<string>(StringComparer.Ordinal);
-                for (int i = 0; i <= s.Length - _n; i++)
+                // Fast path for 2-gram: avoid Substring allocations.
+                foreach (var (id, text) in items)
                 {
-                    var gram = s.Substring(i, _n);
-                    if (!seen.Add(gram))
-                        continue; // avoid adding same gram for this doc multiple times
-                    if (!_postings.TryGetValue(gram, out var set))
+                    var s = text ?? string.Empty;
+                    if (s.Length < 2)
+                        continue;
+                    // Track seen grams per document with a compact set
+                    var seen = new HashSet<int>();
+                    for (int i = 0; i < s.Length - 1; i++)
                     {
-                        set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                        _postings[gram] = set;
+                        char a = s[i];
+                        char b = s[i + 1];
+                        int key = (a << 16) | b;
+                        if (!seen.Add(key))
+                            continue;
+                        string gram = string.Create(
+                            2,
+                            (a, b),
+                            static (span, t) =>
+                            {
+                                span[0] = t.Item1;
+                                span[1] = t.Item2;
+                            }
+                        );
+                        if (!_postings.TryGetValue(gram, out var set))
+                        {
+                            set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            _postings[gram] = set;
+                        }
+                        set.Add(id);
                     }
-                    set.Add(id);
+                }
+            }
+            else
+            {
+                foreach (var (id, text) in items)
+                {
+                    var s = text ?? string.Empty;
+                    if (s.Length < _n)
+                        continue;
+                    var seen = new HashSet<string>(StringComparer.Ordinal);
+                    for (int i = 0; i <= s.Length - _n; i++)
+                    {
+                        var gram = s.Substring(i, _n);
+                        if (!seen.Add(gram))
+                            continue; // avoid adding same gram for this doc multiple times
+                        if (!_postings.TryGetValue(gram, out var set))
+                        {
+                            set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            _postings[gram] = set;
+                        }
+                        set.Add(id);
+                    }
                 }
             }
         }
@@ -57,13 +95,37 @@ namespace PolicyPlusPlus.Services
             if (q.Length < _n)
                 return null;
             var grams = new List<HashSet<string>>();
-            for (int i = 0; i <= q.Length - _n; i++)
+            if (_n == 2)
             {
-                var g = q.Substring(i, _n);
-                if (_postings.TryGetValue(g, out var set))
-                    grams.Add(set);
-                else
-                    return new HashSet<string>(StringComparer.OrdinalIgnoreCase); // one gram missing => no candidates
+                for (int i = 0; i < q.Length - 1; i++)
+                {
+                    char a = q[i];
+                    char b = q[i + 1];
+                    string gram = string.Create(
+                        2,
+                        (a, b),
+                        static (span, t) =>
+                        {
+                            span[0] = t.Item1;
+                            span[1] = t.Item2;
+                        }
+                    );
+                    if (_postings.TryGetValue(gram, out var set))
+                        grams.Add(set);
+                    else
+                        return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                }
+            }
+            else
+            {
+                for (int i = 0; i <= q.Length - _n; i++)
+                {
+                    var g = q.Substring(i, _n);
+                    if (_postings.TryGetValue(g, out var set))
+                        grams.Add(set);
+                    else
+                        return new HashSet<string>(StringComparer.OrdinalIgnoreCase); // one gram missing => no candidates
+                }
             }
             if (grams.Count == 0)
                 return null;

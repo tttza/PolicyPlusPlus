@@ -148,18 +148,23 @@ namespace PolicyPlusPlus.Services
                                         if (token.IsCancellationRequested)
                                             return;
                                         // Compute off-UI-thread
-                                        (
-                                            PolicyState state,
-                                            Dictionary<string, object>? options
-                                        ) compState = (PolicyState.Unknown, null);
-                                        (
-                                            PolicyState state,
-                                            Dictionary<string, object>? options
-                                        ) userState = (PolicyState.Unknown, null);
+                                        // Use local variables instead of tuple field access to avoid named tuple metadata loss across compilations.
+                                        PolicyState baseCompState = PolicyState.Unknown;
+                                        Dictionary<string, object>? baseCompOptions = null;
+                                        PolicyState baseUserState = PolicyState.Unknown;
+                                        Dictionary<string, object>? baseUserOptions = null;
                                         if (row.SupportsComputer && compSource != null)
-                                            compState = GetBase(compSource, row.Policy);
+                                        {
+                                            var (stC, optC) = GetBase(compSource, row.Policy);
+                                            baseCompState = stC;
+                                            baseCompOptions = optC;
+                                        }
                                         if (row.SupportsUser && userSource != null)
-                                            userState = GetBase(userSource, row.Policy);
+                                        {
+                                            var (stU, optU) = GetBase(userSource, row.Policy);
+                                            baseUserState = stU;
+                                            baseUserOptions = optU;
+                                        }
 
                                         // Overlay pending
                                         if (row.SupportsComputer)
@@ -168,8 +173,8 @@ namespace PolicyPlusPlus.Services
                                                 row.Policy.UniqueID,
                                                 "Computer"
                                             );
-                                            var stateC = pendC?.DesiredState ?? compState.state;
-                                            var optsC = pendC?.Options ?? compState.options;
+                                            var stateC = pendC?.DesiredState ?? baseCompState;
+                                            var optsC = pendC?.Options ?? baseCompOptions;
                                             TryDispatch(() =>
                                                 row.ApplyExternal("Computer", stateC, optsC)
                                             );
@@ -177,8 +182,8 @@ namespace PolicyPlusPlus.Services
                                         if (row.SupportsUser)
                                         {
                                             var pendU = FindPending(row.Policy.UniqueID, "User");
-                                            var stateU = pendU?.DesiredState ?? userState.state;
-                                            var optsU = pendU?.Options ?? userState.options;
+                                            var stateU = pendU?.DesiredState ?? baseUserState;
+                                            var optsU = pendU?.Options ?? baseUserOptions;
                                             TryDispatch(() =>
                                                 row.ApplyExternal("User", stateU, optsU)
                                             );
@@ -224,7 +229,8 @@ namespace PolicyPlusPlus.Services
                     action();
                     return;
                 }
-                dq.TryEnqueue(() => action());
+                // Avoid implicit Action -> DispatcherQueueHandler conversion issues by constructing the delegate explicitly.
+                dq.TryEnqueue(new DispatcherQueueHandler(action));
             }
             catch { }
         }

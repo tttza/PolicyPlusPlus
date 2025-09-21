@@ -224,7 +224,8 @@ namespace PolicyPlusPlus.Services
                     FileAccess.Write,
                     FileShare.Read
                 );
-                using var gz = new GZipStream(fs, CompressionLevel.SmallestSize, leaveOpen: false);
+                // Prefer faster compression to reduce CPU contention during startup.
+                using var gz = new GZipStream(fs, CompressionLevel.Fastest, leaveOpen: false);
                 using var bw = new BinaryWriter(gz, Encoding.UTF8, leaveOpen: false);
                 WriteBinary(bw, snapshot);
             }
@@ -306,7 +307,69 @@ namespace PolicyPlusPlus.Services
                     FileAccess.Write,
                     FileShare.Read
                 );
-                using var gz = new GZipStream(fs, CompressionLevel.SmallestSize, leaveOpen: false);
+                using var gz = new GZipStream(fs, CompressionLevel.Fastest, leaveOpen: false);
+                var bytes = Encoding.UTF8.GetBytes(json);
+                gz.Write(bytes, 0, bytes.Length);
+            }
+            catch { }
+        }
+
+        // ADMX warm snapshot (UI-facing DTO) save/load for skipping XML parses.
+        public static bool TryLoadAdmxWarmSnapshot(
+            string admxPath,
+            string language,
+            string fingerprint,
+            out PolicyPlusCore.Core.AdmxWarmSnapshot? snapshot
+        )
+        {
+            snapshot = null;
+            try
+            {
+                if (string.IsNullOrWhiteSpace(admxPath) || string.IsNullOrWhiteSpace(language))
+                    return false;
+                var key =
+                    $"admxwarm_{Hash(admxPath + "\n" + language + "\n" + fingerprint)}.json.gz";
+                var path = Path.Combine(EnsureDir(), key);
+                if (!File.Exists(path))
+                    return false;
+                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var gz = new GZipStream(fs, CompressionMode.Decompress, leaveOpen: false);
+                using var ms = new MemoryStream();
+                gz.CopyTo(ms);
+                var json = Encoding.UTF8.GetString(ms.ToArray());
+                snapshot =
+                    System.Text.Json.JsonSerializer.Deserialize<PolicyPlusCore.Core.AdmxWarmSnapshot>(
+                        json
+                    );
+                return snapshot != null;
+            }
+            catch
+            {
+                snapshot = null;
+                return false;
+            }
+        }
+
+        public static void SaveAdmxWarmSnapshot(
+            string admxPath,
+            string language,
+            string fingerprint,
+            PolicyPlusCore.Core.AdmxWarmSnapshot snapshot
+        )
+        {
+            try
+            {
+                var key =
+                    $"admxwarm_{Hash(admxPath + "\n" + language + "\n" + fingerprint)}.json.gz";
+                var path = Path.Combine(EnsureDir(), key);
+                var json = System.Text.Json.JsonSerializer.Serialize(snapshot);
+                using var fs = new FileStream(
+                    path,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.Read
+                );
+                using var gz = new GZipStream(fs, CompressionLevel.Fastest, leaveOpen: false);
                 var bytes = Encoding.UTF8.GetBytes(json);
                 gz.Write(bytes, 0, bytes.Length);
             }
@@ -322,9 +385,39 @@ namespace PolicyPlusPlus.Services
             out NGramTextIndex.NGramSnapshot? snapshot
         )
         {
-            // N-gram disk cache disabled: always bypass on-disk snapshots.
             snapshot = null;
-            return false;
+            try
+            {
+                if (string.IsNullOrWhiteSpace(admxPath) || string.IsNullOrWhiteSpace(language))
+                    return false;
+                var baseName = GetBaseName(
+                    admxPath,
+                    language,
+                    fingerprint ?? string.Empty,
+                    n,
+                    kind ?? string.Empty
+                );
+                var p1 = GetBinGzPath(baseName);
+                if (TryLoadBinaryGz(p1, out snapshot) && snapshot != null)
+                    return true;
+                var p2 = GetBinPath(baseName);
+                if (TryLoadBinary(p2, out snapshot) && snapshot != null)
+                    return true;
+                var p3 = GetJsonGzPath(baseName);
+                if (TryLoadJsonGz(p3, out snapshot) && snapshot != null)
+                    return true;
+                // Legacy fallback (pre-fingerprint JSON)
+                var legacy = GetLegacyJsonPath(admxPath, language, n);
+                if (TryLoadJsonGz(legacy + ".gz", out snapshot) && snapshot != null)
+                    return true;
+                snapshot = null;
+                return false;
+            }
+            catch
+            {
+                snapshot = null;
+                return false;
+            }
         }
 
         public static bool TryLoadNGramSnapshot(
@@ -334,9 +427,23 @@ namespace PolicyPlusPlus.Services
             out NGramTextIndex.NGramSnapshot? snapshot
         )
         {
-            // N-gram disk cache disabled.
             snapshot = null;
-            return false;
+            try
+            {
+                if (string.IsNullOrWhiteSpace(admxPath) || string.IsNullOrWhiteSpace(language))
+                    return false;
+                var baseName = GetLegacyJsonPath(admxPath, language, n);
+                if (TryLoadJsonGz(baseName + ".gz", out snapshot) && snapshot != null)
+                    return true;
+                // No-op if not present
+                snapshot = null;
+                return false;
+            }
+            catch
+            {
+                snapshot = null;
+                return false;
+            }
         }
 
         public static void SaveNGramSnapshot(
@@ -347,7 +454,20 @@ namespace PolicyPlusPlus.Services
             NGramTextIndex.NGramSnapshot snapshot
         )
         {
-            // N-gram disk cache disabled: do not persist snapshots.
+            try
+            {
+                if (snapshot == null)
+                    return;
+                var baseName = GetBaseName(
+                    admxPath,
+                    language,
+                    fingerprint ?? string.Empty,
+                    snapshot.N,
+                    kind ?? string.Empty
+                );
+                SaveBinaryGz(GetBinGzPath(baseName), snapshot);
+            }
+            catch { }
         }
 
         public static void SaveNGramSnapshot(
@@ -357,7 +477,20 @@ namespace PolicyPlusPlus.Services
             NGramTextIndex.NGramSnapshot snapshot
         )
         {
-            // N-gram disk cache disabled.
+            try
+            {
+                if (snapshot == null)
+                    return;
+                var baseName = GetBaseName(
+                    admxPath,
+                    language,
+                    fingerprint ?? string.Empty,
+                    snapshot.N,
+                    "primary"
+                );
+                SaveBinaryGz(GetBinGzPath(baseName), snapshot);
+            }
+            catch { }
         }
 
         public static void SaveNGramSnapshot(
@@ -366,7 +499,15 @@ namespace PolicyPlusPlus.Services
             NGramTextIndex.NGramSnapshot snapshot
         )
         {
-            // N-gram disk cache disabled.
+            try
+            {
+                if (snapshot == null)
+                    return;
+                // Legacy format for compatibility
+                var legacy = GetLegacyJsonPath(admxPath, language, snapshot.N);
+                SaveJsonGz(legacy + ".gz", snapshot);
+            }
+            catch { }
         }
     }
 }

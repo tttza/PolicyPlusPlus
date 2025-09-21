@@ -452,6 +452,11 @@ namespace PolicyPlusPlus
             }
             if (snap.ConfiguredOnly)
             {
+                // When running on a warm snapshot, RawPolicy may not carry full registry mappings;
+                // evaluating configured state would incorrectly return empty. Defer this filter until
+                // the full bundle is swapped in.
+                if (_isWarmOnly)
+                    return seq;
                 var pending =
                     PendingChangesService.Instance.Pending?.ToList() ?? new List<PendingChange>();
                 if (snap.CompSource != null || snap.UserSource != null || pending.Count > 0)
