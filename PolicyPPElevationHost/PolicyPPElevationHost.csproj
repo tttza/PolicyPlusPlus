@@ -12,9 +12,10 @@
     <LangVersion>latest</LangVersion>
     <EnableDefaultItems>true</EnableDefaultItems>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-	<SelfContained>true</SelfContained>
-	<PackageIcon>PolicyPlusPlus_Elevated_icon.png</PackageIcon>
-	<ApplicationIcon>Assets\PolicyPlusPlus_Elevated_icon.ico</ApplicationIcon>
+    <!-- Do not enforce self-contained during design-time to avoid NETSDK1151 when referenced -->
+    <SelfContained Condition="'$(DesignTimeBuild)'!='true'">true</SelfContained>
+    <PackageIcon>PolicyPlusPlus_Elevated_icon.png</PackageIcon>
+    <ApplicationIcon>Assets\PolicyPlusPlus_Elevated_icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Assets\PolicyPlusPlus_Elevated_icon.ico" />
