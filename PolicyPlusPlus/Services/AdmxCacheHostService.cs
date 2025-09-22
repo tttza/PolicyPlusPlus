@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using PolicyPlusCore.Core;
 
@@ -27,6 +28,9 @@ namespace PolicyPlusPlus.Services
         // Rebuild serialization & coalescing
         private int _rebuildBusy; // 0 = idle, 1 = busy
         private volatile bool _rebuildPending;
+
+        // Tracks active rebuild operations to allow the UI to fall back while building
+        private int _rebuildActive; // >0 means building
 
         private AdmxCacheHostService()
         {
@@ -72,6 +76,7 @@ namespace PolicyPlusPlus.Services
         }
 
         public IAdmxCache Cache => _cache;
+        public bool IsRebuilding => Volatile.Read(ref _rebuildActive) > 0;
         public bool IsStarted
         {
             get
@@ -121,6 +126,7 @@ namespace PolicyPlusPlus.Services
                             return;
                         RunAndTrack(async () =>
                         {
+                            Interlocked.Increment(ref _rebuildActive);
                             try
                             {
                                 await EnsureInitializedAsync().ConfigureAwait(false);
@@ -177,6 +183,10 @@ namespace PolicyPlusPlus.Services
                                 EventHub.PublishAdmxCacheRebuildCompleted("languages");
                             }
                             catch { }
+                            finally
+                            {
+                                Interlocked.Decrement(ref _rebuildActive);
+                            }
                         });
                     };
                     SettingsService.Instance.SourcesRootChanged += () =>
@@ -190,6 +200,7 @@ namespace PolicyPlusPlus.Services
                             return;
                         RunAndTrack(async () =>
                         {
+                            Interlocked.Increment(ref _rebuildActive);
                             try
                             {
                                 await EnsureInitializedAsync().ConfigureAwait(false);
@@ -231,6 +242,10 @@ namespace PolicyPlusPlus.Services
                                 EventHub.PublishAdmxCacheRebuildCompleted("sourcesRoot");
                             }
                             catch { }
+                            finally
+                            {
+                                Interlocked.Decrement(ref _rebuildActive);
+                            }
                         });
                     };
                     SettingsService.Instance.CacheCleared += () =>
@@ -244,6 +259,7 @@ namespace PolicyPlusPlus.Services
                             return;
                         RunAndTrack(async () =>
                         {
+                            Interlocked.Increment(ref _rebuildActive);
                             try
                             {
                                 await EnsureInitializedAsync().ConfigureAwait(false);
@@ -278,6 +294,10 @@ namespace PolicyPlusPlus.Services
                                 EventHub.PublishAdmxCacheRebuildCompleted("cacheCleared");
                             }
                             catch { }
+                            finally
+                            {
+                                Interlocked.Decrement(ref _rebuildActive);
+                            }
                         });
                     };
                 }
@@ -319,6 +339,7 @@ namespace PolicyPlusPlus.Services
                 // Kick off the initial scan in the background to avoid any chance of UI contention.
                 RunAndTrack(async () =>
                 {
+                    Interlocked.Increment(ref _rebuildActive);
                     try
                     {
                         await EnsureInitializedAsync().ConfigureAwait(false);
@@ -340,6 +361,10 @@ namespace PolicyPlusPlus.Services
                         EventHub.PublishPolicySourcesRefreshed(null);
                     }
                     catch { }
+                    finally
+                    {
+                        Interlocked.Decrement(ref _rebuildActive);
+                    }
                 });
             }
             catch
@@ -371,6 +396,7 @@ namespace PolicyPlusPlus.Services
                             _lastWatcherKickUtc = DateTime.UtcNow;
                             RunAndTrack(async () =>
                             {
+                                Interlocked.Increment(ref _rebuildActive);
                                 try
                                 {
                                     await EnsureInitializedAsync().ConfigureAwait(false);
@@ -397,6 +423,10 @@ namespace PolicyPlusPlus.Services
                                     EventHub.PublishAdmxCacheRebuildCompleted("watcher");
                                 }
                                 catch { }
+                                finally
+                                {
+                                    Interlocked.Decrement(ref _rebuildActive);
+                                }
                             });
                             await Task.Yield();
                         }
@@ -517,6 +547,7 @@ namespace PolicyPlusPlus.Services
             }
             RunAndTrack(async () =>
             {
+                Interlocked.Increment(ref _rebuildActive);
                 try
                 {
                     if (_initTask != null)
@@ -544,6 +575,10 @@ namespace PolicyPlusPlus.Services
                     EventHub.PublishAdmxCacheRebuildCompleted(reason);
                 }
                 catch { }
+                finally
+                {
+                    Interlocked.Decrement(ref _rebuildActive);
+                }
             });
             return Task.CompletedTask;
         }

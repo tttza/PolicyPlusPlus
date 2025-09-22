@@ -1167,6 +1167,8 @@ namespace PolicyPlusPlus
                         var st = SettingsService.Instance.LoadSettings();
                         if ((st.AdmxCacheEnabled ?? true) == false)
                             throw new InvalidOperationException("ADMX cache disabled");
+                        if (Services.AdmxCacheHostService.Instance.IsRebuilding)
+                            throw new InvalidOperationException("ADMX cache rebuilding");
                         string primary = !string.IsNullOrWhiteSpace(st.Language)
                             ? st.Language!
                             : System.Globalization.CultureInfo.CurrentUICulture.Name;
@@ -1403,7 +1405,11 @@ namespace PolicyPlusPlus
                     try
                     {
                         var st = SettingsService.Instance.LoadSettings();
-                        if (snap.Category != null && (st.AdmxCacheEnabled ?? true) == true)
+                        if (
+                            snap.Category != null
+                            && (st.AdmxCacheEnabled ?? true) == true
+                            && !Services.AdmxCacheHostService.Instance.IsRebuilding
+                        )
                         {
                             // Build category key set respecting IncludeSubcategories
                             var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
