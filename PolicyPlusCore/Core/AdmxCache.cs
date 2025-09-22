@@ -44,10 +44,45 @@ public sealed class AdmxCache : IAdmxCache
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
-        await _store.InitializeAsync(ct).ConfigureAwait(false);
-        using var conn = _store.OpenConnection();
-        await conn.OpenAsync(ct).ConfigureAwait(false);
-        await _store.OptimizeAsync(conn, ct).ConfigureAwait(false);
+        // Acquire writer lock during initialization to avoid races with cache deletion.
+        IDisposable? writerLock = null;
+        try
+        {
+            for (int attempt = 0; attempt < 3 && writerLock is null; attempt++)
+            {
+                writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(10));
+                if (writerLock is null)
+                {
+                    // Best-effort short backoff before retrying
+                    try
+                    {
+                        await Task.Delay(250, ct).ConfigureAwait(false);
+                    }
+                    catch { }
+                }
+            }
+
+            await _store.InitializeAsync(ct).ConfigureAwait(false);
+            using var conn = _store.OpenConnection();
+            await conn.OpenAsync(ct).ConfigureAwait(false);
+            await _store.OptimizeAsync(conn, ct).ConfigureAwait(false);
+            // Ensure schema writes are checkpointed so the DB file is not left at 0 bytes.
+            try
+            {
+                using var ck = conn.CreateCommand();
+                ck.CommandText = "PRAGMA wal_checkpoint(TRUNCATE);";
+                await ck.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
+            catch { }
+        }
+        finally
+        {
+            try
+            {
+                writerLock?.Dispose();
+            }
+            catch { }
+        }
     }
 
     public void SetSourceRoot(string? baseDirectory)
@@ -143,6 +178,23 @@ public sealed class AdmxCache : IAdmxCache
             }
             catch { }
         }
+
+        // Run a single optimize after processing all cultures to reduce contention and I/O.
+        try
+        {
+            using var conn = _store.OpenConnection();
+            await conn.OpenAsync(ct).ConfigureAwait(false);
+            await _store.OptimizeAsync(conn, ct).ConfigureAwait(false);
+            // Ensure WAL contents are checkpointed so the base DB reflects writes promptly.
+            try
+            {
+                using var ck = conn.CreateCommand();
+                ck.CommandText = "PRAGMA wal_checkpoint(TRUNCATE);";
+                await ck.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
+            catch { }
+        }
+        catch { }
     }
 
     private async Task DiffAndApplyAsync(
@@ -153,12 +205,26 @@ public sealed class AdmxCache : IAdmxCache
     )
     {
         // Serialize writers across processes to avoid WAL write conflicts and cache deletion races.
-        using var writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(30));
+        // Try a few short retries to reduce chances of missing a rebuild entirely during transient contention.
+        IDisposable? writerLock = null;
+        for (int attempt = 0; attempt < 3 && writerLock is null; attempt++)
+        {
+            writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(5));
+            if (writerLock is null)
+            {
+                try
+                {
+                    await Task.Delay(250, ct).ConfigureAwait(false);
+                }
+                catch { }
+            }
+        }
         if (writerLock is null)
         {
-            // Give up quietly if we cannot obtain the writer lock; readers can continue using existing data.
+            // Could not acquire within budget; skip this pass to avoid blocking UI. A coalesced rerun should follow.
             return;
         }
+        using var _writerLockScope = writerLock;
 
         using var conn = _store.OpenConnection();
         await conn.OpenAsync(ct).ConfigureAwait(false);
@@ -202,7 +268,6 @@ public sealed class AdmxCache : IAdmxCache
             }
 
             await tx.CommitAsync(ct).ConfigureAwait(false);
-            await _store.OptimizeAsync(conn, ct).ConfigureAwait(false);
         }
         catch
         {

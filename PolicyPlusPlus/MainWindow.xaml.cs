@@ -299,7 +299,7 @@ namespace PolicyPlusPlus
             catch { }
         }
 
-        private async void ToggleAdmxCacheMenu_Click(object sender, RoutedEventArgs e)
+        private void ToggleAdmxCacheMenu_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -318,12 +318,15 @@ namespace PolicyPlusPlus
                 }
                 else
                 {
-                    // Stop cache host and clear pooled handles
-                    try
+                    // Stop cache host and clear pooled handles (fire-and-forget to avoid blocking UI)
+                    _ = Task.Run(async () =>
                     {
-                        await Services.AdmxCacheHostService.Instance.StopAsync();
-                    }
-                    catch { }
+                        try
+                        {
+                            await Services.AdmxCacheHostService.Instance.StopAsync();
+                        }
+                        catch { }
+                    });
                     ShowInfo(
                         "ADMX cache disabled. Using legacy in-memory search.",
                         InfoBarSeverity.Informational

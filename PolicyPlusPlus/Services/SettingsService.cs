@@ -449,119 +449,136 @@ namespace PolicyPlusPlus.Services
                     PolicyPlusCore.Core.AdmxCacheRuntime.ReleaseSqliteHandles();
                 }
                 catch { }
-                using var writerLock = PolicyPlusCore.Core.AdmxCacheRuntime.TryAcquireWriterLock(
-                    TimeSpan.FromSeconds(10)
-                );
-                if (writerLock is null)
+                IDisposable? writerLock = null;
+                try
                 {
-                    // Another instance is updating the cache; refuse to clear now.
-                    return false;
-                }
-                await Task.Run(() =>
-                {
-                    try
+                    writerLock = PolicyPlusCore.Core.AdmxCacheRuntime.TryAcquireWriterLock(
+                        TimeSpan.FromSeconds(10)
+                    );
+                    if (writerLock is null)
                     {
-                        if (Directory.Exists(uiDir))
+                        return false; // cannot clear while another writer holds the lock
+                    }
+                    await Task.Run(() =>
+                    {
+                        try
                         {
-                            foreach (
-                                var f in Directory.EnumerateFiles(
-                                    uiDir,
-                                    "*",
-                                    SearchOption.AllDirectories
+                            if (Directory.Exists(uiDir))
+                            {
+                                foreach (
+                                    var f in Directory.EnumerateFiles(
+                                        uiDir,
+                                        "*",
+                                        SearchOption.AllDirectories
+                                    )
                                 )
-                            )
-                            {
-                                try
                                 {
-                                    File.SetAttributes(f, System.IO.FileAttributes.Normal);
-                                }
-                                catch { }
-                            }
-                            for (int attempt = 0; attempt < 3; attempt++)
-                            {
-                                try
-                                {
-                                    Directory.Delete(uiDir, recursive: true);
-                                    break;
-                                }
-                                catch
-                                {
-                                    if (attempt == 2)
-                                        throw;
                                     try
                                     {
-                                        Thread.Sleep(120);
+                                        File.SetAttributes(f, System.IO.FileAttributes.Normal);
+                                    }
+                                    catch { }
+                                }
+                                for (int attempt = 0; attempt < 3; attempt++)
+                                {
+                                    try
+                                    {
+                                        Directory.Delete(uiDir, recursive: true);
+                                        break;
+                                    }
+                                    catch
+                                    {
+                                        if (attempt == 2)
+                                            throw;
+                                        try
+                                        {
+                                            Thread.Sleep(120);
+                                        }
+                                        catch { }
+                                    }
+                                }
+                            }
+                        }
+                        catch { }
+                        try
+                        {
+                            Directory.CreateDirectory(uiDir);
+                        }
+                        catch { }
+
+                        if (!string.IsNullOrWhiteSpace(coreDir))
+                        {
+                            try
+                            {
+                                if (
+                                    !string.Equals(
+                                        coreDir,
+                                        uiDir,
+                                        StringComparison.OrdinalIgnoreCase
+                                    )
+                                )
+                                {
+                                    try
+                                    {
+                                        if (Directory.Exists(coreDir))
+                                        {
+                                            foreach (
+                                                var f in Directory.EnumerateFiles(
+                                                    coreDir,
+                                                    "*",
+                                                    SearchOption.AllDirectories
+                                                )
+                                            )
+                                            {
+                                                try
+                                                {
+                                                    File.SetAttributes(
+                                                        f,
+                                                        System.IO.FileAttributes.Normal
+                                                    );
+                                                }
+                                                catch { }
+                                            }
+                                            for (int attempt = 0; attempt < 3; attempt++)
+                                            {
+                                                try
+                                                {
+                                                    Directory.Delete(coreDir, recursive: true);
+                                                    break;
+                                                }
+                                                catch
+                                                {
+                                                    if (attempt == 2)
+                                                        throw;
+                                                    try
+                                                    {
+                                                        Thread.Sleep(120);
+                                                    }
+                                                    catch { }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    catch { }
+                                    try
+                                    {
+                                        Directory.CreateDirectory(coreDir);
                                     }
                                     catch { }
                                 }
                             }
+                            catch { }
                         }
-                    }
-                    catch { }
+                    });
+                }
+                finally
+                {
                     try
                     {
-                        Directory.CreateDirectory(uiDir);
+                        writerLock?.Dispose();
                     }
                     catch { }
-
-                    if (!string.IsNullOrWhiteSpace(coreDir))
-                    {
-                        try
-                        {
-                            if (!string.Equals(coreDir, uiDir, StringComparison.OrdinalIgnoreCase))
-                            {
-                                try
-                                {
-                                    if (Directory.Exists(coreDir))
-                                    {
-                                        foreach (
-                                            var f in Directory.EnumerateFiles(
-                                                coreDir,
-                                                "*",
-                                                SearchOption.AllDirectories
-                                            )
-                                        )
-                                        {
-                                            try
-                                            {
-                                                File.SetAttributes(
-                                                    f,
-                                                    System.IO.FileAttributes.Normal
-                                                );
-                                            }
-                                            catch { }
-                                        }
-                                        for (int attempt = 0; attempt < 3; attempt++)
-                                        {
-                                            try
-                                            {
-                                                Directory.Delete(coreDir, recursive: true);
-                                                break;
-                                            }
-                                            catch
-                                            {
-                                                if (attempt == 2)
-                                                    throw;
-                                                try
-                                                {
-                                                    Thread.Sleep(120);
-                                                }
-                                                catch { }
-                                            }
-                                        }
-                                    }
-                                }
-                                catch { }
-                                try
-                                {
-                                    Directory.CreateDirectory(coreDir);
-                                }
-                                catch { }
-                            }
-                        }
-                        catch { }
-                    }
-                });
+                }
             }
             catch
             {

@@ -44,8 +44,32 @@ internal sealed class AdmxCacheStore
         Directory.CreateDirectory(Path.GetDirectoryName(_dbPath)!);
         using var conn = new SqliteConnection(ConnectionString);
         await conn.OpenAsync(ct).ConfigureAwait(false);
-        await ApplyPragmasAsync(conn, ct).ConfigureAwait(false);
+
+        // Phase 1: create schema in DELETE journal mode so base DB file reflects changes immediately.
+        try
+        {
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText =
+                    "PRAGMA journal_mode=DELETE; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=30000; PRAGMA page_size=4096; PRAGMA encoding='UTF-8';";
+                await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
+        }
+        catch { }
         await CreateSchemaAsync(conn, ct).ConfigureAwait(false);
+
+        // Phase 2: switch to WAL for runtime performance.
+        try
+        {
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText =
+                    "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=30000; PRAGMA page_size=4096;";
+                await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
+        }
+        catch { }
+
         await OptimizeAsync(conn, ct).ConfigureAwait(false);
     }
 
@@ -80,12 +104,17 @@ internal sealed class AdmxCacheStore
         try
         {
             using var chk = conn.CreateCommand();
-            chk.CommandText = "SELECT sql FROM sqlite_master WHERE type='table' AND name='PolicyIndex'";
+            chk.CommandText =
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name='PolicyIndex'";
             var existingSql = (string?)await chk.ExecuteScalarAsync(ct).ConfigureAwait(false);
-            if (!string.IsNullOrEmpty(existingSql) && existingSql.IndexOf("detail=none", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (
+                !string.IsNullOrEmpty(existingSql)
+                && existingSql.IndexOf("detail=none", StringComparison.OrdinalIgnoreCase) >= 0
+            )
             {
                 using var drop = conn.CreateCommand();
-                drop.CommandText = "DROP TABLE IF EXISTS PolicyIndex; DROP TABLE IF EXISTS PolicyIndexMap;";
+                drop.CommandText =
+                    "DROP TABLE IF EXISTS PolicyIndex; DROP TABLE IF EXISTS PolicyIndexMap;";
                 await drop.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
         }
