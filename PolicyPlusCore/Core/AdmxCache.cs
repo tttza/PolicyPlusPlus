@@ -228,54 +228,204 @@ public sealed class AdmxCache : IAdmxCache
 
         using var conn = _store.OpenConnection();
         await conn.OpenAsync(ct).ConfigureAwait(false);
-        using var tx = await conn.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted)
-            .ConfigureAwait(false);
-        try
-        {
-            if (allowGlobalRebuild)
-            {
-                using var purge = conn.CreateCommand();
-                purge.CommandText =
-                    "DELETE FROM PolicyIndex; DELETE FROM PolicyIndexMap; DELETE FROM PolicyI18n; DELETE FROM PolicyDeps; DELETE FROM PolicyStringsDeps; DELETE FROM Policies;";
-                await purge.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-            }
-            else
-            {
-                using (var delI18n = conn.CreateCommand())
-                {
-                    delI18n.CommandText = "DELETE FROM PolicyI18n WHERE culture=@c";
-                    delI18n.Parameters.AddWithValue("@c", culture);
-                    await delI18n.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-                }
-                using (var delIdx = conn.CreateCommand())
-                {
-                    delIdx.CommandText =
-                        "DELETE FROM PolicyIndex WHERE rowid IN (SELECT rowid FROM PolicyIndexMap WHERE culture=@c); DELETE FROM PolicyIndexMap WHERE culture=@c;";
-                    delIdx.Parameters.AddWithValue("@c", culture);
-                    await delIdx.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-                }
-                using (var delStr = conn.CreateCommand())
-                {
-                    delStr.CommandText = "DELETE FROM PolicyStringsDeps WHERE culture=@c";
-                    delStr.Parameters.AddWithValue("@c", culture);
-                    await delStr.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-                }
-            }
 
-            foreach (var kv in bundle.Policies)
-            {
-                await UpsertOnePolicyAsync(conn, kv.Value, culture, ct).ConfigureAwait(false);
-            }
-
-            await tx.CommitAsync(ct).ConfigureAwait(false);
-        }
-        catch
+        // Phase 1: perform required deletes in a single transaction.
+        using (
+            var txDel = (Microsoft.Data.Sqlite.SqliteTransaction)
+                await conn.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted)
+                    .ConfigureAwait(false)
+        )
         {
             try
             {
-                await tx.RollbackAsync(ct).ConfigureAwait(false);
+                if (allowGlobalRebuild)
+                {
+                    using var purge = conn.CreateCommand();
+                    purge.Transaction = txDel;
+                    purge.CommandText =
+                        "DELETE FROM PolicyIndex; DELETE FROM PolicyIndexMap; DELETE FROM PolicyI18n; DELETE FROM PolicyDeps; DELETE FROM PolicyStringsDeps; DELETE FROM Policies;";
+                    await purge.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                }
+                else
+                {
+                    using (var delI18n = conn.CreateCommand())
+                    {
+                        delI18n.Transaction = txDel;
+                        delI18n.CommandText = "DELETE FROM PolicyI18n WHERE culture=@c";
+                        delI18n.Parameters.AddWithValue("@c", culture);
+                        await delI18n.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                    }
+                    using (var delIdx = conn.CreateCommand())
+                    {
+                        delIdx.Transaction = txDel;
+                        delIdx.CommandText =
+                            "DELETE FROM PolicyIndex WHERE rowid IN (SELECT rowid FROM PolicyIndexMap WHERE culture=@c); DELETE FROM PolicyIndexMap WHERE culture=@c;";
+                        delIdx.Parameters.AddWithValue("@c", culture);
+                        await delIdx.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                    }
+                    using (var delStr = conn.CreateCommand())
+                    {
+                        delStr.Transaction = txDel;
+                        delStr.CommandText = "DELETE FROM PolicyStringsDeps WHERE culture=@c";
+                        delStr.Parameters.AddWithValue("@c", culture);
+                        await delStr.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                    }
+                }
+                await txDel.CommitAsync(ct).ConfigureAwait(false);
             }
-            catch { }
+            catch
+            {
+                try
+                {
+                    await txDel.RollbackAsync(ct).ConfigureAwait(false);
+                }
+                catch { }
+                // After rollback, continue without inserts to avoid partial state.
+                return;
+            }
+        }
+
+        // Prepare reusable commands to reduce per-policy command construction overhead.
+        using var cmdPolicy = conn.CreateCommand();
+        cmdPolicy.CommandText =
+            @"INSERT INTO Policies(ns, policy_name, category_key, hive, reg_key, reg_value, value_type, supported_min, supported_max, deprecated, product_hint)
+VALUES(@ns,@name,@cat,@hive,@rkey,@rval,@vtype,'','',0,@ph)
+ON CONFLICT(ns,policy_name) DO UPDATE SET category_key=excluded.category_key, hive=excluded.hive, reg_key=excluded.reg_key, reg_value=excluded.reg_value, value_type=excluded.value_type, product_hint=excluded.product_hint;
+SELECT id FROM Policies WHERE ns=@ns AND policy_name=@name;";
+        var p_ns = cmdPolicy.Parameters.Add("@ns", Microsoft.Data.Sqlite.SqliteType.Text);
+        var p_name = cmdPolicy.Parameters.Add("@name", Microsoft.Data.Sqlite.SqliteType.Text);
+        var p_cat = cmdPolicy.Parameters.Add("@cat", Microsoft.Data.Sqlite.SqliteType.Text);
+        var p_hive = cmdPolicy.Parameters.Add("@hive", Microsoft.Data.Sqlite.SqliteType.Text);
+        var p_rkey = cmdPolicy.Parameters.Add("@rkey", Microsoft.Data.Sqlite.SqliteType.Text);
+        var p_rval = cmdPolicy.Parameters.Add("@rval", Microsoft.Data.Sqlite.SqliteType.Text);
+        var p_vtype = cmdPolicy.Parameters.Add("@vtype", Microsoft.Data.Sqlite.SqliteType.Text);
+        var p_ph = cmdPolicy.Parameters.Add("@ph", Microsoft.Data.Sqlite.SqliteType.Text);
+        try
+        {
+            cmdPolicy.Prepare();
+        }
+        catch { }
+
+        using var cmdI18n = conn.CreateCommand();
+        cmdI18n.CommandText =
+            @"INSERT OR REPLACE INTO PolicyI18n(policy_id, culture, display_name, explain_text, category_path, reading_kana, presentation_json)
+VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
+        var s_pid = cmdI18n.Parameters.Add("@pid", Microsoft.Data.Sqlite.SqliteType.Integer);
+        var s_culture = cmdI18n.Parameters.Add("@culture", Microsoft.Data.Sqlite.SqliteType.Text);
+        var s_dname = cmdI18n.Parameters.Add("@dname", Microsoft.Data.Sqlite.SqliteType.Text);
+        var s_desc = cmdI18n.Parameters.Add("@desc", Microsoft.Data.Sqlite.SqliteType.Text);
+        var s_cat = cmdI18n.Parameters.Add("@cat", Microsoft.Data.Sqlite.SqliteType.Text);
+        var s_kana = cmdI18n.Parameters.Add("@kana", Microsoft.Data.Sqlite.SqliteType.Text);
+        var s_pres = cmdI18n.Parameters.Add("@pres", Microsoft.Data.Sqlite.SqliteType.Blob);
+        try
+        {
+            cmdI18n.Prepare();
+        }
+        catch { }
+
+        using var cmdIdx = conn.CreateCommand();
+        cmdIdx.CommandText =
+            @"INSERT INTO PolicyIndex(title_norm,desc_norm,title_loose,desc_loose,registry_path,tags) VALUES(@tn,@dn,@tl,@dl,@rp,@tags); SELECT last_insert_rowid();";
+        var i_tn = cmdIdx.Parameters.Add("@tn", Microsoft.Data.Sqlite.SqliteType.Text);
+        var i_dn = cmdIdx.Parameters.Add("@dn", Microsoft.Data.Sqlite.SqliteType.Text);
+        var i_tl = cmdIdx.Parameters.Add("@tl", Microsoft.Data.Sqlite.SqliteType.Text);
+        var i_dl = cmdIdx.Parameters.Add("@dl", Microsoft.Data.Sqlite.SqliteType.Text);
+        var i_rp = cmdIdx.Parameters.Add("@rp", Microsoft.Data.Sqlite.SqliteType.Text);
+        var i_tags = cmdIdx.Parameters.Add("@tags", Microsoft.Data.Sqlite.SqliteType.Text);
+        try
+        {
+            cmdIdx.Prepare();
+        }
+        catch { }
+
+        using var cmdIdxMap = conn.CreateCommand();
+        cmdIdxMap.CommandText =
+            "INSERT INTO PolicyIndexMap(rowid,policy_id,culture) VALUES(@rowid,@pid,@culture)";
+        var m_rowid = cmdIdxMap.Parameters.Add("@rowid", Microsoft.Data.Sqlite.SqliteType.Integer);
+        var m_pid = cmdIdxMap.Parameters.Add("@pid", Microsoft.Data.Sqlite.SqliteType.Integer);
+        var m_culture = cmdIdxMap.Parameters.Add("@culture", Microsoft.Data.Sqlite.SqliteType.Text);
+        try
+        {
+            cmdIdxMap.Prepare();
+        }
+        catch { }
+
+        // Phase 2: insert/update in batches to yield and keep UI responsive.
+        const int BatchSize = 500;
+        var policies = bundle.Policies.Values.ToList();
+        int total = policies.Count;
+        int index = 0;
+        while (index < total)
+        {
+            int take = Math.Min(BatchSize, total - index);
+            using var txIns = (Microsoft.Data.Sqlite.SqliteTransaction)
+                await conn.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted)
+                    .ConfigureAwait(false);
+            try
+            {
+                // Enlist prepared commands in this transaction.
+                cmdPolicy.Transaction = txIns;
+                cmdI18n.Transaction = txIns;
+                cmdIdx.Transaction = txIns;
+                cmdIdxMap.Transaction = txIns;
+
+                for (int i0 = 0; i0 < take; i0++)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var pol = policies[index + i0];
+                    await UpsertOnePolicyAsync(
+                            conn,
+                            pol,
+                            culture,
+                            ct,
+                            cmdPolicy,
+                            p_ns,
+                            p_name,
+                            p_cat,
+                            p_hive,
+                            p_rkey,
+                            p_rval,
+                            p_vtype,
+                            p_ph,
+                            cmdI18n,
+                            s_pid,
+                            s_culture,
+                            s_dname,
+                            s_desc,
+                            s_cat,
+                            s_kana,
+                            s_pres,
+                            cmdIdx,
+                            i_tn,
+                            i_dn,
+                            i_tl,
+                            i_dl,
+                            i_rp,
+                            i_tags,
+                            cmdIdxMap,
+                            m_rowid,
+                            m_pid,
+                            m_culture
+                        )
+                        .ConfigureAwait(false);
+                }
+
+                await txIns.CommitAsync(ct).ConfigureAwait(false);
+            }
+            catch
+            {
+                try
+                {
+                    await txIns.RollbackAsync(ct).ConfigureAwait(false);
+                }
+                catch { }
+                // Abort remaining batches on failure to avoid inconsistent partial state.
+                break;
+            }
+
+            index += take;
+            // Yield to allow UI thread and other tasks to run between batches.
+            await Task.Yield();
         }
     }
 
@@ -438,10 +588,16 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        var titleNorm = TextNormalization.ToNGramTokens(TextNormalization.NormalizeStrict(dname));
-        var descNorm = TextNormalization.ToNGramTokens(TextNormalization.NormalizeStrict(desc));
-        var titleLoose = TextNormalization.ToNGramTokens(TextNormalization.NormalizeLoose(dname));
-        var descLoose = TextNormalization.ToNGramTokens(TextNormalization.NormalizeLoose(desc));
+        var dnameStrict = TextNormalization.NormalizeStrict(dname);
+        var descStrict = TextNormalization.NormalizeStrict(desc);
+        var titleNorm = TextNormalization.ToNGramTokens(dnameStrict);
+        var descNorm = TextNormalization.ToNGramTokens(descStrict);
+        var titleLoose = TextNormalization.ToNGramTokens(
+            TextNormalization.NormalizeLooseFromStrict(dnameStrict)
+        );
+        var descLoose = TextNormalization.ToNGramTokens(
+            TextNormalization.NormalizeLooseFromStrict(descStrict)
+        );
         var regPath = TextNormalization.ToNGramTokens(
             TextNormalization.NormalizeStrict(GetRegistryPath(hive, regKey, regVal))
         );
@@ -474,6 +630,116 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             cmd.Parameters.AddWithValue("@culture", culture);
             await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
+    }
+
+    // Optimized variant using prepared commands created by the caller for batch processing.
+    private static async Task UpsertOnePolicyAsync(
+        SqliteConnection conn,
+        PolicyPlusPolicy pol,
+        string culture,
+        CancellationToken ct,
+        Microsoft.Data.Sqlite.SqliteCommand cmdPolicy,
+        Microsoft.Data.Sqlite.SqliteParameter p_ns,
+        Microsoft.Data.Sqlite.SqliteParameter p_name,
+        Microsoft.Data.Sqlite.SqliteParameter p_cat,
+        Microsoft.Data.Sqlite.SqliteParameter p_hive,
+        Microsoft.Data.Sqlite.SqliteParameter p_rkey,
+        Microsoft.Data.Sqlite.SqliteParameter p_rval,
+        Microsoft.Data.Sqlite.SqliteParameter p_vtype,
+        Microsoft.Data.Sqlite.SqliteParameter p_ph,
+        Microsoft.Data.Sqlite.SqliteCommand cmdI18n,
+        Microsoft.Data.Sqlite.SqliteParameter s_pid,
+        Microsoft.Data.Sqlite.SqliteParameter s_culture,
+        Microsoft.Data.Sqlite.SqliteParameter s_dname,
+        Microsoft.Data.Sqlite.SqliteParameter s_desc,
+        Microsoft.Data.Sqlite.SqliteParameter s_cat,
+        Microsoft.Data.Sqlite.SqliteParameter s_kana,
+        Microsoft.Data.Sqlite.SqliteParameter s_pres,
+        Microsoft.Data.Sqlite.SqliteCommand cmdIdx,
+        Microsoft.Data.Sqlite.SqliteParameter i_tn,
+        Microsoft.Data.Sqlite.SqliteParameter i_dn,
+        Microsoft.Data.Sqlite.SqliteParameter i_tl,
+        Microsoft.Data.Sqlite.SqliteParameter i_dl,
+        Microsoft.Data.Sqlite.SqliteParameter i_rp,
+        Microsoft.Data.Sqlite.SqliteParameter i_tags,
+        Microsoft.Data.Sqlite.SqliteCommand cmdIdxMap,
+        Microsoft.Data.Sqlite.SqliteParameter m_rowid,
+        Microsoft.Data.Sqlite.SqliteParameter m_pid,
+        Microsoft.Data.Sqlite.SqliteParameter m_culture
+    )
+    {
+        var raw = pol.RawPolicy;
+        var ns = raw.DefinedIn.AdmxNamespace;
+        var policyName = raw.ID;
+        var catKey = pol.Category?.UniqueID ?? string.Empty;
+        var hive =
+            raw.Section == AdmxPolicySection.Machine ? "HKLM"
+            : raw.Section == AdmxPolicySection.User ? "HKCU"
+            : string.Empty;
+        var regKey = raw.RegistryKey;
+        var regVal = raw.RegistryValue;
+        var vtype = InferValueType(raw);
+        var productHint = pol.SupportedOn?.DisplayName ?? string.Empty;
+
+        p_ns.Value = ns;
+        p_name.Value = policyName;
+        p_cat.Value = catKey;
+        p_hive.Value = hive;
+        p_rkey.Value = (object?)regKey ?? DBNull.Value;
+        p_rval.Value = (object?)regVal ?? DBNull.Value;
+        p_vtype.Value = vtype;
+        p_ph.Value = productHint;
+        var obj = await cmdPolicy.ExecuteScalarAsync(ct).ConfigureAwait(false);
+        var policyId = Convert.ToInt64(obj, CultureInfo.InvariantCulture);
+
+        var dname = pol.DisplayName ?? string.Empty;
+        var desc = pol.DisplayExplanation ?? string.Empty;
+        var catPath = BuildCategoryPath(pol.Category);
+        var presJson = pol.Presentation is null ? null : JsonSerializer.Serialize(pol.Presentation);
+
+        s_pid.Value = policyId;
+        s_culture.Value = culture;
+        s_dname.Value = dname;
+        s_desc.Value = desc;
+        s_cat.Value = catPath;
+        s_kana.Value = DBNull.Value;
+        if (presJson is null)
+            s_pres.Value = DBNull.Value;
+        else
+            s_pres.Value = Encoding.UTF8.GetBytes(presJson);
+        await cmdI18n.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+
+        var dnameStrict = TextNormalization.NormalizeStrict(dname);
+        var descStrict = TextNormalization.NormalizeStrict(desc);
+        var titleNorm = TextNormalization.ToNGramTokens(dnameStrict);
+        var descNorm = TextNormalization.ToNGramTokens(descStrict);
+        var titleLoose = TextNormalization.ToNGramTokens(
+            TextNormalization.NormalizeLooseFromStrict(dnameStrict)
+        );
+        var descLoose = TextNormalization.ToNGramTokens(
+            TextNormalization.NormalizeLooseFromStrict(descStrict)
+        );
+        var regPath = TextNormalization.ToNGramTokens(
+            TextNormalization.NormalizeStrict(GetRegistryPath(hive, regKey, regVal))
+        );
+        var tags = string.Join(
+            ' ',
+            new[] { ns, vtype, productHint, policyName }.Where(s0 => !string.IsNullOrWhiteSpace(s0))
+        );
+
+        i_tn.Value = titleNorm;
+        i_dn.Value = descNorm;
+        i_tl.Value = titleLoose;
+        i_dl.Value = descLoose;
+        i_rp.Value = regPath;
+        i_tags.Value = tags;
+        var objRow = await cmdIdx.ExecuteScalarAsync(ct).ConfigureAwait(false);
+        var rowid = Convert.ToInt64(objRow, CultureInfo.InvariantCulture);
+
+        m_rowid.Value = rowid;
+        m_pid.Value = policyId;
+        m_culture.Value = culture;
+        await cmdIdxMap.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
     public Task<IReadOnlyList<PolicyHit>> SearchAsync(
@@ -518,8 +784,11 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
 
         var qExact = query;
         var qPrefix = query + "%";
-        var norm = TextNormalization.ToNGramTokens(TextNormalization.NormalizeStrict(query));
-        var loose = TextNormalization.ToNGramTokens(TextNormalization.NormalizeLoose(query));
+        var qStrict = TextNormalization.NormalizeStrict(query);
+        var norm = TextNormalization.ToNGramTokens(qStrict);
+        var loose = TextNormalization.ToNGramTokens(
+            TextNormalization.NormalizeLooseFromStrict(qStrict)
+        );
 
         bool useId = (fields & SearchFields.Id) != 0;
         // Only include registry-path FTS fields when the query looks like a registry path to reduce false positives

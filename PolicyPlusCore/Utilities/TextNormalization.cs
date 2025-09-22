@@ -7,7 +7,7 @@ using System.Text;
 
 namespace PolicyPlusCore.Utilities;
 
-internal static class TextNormalization
+public static class TextNormalization
 {
     public static string NormalizeStrict(string? input)
     {
@@ -50,6 +50,16 @@ internal static class TextNormalization
         return s;
     }
 
+    // Performs the loose normalization steps assuming the input has already been normalized via NormalizeStrict.
+    public static string NormalizeLooseFromStrict(string strictAlready)
+    {
+        if (string.IsNullOrEmpty(strictAlready))
+            return string.Empty;
+        var s = KanaUtils.FoldKana(strictAlready);
+        s = RemoveLongVowelMarks(s);
+        return s;
+    }
+
     private static string RemoveLongVowelMarks(string s)
     {
         // Replace prolonged sound mark with nothing
@@ -60,17 +70,33 @@ internal static class TextNormalization
     {
         if (string.IsNullOrEmpty(normalized))
             return string.Empty;
-        var tokens = new List<string>();
         var s = normalized.Replace(" ", string.Empty);
+        // Use a set to avoid duplicate allocations and a StringBuilder to join efficiently.
+        var set = new HashSet<string>(StringComparer.Ordinal);
         for (int i = 0; i < s.Length; i++)
         {
             for (int n = minN; n <= maxN; n++)
             {
-                if (i + n <= s.Length)
-                    tokens.Add(s.Substring(i, n));
+                int end = i + n;
+                if (end <= s.Length)
+                    set.Add(s.Substring(i, n));
             }
         }
-        return string.Join(' ', tokens.Distinct());
+        if (set.Count == 0)
+            return string.Empty;
+        // Sort for deterministic output; FTS5 does not care about order, but stable strings help caching and tests.
+        var list = new List<string>(set);
+        list.Sort(StringComparer.Ordinal);
+        var sb = new StringBuilder(s.Length * (maxN - minN + 1));
+        bool first = true;
+        foreach (var tok in list)
+        {
+            if (!first)
+                sb.Append(' ');
+            sb.Append(tok);
+            first = false;
+        }
+        return sb.ToString();
     }
 
     private static class KanaUtils
