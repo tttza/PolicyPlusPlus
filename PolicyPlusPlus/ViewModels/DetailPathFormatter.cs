@@ -27,21 +27,7 @@ namespace PolicyPlusPlus.ViewModels
 
             string primaryLang = GetPrimaryLanguage();
             string lang = useSecondLanguage ? (secondLanguageCode ?? primaryLang) : primaryLang;
-            bool isJa = lang.StartsWith("ja", System.StringComparison.OrdinalIgnoreCase);
-            string T(string en)
-            {
-                if (!isJa)
-                    return en;
-                return en switch
-                {
-                    "Computer Configuration" => "コンピューターの構成",
-                    "User Configuration" => "ユーザーの構成",
-                    "Computer or User Configuration" =>
-                        "コンピューターの構成 または ユーザーの構成",
-                    "Administrative Templates" => "管理用テンプレート",
-                    _ => en,
-                };
-            }
+            string T(string en) => LocalizationService.Instance.Translate(en, lang);
 
             sb.AppendLine(
                 policy.RawPolicy.Section switch

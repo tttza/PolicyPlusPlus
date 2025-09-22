@@ -37,30 +37,8 @@ namespace PolicyPlusPlus.ViewModels
         )
         {
             string lang = useSecondLanguage ? (secondLanguageCode ?? GetLanguage()) : GetLanguage();
-            bool isJa = lang.StartsWith("ja", StringComparison.OrdinalIgnoreCase);
-            string L(string en)
-            {
-                if (!isJa)
-                    return en;
-                return en switch
-                {
-                    "Key" => "キー",
-                    "Name" => "名前",
-                    "Type" => "種類",
-                    "Value" => "値",
-                    _ => en,
-                };
-            }
-            string GetText(string en)
-            {
-                if (!isJa)
-                    return en;
-                return en switch
-                {
-                    "(no referenced registry values)" => "(参照されているレジストリ値はありません)",
-                    _ => en,
-                };
-            }
+            string L(string en) => LocalizationService.Instance.Translate(en, lang);
+            string GetText(string en) => LocalizationService.Instance.Translate(en, lang);
 
             var sb = new StringBuilder();
             var values = PolicyProcessing.GetReferencedRegistryValues(policy);
