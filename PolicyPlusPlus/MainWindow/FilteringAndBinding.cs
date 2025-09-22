@@ -1285,15 +1285,30 @@ namespace PolicyPlusPlus
                     {
                         // Hide suggestions when 0 or 1 item to reduce distraction
                         bool showSuggestions = suggestions != null && suggestions.Count > 1;
-                        // No forced-close behavior; showSuggestions follows computed value.
-                        SearchBox.ItemsSource = showSuggestions
-                            ? suggestions
-                            : Array.Empty<string>();
+                        // Do not open suggestions unless the search box already has focus to avoid focus shifts on category changes.
+                        bool boxHasFocus = false;
                         try
                         {
-                            SearchBox.IsSuggestionListOpen = showSuggestions;
+                            boxHasFocus =
+                                SearchBox != null && SearchBox.FocusState != FocusState.Unfocused;
                         }
                         catch { }
+                        bool shouldOpenSuggestions = showSuggestions && boxHasFocus;
+                        var sb = SearchBox;
+                        if (sb != null)
+                        {
+                            IEnumerable<string> itemsToShow;
+                            if (shouldOpenSuggestions && suggestions != null)
+                                itemsToShow = suggestions;
+                            else
+                                itemsToShow = Array.Empty<string>();
+                            sb.ItemsSource = itemsToShow;
+                            try
+                            {
+                                sb.IsSuggestionListOpen = shouldOpenSuggestions;
+                            }
+                            catch { }
+                        }
                         // _forceCloseSuggestionsOnce removed
                         if (_navTyping && matches.Count > LargeResultThreshold)
                         {
@@ -1451,6 +1466,7 @@ namespace PolicyPlusPlus
                         {
                             try
                             {
+                                // Only show baseline suggestions if the search box is already focused.
                                 ShowBaselineSuggestions(onlyIfFocused: true);
                             }
                             catch { }
@@ -1490,7 +1506,8 @@ namespace PolicyPlusPlus
                 BindSequenceEnhanced(seq, decision);
                 UpdateSearchClearButtonVisibility();
                 if (showBaselineOnEmpty)
-                    ShowBaselineSuggestions();
+                    // Only open baseline suggestions if the search box is already focused.
+                    ShowBaselineSuggestions(onlyIfFocused: true);
             }
             catch { }
         }
