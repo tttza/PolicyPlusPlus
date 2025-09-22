@@ -649,7 +649,10 @@
                   </datagrid:DataGridTemplateColumn.CellStyle>
                   <datagrid:DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
-                      <Grid HorizontalAlignment="Center">
+                      <Grid
+                        HorizontalAlignment="Center"
+                        Visibility="{Binding IsCategory, Converter={StaticResource NotBoolToVisibilityConverter}}"
+                      >
                         <Button
                           Padding="2"
                           MinWidth="0"
