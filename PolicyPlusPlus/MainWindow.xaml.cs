@@ -1440,41 +1440,8 @@ namespace PolicyPlusPlus
                 }
                 catch { }
 
-                // Attempt to prime second-language NGram from cache; do not force rebuild if available.
-                if (useSecond)
-                {
-                    try
-                    {
-                        var fp2 = CacheService.ComputeAdmxFingerprint(_currentAdmxPath, secondLang);
-                        if (
-                            CacheService.TryLoadNGramSnapshot(
-                                _currentAdmxPath,
-                                secondLang,
-                                fp2,
-                                _secondIndex.N,
-                                "sec-" + secondLang,
-                                out var snap2
-                            )
-                            && snap2 != null
-                        )
-                        {
-                            _secondIndex.LoadSnapshot(snap2);
-                            _secondIndexBuilt = true;
-                        }
-                        else
-                        {
-                            _secondIndexBuilt = false; // lazy build on demand
-                        }
-                    }
-                    catch
-                    {
-                        _secondIndexBuilt = false;
-                    }
-                }
-                else
-                {
-                    _secondIndexBuilt = true; // nothing to build
-                }
+                // Do not load UI-level N-gram snapshots from disk anymore; indices will build on demand when cache is enabled.
+                _secondIndexBuilt = useSecond ? false : true;
 
                 StartPrebuildDescIndex();
 

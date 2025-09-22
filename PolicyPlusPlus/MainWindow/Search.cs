@@ -144,6 +144,14 @@ namespace PolicyPlusPlus
             {
                 if (_descIndexBuilt)
                     return; // already loaded from cache
+                // Skip background prebuild when ADMX cache is disabled (no-cache mode)
+                try
+                {
+                    var s = SettingsService.Instance.LoadSettings();
+                    if ((s.AdmxCacheEnabled ?? true) == false)
+                        return;
+                }
+                catch { }
                 var path = _currentAdmxPath;
                 var lang = _currentLanguage;
                 var fp =
@@ -164,13 +172,7 @@ namespace PolicyPlusPlus
                         );
                         idx.Build(items);
                         var snap = idx.GetSnapshot();
-                        if (!string.IsNullOrEmpty(path) && !string.IsNullOrEmpty(lang))
-                        {
-                            if (!string.IsNullOrEmpty(fp))
-                                CacheService.SaveNGramSnapshot(path!, lang!, fp, "desc", snap);
-                            else
-                                CacheService.SaveNGramSnapshot(path!, lang!, snap);
-                        }
+                        // Do not persist UI-level N-gram snapshot; ADMX Cache owns search indexing
                         _descIndex.LoadSnapshot(snap);
                         _descIndexBuilt = true;
                     }

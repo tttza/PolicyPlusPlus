@@ -31,73 +31,36 @@ namespace PolicyPlusPlus
             _idIndexBuilt;
         private int _searchGeneration;
 
-        private void EnsureDescIndex()
+        // Returns whether ADMX Cache is enabled in settings. When disabled, we also disable in-memory N-gram usage.
+        private static bool IsAdmxCacheEnabled()
         {
-            if (_descIndexBuilt)
-                return;
             try
             {
-                if (
-                    !string.IsNullOrEmpty(_currentAdmxPath)
-                    && !string.IsNullOrEmpty(_currentLanguage)
-                )
-                {
-                    var fp = CacheService.ComputeAdmxFingerprint(
-                        _currentAdmxPath,
-                        _currentLanguage
-                    );
-                    if (
-                        CacheService.TryLoadNGramSnapshot(
-                            _currentAdmxPath,
-                            _currentLanguage,
-                            fp,
-                            _descIndex.N,
-                            "desc",
-                            out var snap
-                        )
-                        && snap != null
-                    )
-                    {
-                        _descIndex.LoadSnapshot(snap);
-                        _descIndexBuilt = true;
-                        return;
-                    }
-                }
+                var s = SettingsService.Instance.LoadSettings();
+                return s.AdmxCacheEnabled ?? true;
             }
-            catch (Exception ex)
+            catch
             {
-                Log.Warn("MainFilter", "EnsureDescIndex cache load failed", ex);
+                return true;
             }
+        }
+
+        private void EnsureDescIndex()
+        {
+            // Do not use in-memory N-gram when cache is disabled (no-cache search mode)
+            if (!IsAdmxCacheEnabled())
+            {
+                _descIndexBuilt = true; // mark as built to skip attempts
+                return;
+            }
+            if (_descIndexBuilt)
+                return;
             try
             {
                 var items = _allPolicies.Select(p =>
                     (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayExplanation))
                 );
                 _descIndex.Build(items);
-                try
-                {
-                    if (
-                        !string.IsNullOrEmpty(_currentAdmxPath)
-                        && !string.IsNullOrEmpty(_currentLanguage)
-                    )
-                    {
-                        var fp = CacheService.ComputeAdmxFingerprint(
-                            _currentAdmxPath,
-                            _currentLanguage
-                        );
-                        CacheService.SaveNGramSnapshot(
-                            _currentAdmxPath,
-                            _currentLanguage,
-                            fp,
-                            "desc",
-                            _descIndex.GetSnapshot()
-                        );
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Warn("MainFilter", "EnsureDescIndex snapshot save failed", ex);
-                }
                 _descIndexBuilt = true;
             }
             catch (Exception ex)
@@ -108,71 +71,27 @@ namespace PolicyPlusPlus
 
         private void EnsureNameSecondIdIndexes()
         {
+            // Do not use in-memory N-gram when cache is disabled (no-cache search mode)
+            if (!IsAdmxCacheEnabled())
+            {
+                _nameIndexBuilt = true;
+                _secondIndexBuilt = true;
+                _idIndexBuilt = true;
+                return;
+            }
             if (!_nameIndexBuilt)
             {
                 try
                 {
-                    if (
-                        !string.IsNullOrEmpty(_currentAdmxPath)
-                        && !string.IsNullOrEmpty(_currentLanguage)
-                    )
-                    {
-                        var fp = CacheService.ComputeAdmxFingerprint(
-                            _currentAdmxPath,
-                            _currentLanguage
-                        );
-                        if (
-                            CacheService.TryLoadNGramSnapshot(
-                                _currentAdmxPath,
-                                _currentLanguage,
-                                fp,
-                                _nameIndex.N,
-                                "name",
-                                out var snap
-                            )
-                            && snap != null
-                        )
-                        {
-                            _nameIndex.LoadSnapshot(snap);
-                            _nameIndexBuilt = true;
-                        }
-                    }
+                    var items = _allPolicies.Select(p =>
+                        (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayName))
+                    );
+                    _nameIndex.Build(items);
+                    _nameIndexBuilt = true;
                 }
                 catch (Exception ex)
                 {
-                    Log.Warn("MainFilter", "Name index cache load failed", ex);
-                }
-                if (!_nameIndexBuilt)
-                {
-                    try
-                    {
-                        var items = _allPolicies.Select(p =>
-                            (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayName))
-                        );
-                        _nameIndex.Build(items);
-                        if (
-                            !string.IsNullOrEmpty(_currentAdmxPath)
-                            && !string.IsNullOrEmpty(_currentLanguage)
-                        )
-                        {
-                            var fp = CacheService.ComputeAdmxFingerprint(
-                                _currentAdmxPath,
-                                _currentLanguage
-                            );
-                            CacheService.SaveNGramSnapshot(
-                                _currentAdmxPath,
-                                _currentLanguage,
-                                fp,
-                                "name",
-                                _nameIndex.GetSnapshot()
-                            );
-                        }
-                        _nameIndexBuilt = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("MainFilter", "Name index build failed", ex);
-                    }
+                    Log.Error("MainFilter", "Name index build failed", ex);
                 }
             }
             if (!_secondIndexBuilt)
@@ -192,61 +111,22 @@ namespace PolicyPlusPlus
                         )
                     )
                     {
-                        if (!string.IsNullOrEmpty(_currentAdmxPath))
+                        try
                         {
-                            var fp = CacheService.ComputeAdmxFingerprint(
-                                _currentAdmxPath,
-                                secondLang
-                            );
-                            if (
-                                CacheService.TryLoadNGramSnapshot(
-                                    _currentAdmxPath,
-                                    secondLang,
-                                    fp,
-                                    _secondIndex.N,
-                                    "sec-" + secondLang,
-                                    out var snap
-                                )
-                                && snap != null
-                            )
-                            {
-                                _secondIndex.LoadSnapshot(snap);
-                                _secondIndexBuilt = true;
-                            }
-                        }
-                        if (!_secondIndexBuilt)
-                        {
-                            try
-                            {
-                                var items = _allPolicies.Select(p =>
-                                    (
-                                        id: p.UniqueID,
-                                        normalizedText: SearchText.Normalize(
-                                            LocalizedTextService.GetPolicyNameIn(p, secondLang)
-                                        )
+                            var items = _allPolicies.Select(p =>
+                                (
+                                    id: p.UniqueID,
+                                    normalizedText: SearchText.Normalize(
+                                        LocalizedTextService.GetPolicyNameIn(p, secondLang)
                                     )
-                                );
-                                _secondIndex.Build(items);
-                                if (!string.IsNullOrEmpty(_currentAdmxPath))
-                                {
-                                    var fp = CacheService.ComputeAdmxFingerprint(
-                                        _currentAdmxPath,
-                                        secondLang
-                                    );
-                                    CacheService.SaveNGramSnapshot(
-                                        _currentAdmxPath,
-                                        secondLang,
-                                        fp,
-                                        "sec-" + secondLang,
-                                        _secondIndex.GetSnapshot()
-                                    );
-                                }
-                                _secondIndexBuilt = true;
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error("MainFilter", "Second language index build failed", ex);
-                            }
+                                )
+                            );
+                            _secondIndex.Build(items);
+                            _secondIndexBuilt = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("MainFilter", "Second language index build failed", ex);
                         }
                     }
                     else
@@ -264,73 +144,24 @@ namespace PolicyPlusPlus
             {
                 try
                 {
-                    if (
-                        !string.IsNullOrEmpty(_currentAdmxPath)
-                        && !string.IsNullOrEmpty(_currentLanguage)
-                    )
-                    {
-                        var fp = CacheService.ComputeAdmxFingerprint(
-                            _currentAdmxPath,
-                            _currentLanguage
-                        );
-                        if (
-                            CacheService.TryLoadNGramSnapshot(
-                                _currentAdmxPath,
-                                _currentLanguage,
-                                fp,
-                                _idIndex.N,
-                                "id",
-                                out var snap
-                            )
-                            && snap != null
-                        )
-                        {
-                            _idIndex.LoadSnapshot(snap);
-                            _idIndexBuilt = true;
-                        }
-                    }
+                    var items = _allPolicies.Select(p =>
+                        (id: p.UniqueID, normalizedText: SearchText.Normalize(p.UniqueID))
+                    );
+                    _idIndex.Build(items);
+                    _idIndexBuilt = true;
                 }
                 catch (Exception ex)
                 {
-                    Log.Warn("MainFilter", "ID index cache load failed", ex);
-                }
-                if (!_idIndexBuilt)
-                {
-                    try
-                    {
-                        var items = _allPolicies.Select(p =>
-                            (id: p.UniqueID, normalizedText: SearchText.Normalize(p.UniqueID))
-                        );
-                        _idIndex.Build(items);
-                        if (
-                            !string.IsNullOrEmpty(_currentAdmxPath)
-                            && !string.IsNullOrEmpty(_currentLanguage)
-                        )
-                        {
-                            var fp = CacheService.ComputeAdmxFingerprint(
-                                _currentAdmxPath,
-                                _currentLanguage
-                            );
-                            CacheService.SaveNGramSnapshot(
-                                _currentAdmxPath,
-                                _currentLanguage,
-                                fp,
-                                "id",
-                                _idIndex.GetSnapshot()
-                            );
-                        }
-                        _idIndexBuilt = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error("MainFilter", "ID index build failed", ex);
-                    }
+                    Log.Error("MainFilter", "ID index build failed", ex);
                 }
             }
         }
 
         private HashSet<string>? GetTextCandidates(string qLower)
         {
+            // No-cache mode: do not use N-gram candidates at all
+            if (!IsAdmxCacheEnabled())
+                return null;
             HashSet<string>? union = null;
             try
             {
@@ -886,8 +717,16 @@ namespace PolicyPlusPlus
             HashSet<string>? descCandidates = null;
             if (_searchInDescription)
             {
-                EnsureDescIndex();
-                descCandidates = _descIndex.TryQuery(qLower);
+                if (IsAdmxCacheEnabled())
+                {
+                    EnsureDescIndex();
+                    descCandidates = _descIndex.TryQuery(qLower);
+                }
+                else
+                {
+                    // No-cache mode: do not prefilter by N-gram; allow per-item description match
+                    descCandidates = null;
+                }
             }
             HashSet<string> scanSet = allowedSet;
             if (baseCandidates != null && baseCandidates.Count > 0)
