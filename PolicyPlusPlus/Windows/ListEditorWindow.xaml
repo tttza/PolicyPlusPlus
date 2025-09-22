@@ -3,6 +3,7 @@
   x:Class="PolicyPlusPlus.Windows.ListEditorWindow"
   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:models="using:PolicyPlusPlus.Windows.Models"
 >
   <Grid x:Name="ScaleHost">
     <Grid
@@ -13,6 +14,71 @@
       MinHeight="360"
       KeyboardAcceleratorPlacementMode="Hidden"
     >
+      <Grid.Resources>
+        <!-- Value-only item template (virtualized by ListView) -->
+        <DataTemplate x:Key="ValueOnlyTemplate" x:DataType="models:ListEditorValueRow">
+          <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox
+              x:Name="ValueTb"
+              Grid.Column="0"
+              Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+              KeyDown="TextBox_KeyDown"
+            />
+            <Button
+              Grid.Column="1"
+              MinWidth="36"
+              MinHeight="36"
+              HorizontalAlignment="Right"
+              IsTabStop="False"
+              Click="RemoveRow_Click"
+              IsEnabled="{x:Bind CanRemove}"
+              ToolTipService.ToolTip="Remove"
+            >
+              <SymbolIcon Symbol="Delete" />
+            </Button>
+          </Grid>
+        </DataTemplate>
+        <!-- Key/Value item template (virtualized by ListView) -->
+        <DataTemplate x:Key="KeyValueTemplate" x:DataType="models:ListEditorNamedRow">
+          <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox
+              x:Name="KeyTb"
+              Grid.Column="0"
+              PlaceholderText="Key"
+              Text="{x:Bind Key, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+              KeyDown="TextBox_KeyDown"
+            />
+            <TextBox
+              x:Name="ValTb"
+              Grid.Column="1"
+              PlaceholderText="Value"
+              Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+              KeyDown="TextBox_KeyDown"
+            />
+            <Button
+              Grid.Column="2"
+              MinWidth="36"
+              MinHeight="36"
+              HorizontalAlignment="Right"
+              IsTabStop="False"
+              Click="RemoveRow_Click"
+              IsEnabled="{x:Bind CanRemove}"
+              ToolTipService.ToolTip="Remove"
+            >
+              <SymbolIcon Symbol="Delete" />
+            </Button>
+          </Grid>
+        </DataTemplate>
+      </Grid.Resources>
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
         <RowDefinition Height="*" />
@@ -25,7 +91,13 @@
         <KeyboardAccelerator Key="Escape" Invoked="Accel_Close" />
       </Grid.KeyboardAccelerators>
       <TextBlock x:Name="HeaderText" Grid.Row="0" FontWeight="SemiBold" />
-      <ListView x:Name="ListItems" Grid.Row="1" SelectionMode="None" />
+      <ListView x:Name="ListItems" Grid.Row="1" SelectionMode="None">
+        <ListView.ItemsPanel>
+          <ItemsPanelTemplate>
+            <ItemsStackPanel />
+          </ItemsPanelTemplate>
+        </ListView.ItemsPanel>
+      </ListView>
       <Grid Grid.Row="2">
         <Grid.ColumnDefinitions>
           <ColumnDefinition />

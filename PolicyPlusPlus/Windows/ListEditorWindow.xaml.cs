@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq; // for duplicate detection
 using Microsoft.UI.Input; // added for InputKeyboardSource
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using PolicyPlusPlus.Utils;
 using Windows.System; // VirtualKey
@@ -49,6 +52,8 @@ namespace PolicyPlusPlus.Windows
         }
 
         private bool _userProvidesNames;
+        private ObservableCollection<Models.ListEditorNamedRow>? _namedRows;
+        private ObservableCollection<Models.ListEditorValueRow>? _valueRows;
         public object? Result { get; private set; }
         public string? CountText { get; private set; }
         public event EventHandler<bool>? Finished; // true=OK
@@ -63,8 +68,7 @@ namespace PolicyPlusPlus.Windows
 
             AddBtn.Click += (s, e) =>
             {
-                var tb = AddListRow(string.Empty, string.Empty, true);
-                tb?.Focus(FocusState.Programmatic);
+                AddNewRow(focus: true);
             };
             OkBtn.Click += Ok_Click;
             CancelBtn.Click += Cancel_Click;
@@ -74,8 +78,7 @@ namespace PolicyPlusPlus.Windows
         {
             try
             {
-                var tb = AddListRow(string.Empty, string.Empty, true);
-                tb?.Focus(FocusState.Programmatic);
+                AddNewRow(focus: true);
             }
             catch { }
             args.Handled = true;
@@ -120,15 +123,23 @@ namespace PolicyPlusPlus.Windows
         {
             HeaderText.Text = label;
             _userProvidesNames = userProvidesNames;
-            ListItems.Items.Clear();
+            ListItems.ItemsSource = null;
             bool any = false;
             if (userProvidesNames)
             {
+                _namedRows = new ObservableCollection<Models.ListEditorNamedRow>();
                 if (initial is List<KeyValuePair<string, string>> kvp)
                 {
                     foreach (var p in kvp)
                     {
-                        AddListRow(p.Key, p.Value);
+                        AppendRow(
+                            new Models.ListEditorNamedRow
+                            {
+                                Key = p.Key,
+                                Value = p.Value,
+                                IsPlaceholder = false,
+                            }
+                        );
                         any = true;
                     }
                 }
@@ -136,7 +147,14 @@ namespace PolicyPlusPlus.Windows
                 {
                     foreach (var kv in dict)
                     {
-                        AddListRow(kv.Key, kv.Value);
+                        AppendRow(
+                            new Models.ListEditorNamedRow
+                            {
+                                Key = kv.Key,
+                                Value = kv.Value,
+                                IsPlaceholder = false,
+                            }
+                        );
                         any = true;
                     }
                 }
@@ -144,186 +162,112 @@ namespace PolicyPlusPlus.Windows
                 {
                     foreach (var kv in en)
                     {
-                        AddListRow(kv.Key, kv.Value);
+                        AppendRow(
+                            new Models.ListEditorNamedRow
+                            {
+                                Key = kv.Key,
+                                Value = kv.Value,
+                                IsPlaceholder = false,
+                            }
+                        );
                         any = true;
                     }
                 }
             }
             else if (initial is List<string> list)
             {
+                _valueRows = new ObservableCollection<Models.ListEditorValueRow>();
                 foreach (var s in list)
                 {
-                    AddListRow(s, string.Empty);
+                    AppendRow(new Models.ListEditorValueRow { Value = s, IsPlaceholder = false });
                     any = true;
                 }
             }
             if (!any)
-                AddListRow(string.Empty, string.Empty);
-            EnsureTrailingBlankRow();
-        }
-
-        private void EnsureTrailingBlankRow()
-        {
-            try
             {
-                if (ListItems.Items.Count == 0)
-                {
-                    AddListRow(string.Empty, string.Empty);
-                    return;
-                }
-                if (ListItems.Items[ListItems.Items.Count - 1] is Grid g)
-                {
-                    if (_userProvidesNames)
-                    {
-                        var keyTb = g
-                            .Children.OfType<TextBox>()
-                            .FirstOrDefault(tb => (string?)tb.Tag == "k");
-                        var valTb = g
-                            .Children.OfType<TextBox>()
-                            .FirstOrDefault(tb => (string?)tb.Tag == "v");
-                        if (
-                            keyTb != null
-                            && valTb != null
-                            && (
-                                !string.IsNullOrWhiteSpace(keyTb.Text)
-                                || !string.IsNullOrWhiteSpace(valTb.Text)
-                            )
-                        )
-                            AddListRow(string.Empty, string.Empty);
-                    }
-                    else
-                    {
-                        var tb = g.Children.OfType<TextBox>().FirstOrDefault();
-                        if (tb != null && !string.IsNullOrWhiteSpace(tb.Text))
-                            AddListRow(string.Empty, string.Empty);
-                    }
-                }
+                if (_userProvidesNames)
+                    _namedRows = new ObservableCollection<Models.ListEditorNamedRow>();
+                else
+                    _valueRows = new ObservableCollection<Models.ListEditorValueRow>();
             }
-            catch { }
-        }
 
-        // Returns the first textbox (key when named, value-only when simple)
-        private TextBox? AddListRow(string keyOrValue, string valueIfNamed = "", bool focus = false)
-        {
-            var grid = new Grid { ColumnSpacing = 8 };
+            // Bind ItemsSource and template
             if (_userProvidesNames)
             {
-                // key, value, delete button
-                grid.ColumnDefinitions.Add(
-                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
-                );
-                grid.ColumnDefinitions.Add(
-                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
-                );
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                var keyTb = new TextBox
-                {
-                    Text = keyOrValue,
-                    PlaceholderText = "Key",
-                    Tag = "k",
-                };
-                Grid.SetColumn(keyTb, 0);
-                keyTb.KeyDown += TextBox_KeyDown;
-                keyTb.TextChanged += TextBox_TextChanged;
-                grid.Children.Add(keyTb);
-
-                var valTb = new TextBox
-                {
-                    Text = valueIfNamed,
-                    PlaceholderText = "Value",
-                    Tag = "v",
-                };
-                Grid.SetColumn(valTb, 1);
-                valTb.KeyDown += TextBox_KeyDown;
-                valTb.TextChanged += TextBox_TextChanged;
-                grid.Children.Add(valTb);
-
-                var removeBtn = new Button
-                {
-                    Content = new SymbolIcon(Symbol.Delete),
-                    MinWidth = 36,
-                    MinHeight = 36,
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                    IsTabStop = false,
-                };
-                ToolTipService.SetToolTip(removeBtn, "Remove");
-                removeBtn.Tag = grid;
-                removeBtn.Click += RemoveRow_Click;
-                Grid.SetColumn(removeBtn, 2);
-                grid.Children.Add(removeBtn);
-
-                ListItems.Items.Add(grid);
-                if (focus)
-                    keyTb.Loaded += (s, e) => keyTb.Focus(FocusState.Programmatic);
-                return keyTb;
+                ListItems.ItemTemplate = (DataTemplate)RootShell.Resources["KeyValueTemplate"];
+                ListItems.ItemsSource = _namedRows;
             }
             else
             {
-                // value only + delete button
-                grid.ColumnDefinitions.Add(
-                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
-                );
-                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                var tb = new TextBox { Text = keyOrValue };
-                Grid.SetColumn(tb, 0);
-                tb.KeyDown += TextBox_KeyDown;
-                tb.TextChanged += TextBox_TextChanged;
-                grid.Children.Add(tb);
-
-                var removeBtn = new Button
-                {
-                    Content = new SymbolIcon(Symbol.Delete),
-                    MinWidth = 36,
-                    MinHeight = 36,
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                    IsTabStop = false,
-                };
-                ToolTipService.SetToolTip(removeBtn, "Remove");
-                removeBtn.Tag = grid;
-                removeBtn.Click += RemoveRow_Click;
-                Grid.SetColumn(removeBtn, 1);
-                grid.Children.Add(removeBtn);
-
-                ListItems.Items.Add(grid);
-                if (focus)
-                    tb.Loaded += (s, e) => tb.Focus(FocusState.Programmatic);
-                return tb;
+                ListItems.ItemTemplate = (DataTemplate)RootShell.Resources["ValueOnlyTemplate"];
+                ListItems.ItemsSource = _valueRows;
             }
+
+            EnsureTrailingPlaceholder();
         }
 
-        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void EnsureTrailingPlaceholder()
         {
             try
             {
-                if (sender is TextBox tb && tb.Parent is Grid row)
+                if (_userProvidesNames)
                 {
-                    int index = ListItems.Items.IndexOf(row);
-                    if (index == ListItems.Items.Count - 1) // last row
+                    if (_namedRows == null)
+                        return;
+                    // Remove extra placeholders except last
+                    for (int i = _namedRows.Count - 2; i >= 0; i--)
                     {
-                        if (_userProvidesNames)
-                        {
-                            var keyTb = row
-                                .Children.OfType<TextBox>()
-                                .FirstOrDefault(x => (string?)x.Tag == "k");
-                            var valTb = row
-                                .Children.OfType<TextBox>()
-                                .FirstOrDefault(x => (string?)x.Tag == "v");
-                            if (
-                                (keyTb != null && !string.IsNullOrWhiteSpace(keyTb.Text))
-                                || (valTb != null && !string.IsNullOrWhiteSpace(valTb.Text))
-                            )
-                                AddListRow(string.Empty, string.Empty);
-                        }
-                        else if (!string.IsNullOrWhiteSpace(tb.Text))
-                        {
-                            AddListRow(string.Empty, string.Empty);
-                        }
+                        if (_namedRows[i].IsPlaceholder)
+                            _namedRows.RemoveAt(i);
+                    }
+                    if (_namedRows.Count == 0 || !_namedRows[^1].IsPlaceholder)
+                    {
+                        AppendRow(new Models.ListEditorNamedRow { IsPlaceholder = true });
+                    }
+                }
+                else
+                {
+                    if (_valueRows == null)
+                        return;
+                    for (int i = _valueRows.Count - 2; i >= 0; i--)
+                    {
+                        if (_valueRows[i].IsPlaceholder)
+                            _valueRows.RemoveAt(i);
+                    }
+                    if (_valueRows.Count == 0 || !_valueRows[^1].IsPlaceholder)
+                    {
+                        AppendRow(new Models.ListEditorValueRow { IsPlaceholder = true });
                     }
                 }
             }
             catch { }
+        }
+
+        private void AddNewRow(bool focus)
+        {
+            if (_userProvidesNames)
+            {
+                var row = new Models.ListEditorNamedRow
+                {
+                    Key = string.Empty,
+                    Value = string.Empty,
+                    IsPlaceholder = false,
+                };
+                AppendRow(row, insertBeforePlaceholder: true);
+                if (focus)
+                    TryFocusRow(row, preferKey: true);
+            }
+            else
+            {
+                var row = new Models.ListEditorValueRow
+                {
+                    Value = string.Empty,
+                    IsPlaceholder = false,
+                };
+                AppendRow(row, insertBeforePlaceholder: true);
+                if (focus)
+                    TryFocusRow(row, preferKey: false);
+            }
         }
 
         private void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -335,65 +279,15 @@ namespace PolicyPlusPlus.Windows
                         InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift)
                         & CoreVirtualKeyStates.Down
                     ) == CoreVirtualKeyStates.Down;
-                if (!shiftDown && sender is TextBox tb && tb.Parent is Grid row)
+                if (!shiftDown && sender is TextBox tb)
                 {
-                    if (_userProvidesNames && (string?)tb.Tag == "v")
+                    if (_userProvidesNames && (tb.Name == "ValTb"))
                     {
-                        // Always move to next key textbox (create row if needed)
-                        int index = ListItems.Items.IndexOf(row);
-                        bool lastRow = index == ListItems.Items.Count - 1;
-                        if (lastRow)
-                        {
-                            var keyTbCur = row
-                                .Children.OfType<TextBox>()
-                                .FirstOrDefault(x => (string?)x.Tag == "k");
-                            if (
-                                (keyTbCur != null && !string.IsNullOrWhiteSpace(keyTbCur.Text))
-                                || !string.IsNullOrWhiteSpace(tb.Text)
-                            )
-                            {
-                                AddListRow(string.Empty, string.Empty, false);
-                            }
-                        }
-                        int nextIndex = Math.Min(index + 1, ListItems.Items.Count - 1);
-                        if (nextIndex > index && ListItems.Items[nextIndex] is Grid nextRow)
-                        {
-                            var nextKey = nextRow
-                                .Children.OfType<TextBox>()
-                                .FirstOrDefault(x => (string?)x.Tag == "k");
-                            if (nextKey != null)
-                            {
-                                e.Handled = true;
-                                nextKey.Focus(FocusState.Programmatic);
-                                nextKey.SelectAll();
-                                return;
-                            }
-                        }
+                        MoveToNextRowAndFocusKey(ref e);
                     }
                     else if (!_userProvidesNames)
                     {
-                        // Simple list: always move to next row (create if at end and current has content)
-                        int index = ListItems.Items.IndexOf(row);
-                        bool lastRow = index == ListItems.Items.Count - 1;
-                        if (lastRow)
-                        {
-                            if (!string.IsNullOrWhiteSpace(tb.Text))
-                            {
-                                AddListRow(string.Empty, string.Empty, false);
-                            }
-                        }
-                        int nextIndex = Math.Min(index + 1, ListItems.Items.Count - 1);
-                        if (nextIndex > index && ListItems.Items[nextIndex] is Grid nextRow)
-                        {
-                            var nextTb = nextRow.Children.OfType<TextBox>().FirstOrDefault();
-                            if (nextTb != null)
-                            {
-                                e.Handled = true;
-                                nextTb.Focus(FocusState.Programmatic);
-                                nextTb.SelectAll();
-                                return;
-                            }
-                        }
+                        MoveToNextRowAndFocusValue(ref e);
                     }
                 }
             }
@@ -401,13 +295,27 @@ namespace PolicyPlusPlus.Windows
 
         private void RemoveRow_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button b && b.Tag is Grid row)
+            if (sender is Button b && b.DataContext is object ctx)
             {
-                ListItems.Items.Remove(row);
-                if (ListItems.Items.Count == 0)
-                    AddListRow(string.Empty, string.Empty);
+                if (_userProvidesNames)
+                {
+                    if (ctx is Models.ListEditorNamedRow nr)
+                    {
+                        if (nr.IsPlaceholder)
+                            return;
+                        _namedRows?.Remove(nr);
+                    }
+                }
                 else
-                    EnsureTrailingBlankRow();
+                {
+                    if (ctx is Models.ListEditorValueRow vr)
+                    {
+                        if (vr.IsPlaceholder)
+                            return;
+                        _valueRows?.Remove(vr);
+                    }
+                }
+                EnsureTrailingPlaceholder();
             }
         }
 
@@ -417,38 +325,30 @@ namespace PolicyPlusPlus.Windows
             {
                 var list = new List<KeyValuePair<string, string>>();
                 var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var item in ListItems.Items)
+                if (_namedRows != null)
                 {
-                    if (item is not Grid row)
-                        continue;
-                    var keyTb = row
-                        .Children.OfType<TextBox>()
-                        .FirstOrDefault(x => (string?)x.Tag == "k");
-                    var valTb = row
-                        .Children.OfType<TextBox>()
-                        .FirstOrDefault(x => (string?)x.Tag == "v");
-                    if (keyTb == null || valTb == null)
-                        continue;
-                    var key = keyTb.Text?.Trim() ?? string.Empty;
-                    var val = valTb.Text?.Trim() ?? string.Empty;
-                    if (string.IsNullOrWhiteSpace(key) && string.IsNullOrWhiteSpace(val))
-                        continue; // ignore blank rows
-                    if (string.IsNullOrWhiteSpace(key))
+                    foreach (var row in _namedRows)
                     {
-                        await ShowValidationDialog("A key is required for all non-empty rows.");
-                        keyTb.Focus(FocusState.Programmatic);
-                        return;
+                        if (row.IsPlaceholder)
+                            continue;
+                        var key = row.Key?.Trim() ?? string.Empty;
+                        var val = row.Value?.Trim() ?? string.Empty;
+                        if (string.IsNullOrWhiteSpace(key) && string.IsNullOrWhiteSpace(val))
+                            continue;
+                        if (string.IsNullOrWhiteSpace(key))
+                        {
+                            await ShowValidationDialog("A key is required for all non-empty rows.");
+                            return;
+                        }
+                        if (!seen.Add(key))
+                        {
+                            await ShowValidationDialog(
+                                $"Multiple entries are named \"{key}\". Remove or rename duplicates."
+                            );
+                            return;
+                        }
+                        list.Add(new KeyValuePair<string, string>(key, val));
                     }
-                    if (!seen.Add(key))
-                    {
-                        await ShowValidationDialog(
-                            $"Multiple entries are named \"{key}\". Remove or rename duplicates."
-                        );
-                        keyTb.Focus(FocusState.Programmatic);
-                        keyTb.SelectAll();
-                        return;
-                    }
-                    list.Add(new KeyValuePair<string, string>(key, val));
                 }
                 Result = list;
                 CountText = $"Edit... ({list.Count})";
@@ -456,16 +356,16 @@ namespace PolicyPlusPlus.Windows
             else
             {
                 var list = new List<string>();
-                foreach (var item in ListItems.Items)
+                if (_valueRows != null)
                 {
-                    if (item is not Grid row)
-                        continue;
-                    var tb = row.Children.OfType<TextBox>().FirstOrDefault();
-                    if (tb == null)
-                        continue;
-                    var s = tb.Text ?? string.Empty;
-                    if (!string.IsNullOrWhiteSpace(s))
-                        list.Add(s);
+                    foreach (var row in _valueRows)
+                    {
+                        if (row.IsPlaceholder)
+                            continue;
+                        var s = row.Value ?? string.Empty;
+                        if (!string.IsNullOrWhiteSpace(s))
+                            list.Add(s);
+                    }
                 }
                 Result = list;
                 CountText = $"Edit... ({list.Count})";
@@ -493,6 +393,218 @@ namespace PolicyPlusPlus.Windows
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        private void AppendRow(Models.ListEditorNamedRow row, bool insertBeforePlaceholder = false)
+        {
+            if (_namedRows == null)
+                _namedRows = new ObservableCollection<Models.ListEditorNamedRow>();
+            if (insertBeforePlaceholder && _namedRows.Count > 0 && _namedRows[^1].IsPlaceholder)
+                _namedRows.Insert(_namedRows.Count - 1, row);
+            else
+                _namedRows.Add(row);
+            row.PropertyChanged += Row_PropertyChanged;
+        }
+
+        private void AppendRow(Models.ListEditorValueRow row, bool insertBeforePlaceholder = false)
+        {
+            if (_valueRows == null)
+                _valueRows = new ObservableCollection<Models.ListEditorValueRow>();
+            if (insertBeforePlaceholder && _valueRows.Count > 0 && _valueRows[^1].IsPlaceholder)
+                _valueRows.Insert(_valueRows.Count - 1, row);
+            else
+                _valueRows.Add(row);
+            row.PropertyChanged += Row_PropertyChanged;
+        }
+
+        private void Row_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // When last row gets content, ensure trailing placeholder exists
+            try
+            {
+                if (sender is Models.ListEditorNamedRow nr)
+                {
+                    if (
+                        nr.IsPlaceholder
+                        && (
+                            !string.IsNullOrWhiteSpace(nr.Key)
+                            || !string.IsNullOrWhiteSpace(nr.Value)
+                        )
+                    )
+                    {
+                        nr.IsPlaceholder = false;
+                    }
+                }
+                else if (sender is Models.ListEditorValueRow vr)
+                {
+                    if (vr.IsPlaceholder && !string.IsNullOrWhiteSpace(vr.Value))
+                    {
+                        vr.IsPlaceholder = false;
+                    }
+                }
+                EnsureTrailingPlaceholder();
+            }
+            catch { }
+        }
+
+        private void TryFocusRow(object row, bool preferKey)
+        {
+            try
+            {
+                ListItems.ScrollIntoView(row);
+                var timer = DispatcherQueue.CreateTimer();
+                timer.Interval = TimeSpan.FromMilliseconds(1);
+                timer.IsRepeating = false;
+                timer.Tick += (s, e) =>
+                {
+                    var container = ListItems.ContainerFromItem(row) as ListViewItem;
+                    if (container == null)
+                        return;
+                    var root = container.ContentTemplateRoot as FrameworkElement;
+                    if (root == null)
+                        return;
+                    var tb = FindDescendantByName<TextBox>(root, preferKey ? "KeyTb" : "ValueTb");
+                    tb?.Focus(FocusState.Programmatic);
+                    tb?.SelectAll();
+                };
+                timer.Start();
+            }
+            catch { }
+        }
+
+        private void MoveToNextRowAndFocusKey(ref KeyRoutedEventArgs e)
+        {
+            if (_namedRows == null)
+                return;
+            // If at last non-placeholder row, ensure placeholder exists
+            EnsureTrailingPlaceholder();
+            var focused = FocusManager.GetFocusedElement() as FrameworkElement;
+            var item = (focused as FrameworkElement)?.DataContext;
+            if (item is Models.ListEditorNamedRow nr)
+            {
+                int index = _namedRows.IndexOf(nr);
+                int nextIndex = Math.Min(index + 1, _namedRows.Count - 1);
+                if (nextIndex > index)
+                {
+                    var next = _namedRows[nextIndex];
+                    e.Handled = true;
+                    TryFocusRow(next, preferKey: true);
+                }
+            }
+        }
+
+        private void MoveToNextRowAndFocusValue(ref KeyRoutedEventArgs e)
+        {
+            if (_valueRows == null)
+                return;
+            EnsureTrailingPlaceholder();
+            var focused = FocusManager.GetFocusedElement() as FrameworkElement;
+            var item = (focused as FrameworkElement)?.DataContext;
+            if (item is Models.ListEditorValueRow vr)
+            {
+                int index = _valueRows.IndexOf(vr);
+                int nextIndex = Math.Min(index + 1, _valueRows.Count - 1);
+                if (nextIndex > index)
+                {
+                    var next = _valueRows[nextIndex];
+                    e.Handled = true;
+                    TryFocusRow(next, preferKey: false);
+                }
+            }
+        }
+
+        private static TElement? FindDescendantByName<TElement>(DependencyObject root, string name)
+            where TElement : FrameworkElement
+        {
+            int count = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < count; i++)
+            {
+                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(root, i);
+                if (child is TElement fe && string.Equals(fe.Name, name, StringComparison.Ordinal))
+                    return fe;
+                var found = FindDescendantByName<TElement>(child, name);
+                if (found != null)
+                    return found;
+            }
+            return null;
+        }
+    }
+}
+
+namespace PolicyPlusPlus.Windows.Models
+{
+    using System.Runtime.CompilerServices;
+
+    internal abstract class ListEditorRowBase : INotifyPropertyChanged
+    {
+        private bool _isPlaceholder;
+        public bool IsPlaceholder
+        {
+            get => _isPlaceholder;
+            set
+            {
+                if (_isPlaceholder != value)
+                {
+                    _isPlaceholder = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(CanRemove));
+                }
+            }
+        }
+
+        public bool CanRemove => !IsPlaceholder;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string? name = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
+    internal sealed class ListEditorNamedRow : ListEditorRowBase
+    {
+        private string _key = string.Empty;
+        public string Key
+        {
+            get => _key;
+            set
+            {
+                if (!string.Equals(_key, value, StringComparison.Ordinal))
+                {
+                    _key = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private string _value = string.Empty;
+        public string Value
+        {
+            get => _value;
+            set
+            {
+                if (!string.Equals(_value, value, StringComparison.Ordinal))
+                {
+                    _value = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+    }
+
+    internal sealed class ListEditorValueRow : ListEditorRowBase
+    {
+        private string _value = string.Empty;
+        public string Value
+        {
+            get => _value;
+            set
+            {
+                if (!string.Equals(_value, value, StringComparison.Ordinal))
+                {
+                    _value = value;
+                    OnPropertyChanged();
+                }
+            }
         }
     }
 }
