@@ -30,8 +30,8 @@
         </Paragraph>
         <Paragraph>
           <Run Text="Modified: " />
-          <Hyperlink x:Name="ModifiedLink" NavigateUri="https://github.com/tttza/PolicyPlusMod">
-            <Run Text="https://github.com/tttza/PolicyPlusMod" />
+          <Hyperlink x:Name="ModifiedLink" NavigateUri="https://github.com/tttza/PolicyPlusPlus">
+            <Run Text="https://github.com/tttza/PolicyPlusPlus" />
           </Hyperlink>
         </Paragraph>
       </RichTextBlock>
