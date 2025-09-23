@@ -1,94 +1,102 @@
-# Policy Plus Mod
+# PolicyPlusPlus
 
-Local Group Policy Editor plus more, for all Windows editions.
+A tool to search, view, edit, and share Local Group Policy (Administrative Templates/ADMX).  
+This repository is a fork of Fleex255’s [PolicyPlus](https://github.com/Fleex255/PolicyPlus) with additional features and a modernized UI.
 
-[![Build Latest](https://github.com/tttza/PolicyPlusPlus/actions/workflows/publish.yml/badge.svg)](https://github.com/tttza/PolicyPlusPlus/tttza/PolicyPlus/actions/workflows/latest.yml)
+[![build & release](https://github.com/tttza/PolicyPlusMod/actions/workflows/publish.yml/badge.svg)](https://github.com/tttza/PolicyPlusMod/actions/workflows/publish.yml)
 
-## Modified from original
+> Note: This tool modifies the Windows Registry. Create a restore point or take a backup before use.
 
-Converted to C# and adding features that I use.
+---
 
-- Convert VB to C#
-- ID Columns added in View.
-- Copy Name, ID, Registry path to clipboard.
-- Search by partially ID.
-- Copy formatted Group Policy template path. (See below.)
+## What it can do
 
-```txt
-Computer
-  + Administrative Templates
-    + Delivery Optimization
-      + Windows Components
-         Maximum Foreground Download Bandwidth (percentage)
-```
+- Search and display
+  - Fast search by Name / Description / Policy ID / Registry path
+  - See technical details like target OS, supported on, and application target
+- Edit and save
+  - Toggle Enabled / Disabled / Not Configured
+  - Edit elements: enum, numeric, string, multi-line text, lists
+  - Queue changes in a temporary Pending list and save them in batch
+- Share and migrate
+  - Export / import .reg
+  - One-click copy of Name / Policy ID / Registry path
+  - Copy template hierarchy path as easy-to-read text
+- Switch sources
+  - Local GPO (User/Computer)
+  - Per-user GPO (editable; application may be limited depending on Windows edition)
+  - Standalone POL files, offline user hive, live registry
+- ADMX ingestion
+  - Auto-load from the default PolicyDefinitions folder
+  - Load/switch from any chosen folder
+- Display and language
+  - Toggle columns (ID/Category/Applies to/Supported on, etc.)
+  - Switch display language; optional secondary-language names
 
-!!! MAKE SURE YOU MADE a System Restore Point BEFORE YOU USE. !!!
-I'm not sure about that it converted from VB to C# as expected, so be careful when you use.  
-I've confirmed that reading and writing to the registry hive works fine.
+---
 
-## Goals
+## Key features added in this Mod
 
-Policy Plus is intended to make the power of Group Policy settings available to everyone.
+- Bookmarks
+  - Bookmark frequently used policies and filter by bookmark list
+  - Manage bookmark lists (create, rename, delete)
+- Quick Edit
+  - Quickly edit and save multiple selected policies at once (pairs well with bookmarks)
+- History
+  - List previously saved changes and re-apply them when needed
+- Enhanced search
+  - Partial match on Policy ID and search by Registry path
+- Copy tools
+  - One-click copy for Name / ID / Registry path / Hierarchy path
+- Secondary language display
+  - Show labels in multiple languages on a single screen
+- Dark mode / High-DPI support
+  - Implemented with WinUI 3 for a modern UI
 
-- Run and work on all Windows editions, not just Pro and Enterprise
-- Comply fully with licensing (i.e. transplant no components across Windows installations)
-- View and edit Registry-based policies in local GPOs, per-user GPOs, individual POL files, offline Registry user hives, and the live Registry
-- Navigate to policies by ID, text, or affected Registry entries
-- Show additional technical information about objects (policies, categories, products)
-- Provide convenient ways to share and import policy settings
+---
 
-Non-Registry-based policies (i.e. items outside the Administrative Templates branch of the Group Policy Editor) currently have no priority,
-but they may be reconsidered at a later date.
+## Differences from PolicyPlus (important)
 
-## Quick intro
+- Not all features of PolicyPlus have been carried over yet
+  - Features like “Acquire ADMX Files” are not included (please prepare/place ADMX files yourself)
 
-At startup, Policy Plus opens the last saved policy source, or the local Group Policy Object (Local GPO) by default.
-To open a different policy source (like a Registry branch or a per-user GPO), use _File | Open Policy Resources_.
+Original (PolicyPlus by Fleex255): https://github.com/Fleex255/PolicyPlus
 
-Much like the official Group Policy editor, categories are shown in the left tree.
-Information on the selected object is shown in the middle.
-Policies and subcategories in the selected category are shown in the right list.
-By default, both user and computer policies are displayed, but you can focus on just one policy source using the drop-down in the upper left.
+---
 
-To edit a policy, double-click it. If the selected setting applies to both users and computers,
-you can switch sections with the "Editing for" drop-down. Click OK to keep the changes to the setting.
-**Notice:** If a policy source is backed by a POL file (like Local GPO),
-changes to it will not be committed to disk until you use _File | Save Policies_ (Ctrl+S).
+## Notes
 
-## System requirements
+- Behavior on Home Edition has not been sufficiently tested
+- If ADMX/ADML are missing, obtain Microsoft’s administrative templates and place them in `PolicyDefinitions` and the corresponding language folder
+- This tool directly manipulates the registry; mistakes can affect your system. Use with caution
+- Much of the implementation was assisted by GitHub Copilot. While improvements are ongoing, it may contain critical errors that are easy to overlook. Please use with care.
 
-Policy Plus requires .NET Framework 4.5 or newer. That can be installed on Windows Vista or newer,
-and comes preinstalled on Windows 8 or newer.
-Policy Plus should also work on the corresponding server OSes: Windows Server 2008 or newer.
-The standard [.NET Framework hardware requirements](https://docs.microsoft.com/en-us/dotnet/framework/get-started/system-requirements)
-are sufficient for Policy Plus.
-
-## Special considerations for use on Home editions
-
-Some administrative templates are present by default on these editions, but many are missing.
-The newest full package can be downloaded from Microsoft and installed with _Help | Acquire ADMX Files_.
-
-The `RefreshPolicyEx` native function has reduced functionality on editions without full Group Policy infrastructure,
-so while Policy Plus can edit the local GPO and apply the changes to the Registry,
-a reboot or logon/logoff cycle is required for some policy changes to take effect.
-
-While the UI allows the creation and editing of per-user GPOs, their settings cannot be applied on these limited editions of Windows.
-If you need to change a policy setting for only one user, open the "user hive" source instead.
-Per-user local GPOs, a fairly arcane Windows feature, are not to be confused with policies that apply to the User section.
-Policy Plus supports user policies on Home editions just as well as computer policies.
-
-## Status
-
-Policy Plus is usable on all editions. It can load and save all policy sources successfully. More features may be still to come, though.
+---
 
 ## Download
 
-[Download a release build from the Releases page.](https://github.com/tttza/PolicyPlus/releases)
-Updates are published as GitHub releases after it is verified that they are fit for public use.
-Note that Policy Plus is still pre-release software, so there may be bugs; please submit any problems to the issue tracker.
+Release builds are available on GitHub Releases:  
+https://github.com/tttza/PolicyPlusMod/releases
 
-**N.B.** A few antivirus programs incorrectly flag Policy Plus as malware.
-Policy Plus is a powerful tool and so may cause problems if used recklessly, but it is not malicious.
-If you would prefer to not trust binaries, feel free to read the code and [compile Policy Plus from source](https://github.com/tttza/PolicyPlus/blob/master/COMPILE.md).
-You can also verify that a build was created from the published code by examining the output of a GitHub Actions run:
-the input commit hash can be found under "checkout master" and the output executable hash can be found under "compute hash."
+---
+
+## For developers
+
+- Main directories
+  - `PolicyPlusCore`: ADMX/ADML processing, evaluation, and persistence abstractions
+  - `PolicyPlusPlus`: Desktop UI
+  - `PolicyPPElevationHost`: Separate process for admin-required operations
+  - `PolicyPlusModTests` / `PolicyPlusPlus.Tests.UI`: Unit / UI tests
+- Build and run (cmd.exe)
+  ```cmd
+  dotnet restore PolicyPlusMod.sln
+  dotnet build PolicyPlusMod.sln -c Debug-Unpackaged
+  dotnet run --project PolicyPlusPlus\PolicyPlusPlus.csproj -c Debug-Unpackaged
+  ```
+- Tests
+  ```cmd
+  dotnet test PolicyPlusModTests\PolicyPlusModTests.csproj -c Debug-Unpackaged
+  dotnet test PolicyPlusPlus.Tests.UI\PolicyPlus.Tests.UI.csproj -c Debug-Unpackaged -- --stop-on-fail on
+  ```
+
+Please report issues and improvement proposals via Issues / PR.
