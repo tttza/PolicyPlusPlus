@@ -15,6 +15,10 @@ on:
         type: boolean
         default: true
 
+permissions:
+  contents: write
+
+
 jobs:
   pack-and-release:
     runs-on: windows-latest
@@ -25,6 +29,7 @@ jobs:
       PACK_AUTHORS: tttza.dev
       ENTRY_EXE: PolicyPlusPlus.exe
       PROJECT: PolicyPlusPlus/PolicyPlusPlus.csproj
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
 
     steps:
       - name: Checkout
@@ -126,11 +131,12 @@ jobs:
           $pre = "$env:IS_PRERELEASE"
           $tag = if ("${{ github.ref_type }}" -eq "tag") { "${{ steps.ver.outputs.tagref }}" } else { "ci-${{ github.run_id }}" }
           $name = "$env:PACK_TITLE ${{ steps.ver.outputs.version }}"
+          %token = "$env:GITHUB_TOKEN"
           if ($pre -eq "true") {
-            vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --pre --releaseName "$name" --tag "$tag" -c "win-x64"
-            vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --pre --releaseName "$name" --tag "$tag" -c "win-arm64"
+            vpk upload github --token "$token" --repoUrl https://github.com/${{ github.repository }} --publish --pre --releaseName "$name" --tag "$tag" -c "win-x64"
+            vpk upload github --token "$token" --repoUrl https://github.com/${{ github.repository }} --publish --pre --releaseName "$name" --tag "$tag" -c "win-arm64"
           } else {
-            vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --releaseName "$name" --tag "$tag" -c "win-x64"
-            vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --releaseName "$name" --tag "$tag" -c "win-arm64"
+            vpk upload github --token "$token" --repoUrl https://github.com/${{ github.repository }} --publish --releaseName "$name" --tag "$tag" -c "win-x64"
+            vpk upload github --token "$token" --repoUrl https://github.com/${{ github.repository }} --publish --releaseName "$name" --tag "$tag" -c "win-arm64"
           }
         shell: pwsh
