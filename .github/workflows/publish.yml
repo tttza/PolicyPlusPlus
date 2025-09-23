@@ -131,7 +131,7 @@ jobs:
           $pre = "$env:IS_PRERELEASE"
           $tag = if ("${{ github.ref_type }}" -eq "tag") { "${{ steps.ver.outputs.tagref }}" } else { "ci-${{ github.run_id }}" }
           $name = "$env:PACK_TITLE ${{ steps.ver.outputs.version }}"
-          %token = "$env:GITHUB_TOKEN"
+          $token = "$env:GITHUB_TOKEN"
           if ($pre -eq "true") {
             vpk upload github --token "$token" --repoUrl https://github.com/${{ github.repository }} --publish --pre --releaseName "$name" --tag "$tag" -c "win-x64"
             vpk upload github --token "$token" --repoUrl https://github.com/${{ github.repository }} --publish --pre --releaseName "$name" --tag "$tag" -c "win-arm64"
