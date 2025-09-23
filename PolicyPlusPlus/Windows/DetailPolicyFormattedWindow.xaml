@@ -59,7 +59,7 @@
           x:Name="PathBox"
           AcceptsReturn="True"
           TextWrapping="NoWrap"
-          FontFamily="Consolas"
+          FontFamily="ms-appx:///Assets/Fonts/PolicyPlusMono.CompositeFont#PolicyPlus Mono"
         />
       </ScrollViewer>
       <StackPanel
@@ -106,7 +106,12 @@
         VerticalScrollBarVisibility="Auto"
         Background="{ThemeResource LayerOnMicaBaseAltFillColorDefaultBrush}"
       >
-        <TextBox x:Name="RegBox" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Consolas" />
+        <TextBox
+          x:Name="RegBox"
+          AcceptsReturn="True"
+          TextWrapping="NoWrap"
+          FontFamily="ms-appx:///Assets/Fonts/PolicyPlusMono.CompositeFont#PolicyPlus Mono"
+        />
       </ScrollViewer>
       <StackPanel
         Grid.Row="4"

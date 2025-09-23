@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FontFamily xmlns="http://schemas.microsoft.com/winfx/2006/xaml/composite-font">
+  <FamilyNames>
+    <FamilyName xml:lang="en-us">PolicyPlus Mono</FamilyName>
+    <FamilyName xml:lang="ja-jp">PolicyPlus Mono</FamilyName>
+  </FamilyNames>
+
+  <!-- Optional local fonts (if bundled) could be declared in <Fonts> with src=ms-appx:///... -->
+  <Fonts>
+    <!-- Intentionally empty: prefer installed system fonts by family name via FontFamilyMap -->
+  </Fonts>
+
+  <FontMappings>
+    <!-- Keep ASCII/Latin numbers/spaces monospaced for alignment -->
+    <FontFamilyMap Unicode="0000-00FF,0100-017F,0180-024F" Target="Cascadia Mono" />
+
+    <!-- CJK and related punctuation ranges: Japanese-specific (Kana etc.) prefer Yu Gothic UI/Meiryo order -->
+    <FontFamilyMap Unicode="3000-303F,3040-309F,30A0-30FF,31F0-31FF,3400-4DBF,4E00-9FFF,FF00-FFEF" Target="Noto Sans CJK JP" />
+    <FontFamilyMap Unicode="3000-303F,3040-309F,30A0-30FF,31F0-31FF,3400-4DBF,4E00-9FFF,FF00-FFEF" Target="Yu Gothic UI" />
+    <FontFamilyMap Unicode="3000-303F,3040-309F,30A0-30FF,31F0-31FF,3400-4DBF,4E00-9FFF,FF00-FFEF" Target="Meiryo UI" />
+    <FontFamilyMap Unicode="3000-303F,3040-309F,30A0-30FF,31F0-31FF,3400-4DBF,4E00-9FFF,FF00-FFEF" Target="MS Gothic" />
+
+    <!-- Chinese (Traditional) specific blocks: Bopomofo and ideographs preferences -->
+    <FontFamilyMap Unicode="3100-312F" Target="Microsoft JhengHei UI" />
+    <FontFamilyMap Unicode="3100-312F" Target="Noto Sans CJK TC" />
+    <!-- Prefer TC/SC UI fonts for unified ideographs when present -->
+    <FontFamilyMap Unicode="3400-4DBF,4E00-9FFF,F900-FAFF" Target="Microsoft JhengHei UI" />
+    <FontFamilyMap Unicode="3400-4DBF,4E00-9FFF,F900-FAFF" Target="Noto Sans CJK TC" />
+
+    <!-- Chinese (Simplified) specific: prefer Microsoft YaHei UI then Noto SC -->
+    <FontFamilyMap Unicode="3400-4DBF,4E00-9FFF,F900-FAFF" Target="Microsoft YaHei UI" />
+    <FontFamilyMap Unicode="3400-4DBF,4E00-9FFF,F900-FAFF" Target="Noto Sans CJK SC" />
+
+    <!-- Korean: Hangul blocks and fallback for ideographs when mixed text occurs -->
+    <FontFamilyMap Unicode="1100-11FF,3130-318F,AC00-D7AF" Target="Malgun Gothic" />
+    <FontFamilyMap Unicode="1100-11FF,3130-318F,AC00-D7AF" Target="Noto Sans CJK KR" />
+    <FontFamilyMap Unicode="3400-4DBF,4E00-9FFF,F900-FAFF" Target="Malgun Gothic" />
+    <FontFamilyMap Unicode="3400-4DBF,4E00-9FFF,F900-FAFF" Target="Noto Sans CJK KR" />
+
+    <!-- Symbols (arrows, bullets, punctuation, box drawing); prefer Segoe UI Symbol then MS Gothic -->
+    <FontFamilyMap Unicode="2000-206F" Target="Segoe UI Symbol" />
+    <FontFamilyMap Unicode="2000-206F" Target="MS Gothic" />
+    <FontFamilyMap Unicode="2500-257F" Target="Segoe UI Symbol" />
+    <FontFamilyMap Unicode="2500-257F" Target="MS Gothic" />
+    <FontFamilyMap Unicode="2190-21FF,25A0-25FF,2600-26FF" Target="Segoe UI Symbol" />
+    <FontFamilyMap Unicode="2190-21FF,25A0-25FF,2600-26FF" Target="MS Gothic" />
+  </FontMappings>
+</FontFamily>

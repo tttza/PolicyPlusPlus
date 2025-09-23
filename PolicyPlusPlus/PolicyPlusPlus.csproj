@@ -193,4 +193,9 @@
       WorkingDirectory=".."
     />
   </Target>
+  <ItemGroup>
+    <Content Include="Assets\Fonts\PolicyPlusMono.CompositeFont">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>
