@@ -267,7 +267,8 @@ namespace PolicyPlusPlus.Windows
                         sym = "+";
                     _joinSymbol = sym.Substring(0, Math.Min(1, sym.Length));
                     PathSymbolBtn.Content = _joinSymbol;
-                    PathBox.Text = DetailPathFormatter.BuildPathText(_policy, _joinSymbol);
+                    // Rebuild all localized texts to respect the current second-language toggle and ADML availability
+                    RefreshTexts();
                     try
                     {
                         SettingsService.Instance.UpdatePathJoinSymbol(_joinSymbol);
