@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using PolicyPlusPlus.Logging;
 
 namespace PolicyPlusPlus.Services
 {
@@ -106,7 +107,14 @@ namespace PolicyPlusPlus.Services
                     $"admxwarm_{Hash(admxPath + "\n" + language + "\n" + fingerprint)}.json.gz";
                 var path = Path.Combine(EnsureDir(), key);
                 if (!File.Exists(path))
+                {
+                    try
+                    {
+                        Log.Debug("Cache", $"Warm snapshot miss path={path}");
+                    }
+                    catch { }
                     return false;
+                }
                 using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 using var gz = new GZipStream(fs, CompressionMode.Decompress, leaveOpen: false);
                 using var ms = new MemoryStream();
@@ -116,11 +124,22 @@ namespace PolicyPlusPlus.Services
                     System.Text.Json.JsonSerializer.Deserialize<PolicyPlusCore.Core.AdmxWarmSnapshot>(
                         json
                     );
-                return snapshot != null;
+                bool ok = snapshot != null;
+                try
+                {
+                    Log.Debug("Cache", $"Warm snapshot load {(ok ? "hit" : "fail")} path={path}");
+                }
+                catch { }
+                return ok;
             }
             catch
             {
                 snapshot = null;
+                try
+                {
+                    Log.Debug("Cache", "Warm snapshot load threw");
+                }
+                catch { }
                 return false;
             }
         }
@@ -147,8 +166,20 @@ namespace PolicyPlusPlus.Services
                 using var gz = new GZipStream(fs, CompressionLevel.Fastest, leaveOpen: false);
                 var bytes = Encoding.UTF8.GetBytes(json);
                 gz.Write(bytes, 0, bytes.Length);
+                try
+                {
+                    Log.Info("Cache", $"Warm snapshot saved path={path} size={bytes.Length}");
+                }
+                catch { }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                try
+                {
+                    Log.Warn("Cache", $"Warm snapshot save failed lang={language}", ex);
+                }
+                catch { }
+            }
         }
     }
 }

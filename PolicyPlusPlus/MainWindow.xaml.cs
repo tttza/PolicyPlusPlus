@@ -1089,15 +1089,52 @@ namespace PolicyPlusPlus
                         totalGroupsLocal = allLocal
                             .GroupBy(p => p.DisplayName, StringComparer.InvariantCultureIgnoreCase)
                             .Count();
+                        // Optionally load secondary-language warm snapshot to power second-language search while in warm-only mode.
+                        Dictionary<string, string>? secondNameById = null;
+                        if (useSecond)
+                        {
+                            try
+                            {
+                                var fpSecond = CacheService.ComputeAdmxFingerprint(
+                                    path,
+                                    secondLang
+                                );
+                                if (
+                                    !string.IsNullOrEmpty(fpSecond)
+                                    && CacheService.TryLoadAdmxWarmSnapshot(
+                                        path,
+                                        secondLang,
+                                        fpSecond,
+                                        out var warmSecond
+                                    )
+                                    && warmSecond != null
+                                )
+                                {
+                                    var compiled2 = warmSecond.ToCompiled();
+                                    secondNameById = compiled2.policies.ToDictionary(
+                                        p => p.UniqueID,
+                                        p => p.DisplayName ?? string.Empty,
+                                        StringComparer.OrdinalIgnoreCase
+                                    );
+                                }
+                            }
+                            catch
+                            {
+                                secondNameById = null;
+                            }
+                        }
+
                         // Build search vectors
                         searchIndexLocal = allLocal
                             .Select(p =>
                                 (
                                     Policy: p,
                                     NameLower: SearchText.Normalize(p.DisplayName),
-                                    SecondLower: useSecond
+                                    SecondLower: useSecond && secondNameById != null
                                         ? SearchText.Normalize(
-                                            LocalizedTextService.GetPolicyNameIn(p, secondLang)
+                                            secondNameById.TryGetValue(p.UniqueID, out var n)
+                                                ? n
+                                                : string.Empty
                                         )
                                         : string.Empty,
                                     IdLower: SearchText.Normalize(p.UniqueID),
@@ -1436,6 +1473,44 @@ namespace PolicyPlusPlus
                             );
                             CacheService.SaveAdmxWarmSnapshot(path, langPref, fpToSave!, snap);
                         }
+                        // Persist a secondary-language warm snapshot as well when enabled to speed up second-language features.
+                        if (useSecond)
+                        {
+                            _ = System.Threading.Tasks.Task.Run(() =>
+                            {
+                                try
+                                {
+                                    var fpSecond = CacheService.ComputeAdmxFingerprint(
+                                        path,
+                                        secondLang
+                                    );
+                                    if (!string.IsNullOrEmpty(fpSecond))
+                                    {
+                                        var b2 = new AdmxBundle();
+                                        bool allowFallback = true;
+                                        try
+                                        {
+                                            allowFallback =
+                                                settings.PrimaryLanguageFallbackEnabled ?? true;
+                                        }
+                                        catch { }
+                                        b2.EnableLanguageFallback = allowFallback;
+                                        b2.LoadFolder(path, secondLang);
+                                        var snap2 = PolicyPlusCore.Core.AdmxWarmSnapshot.FromBundle(
+                                            b2,
+                                            secondLang
+                                        );
+                                        CacheService.SaveAdmxWarmSnapshot(
+                                            path,
+                                            secondLang,
+                                            fpSecond,
+                                            snap2
+                                        );
+                                    }
+                                }
+                                catch { }
+                            });
+                        }
                     }
                 }
                 catch { }
@@ -1477,6 +1552,42 @@ namespace PolicyPlusPlus
                                     langPref
                                 );
                                 CacheService.SaveAdmxWarmSnapshot(path, langPref, fp2, warm2);
+                            }
+                            // Also build and persist a secondary-language warm snapshot when enabled so next startup can leverage it immediately.
+                            if (useSecond)
+                            {
+                                try
+                                {
+                                    var fpSecond = CacheService.ComputeAdmxFingerprint(
+                                        path,
+                                        secondLang
+                                    );
+                                    if (!string.IsNullOrEmpty(fpSecond))
+                                    {
+                                        var b2 = new AdmxBundle();
+                                        bool allowFallback2 = true;
+                                        try
+                                        {
+                                            allowFallback2 =
+                                                settings.PrimaryLanguageFallbackEnabled ?? true;
+                                        }
+                                        catch { }
+                                        b2.EnableLanguageFallback = allowFallback2;
+                                        b2.LoadFolder(path, secondLang);
+                                        var warmSecond =
+                                            PolicyPlusCore.Core.AdmxWarmSnapshot.FromBundle(
+                                                b2,
+                                                secondLang
+                                            );
+                                        CacheService.SaveAdmxWarmSnapshot(
+                                            path,
+                                            secondLang,
+                                            fpSecond,
+                                            warmSecond
+                                        );
+                                    }
+                                }
+                                catch { }
                             }
                             // Swap-in completed bundle on UI thread
                             var fullPolicies = b.Policies.Values.ToList();
