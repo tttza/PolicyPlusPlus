@@ -3,6 +3,7 @@
   x:Class="PolicyPlusPlus.Windows.EditSettingWindow"
   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:g="using:PolicyPlusPlus.Markup"
   Title="Edit policy setting"
 >
   <Window.SystemBackdrop>
@@ -159,7 +160,7 @@
           ToolTipService.ToolTip="Toggle 2nd language"
           Visibility="Collapsed"
         >
-          <FontIcon Glyph="" />
+          <FontIcon Glyph="{g:GlyphHex Code=F2B7}" />
         </ToggleButton>
         <Button
           x:Name="ApplyBtn"

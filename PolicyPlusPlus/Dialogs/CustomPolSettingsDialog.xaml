@@ -5,6 +5,7 @@
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:g="using:PolicyPlusPlus.Markup"
   mc:Ignorable="d"
   Title="Custom POL Settings"
   PrimaryButtonText="OK"
@@ -71,7 +72,7 @@
         Click="BrowseComp_Click"
         ToolTipService.ToolTip="Browse"
       >
-        <FontIcon Glyph="" FontSize="12" />
+        <FontIcon Glyph="{g:GlyphHex Code=E8B7}" FontSize="12" />
       </Button>
       <Button
         Grid.Column="3"
@@ -79,7 +80,7 @@
         Click="NewComp_Click"
         ToolTipService.ToolTip="New empty file"
       >
-        <FontIcon Glyph="" FontSize="12" />
+        <FontIcon Glyph="{g:GlyphHex Code=E710}" FontSize="12" />
       </Button>
       <Button
         Grid.Column="4"
@@ -87,7 +88,7 @@
         Click="ResetComp_Click"
         ToolTipService.ToolTip="Clear path"
       >
-        <FontIcon Glyph="" FontSize="12" />
+        <FontIcon Glyph="{g:GlyphHex Code=E711}" FontSize="12" />
       </Button>
     </Grid>
     <Grid Grid.Row="3" ColumnSpacing="4">
@@ -116,7 +117,7 @@
         Click="BrowseUser_Click"
         ToolTipService.ToolTip="Browse"
       >
-        <FontIcon Glyph="" FontSize="12" />
+        <FontIcon Glyph="{g:GlyphHex Code=E8B7}" FontSize="12" />
       </Button>
       <Button
         Grid.Column="3"
@@ -124,7 +125,7 @@
         Click="NewUser_Click"
         ToolTipService.ToolTip="New empty file"
       >
-        <FontIcon Glyph="" FontSize="12" />
+        <FontIcon Glyph="{g:GlyphHex Code=E710}" FontSize="12" />
       </Button>
       <Button
         Grid.Column="4"
@@ -132,7 +133,7 @@
         Click="ResetUser_Click"
         ToolTipService.ToolTip="Clear path"
       >
-        <FontIcon Glyph="" FontSize="12" />
+        <FontIcon Glyph="{g:GlyphHex Code=E711}" FontSize="12" />
       </Button>
     </Grid>
     <CheckBox

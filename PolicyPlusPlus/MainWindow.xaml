@@ -11,6 +11,7 @@
   xmlns:converters="using:PolicyPlusPlus.Converters"
   xmlns:models="using:PolicyPlusPlus.Models"
   xmlns:viewModels="using:PolicyPlusPlus.ViewModels"
+  xmlns:g="using:PolicyPlusPlus.Markup"
   mc:Ignorable="d"
   Title="Policy++"
 >
@@ -378,7 +379,7 @@
               ToolTipService.ToolTip="Back (Alt+Left / Mouse Back)"
               Style="{StaticResource NavIconButtonStyle}"
             >
-              <FontIcon Glyph="" FontSize="12" />
+              <FontIcon Glyph="{g:GlyphHex Code=E72B}" FontSize="12" />
             </Button>
             <Button
               x:Name="BtnForward"
@@ -387,7 +388,7 @@
               ToolTipService.ToolTip="Forward (Alt+Right / Mouse Forward)"
               Style="{StaticResource NavIconButtonStyle}"
             >
-              <FontIcon Glyph="" FontSize="12" />
+              <FontIcon Glyph="{g:GlyphHex Code=E72A}" FontSize="12" />
             </Button>
             <TextBlock Text="Applies to:" VerticalAlignment="Center" Margin="6,0,0,0" />
             <ComboBox
@@ -454,7 +455,7 @@
                 Tapped="SearchClearBtn_Tapped"
               >
                 <FontIcon
-                  Glyph=""
+                  Glyph="{g:GlyphHex Code=E10A}"
                   FontSize="10"
                   Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                 />
@@ -473,7 +474,7 @@
               Style="{StaticResource NavIconButtonStyle}"
               ToolTipService.ToolTip="Search options"
             >
-              <FontIcon Glyph="" FontSize="12" />
+              <FontIcon Glyph="{g:GlyphHex Code=E713}" FontSize="12" />
               <Button.Flyout>
                 <Flyout>
                   <StackPanel>
@@ -572,7 +573,7 @@
               CornerRadius="6"
             >
               <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                <FontIcon Glyph="" />
+                <FontIcon Glyph="{g:GlyphHex Code=E8E6}" />
                 <TextBlock Text="Clear category filter" />
               </StackPanel>
             </Button>
@@ -667,7 +668,7 @@
                         >
                           <FontIcon
                             x:Name="BookmarkGlyph"
-                            Glyph=""
+                            Glyph="{g:GlyphHex Code=E735}"
                             FontSize="14"
                             Foreground="Gold"
                             MinWidth="0"
@@ -689,7 +690,7 @@
                   <datagrid:DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
                       <FontIcon
-                        Glyph=""
+                        Glyph="{g:GlyphHex Code=E8B7}"
                         Opacity="0.8"
                         Visibility="{Binding IsCategory, Converter={StaticResource BoolToVisibilityConverter}}"
                       />
@@ -707,7 +708,7 @@
                     <DataTemplate>
                       <Grid Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
                         <FontIcon
-                          Glyph=""
+                          Glyph="{g:GlyphHex Code=E77B}"
                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                           Opacity="0.9"
                         />
@@ -743,7 +744,7 @@
                     <DataTemplate>
                       <Grid Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
                         <FontIcon
-                          Glyph=""
+                          Glyph="{g:GlyphHex Code=E211}"
                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                           Opacity="0.9"
                         />
@@ -949,7 +950,7 @@
                   Spacing="8"
                   Opacity="0.8"
                 >
-                  <FontIcon Glyph="" FontSize="32" />
+                  <FontIcon Glyph="{g:GlyphHex Code=E946}" FontSize="32" />
                   <TextBlock Text="Select a policy to view details here" TextAlignment="Center" />
                   <TextBlock
                     Text="Hint: double-click a row to edit the setting"
