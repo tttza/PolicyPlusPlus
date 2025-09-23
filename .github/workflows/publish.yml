@@ -15,9 +15,6 @@ on:
         type: boolean
         default: true
 
-permissions:
-  contents: write
-
 jobs:
   pack-and-release:
     runs-on: windows-latest
