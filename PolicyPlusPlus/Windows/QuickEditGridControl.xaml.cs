@@ -25,6 +25,13 @@ namespace PolicyPlusPlus.Windows
         public QuickEditGridControl Root => this;
         private bool _measured;
 
+        // Align with XAML resources; allows QuickEditWindow to query actual separator width.
+        public double SeparatorWidth { get; set; } = 4;
+        public double RightSpacerWidth { get; set; } = 8;
+
+        // Whether to auto-size option columns to content on first load.
+        public bool AutoAdjustOptionColumns { get; set; } = false;
+
         public QuickEditGridControl()
         {
             this.InitializeComponent();
@@ -43,7 +50,8 @@ namespace PolicyPlusPlus.Windows
             _measured = true;
             try
             {
-                AdjustOptionColumnsToContent();
+                if (AutoAdjustOptionColumns)
+                    AdjustOptionColumnsToContent();
             }
             catch { }
         }
@@ -489,7 +497,7 @@ namespace PolicyPlusPlus.Windows
                 }
             }
         }
-        private GridLength _userOptions = new GridLength(420);
+        private GridLength _userOptions = new GridLength(220);
         public GridLength UserOptions
         {
             get => _userOptions;
@@ -516,7 +524,7 @@ namespace PolicyPlusPlus.Windows
                 }
             }
         }
-        private GridLength _computerOptions = new GridLength(420);
+        private GridLength _computerOptions = new GridLength(220);
         public GridLength ComputerOptions
         {
             get => _computerOptions;
@@ -542,16 +550,16 @@ namespace PolicyPlusPlus.Windows
                     Id = New(Id, delta, 140);
                     break;
                 case "UserState":
-                    UserState = New(UserState, delta, 160);
+                    UserState = New(UserState, delta, 150);
                     break;
                 case "UserOptions":
-                    UserOptions = New(UserOptions, delta, 300);
+                    UserOptions = New(UserOptions, delta, 220);
                     break;
                 case "ComputerState":
-                    ComputerState = New(ComputerState, delta, 160);
+                    ComputerState = New(ComputerState, delta, 150);
                     break;
                 case "ComputerOptions":
-                    ComputerOptions = New(ComputerOptions, delta, 300);
+                    ComputerOptions = New(ComputerOptions, delta, 220);
                     break;
             }
         }

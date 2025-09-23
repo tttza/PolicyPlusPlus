@@ -45,7 +45,9 @@ namespace PolicyPlusPlus.Windows
                 SystemBackdrop = new MicaBackdrop();
             }
             catch { }
-            ChildWindowCommon.Initialize(this, 800, 520, ApplyCurrentTheme);
+            // Initial size will be further refined by ApplyAutoSize. Width here approximates
+            // the model: sum of columns + 5 separators (QuickEdit.SeparatorWidth) + right spacer + padding/slack.
+            ChildWindowCommon.Initialize(this, 1388, 520, ApplyCurrentTheme);
             if (_grid != null)
                 _grid.ParentQuickEditWindow = this;
             if (_saveButton != null)
@@ -485,6 +487,12 @@ namespace PolicyPlusPlus.Windows
             if (_grid?.Columns != null)
             {
                 var c = _grid.Columns;
+                double sep = 4; // default
+                try
+                {
+                    sep = _grid.SeparatorWidth;
+                }
+                catch { }
                 double model =
                     c.Name.Value
                     + c.Id.Value
@@ -492,7 +500,12 @@ namespace PolicyPlusPlus.Windows
                     + c.UserOptions.Value
                     + c.ComputerState.Value
                     + c.ComputerOptions.Value
-                    + (6 * 5);
+                    + (sep * 5);
+                try
+                {
+                    model += _grid.RightSpacerWidth;
+                }
+                catch { }
                 try
                 {
                     model += RootShell.Padding.Left + RootShell.Padding.Right;

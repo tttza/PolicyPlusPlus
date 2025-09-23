@@ -12,6 +12,14 @@
     <conv:QuickEditStateToIndexConverter x:Key="StateIndex" />
     <conv:HeaderGlyphConverter x:Key="HeaderGlyph" />
     <conv:QuickEditStateToBrushConverter x:Key="StateBrush" />
+    <!-- Centralized layout metrics for QuickEdit grid -->
+    <x:String x:Key="QuickEdit.SeparatorWidth">4</x:String>
+    <x:Double x:Key="QuickEdit.NameMin">300</x:Double>
+    <x:Double x:Key="QuickEdit.IdMin">140</x:Double>
+    <x:Double x:Key="QuickEdit.StateMin">150</x:Double>
+    <x:Double x:Key="QuickEdit.OptionsMin">220</x:Double>
+    <!-- Small breathing space at far right -->
+    <x:String x:Key="QuickEdit.RightSpacerWidth">8</x:String>
   </UserControl.Resources>
   <Grid KeyDown="RootGrid_KeyDown">
     <ScrollViewer
@@ -25,27 +33,35 @@
           <Grid.ColumnDefinitions>
             <ColumnDefinition
               Width="{Binding Columns.Name, ElementName=RootControl}"
-              MinWidth="300"
+              MinWidth="{StaticResource QuickEdit.NameMin}"
             />
-            <ColumnDefinition Width="4" />
+            <ColumnDefinition Width="{StaticResource QuickEdit.SeparatorWidth}" />
             <ColumnDefinition
               Width="{Binding Columns.Id, ElementName=RootControl}"
-              MinWidth="140"
+              MinWidth="{StaticResource QuickEdit.IdMin}"
             />
-            <ColumnDefinition Width="4" />
+            <ColumnDefinition Width="{StaticResource QuickEdit.SeparatorWidth}" />
             <ColumnDefinition
               Width="{Binding Columns.UserState, ElementName=RootControl}"
-              MinWidth="150"
+              MinWidth="{StaticResource QuickEdit.StateMin}"
             />
-            <ColumnDefinition Width="4" />
-            <ColumnDefinition Width="260" />
-            <ColumnDefinition Width="4" />
+            <ColumnDefinition Width="{StaticResource QuickEdit.SeparatorWidth}" />
+            <ColumnDefinition
+              Width="{Binding Columns.UserOptions, ElementName=RootControl}"
+              MinWidth="{StaticResource QuickEdit.OptionsMin}"
+            />
+            <ColumnDefinition Width="{StaticResource QuickEdit.SeparatorWidth}" />
             <ColumnDefinition
               Width="{Binding Columns.ComputerState, ElementName=RootControl}"
-              MinWidth="150"
+              MinWidth="{StaticResource QuickEdit.StateMin}"
             />
-            <ColumnDefinition Width="4" />
-            <ColumnDefinition Width="260" />
+            <ColumnDefinition Width="{StaticResource QuickEdit.SeparatorWidth}" />
+            <ColumnDefinition
+              Width="{Binding Columns.ComputerOptions, ElementName=RootControl}"
+              MinWidth="{StaticResource QuickEdit.OptionsMin}"
+            />
+            <!-- right spacer -->
+            <ColumnDefinition Width="{StaticResource QuickEdit.RightSpacerWidth}" />
           </Grid.ColumnDefinitions>
           <TextBlock Grid.Column="0" Text="Name" VerticalAlignment="Center" Margin="6,0" />
           <Thumb
@@ -119,27 +135,35 @@
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition
                       Width="{Binding Columns.Name, ElementName=RootControl}"
-                      MinWidth="300"
+                      MinWidth="{StaticResource QuickEdit.NameMin}"
                     />
-                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="{StaticResource QuickEdit.SeparatorWidth}" />
                     <ColumnDefinition
                       Width="{Binding Columns.Id, ElementName=RootControl}"
-                      MinWidth="140"
+                      MinWidth="{StaticResource QuickEdit.IdMin}"
                     />
-                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="{StaticResource QuickEdit.SeparatorWidth}" />
                     <ColumnDefinition
                       Width="{Binding Columns.UserState, ElementName=RootControl}"
-                      MinWidth="150"
+                      MinWidth="{StaticResource QuickEdit.StateMin}"
                     />
-                    <ColumnDefinition Width="4" />
-                    <ColumnDefinition Width="260" />
-                    <ColumnDefinition Width="4" />
+                    <ColumnDefinition Width="{StaticResource QuickEdit.SeparatorWidth}" />
+                    <ColumnDefinition
+                      Width="{Binding Columns.UserOptions, ElementName=RootControl}"
+                      MinWidth="{StaticResource QuickEdit.OptionsMin}"
+                    />
+                    <ColumnDefinition Width="{StaticResource QuickEdit.SeparatorWidth}" />
                     <ColumnDefinition
                       Width="{Binding Columns.ComputerState, ElementName=RootControl}"
-                      MinWidth="150"
+                      MinWidth="{StaticResource QuickEdit.StateMin}"
                     />
-                    <ColumnDefinition Width="4" />
-                    <ColumnDefinition Width="260" />
+                    <ColumnDefinition Width="{StaticResource QuickEdit.SeparatorWidth}" />
+                    <ColumnDefinition
+                      Width="{Binding Columns.ComputerOptions, ElementName=RootControl}"
+                      MinWidth="{StaticResource QuickEdit.OptionsMin}"
+                    />
+                    <!-- right spacer -->
+                    <ColumnDefinition Width="{StaticResource QuickEdit.RightSpacerWidth}" />
                   </Grid.ColumnDefinitions>
                   <TextBlock
                     Grid.Column="0"
