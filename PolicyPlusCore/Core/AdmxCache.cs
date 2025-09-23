@@ -240,11 +240,22 @@ public sealed class AdmxCache : IAdmxCache
             {
                 if (allowGlobalRebuild)
                 {
-                    using var purge = conn.CreateCommand();
-                    purge.Transaction = txDel;
-                    purge.CommandText =
-                        "DELETE FROM PolicyIndex; DELETE FROM PolicyIndexMap; DELETE FROM PolicyI18n; DELETE FROM PolicyDeps; DELETE FROM PolicyStringsDeps; DELETE FROM Policies;";
-                    await purge.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                    // For contentless FTS5, regular DELETE is not allowed; use special commands.
+                    using (var purgeFts = conn.CreateCommand())
+                    {
+                        purgeFts.Transaction = txDel;
+                        purgeFts.CommandText =
+                            "INSERT INTO PolicyIndex(PolicyIndex) VALUES('delete-all');";
+                        await purgeFts.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                    }
+
+                    using (var purgeRest = conn.CreateCommand())
+                    {
+                        purgeRest.Transaction = txDel;
+                        purgeRest.CommandText =
+                            "DELETE FROM PolicyIndexMap; DELETE FROM PolicyI18n; DELETE FROM PolicyDeps; DELETE FROM PolicyStringsDeps; DELETE FROM Policies;";
+                        await purgeRest.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                    }
                 }
                 else
                 {
@@ -255,13 +266,42 @@ public sealed class AdmxCache : IAdmxCache
                         delI18n.Parameters.AddWithValue("@c", culture);
                         await delI18n.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
                     }
-                    using (var delIdx = conn.CreateCommand())
+                    // Delete FTS5 rows for the culture using special 'delete' per rowid, then clean up the map.
+                    var rowIds = new List<long>(256);
+                    using (var getRows = conn.CreateCommand())
                     {
-                        delIdx.Transaction = txDel;
-                        delIdx.CommandText =
-                            "DELETE FROM PolicyIndex WHERE rowid IN (SELECT rowid FROM PolicyIndexMap WHERE culture=@c); DELETE FROM PolicyIndexMap WHERE culture=@c;";
-                        delIdx.Parameters.AddWithValue("@c", culture);
-                        await delIdx.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                        getRows.Transaction = txDel;
+                        getRows.CommandText = "SELECT rowid FROM PolicyIndexMap WHERE culture=@c;";
+                        getRows.Parameters.AddWithValue("@c", culture);
+                        using var r = await getRows.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                        while (await r.ReadAsync(ct).ConfigureAwait(false))
+                        {
+                            if (!r.IsDBNull(0))
+                                rowIds.Add(r.GetInt64(0));
+                        }
+                    }
+                    if (rowIds.Count > 0)
+                    {
+                        using var delFts = conn.CreateCommand();
+                        delFts.Transaction = txDel;
+                        delFts.CommandText =
+                            "INSERT INTO PolicyIndex(PolicyIndex, rowid) VALUES('delete', @rid);";
+                        var pRid = delFts.Parameters.Add(
+                            "@rid",
+                            Microsoft.Data.Sqlite.SqliteType.Integer
+                        );
+                        foreach (var rid in rowIds)
+                        {
+                            pRid.Value = rid;
+                            await delFts.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                        }
+                    }
+                    using (var delMap = conn.CreateCommand())
+                    {
+                        delMap.Transaction = txDel;
+                        delMap.CommandText = "DELETE FROM PolicyIndexMap WHERE culture=@c;";
+                        delMap.Parameters.AddWithValue("@c", culture);
+                        await delMap.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
                     }
                     using (var delStr = conn.CreateCommand())
                     {
