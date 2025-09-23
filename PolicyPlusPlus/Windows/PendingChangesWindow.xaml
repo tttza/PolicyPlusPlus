@@ -97,16 +97,6 @@
           </ComboBox>
         </StackPanel>
       </Grid>
-      <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-        <AutoSuggestBox
-          x:Name="SearchBox"
-          Width="360"
-          QueryIcon="Find"
-          PlaceholderText="Search pending items (policy, path)"
-          TextChanged="SearchBox_TextChanged"
-        />
-        <Button x:Name="BtnClearFilters" Content="Clear filters" />
-      </StackPanel>
       <controls:TabView
         Grid.Row="2"
         x:Name="MainTabs"
@@ -120,10 +110,22 @@
         <controls:TabViewItem x:Name="PendingTab" Header="Pending" IsClosable="False">
           <Grid Padding="4">
             <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
               <RowDefinition Height="*" />
             </Grid.RowDefinitions>
+            <!-- Pending-specific search and clear controls moved inside the Pending tab -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+              <AutoSuggestBox
+                x:Name="SearchBox"
+                Width="360"
+                QueryIcon="Find"
+                PlaceholderText="Search pending items (policy, path)"
+                TextChanged="SearchBox_TextChanged"
+              />
+              <Button x:Name="BtnClearFilters" Content="Clear filters" />
+            </StackPanel>
             <toolkit:DataGrid
-              Grid.Row="0"
+              Grid.Row="1"
               x:Name="PendingList"
               AutoGenerateColumns="False"
               IsReadOnly="True"

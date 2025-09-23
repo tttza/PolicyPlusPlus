@@ -45,12 +45,6 @@ namespace PolicyPlusPlus.Windows
                     ScopeFilter.SelectedIndex = 0;
                 if (OperationFilter != null)
                     OperationFilter.SelectedIndex = 0;
-                if (HistoryTimeRange != null)
-                    HistoryTimeRange.SelectedIndex = 0;
-                if (HistoryType != null)
-                    HistoryType.SelectedIndex = 0;
-                if (HistorySearch != null)
-                    HistorySearch.Text = string.Empty;
                 RefreshViews();
             };
             if (RootShell != null)
