@@ -109,7 +109,10 @@ internal sealed class AdmxCacheStore
             var existingSql = (string?)await chk.ExecuteScalarAsync(ct).ConfigureAwait(false);
             if (
                 !string.IsNullOrEmpty(existingSql)
-                && existingSql.IndexOf("detail=none", StringComparison.OrdinalIgnoreCase) >= 0
+                && (
+                    existingSql.IndexOf("detail=none", StringComparison.OrdinalIgnoreCase) >= 0
+                    || existingSql.IndexOf("detail=column", StringComparison.OrdinalIgnoreCase) >= 0
+                )
             )
             {
                 using var drop = conn.CreateCommand();
@@ -142,7 +145,7 @@ internal sealed class AdmxCacheStore
             "CREATE TABLE IF NOT EXISTS PolicyStringsDeps( policy_id INTEGER, culture TEXT, adml_source_id INTEGER );"
         );
         sb.AppendLine(
-            "CREATE VIRTUAL TABLE IF NOT EXISTS PolicyIndex USING fts5( title_norm, desc_norm, title_loose, desc_loose, registry_path, tags, tokenize='unicode61', detail=column, content='' );"
+            "CREATE VIRTUAL TABLE IF NOT EXISTS PolicyIndex USING fts5( title_norm, desc_norm, title_loose, desc_loose, registry_path, tags, tokenize='unicode61', detail=full, content='' );"
         );
         sb.AppendLine(
             "CREATE TABLE IF NOT EXISTS PolicyIndexMap( rowid INTEGER PRIMARY KEY, policy_id INTEGER, culture TEXT );"

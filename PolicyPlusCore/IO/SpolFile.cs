@@ -1,4 +1,5 @@
 // VB dependency removed: replaced Strings/Constants/Conversions with .NET APIs
+using System.Diagnostics;
 using PolicyPlusCore.Admx;
 using PolicyPlusCore.Core;
 
@@ -412,7 +413,16 @@ namespace PolicyPlusCore.IO
             Dictionary<string, string> CommentsMap
         )
         {
-            var pol = AdmxWorkspace.Policies[UniqueID];
+            if (!AdmxWorkspace.Policies.TryGetValue(UniqueID, out var pol) || pol == null)
+            {
+                // Policy not found in current bundle (e.g., ADMX set changed).
+                try
+                {
+                    Debug.WriteLine($"[Core:SPOL] Unknown policy id in SPOL: {UniqueID} (skipped)");
+                }
+                catch { }
+                return;
+            }
             if (CommentsMap != null && !string.IsNullOrEmpty(Comment))
                 CommentsMap[UniqueID] = Comment!;
             PolicyProcessing.ForgetPolicy(PolicySource, pol);

@@ -11,6 +11,54 @@ namespace PolicyPlusCore.Admx
         private Dictionary<AdmxFile, AdmlFile> SourceFiles = new Dictionary<AdmxFile, AdmlFile>();
         private Dictionary<string, AdmxFile> Namespaces = new Dictionary<string, AdmxFile>();
 
+        // Cache for last-resort external ADML string lookups (path -> string table)
+        private readonly Dictionary<string, Dictionary<string, string>> _externalAdmlStringCache =
+            new(StringComparer.OrdinalIgnoreCase);
+
+        // Caches to avoid repeated directory enumeration and File.Exists calls during batch loads.
+        private readonly Dictionary<string, string[]> _dirSubdirsCache = new(
+            StringComparer.OrdinalIgnoreCase
+        );
+        private readonly Dictionary<string, bool> _fileExistsCache = new(
+            StringComparer.OrdinalIgnoreCase
+        );
+
+        private string[] GetSubdirectories(string? dir)
+        {
+            if (string.IsNullOrEmpty(dir))
+                return Array.Empty<string>();
+            if (_dirSubdirsCache.TryGetValue(dir, out var cached))
+                return cached;
+            string[] subs;
+            try
+            {
+                subs = Directory.EnumerateDirectories(dir).ToArray();
+            }
+            catch
+            {
+                subs = Array.Empty<string>();
+            }
+            _dirSubdirsCache[dir] = subs;
+            return subs;
+        }
+
+        private bool CachedFileExists(string path)
+        {
+            if (_fileExistsCache.TryGetValue(path, out var exists))
+                return exists;
+            bool e;
+            try
+            {
+                e = File.Exists(path);
+            }
+            catch
+            {
+                e = false;
+            }
+            _fileExistsCache[path] = e;
+            return e;
+        }
+
         // Temporary lists from ADMX files that haven't been integrated yet
         private List<AdmxCategory> RawCategories = new List<AdmxCategory>();
         private List<AdmxProduct> RawProducts = new List<AdmxProduct>();
@@ -87,147 +135,121 @@ namespace PolicyPlusCore.Admx
                 AdmxPath.Replace(fileTitle, LanguageCode + @"\" + fileTitle),
                 "adml"
             );
-            if (!File.Exists(admlPath))
+            // Build ordered candidate list and use cached existence checks to short-circuit quickly.
+            var candidates = new List<string>(8);
+            candidates.Add(admlPath);
+            var admxDir = Path.GetDirectoryName(AdmxPath);
+            // Base language match inside sibling culture folders (e.g., fr-CA -> fr-FR)
+            try
             {
                 string language = LanguageCode.Split('-')[0];
-                var admxDir = Path.GetDirectoryName(AdmxPath);
-                foreach (
-                    var langSubdir in string.IsNullOrEmpty(admxDir)
-                        ? Array.Empty<string>()
-                        : Directory.EnumerateDirectories(admxDir)
-                )
+                if (!string.IsNullOrEmpty(language) && !string.IsNullOrEmpty(admxDir))
                 {
-                    string langSubdirTitle = Path.GetFileName(langSubdir);
-                    if ((langSubdirTitle.Split('-')[0] ?? "") == (language ?? ""))
+                    var subs = GetSubdirectories(admxDir);
+                    for (int i = 0; i < subs.Length; i++)
                     {
-                        string similarLanguagePath = Path.ChangeExtension(
-                            AdmxPath.Replace(fileTitle, langSubdirTitle + @"\" + fileTitle),
-                            "adml"
-                        );
-                        if (File.Exists(similarLanguagePath))
+                        var langSubdirTitle = Path.GetFileName(subs[i]);
+                        if ((langSubdirTitle?.Split('-')[0] ?? "") == language)
                         {
-                            admlPath = similarLanguagePath;
-                            break;
+                            string similarLanguagePath = Path.ChangeExtension(
+                                Path.Combine(subs[i], fileTitle),
+                                "adml"
+                            );
+                            candidates.Add(similarLanguagePath);
                         }
                     }
                 }
             }
+            catch { }
 
             if (EnableLanguageFallback)
             {
                 // OS UI culture fallback (full name then its base) before en-US/en.
-                if (!File.Exists(admlPath))
+                try
                 {
-                    try
+                    var osFull = CultureInfo.CurrentUICulture.Name; // e.g. ja-JP
+                    if (
+                        !string.IsNullOrEmpty(osFull)
+                        && !osFull.Equals(LanguageCode, StringComparison.OrdinalIgnoreCase)
+                    )
                     {
-                        var osFull = CultureInfo.CurrentUICulture.Name; // e.g. ja-JP
-                        if (
-                            !string.IsNullOrEmpty(osFull)
-                            && !osFull.Equals(LanguageCode, StringComparison.OrdinalIgnoreCase)
-                        )
+                        string osFullPath = Path.ChangeExtension(
+                            AdmxPath.Replace(fileTitle, osFull + @"\" + fileTitle),
+                            "adml"
+                        );
+                        candidates.Add(osFullPath);
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    var osBase = CultureInfo.CurrentUICulture.Name.Split('-')[0];
+                    var specifiedBase = LanguageCode.Split('-')[0];
+                    if (
+                        !string.IsNullOrEmpty(osBase)
+                        && !osBase.Equals(specifiedBase, StringComparison.OrdinalIgnoreCase)
+                        && !string.IsNullOrEmpty(admxDir)
+                    )
+                    {
+                        var subs = GetSubdirectories(admxDir);
+                        for (int i = 0; i < subs.Length; i++)
                         {
-                            string osFullPath = Path.ChangeExtension(
-                                AdmxPath.Replace(fileTitle, osFull + @"\" + fileTitle),
+                            var title = Path.GetFileName(subs[i]);
+                            if ((title?.Split('-')[0] ?? "") == osBase)
+                            {
+                                var baseCandidate = Path.ChangeExtension(
+                                    Path.Combine(subs[i], fileTitle),
+                                    "adml"
+                                );
+                                candidates.Add(baseCandidate);
+                            }
+                        }
+                    }
+                }
+                catch { }
+
+                candidates.Add(
+                    Path.ChangeExtension(AdmxPath.Replace(fileTitle, @"en-US\" + fileTitle), "adml")
+                );
+
+                try
+                {
+                    if (!string.IsNullOrEmpty(admxDir))
+                    {
+                        var enDir = Path.Combine(admxDir, "en");
+                        if (Directory.Exists(enDir))
+                        {
+                            candidates.Add(
+                                Path.ChangeExtension(Path.Combine(enDir, fileTitle), "adml")
+                            );
+                        }
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    if (!string.IsNullOrEmpty(admxDir))
+                    {
+                        var subs = GetSubdirectories(admxDir);
+                        for (int i = 0; i < subs.Length; i++)
+                        {
+                            var candidate = Path.ChangeExtension(
+                                Path.Combine(subs[i], fileTitle),
                                 "adml"
                             );
-                            if (File.Exists(osFullPath))
-                                admlPath = osFullPath;
+                            candidates.Add(candidate);
                         }
                     }
-                    catch { }
                 }
-                if (!File.Exists(admlPath))
-                {
-                    try
-                    {
-                        var osBase = CultureInfo.CurrentUICulture.Name.Split('-')[0];
-                        var specifiedBase = LanguageCode.Split('-')[0];
-                        if (
-                            !string.IsNullOrEmpty(osBase)
-                            && !osBase.Equals(specifiedBase, StringComparison.OrdinalIgnoreCase)
-                        )
-                        {
-                            var admxDir = Path.GetDirectoryName(AdmxPath);
-                            if (!string.IsNullOrEmpty(admxDir))
-                            {
-                                foreach (var sub in Directory.EnumerateDirectories(admxDir))
-                                {
-                                    var title = Path.GetFileName(sub);
-                                    if ((title.Split('-')[0] ?? "") == osBase)
-                                    {
-                                        var baseCandidate = Path.ChangeExtension(
-                                            Path.Combine(sub, fileTitle),
-                                            "adml"
-                                        );
-                                        if (File.Exists(baseCandidate))
-                                        {
-                                            admlPath = baseCandidate;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    catch { }
-                }
-
-                if (!File.Exists(admlPath))
-                    admlPath = Path.ChangeExtension(
-                        AdmxPath.Replace(fileTitle, @"en-US\" + fileTitle),
-                        "adml"
-                    );
-
-                // Additional fallback: plain 'en' folder (some distributions may ship this)
-                if (!File.Exists(admlPath))
-                {
-                    try
-                    {
-                        var rootDir = Path.GetDirectoryName(AdmxPath);
-                        if (!string.IsNullOrEmpty(rootDir))
-                        {
-                            var enDir = Path.Combine(rootDir, "en");
-                            if (Directory.Exists(enDir))
-                            {
-                                var enCandidate = Path.ChangeExtension(
-                                    Path.Combine(enDir, fileTitle),
-                                    "adml"
-                                );
-                                if (File.Exists(enCandidate))
-                                    admlPath = enCandidate;
-                            }
-                        }
-                    }
-                    catch { }
-                }
-
-                if (!File.Exists(admlPath))
-                {
-                    // Last resort: scan any subfolder for a matching .adml regardless of culture to avoid losing the policy definitions entirely.
-                    try
-                    {
-                        var rootDir = Path.GetDirectoryName(AdmxPath);
-                        if (!string.IsNullOrEmpty(rootDir))
-                        {
-                            foreach (var sub in Directory.EnumerateDirectories(rootDir))
-                            {
-                                var candidate = Path.ChangeExtension(
-                                    Path.Combine(sub, fileTitle),
-                                    "adml"
-                                );
-                                if (File.Exists(candidate))
-                                {
-                                    admlPath = candidate;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    catch { }
-                }
+                catch { }
             }
 
-            if (!File.Exists(admlPath))
+            // Choose first existing path from candidates
+            admlPath = candidates.FirstOrDefault(CachedFileExists) ?? admlPath;
+
+            if (!CachedFileExists(admlPath))
                 return new AdmxLoadFailure(AdmxLoadFailType.NoAdml, AdmxPath);
             // Load the ADML
             try
@@ -414,18 +436,11 @@ namespace PolicyPlusCore.Admx
             where T : class
         {
             // Get the best available structure for an ID
-            if (TempDict.ContainsKey(UniqueID))
-            {
-                return TempDict[UniqueID];
-            }
-            else if (FlatDict is object && FlatDict.ContainsKey(UniqueID))
-            {
-                return FlatDict[UniqueID];
-            }
-            else
-            {
-                return default;
-            }
+            if (TempDict.TryGetValue(UniqueID, out var tmp))
+                return tmp;
+            if (FlatDict is object && FlatDict.TryGetValue(UniqueID, out var flat))
+                return flat;
+            return default;
         }
 
         public string ResolveString(string? DisplayCode, AdmxFile Admx)
@@ -436,11 +451,103 @@ namespace PolicyPlusCore.Admx
             if (!DisplayCode.StartsWith("$(string."))
                 return DisplayCode;
             string stringId = DisplayCode.Substring(9, DisplayCode.Length - 10);
-            var dict = SourceFiles[Admx].StringTable;
-            if (dict.ContainsKey(stringId))
-                return dict[stringId];
-            else
-                return DisplayCode;
+            var admlObj = SourceFiles[Admx];
+            var dict = admlObj.StringTable;
+            if (dict.TryGetValue(stringId, out var val))
+                return val;
+            // Attempt to lazily merge strings from the actual ADML file on disk if not already present.
+            try
+            {
+                var path = admlObj.SourceFile;
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                {
+                    if (!_externalAdmlStringCache.TryGetValue(path, out var mapSelf))
+                    {
+                        mapSelf = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                        try
+                        {
+                            var xml = new System.Xml.XmlDocument();
+                            xml.Load(path);
+                            var list = xml.GetElementsByTagName("stringTable");
+                            if (list.Count > 0)
+                            {
+                                foreach (System.Xml.XmlNode n in list[0]!.ChildNodes)
+                                {
+                                    if (n.LocalName == "string")
+                                    {
+                                        var id = n.Attributes?["id"]?.Value;
+                                        if (!string.IsNullOrEmpty(id) && !mapSelf.ContainsKey(id))
+                                            mapSelf[id] = n.InnerText ?? string.Empty;
+                                    }
+                                }
+                            }
+                        }
+                        catch { }
+                        _externalAdmlStringCache[path] = mapSelf;
+                    }
+                    foreach (var kvp in mapSelf)
+                    {
+                        if (!dict.ContainsKey(kvp.Key))
+                            dict[kvp.Key] = kvp.Value;
+                    }
+                    if (dict.TryGetValue(stringId, out var fromSelf))
+                        return fromSelf;
+                }
+            }
+            catch { }
+            // Fallback: search other loaded ADMLs for the same string key. This is a resilience aid in case of partial ADML loads.
+            foreach (var kv in SourceFiles)
+            {
+                if (ReferenceEquals(kv.Key, Admx))
+                    continue;
+                var table = kv.Value.StringTable;
+                if (table.TryGetValue(stringId, out var v2))
+                    return v2;
+            }
+            // Last resort: try to load en-US ADML adjacent to the ADMX and resolve from there (single file, cached by path).
+            try
+            {
+                var admxDir = Path.GetDirectoryName(Admx.SourceFile);
+                var admxName = Path.GetFileName(Admx.SourceFile);
+                if (!string.IsNullOrEmpty(admxDir) && !string.IsNullOrEmpty(admxName))
+                {
+                    var enUsPath = Path.ChangeExtension(
+                        Path.Combine(admxDir, "en-US", admxName),
+                        "adml"
+                    );
+                    if (File.Exists(enUsPath))
+                    {
+                        if (!_externalAdmlStringCache.TryGetValue(enUsPath, out var map))
+                        {
+                            map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                            try
+                            {
+                                var xml = new System.Xml.XmlDocument();
+                                xml.Load(enUsPath);
+                                var list = xml.GetElementsByTagName("stringTable");
+                                if (list.Count > 0)
+                                {
+                                    foreach (System.Xml.XmlNode n in list[0]!.ChildNodes)
+                                    {
+                                        if (n.LocalName == "string")
+                                        {
+                                            var id = n.Attributes?["id"]?.Value;
+                                            if (!string.IsNullOrEmpty(id) && !map.ContainsKey(id))
+                                                map[id] = n.InnerText ?? string.Empty;
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
+                            _externalAdmlStringCache[enUsPath] = map;
+                        }
+                        if (map.TryGetValue(stringId, out var v3))
+                            return v3;
+                    }
+                }
+            }
+            catch { }
+            return DisplayCode;
         }
 
         public Presentation? ResolvePresentation(string DisplayCode, AdmxFile Admx)
@@ -450,10 +557,7 @@ namespace PolicyPlusCore.Admx
                 return null;
             string presId = DisplayCode.Substring(15, DisplayCode.Length - 16);
             var dict = SourceFiles[Admx].PresentationTable;
-            if (dict.ContainsKey(presId))
-                return dict[presId];
-            else
-                return null;
+            return dict.TryGetValue(presId, out var pres) ? pres : null;
         }
 
         private string QualifyName(string ID, AdmxFile Admx)

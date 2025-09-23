@@ -715,7 +715,11 @@ namespace PolicyPlusPlus.Windows
                 return fallback ?? string.Empty;
             }
 
-            var elemDict = _policy.RawPolicy.Elements.ToDictionary(e => e.ID);
+            // Build a case-insensitive map of element definitions for robust lookup from presentation.
+            var elemDict = _policy.RawPolicy.Elements.ToDictionary(
+                e => e.ID,
+                StringComparer.OrdinalIgnoreCase
+            );
             foreach (var pres in presentationToUse.Elements)
             {
                 FrameworkElement control = null!;
@@ -733,7 +737,31 @@ namespace PolicyPlusPlus.Windows
                     case "decimalTextBox":
                     {
                         var p = (NumericBoxPresentationElement)pres;
-                        var e = (DecimalPolicyElement)elemDict[pres.ID];
+                        DecimalPolicyElement? e = null;
+                        if (
+                            !elemDict.TryGetValue(pres.ID, out var elem)
+                            || elem is not DecimalPolicyElement de
+                        )
+                        {
+                            // Element mapping missing; degrade gracefully with wide defaults.
+                            var nbFallback = new NumberBox
+                            {
+                                Minimum = 0,
+                                Maximum = uint.MaxValue,
+                                Value = p.DefaultValue,
+                                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
+                                IsEnabled = true,
+                            };
+                            if (p.HasSpinner)
+                                nbFallback.SmallChange = p.SpinnerIncrement;
+                            else
+                                nbFallback.SmallChange = 1;
+                            control = nbFallback;
+                            label = ResolvePresString(pres, p.Label);
+                            nbFallback.ValueChanged += (_, __) => RaiseLiveChanged();
+                            break;
+                        }
+                        e = de;
                         var nb = new NumberBox
                         {
                             Minimum = e.Minimum,
@@ -753,7 +781,20 @@ namespace PolicyPlusPlus.Windows
                     case "textBox":
                     {
                         var p = (TextBoxPresentationElement)pres;
-                        var e = (TextPolicyElement)elemDict[pres.ID];
+                        TextPolicyElement? e = null;
+                        if (
+                            !elemDict.TryGetValue(pres.ID, out var elem)
+                            || elem is not TextPolicyElement te
+                        )
+                        {
+                            // Element missing: no explicit max length available; use control defaults (no limit).
+                            var tbFallback = new TextBox { Text = p.DefaultValue ?? string.Empty };
+                            control = tbFallback;
+                            label = ResolvePresString(pres, p.Label);
+                            tbFallback.TextChanged += (_, __) => RaiseLiveChanged();
+                            break;
+                        }
+                        e = te;
                         var tb = new TextBox
                         {
                             Text = p.DefaultValue ?? string.Empty,
@@ -778,7 +819,7 @@ namespace PolicyPlusPlus.Windows
                     case "comboBox":
                     {
                         var p = (ComboBoxPresentationElement)pres;
-                        var e = (TextPolicyElement)elemDict[pres.ID];
+                        // Element definition is not required for rendering suggestions; proceed even if missing.
                         var acb = new AutoSuggestBox { Text = p.DefaultText ?? string.Empty };
                         var list = new List<string>();
                         foreach (var s in p.Suggestions)
@@ -799,7 +840,17 @@ namespace PolicyPlusPlus.Windows
                     case "dropdownList":
                     {
                         var p = (DropDownPresentationElement)pres;
-                        var e = (EnumPolicyElement)elemDict[pres.ID];
+                        if (
+                            !elemDict.TryGetValue(pres.ID, out var elem)
+                            || elem is not EnumPolicyElement e
+                        )
+                        {
+                            // Without element, we cannot enumerate items. Show disabled empty dropdown.
+                            label = ResolvePresString(pres, p.Label);
+                            var cbEmpty = new ComboBox { MinWidth = 160, IsEnabled = false };
+                            control = cbEmpty;
+                            break;
+                        }
                         label = ResolvePresString(pres, p.Label);
                         var cb = new ComboBox { MinWidth = 160 };
                         int selectedIdx = 0;
@@ -852,7 +903,17 @@ namespace PolicyPlusPlus.Windows
                     case "listBox":
                     {
                         var p = (ListPresentationElement)pres;
-                        var e = (ListPolicyElement)elemDict[pres.ID];
+                        if (
+                            !elemDict.TryGetValue(pres.ID, out var elem)
+                            || elem is not ListPolicyElement e
+                        )
+                        {
+                            // Cannot edit without element schema; show disabled button with label.
+                            var disabledBtn = new Button { Content = "Edit...", IsEnabled = false };
+                            control = disabledBtn;
+                            label = ResolvePresString(pres, p.Label);
+                            break;
+                        }
                         var btn = new Button { Content = "Edit..." };
                         btn.Click += (s, e2) =>
                         {

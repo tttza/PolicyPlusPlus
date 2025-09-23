@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -31,36 +32,82 @@ namespace PolicyPlusPlus.Services
             _postings.Clear();
             if (_n == 2)
             {
-                // Fast path for 2-gram: avoid Substring allocations.
+                // Fast path for 2-gram: avoid Substring allocations and reduce GC from per-doc HashSet.
                 foreach (var (id, text) in items)
                 {
                     var s = text ?? string.Empty;
-                    if (s.Length < 2)
+                    int len = s.Length;
+                    if (len < 2)
                         continue;
-                    // Track seen grams per document with a compact set
-                    var seen = new HashSet<int>();
-                    for (int i = 0; i < s.Length - 1; i++)
+
+                    int[]? smallArr = null;
+                    Span<int> smallSeen = Span<int>.Empty;
+                    int smallCount = 0;
+                    if (len <= 64)
                     {
-                        char a = s[i];
-                        char b = s[i + 1];
-                        int key = (a << 16) | b;
-                        if (!seen.Add(key))
-                            continue;
-                        string gram = string.Create(
-                            2,
-                            (a, b),
-                            static (span, t) =>
-                            {
-                                span[0] = t.Item1;
-                                span[1] = t.Item2;
-                            }
-                        );
-                        if (!_postings.TryGetValue(gram, out var set))
+                        smallArr = ArrayPool<int>.Shared.Rent(64);
+                        smallSeen = smallArr.AsSpan(0, 64);
+                    }
+                    HashSet<int>? largeSeen = null;
+                    var buf = new char[2];
+
+                    try
+                    {
+                        for (int i = 0; i < len - 1; i++)
                         {
-                            set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                            _postings[gram] = set;
+                            char a = s[i];
+                            char b = s[i + 1];
+                            int key = (a << 16) | b;
+                            bool already;
+                            if (!smallSeen.IsEmpty)
+                            {
+                                already = false;
+                                for (int k = 0; k < smallCount; k++)
+                                {
+                                    if (smallSeen[k] == key)
+                                    {
+                                        already = true;
+                                        break;
+                                    }
+                                }
+                                if (!already)
+                                {
+                                    if (smallCount < smallSeen.Length)
+                                    {
+                                        smallSeen[smallCount++] = key;
+                                    }
+                                    else
+                                    {
+                                        largeSeen = new HashSet<int>();
+                                        for (int k = 0; k < smallCount; k++)
+                                            largeSeen.Add(smallSeen[k]);
+                                        smallSeen = Span<int>.Empty;
+                                    }
+                                }
+                            }
+                            if (smallSeen.IsEmpty)
+                            {
+                                largeSeen ??= new HashSet<int>();
+                                if (!largeSeen.Add(key))
+                                    continue;
+                            }
+                            buf[0] = a;
+                            buf[1] = b;
+                            string gram = new string(buf);
+                            if (!_postings.TryGetValue(gram, out var set))
+                            {
+                                set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                                _postings[gram] = set;
+                            }
+                            set.Add(id);
                         }
-                        set.Add(id);
+                    }
+                    finally
+                    {
+                        if (smallArr != null)
+                        {
+                            ArrayPool<int>.Shared.Return(smallArr);
+                        }
                     }
                 }
             }
@@ -101,15 +148,10 @@ namespace PolicyPlusPlus.Services
                 {
                     char a = q[i];
                     char b = q[i + 1];
-                    string gram = string.Create(
-                        2,
-                        (a, b),
-                        static (span, t) =>
-                        {
-                            span[0] = t.Item1;
-                            span[1] = t.Item2;
-                        }
-                    );
+                    var buf = new char[2];
+                    buf[0] = a;
+                    buf[1] = b;
+                    string gram = new string(buf);
                     if (_postings.TryGetValue(gram, out var set))
                         grams.Add(set);
                     else

@@ -829,9 +829,31 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             );
             if (tokens.Length == 0)
                 return string.Empty;
-            // Quote each token to suppress FTS5 parser treating ':' or other punctuation specially.
-            var quoted = tokens.Select(t => "\"" + t.Replace("\"", "\"\"") + "\"");
-            var inside = string.Join(' ', quoted);
+            // Sanitize tokens to avoid triggering phrase parsing or column qualifiers in FTS5 MATCH.
+            // Remove characters that are special to the MATCH grammar (quotes, colon, brackets, braces, parentheses).
+            static string Sanitize(string t)
+            {
+                if (string.IsNullOrEmpty(t))
+                    return string.Empty;
+                var sbTok = new StringBuilder(t.Length);
+                for (int i = 0; i < t.Length; i++)
+                {
+                    char ch = t[i];
+                    // Keep letters and digits only; drop all punctuation to avoid MATCH grammar conflicts.
+                    if (char.IsLetterOrDigit(ch))
+                        sbTok.Append(ch);
+                    // else drop
+                }
+                return sbTok.ToString();
+            }
+            var safeList = tokens
+                .Select(Sanitize)
+                .Where(s0 => !string.IsNullOrWhiteSpace(s0))
+                .ToList();
+            if (safeList.Count == 0)
+                return string.Empty;
+            // With detail=full, space-joining yields a phrase search; tests rely on this behavior for tight matches.
+            var inside = string.Join(' ', safeList);
             return string.Join(" OR ", cols.Select(c => $"{c}:(" + inside + ")"));
         }
         var matchNorm = BuildMatch(norm, ftsNormCols);
@@ -869,14 +891,12 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         }
         sb.AppendLine(") ,");
         sb.AppendLine("F1 AS (");
-        sb.AppendLine(
-            "  SELECT m.policy_id AS id, m.culture, s.display_name, (100 - bm25(PolicyIndex)) AS score"
-        );
+        sb.AppendLine("  SELECT m.policy_id AS id, m.culture, s.display_name, 100 AS score");
         sb.AppendLine("  FROM PolicyIndex");
         sb.AppendLine("  JOIN PolicyIndexMap m ON m.rowid = PolicyIndex.rowid");
         sb.AppendLine("  JOIN PolicyI18n s ON s.policy_id=m.policy_id AND s.culture=@culture");
         sb.AppendLine("  WHERE m.culture=@culture AND @enableFts = 1");
-        if (enableFts && ftsNormCols.Count > 0)
+        if (enableFts && ftsNormCols.Count > 0 && !string.IsNullOrWhiteSpace(matchNorm))
         {
             sb.Append("    AND PolicyIndex MATCH '");
             sb.Append(matchNormEsc);
@@ -888,14 +908,12 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         }
         sb.AppendLine(") ,");
         sb.AppendLine("F2 AS (");
-        sb.AppendLine(
-            "  SELECT m.policy_id AS id, m.culture, s.display_name, (60 - bm25(PolicyIndex)) AS score"
-        );
+        sb.AppendLine("  SELECT m.policy_id AS id, m.culture, s.display_name, 60 AS score");
         sb.AppendLine("  FROM PolicyIndex");
         sb.AppendLine("  JOIN PolicyIndexMap m ON m.rowid = PolicyIndex.rowid");
         sb.AppendLine("  JOIN PolicyI18n s ON s.policy_id=m.policy_id AND s.culture=@culture");
         sb.AppendLine("  WHERE m.culture=@culture AND @enableFts = 1");
-        if (enableFts && ftsLooseCols.Count > 0)
+        if (enableFts && ftsLooseCols.Count > 0 && !string.IsNullOrWhiteSpace(matchLoose))
         {
             sb.Append("    AND PolicyIndex MATCH '");
             sb.Append(matchLooseEsc);

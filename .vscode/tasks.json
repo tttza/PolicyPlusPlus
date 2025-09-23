@@ -1,116 +1,125 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"label": "dotnet build (Debug)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"PolicyPlusMod.sln",
-				"-c",
-				"Debug-Unpackaged",
-			],
-			"group": "build"
-		},
-		{
-			"label": "dotnet build (Release)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"PolicyPlusMod.sln",
-				"-c",
-				"Release-Unpackaged",
-			],
-			"group": "build"
-		},
-		{
-			"label": "dotnet build PolicyPlusPlus (Debug, win-x64)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"PolicyPlusPlus/PolicyPlusPlus.csproj",
-				"-c",
-				"Debug-Unpackaged",
-				"-r",
-				"win-x64"
-			],
-			"group": "build"
-		},
-		{
-			"label": "dotnet build PolicyPlusPlus (Release, win-x64)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"PolicyPlusPlus/PolicyPlusPlus.csproj",
-				"-c",
-				"Release-Unpackaged",
-				"-r",
-				"win-x64"
-			],
-			"group": "build"
-		},
-		{
-			"label": "dotnet build ElevationHost (Debug, win-x64)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"PolicyPPElevationHost/PolicyPPElevationHost.csproj",
-				"-c",
-				"Debug-Unpackaged",
-				"-r",
-				"win-x64"
-			],
-			"group": "build"
-		},
-		{
-			"label": "dotnet build ElevationHost (Release, win-x64)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"PolicyPPElevationHost/PolicyPPElevationHost.csproj",
-				"-c",
-				"Release-Unpackaged",
-				"-r",
-				"win-x64"
-			],
-			"group": "build"
-		},
-		{
-			"label": "dotnet test (Unit)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"test",
-				"PolicyPlusModTests/PolicyPlusModTests.csproj",
-				"-c",
-				"Debug-Unpackaged",
-				"-r",
-				"win-x64"
-			],
-			"group": "test"
-		},
-		{
-			"label": "dotnet test (UI)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"test",
-				"PolicyPlusPlus.Tests.UI/PolicyPlus.Tests.UI.csproj",
-				"-c",
-				"Debug-Unpackaged",
-				"-r",
-				"win-x64",
-				"--",
-				"--stop-on-fail",
-				"on"
-			],
-			"group": "test"
-		}
-	]
+  "version": "2.0.0",
+  "options": {
+    "shell": {
+      "executable": "cmd.exe",
+      "args": ["/d", "/c"]
+    },
+    "env": {
+      "DOTNET_CLI_UI_LANGUAGE": "en"
+    }
+  },
+  "tasks": [
+    {
+      "label": "dotnet build (Debug)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "PolicyPlusMod.sln",
+        "-c",
+        "Debug-Unpackaged"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "dotnet build (Release)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "PolicyPlusMod.sln",
+        "-c",
+        "Release-Unpackaged"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "dotnet build PolicyPlusPlus (Debug, win-x64)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "PolicyPlusPlus/PolicyPlusPlus.csproj",
+        "-c",
+        "Debug-Unpackaged",
+        "-r",
+        "win-x64"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "dotnet build PolicyPlusPlus (Release, win-x64)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "PolicyPlusPlus/PolicyPlusPlus.csproj",
+        "-c",
+        "Release-Unpackaged",
+        "-r",
+        "win-x64"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "dotnet build ElevationHost (Debug, win-x64)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "PolicyPPElevationHost/PolicyPPElevationHost.csproj",
+        "-c",
+        "Debug-Unpackaged",
+        "-r",
+        "win-x64"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "dotnet build ElevationHost (Release, win-x64)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "PolicyPPElevationHost/PolicyPPElevationHost.csproj",
+        "-c",
+        "Release-Unpackaged",
+        "-r",
+        "win-x64"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "dotnet test (Unit)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "PolicyPlusModTests/PolicyPlusModTests.csproj",
+        "-c",
+        "Debug-Unpackaged",
+        "-r",
+        "win-x64"
+      ],
+      "group": "test"
+    },
+    {
+      "label": "dotnet test (UI)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "PolicyPlusPlus.Tests.UI/PolicyPlus.Tests.UI.csproj",
+        "-c",
+        "Debug-Unpackaged",
+        "-r",
+        "win-x64",
+        "--",
+        "--stop-on-fail",
+        "on"
+      ],
+      "group": "test"
+    }
+  ]
 }
