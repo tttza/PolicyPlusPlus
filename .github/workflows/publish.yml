@@ -130,7 +130,7 @@ jobs:
           $tag = if ("${{ github.ref_type }}" -eq "tag") { "${{ steps.ver.outputs.tagref }}" } else { "ci-${{ github.run_id }}" }
           $name = "$env:PACK_TITLE ${{ steps.ver.outputs.version }}"
           if ($pre -eq "true") {
-            vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --prerelease --releaseName "$name" --tag "$tag"
+            vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --pre --releaseName "$name" --tag "$tag"
           } else {
             vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --releaseName "$name" --tag "$tag"
           }
