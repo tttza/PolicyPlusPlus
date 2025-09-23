@@ -50,6 +50,14 @@ namespace PolicyPlusPlus.Windows
                 _grid.ParentQuickEditWindow = this;
             if (_saveButton != null)
                 _saveButton.Click += async (_, __) => await SaveAsync();
+            if (_saveCloseButton != null)
+                _saveCloseButton.Click += async (_, __) =>
+                {
+                    var ok = await SaveAsync();
+                    // Close on success or when there was nothing to save
+                    if (ok && !_isSaving)
+                        Close();
+                };
             if (_closeButton != null)
                 _closeButton.Click += (_, __) => Close();
             // Keyboard shortcuts
@@ -552,14 +560,16 @@ namespace PolicyPlusPlus.Windows
                 _unsavedText.Text = count > 0 ? $"Unsaved changes ({count})" : "";
                 // Always allow Save (even if 0) as requested; it will no-op when there are no changes.
                 _saveButton.IsEnabled = _bundle != null && !_isSaving;
+                if (_saveCloseButton != null)
+                    _saveCloseButton.IsEnabled = _bundle != null && !_isSaving;
             }
             catch { }
         }
 
-        private async Task SaveAsync()
+        private async Task<bool> SaveAsync()
         {
             if (_bundle == null || _isSaving || _grid == null)
-                return;
+                return false;
             var ids = _grid
                 .Rows.Select(r => r.Policy.UniqueID)
                 .ToHashSet(System.StringComparer.OrdinalIgnoreCase);
@@ -569,13 +579,15 @@ namespace PolicyPlusPlus.Windows
             if (relevant.Count == 0)
             {
                 SetStatus("No changes to save.");
-                return;
+                return true; // treat as success so Save & Close can close
             }
             _isSaving = true;
             SetStatus("Saving...");
             SetSaving(true);
             if (_saveButton != null)
                 _saveButton.IsEnabled = false;
+            if (_saveCloseButton != null)
+                _saveCloseButton.IsEnabled = false;
             try
             {
                 var mgr = PolicySourceManager.Instance;
@@ -605,6 +617,7 @@ namespace PolicyPlusPlus.Windows
                         EventHub.PublishPendingAppliedOrDiscarded(affected);
                     }
                     catch { }
+                    return true;
                 }
                 else
                     SetStatus(
@@ -617,6 +630,7 @@ namespace PolicyPlusPlus.Windows
                 SetSaving(false);
                 UpdateUnsavedIndicator();
             }
+            return false;
         }
 
         private void SetSaving(bool saving)
