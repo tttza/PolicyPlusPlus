@@ -3,7 +3,7 @@ name: build & release
 on:
   push:
     tags:
-      - 'v*'
+      - '*.*.*'
   workflow_dispatch:
     inputs:
       version:
@@ -34,6 +34,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # Need full history so git describe works if fallback used
+          fetch-tags: true      # Ensure tags are present for git describe
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -46,45 +49,51 @@ jobs:
         env:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
-          ref="${GITHUB_REF_NAME}"
-          # If version is provided via manual dispatch, use it directly
+          # Mirror csproj logic: prefer git describe; fallback 'dev'.
           if [[ -n "${INPUT_VERSION}" ]]; then
             ver="${INPUT_VERSION}"
-            # Normalize alpha6/beta10/rc2 => alpha.6/beta.10/rc.2 for proper SemVer ordering
-            if [[ "${ver}" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-(alpha|beta|rc)([0-9]+)$ ]]; then
-              ver="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-            fi
-            echo "version=${ver}" >> $GITHUB_OUTPUT
-            if [[ "${ver}" == *-* ]]; then
-              echo "prerelease=true" >> $GITHUB_OUTPUT
-            else
-              echo "prerelease=false" >> $GITHUB_OUTPUT
-            fi
-          elif [[ "${GITHUB_REF_TYPE}" == "tag" && "${ref}" =~ ^v([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z\.-]+)?)$ ]]; then
-            ver="${BASH_REMATCH[1]}"
-            # Normalize alpha6/beta10/rc2 => alpha.6/beta.10/rc.2 for proper SemVer ordering
-            if [[ "${ver}" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-(alpha|beta|rc)([0-9]+)$ ]]; then
-              ver="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-            fi
-            echo "version=${ver}" >> $GITHUB_OUTPUT
-            if [[ "${ver}" == *-* ]]; then
-              echo "prerelease=true" >> $GITHUB_OUTPUT
-            else
-              echo "prerelease=false" >> $GITHUB_OUTPUT
-            fi
           else
-            datepart=$(date -u +%Y%m%d)
-            echo "version=2.0.0-alpha.${datepart}.${GITHUB_RUN_NUMBER}" >> $GITHUB_OUTPUT
+            ver=$(git describe --tags --always --dirty 2>/dev/null || echo "")
+            if [[ -z "${ver}" ]]; then
+              ver="dev"
+            fi
+          fi
+          echo "version=${ver}" >> $GITHUB_OUTPUT
+          if [[ "${ver}" == *-* ]]; then
             echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
           fi
           echo "tagref=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
 
+      - name: Derive pack version (strip -dirty suffix only for packaging)
+        id: packver
+        shell: bash
+        run: |
+          original='${{ steps.ver.outputs.version }}'
+          # Remove a trailing -dirty (git describe style) or .dirty variant if present
+          packver=${original%-dirty}
+          packver=${packver%.dirty}
+          echo "packversion=${packver}" >> $GITHUB_OUTPUT
+
       - name: Publish (win-x64)
-        run: dotnet publish $env:PROJECT -c Release-Unpackaged -o publish/win-x64 -r win-x64 --self-contained true
+        run: >
+          dotnet publish $env:PROJECT
+          -c Release-Unpackaged
+          -o publish/win-x64
+          -r win-x64
+          --self-contained true
+          /p:GitVersionOverride=${{ steps.ver.outputs.version }}
         shell: pwsh
 
       - name: Publish (win-arm64)
-        run: dotnet publish $env:PROJECT -c Release-Unpackaged -o publish/win-arm64 -r win-arm64 --self-contained true
+        run: >
+          dotnet publish $env:PROJECT
+          -c Release-Unpackaged
+          -o publish/win-arm64
+          -r win-arm64
+          --self-contained true
+          /p:GitVersionOverride=${{ steps.ver.outputs.version }}
         shell: pwsh
 
       - name: Install vpk (Velopack CLI)
@@ -102,7 +111,7 @@ jobs:
           --packId $env:PACK_ID
           --packTitle "$env:PACK_TITLE"
           --packAuthors "$env:PACK_AUTHORS"
-          --packVersion ${{ steps.ver.outputs.version }}
+          --packVersion ${{ steps.packver.outputs.packversion }}
           --runtime win-x64
           --packDir publish/win-x64
           --mainExe $env:ENTRY_EXE
@@ -117,7 +126,7 @@ jobs:
           --packId $env:PACK_ID
           --packTitle "$env:PACK_TITLE"
           --packAuthors "$env:PACK_AUTHORS"
-          --packVersion ${{ steps.ver.outputs.version }}
+          --packVersion ${{ steps.packver.outputs.packversion }}
           --runtime win-arm64
           --packDir publish/win-arm64
           --mainExe $env:ENTRY_EXE
@@ -132,7 +141,7 @@ jobs:
         run: |
           $pre = "$env:IS_PRERELEASE"
           $tag = "${{ steps.ver.outputs.tagref }}"
-          $name = "$env:PACK_TITLE ${{ steps.ver.outputs.version }}"
+          $name = "$env:PACK_TITLE ${{ steps.packver.outputs.packversion }}"
           $token = "$env:GITHUB_TOKEN"
           if ($pre -eq "true") {
             vpk upload github --token "$token" --repoUrl https://github.com/${{ github.repository }} --publish --pre --releaseName "$name" --tag "$tag" -c "win-x64" --merge
