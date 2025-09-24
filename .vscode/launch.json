@@ -8,7 +8,7 @@
             "request": "launch",
             "preLaunchTask": "dotnet build PolicyPlusPlus (Debug, win-x64)",
             // Match TargetFramework in csproj (net8.0-windows10.0.26100.0)
-            "program": "${workspaceFolder}/PolicyPlusPlus/bin/Debug-Unpackaged/net8.0-windows10.0.26100.0/win-x64/PolicyPlusPlus.exe",
+            "program": "${workspaceFolder}/PolicyPlusPlus/bin/x64/Debug-Unpackaged/net8.0-windows10.0.26100.0/win-x64/PolicyPlusPlus.exe",
             "args": [],
             "cwd": "${workspaceFolder}/PolicyPlusPlus",
             // For WinUI apps, no console window is needed
