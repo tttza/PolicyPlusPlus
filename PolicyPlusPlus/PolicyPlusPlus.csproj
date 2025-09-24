@@ -30,6 +30,26 @@
     <!-- Avoid setting SelfContained during design-time build to prevent duplicate generated files in LSP -->
     <SelfContained Condition="'$(DesignTimeBuild)'!='true'">true</SelfContained>
   </PropertyGroup>
+  <!-- Derive a concrete Platform from host architecture when invoked without -p:Platform (avoids invalid win-AnyCPU RID). -->
+  <PropertyGroup Condition="'$(Platform)'=='' or '$(Platform)'=='AnyCPU'">
+    <!-- Use managed API to read current process architecture -->
+    <_HostArch>$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</_HostArch>
+    <!-- Map to supported Platforms list -->
+    <Platform Condition="'$(_HostArch)'=='x64'">x64</Platform>
+    <Platform Condition="'$(_HostArch)'=='arm64'">ARM64</Platform>
+    <Platform Condition="'$(_HostArch)'=='x86'">x86</Platform>
+    <!-- Fallback (unexpected architectures) -->
+    <Platform
+      Condition="'$(Platform)'=='' and '$(MSBuildThisFileDirectory)'!='' and '$(Platform)'!='x64' and '$(Platform)'!='ARM64' and '$(Platform)'!='x86'"
+      >x64</Platform
+    >
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- Simplified fallback RID to avoid accidental win-AnyCPU invalid value when running without -r -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)'=='' and '$(DesignTimeBuild)'!='true'"
+      >win-$(Platform)</RuntimeIdentifier
+    >
+  </PropertyGroup>
   <!-- Unpackaged (non Store) build: enable Velopack based updating -->
   <PropertyGroup Condition="'$(Packaged)' != 'true'">
     <EnableMsixTooling>true</EnableMsixTooling>
@@ -37,10 +57,6 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <PublishProfile>Properties\PublishProfiles\win-$(Platform)-standalone.pubxml</PublishProfile>
     <DefineConstants>$(DefineConstants);USE_VELOPACK</DefineConstants>
-    <!-- Ensure a default RID is set when building project directly without -r; skip during design-time to avoid duplicate docs in LSP -->
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)'=='' and '$(DesignTimeBuild)'!='true'"
-      >win-$(Platform)</RuntimeIdentifier
-    >
   </PropertyGroup>
   <!-- Packaged (Store) build: use Store update mechanism -->
   <PropertyGroup Condition="'$(Packaged)' == 'true'">
@@ -153,32 +169,76 @@
     </ItemGroup>
     <RemoveDir Directories="@(RemovingFolders)" />
   </Target>
-  <Target Name="GenerateGitVersion" BeforeTargets="BeforeBuild">
-    <PropertyGroup>
-      <_GitVersionFile>$(IntermediateOutputPath)gitversion.txt</_GitVersionFile>
-    </PropertyGroup>
+  <!-- Custom AssemblyInfo generation -->
+  <PropertyGroup>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+  </PropertyGroup>
+  <!-- Compute git describe output and set AssemblyInformationalVersion dynamically -->
+  <Target Name="ComputeGitDescribe" BeforeTargets="GenerateAssemblyInfo;CoreCompile">
     <Exec
-      Command="git describe --tags --always --dirty &gt; &quot;$(_GitVersionFile)&quot;"
+      Command="git describe --tags --always --dirty &gt; &quot;$(IntermediateOutputPath)git-describe.txt&quot;"
       IgnoreExitCode="true"
     />
-    <ReadLinesFromFile File="$(_GitVersionFile)">
-      <Output TaskParameter="Lines" PropertyName="GitVersionRaw" />
+    <ReadLinesFromFile File="$(IntermediateOutputPath)git-describe.txt">
+      <Output TaskParameter="Lines" PropertyName="GitDescribeRaw" />
     </ReadLinesFromFile>
     <PropertyGroup>
-      <GitVersion Condition="'$(GitVersionRaw)'==''">dev</GitVersion>
-      <GitVersion Condition="'$(GitVersionRaw)'!=''">$(GitVersionRaw)</GitVersion>
+      <GitDescribe>$(GitDescribeRaw)</GitDescribe>
+      <GitDescribe Condition="'$(GitDescribe)'==''">dev</GitDescribe>
+      <!-- Derive numeric version parts.
+           Supported tags:
+             2.0.1
+             2.0.0-alpha.7
+             2.0.0-alpha7
+             2.0.0-alpha.7-3-gHASH (git describe after extra commits)
+           Strategy:
+             major.minor.patch from first numeric triple
+             4th segment preference order:
+               1) prerelease numeric suffix (alpha.7 => 7)
+               2) git describe commit count (-3-g...) if present
+               3) 0 fallback
+      -->
+      <VersionMajor>$([System.Text.RegularExpressions.Regex]::Match('$(GitDescribe)', '^v?(\d+)\.(\d+)\.(\d+)').Groups[1].Value)</VersionMajor>
+      <VersionMinor>$([System.Text.RegularExpressions.Regex]::Match('$(GitDescribe)', '^v?(\d+)\.(\d+)\.(\d+)').Groups[2].Value)</VersionMinor>
+      <VersionPatch>$([System.Text.RegularExpressions.Regex]::Match('$(GitDescribe)', '^v?(\d+)\.(\d+)\.(\d+)').Groups[3].Value)</VersionPatch>
+      <!-- Capture prerelease numeric part (alpha.7 / alpha7 / rc.2 etc.) -->
+      <PreReleaseNumber>$([System.Text.RegularExpressions.Regex]::Match('$(GitDescribe)', '^v?\d+\.\d+\.\d+-[A-Za-z]+[.-]?(\d+)').Groups[1].Value)</PreReleaseNumber>
+      <!-- Commit count (works regardless of prerelease) -->
+      <VersionCommitCount>$([System.Text.RegularExpressions.Regex]::Match('$(GitDescribe)', '-(\d+)-g[0-9a-fA-F]+$').Groups[1].Value)</VersionCommitCount>
+      <VersionMajor Condition="'$(VersionMajor)'==''">0</VersionMajor>
+      <VersionMinor Condition="'$(VersionMinor)'==''">0</VersionMinor>
+      <VersionPatch Condition="'$(VersionPatch)'==''">0</VersionPatch>
+      <FourthPart>$(PreReleaseNumber)</FourthPart>
+      <FourthPart Condition="'$(FourthPart)'==''">$(VersionCommitCount)</FourthPart>
+      <FourthPart Condition="'$(FourthPart)'==''">0</FourthPart>
+      <_NumericAssemblyVersion>$(VersionMajor).$(VersionMinor).$(VersionPatch).$(FourthPart)</_NumericAssemblyVersion>
     </PropertyGroup>
+    <Message Text="[ComputeGitDescribe] GitDescribe=$(GitDescribe) -&gt; AssemblyVersion=$(_NumericAssemblyVersion) (PreRelease=$(PreReleaseNumber); Commits=$(VersionCommitCount))" />
+  </Target>
+  <!-- Emit AssemblyInformationalVersion attribute source file -->
+  <Target
+    Name="EmitGitVersionAttribute"
+    AfterTargets="ComputeGitDescribe"
+    BeforeTargets="CoreCompile"
+  >
+    <ItemGroup>
+      <_GitVerLines Include="// Auto-generated git version attribute" />
+      <_GitVerLines Include="[assembly: System.Reflection.AssemblyInformationalVersionAttribute(&quot;$(GitDescribe)&quot;)]" />
+      <_GitVerLines Include="[assembly: System.Reflection.AssemblyVersionAttribute(&quot;$(_NumericAssemblyVersion)&quot;)]" />
+      <_GitVerLines Include="[assembly: System.Reflection.AssemblyFileVersionAttribute(&quot;$(_NumericAssemblyVersion)&quot;)]" />
+    </ItemGroup>
     <WriteLinesToFile
-      File="$(IntermediateOutputPath)gitversion.runtime.txt"
+      File="$(IntermediateOutputPath)GitVersionInfo.g.cs"
+      Lines="@(_GitVerLines)"
       Overwrite="true"
-      Lines="$(GitVersion)"
     />
     <ItemGroup>
-      <None Include="$(IntermediateOutputPath)gitversion.runtime.txt">
-        <Link>gitversion.txt</Link>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+      <Compile Include="$(IntermediateOutputPath)GitVersionInfo.g.cs" />
     </ItemGroup>
+    <Message Text="[EmitGitVersionAttribute] Wrote GitVersionInfo.g.cs with $(GitDescribe) / $(_NumericAssemblyVersion)" />
   </Target>
   <Target Name="Husky" BeforeTargets="Restore;CollectPackageReferences" Condition="'$(HUSKY)' != 0">
     <Exec

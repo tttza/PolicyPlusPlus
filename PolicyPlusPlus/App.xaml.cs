@@ -23,23 +23,26 @@ namespace PolicyPlusPlus
                     return _cached;
                 try
                 {
-                    string baseDir = AppContext.BaseDirectory;
-                    string path = System.IO.Path.Combine(baseDir, "gitversion.txt");
-                    if (File.Exists(path))
+                    var asm = typeof(App).Assembly;
+                    var info = asm.GetCustomAttributes<AssemblyInformationalVersionAttribute>()
+                        .FirstOrDefault()
+                        ?.InformationalVersion;
+                    if (!string.IsNullOrWhiteSpace(info))
                     {
-                        var txt = File.ReadAllText(path).Trim();
-                        if (!string.IsNullOrEmpty(txt))
-                        {
-                            _cached = txt;
-                            return _cached;
-                        }
+                        var v = info.Trim();
+                        // AssemblyInformationalVersion is set by MSBuild target (git describe output). Use as-is.
+                        _cached = v;
+                        return _cached;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug("App", $"version file read failed: {ex.GetType().Name} {ex.Message}");
+                    Log.Debug(
+                        "App",
+                        $"informational version read failed: {ex.GetType().Name} {ex.Message}"
+                    );
                 }
-                _cached = "dev";
+                _cached = "dev"; // Fallback when attribute missing
                 return _cached;
             }
         }
@@ -265,11 +268,11 @@ namespace PolicyPlusPlus
                             "PolicyPlusAppIcon.ico"
                         );
                         using (
-                            var fs = new FileStream(
+                            var fs = new System.IO.FileStream(
                                 tempPath,
-                                FileMode.Create,
-                                FileAccess.Write,
-                                FileShare.Read
+                                System.IO.FileMode.Create,
+                                System.IO.FileAccess.Write,
+                                System.IO.FileShare.Read
                             )
                         )
                         {
@@ -290,9 +293,9 @@ namespace PolicyPlusPlus
             {
                 string baseDir = AppContext.BaseDirectory;
                 string assets = System.IO.Path.Combine(baseDir, "Assets");
-                if (Directory.Exists(assets))
+                if (System.IO.Directory.Exists(assets))
                 {
-                    var path = Directory.EnumerateFiles(assets, "*.ico").FirstOrDefault();
+                    var path = System.IO.Directory.EnumerateFiles(assets, "*.ico").FirstOrDefault();
                     if (!string.IsNullOrEmpty(path))
                     {
                         _iconPathCache = path;
