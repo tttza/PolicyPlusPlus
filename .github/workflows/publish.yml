@@ -69,6 +69,7 @@ jobs:
             echo "version=${ver}" >> $GITHUB_OUTPUT
             if [[ "${ver}" == *-* ]]; then
               echo "prerelease=true" >> $GITHUB_OUTPUT
+            else
               echo "prerelease=false" >> $GITHUB_OUTPUT
             fi
           else
@@ -105,6 +106,7 @@ jobs:
           --runtime win-x64
           --packDir publish/win-x64
           --mainExe $env:ENTRY_EXE
+          --icon PolicyPlusPlus/Assets/AppIcon.ico
           -o Releases
           -c win-x64
         shell: pwsh
@@ -119,6 +121,7 @@ jobs:
           --runtime win-arm64
           --packDir publish/win-arm64
           --mainExe $env:ENTRY_EXE
+          --icon PolicyPlusPlus/Assets/AppIcon.ico
           -o Releases
           -c win-arm64
         shell: pwsh
