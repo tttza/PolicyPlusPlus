@@ -589,6 +589,41 @@ namespace PolicyPlusPlus
                 (RootGrid?.FindName("VersionText") as TextBlock)!.Text = BuildInfo.Version;
             }
             catch { }
+#if USE_VELOPACK
+            try
+            {
+                // Fire-and-forget background update check shortly after UI init to avoid UI thread jank.
+                if (UpdateHelper.IsVelopackAvailable)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        // Small delay to let initial rendering settle.
+                        await Task.Delay(10000).ConfigureAwait(false);
+                        var (ok, hasUpdate, _) = await UpdateHelper
+                            .CheckVelopackUpdatesAsync()
+                            .ConfigureAwait(false);
+                        if (ok && hasUpdate)
+                        {
+                            try
+                            {
+                                DispatcherQueue.TryEnqueue(() =>
+                                {
+                                    if (
+                                        RootGrid?.FindName("UpdateAvailableBadge")
+                                        is TextBlock badge
+                                    )
+                                    {
+                                        badge.Visibility = Visibility.Visible;
+                                    }
+                                });
+                            }
+                            catch { }
+                        }
+                    });
+                }
+            }
+            catch { }
+#endif
             AppSettings s;
             try
             {
@@ -758,6 +793,22 @@ namespace PolicyPlusPlus
 
         public System.Threading.Tasks.Task EnsureInitializedAsync() =>
             InitializeUiFromSettingsAsync();
+
+        private void UpdateAvailableBadge_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            try
+            {
+#if USE_VELOPACK
+                // Reuse existing manual update flow when Velopack updater is available.
+                MenuCheckForUpdates_Click(sender, e);
+#else
+                // Packaged (Store) build: no in-app manual updater; hide badge if tapped.
+                if (sender is FrameworkElement fe)
+                    fe.Visibility = Visibility.Collapsed;
+#endif
+            }
+            catch { }
+        }
 
         // Helper to detect double-tap originating from bookmark toggle button to suppress edit dialog.
         private bool IsFromBookmarkButton(DependencyObject? dep)

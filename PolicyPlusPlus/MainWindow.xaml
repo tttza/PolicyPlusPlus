@@ -984,12 +984,23 @@
             Opacity="0.85"
             VerticalAlignment="Center"
           />
-          <TextBlock
-            x:Name="VersionText"
+          <StackPanel
             Grid.Column="2"
-            Opacity="0.7"
+            Orientation="Horizontal"
             VerticalAlignment="Center"
-          />
+            Spacing="8"
+          >
+            <TextBlock x:Name="VersionText" Opacity="0.7" VerticalAlignment="Center" />
+            <TextBlock
+              x:Name="UpdateAvailableBadge"
+              Text="Update Available"
+              Visibility="Collapsed"
+              VerticalAlignment="Center"
+              Opacity="0.9"
+              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+              Tapped="UpdateAvailableBadge_Tapped"
+            />
+          </StackPanel>
         </Grid>
       </Border>
       <Grid
