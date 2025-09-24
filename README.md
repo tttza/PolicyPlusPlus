@@ -3,9 +3,11 @@
 A tool to search, view, edit, and share Local Group Policy (Administrative Templates/ADMX).  
 This repository is a fork of Fleex255’s [PolicyPlus](https://github.com/Fleex255/PolicyPlus) with additional features and a modernized UI.
 
-[![build & release](https://github.com/tttza/PolicyPlusMod/actions/workflows/publish.yml/badge.svg)](https://github.com/tttza/PolicyPlusMod/actions/workflows/publish.yml)
+[![build & release](https://github.com/tttza/PolicyPlusPlus/actions/workflows/publish.yml/badge.svg)](https://github.com/tttza/PolicyPlusPlus/actions/workflows/publish.yml)
 
 > Note: This tool modifies the Windows Registry. Create a restore point or take a backup before use.
+
+<img width="1227" height="734" alt="image" src="https://github.com/user-attachments/assets/85dc1ad5-e970-4813-bdc8-89c18588ef40" />
 
 ---
 
@@ -53,6 +55,9 @@ This repository is a fork of Fleex255’s [PolicyPlus](https://github.com/Fleex2
 - Dark mode / High-DPI support
   - Implemented with WinUI 3 for a modern UI
 
+<img width="367" height="321" alt="image" src="https://github.com/user-attachments/assets/c9e33042-60d0-4b47-871b-fe7e1bc3ef75" />
+<img width="1671" height="706" alt="image" src="https://github.com/user-attachments/assets/9699590e-966f-478e-8d84-c828b9b8ef90" />
+
 ---
 
 ## Differences from PolicyPlus (important)
@@ -76,7 +81,7 @@ Original (PolicyPlus by Fleex255): https://github.com/Fleex255/PolicyPlus
 ## Download
 
 Release builds are available on GitHub Releases:  
-https://github.com/tttza/PolicyPlusMod/releases
+https://github.com/tttza/PolicyPlusPlus/releases
 
 ---
 
