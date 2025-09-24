@@ -61,8 +61,15 @@ namespace PolicyPlusPlus.Services
                 return;
             try
             {
+                bool includePre = false;
+                try
+                {
+                    var s = SettingsService.Instance.LoadSettings();
+                    includePre = s.IncludePrereleaseUpdates ?? false;
+                }
+                catch { }
                 _updateManager = new UpdateManager(
-                    new GithubSource(UpdateConfig.VelopackUpdateUrl, null, false)
+                    new GithubSource(UpdateConfig.VelopackUpdateUrl, null, includePre)
                 );
             }
             catch (Exception ex)
@@ -74,6 +81,19 @@ namespace PolicyPlusPlus.Services
             }
 #endif
         }
+
+#if USE_VELOPACK
+        public static void ResetVelopackSource()
+        {
+            try
+            {
+                // No explicit dispose available; just drop reference.
+            }
+            catch { }
+            _updateManager = null;
+            // Force re-init on next use with new prerelease flag
+        }
+#endif
 
         public static async Task<(
             bool ok,

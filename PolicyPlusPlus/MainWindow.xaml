@@ -311,6 +311,13 @@
                 Click="MenuCheckForUpdates_Click"
                 Visibility="Collapsed"
               />
+              <ToggleMenuFlyoutItem
+                x:Name="MenuIncludePrereleaseUpdates"
+                Text="Include prerelease updates"
+                IsChecked="False"
+                Visibility="Collapsed"
+                Click="MenuIncludePrereleaseUpdates_Click"
+              />
               <MenuFlyoutItem
                 x:Name="MenuOpenStorePage"
                 Text="Open in Microsoft Store"

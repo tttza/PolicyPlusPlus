@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -195,8 +196,33 @@ namespace PolicyPlusPlus.Services
             {
                 _cachedSettings = LoadFromDisk_NoLock();
                 MigrateIfNeeded_NoLock(_cachedSettings);
+                // Initialize default for prerelease updates if not set.
+                if (_cachedSettings.IncludePrereleaseUpdates == null)
+                {
+                    try
+                    {
+                        _cachedSettings.IncludePrereleaseUpdates = IsCurrentBuildPrerelease();
+                    }
+                    catch { }
+                }
             }
             return _cachedSettings;
+        }
+
+        private bool IsCurrentBuildPrerelease()
+        {
+            try
+            {
+                var info = typeof(SettingsService)
+                    .Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                    ?.InformationalVersion;
+                if (string.IsNullOrWhiteSpace(info))
+                    return false;
+                // Simple heuristic: semver with a '-' indicates prerelease (e.g., 1.2.3-alpha.1)
+                return info.Contains('-', StringComparison.Ordinal);
+            }
+            catch { }
+            return false;
         }
 
         public AppSettings LoadSettings()
@@ -878,6 +904,9 @@ namespace PolicyPlusPlus.Services
 
         public void UpdateAdmxCacheEnabled(bool enabled) =>
             Update(s => s.AdmxCacheEnabled = enabled);
+
+        public void UpdateIncludePrereleaseUpdates(bool enabled) =>
+            Update(s => s.IncludePrereleaseUpdates = enabled);
     }
 
     public partial class AppSettings
@@ -911,6 +940,7 @@ namespace PolicyPlusPlus.Services
         public string? CustomPolUserPath { get; set; }
         public CustomPolSettings? CustomPol { get; set; }
         public bool? PrimaryLanguageFallbackEnabled { get; set; }
+        public bool? IncludePrereleaseUpdates { get; set; }
     }
 
     public class CustomPolSettings

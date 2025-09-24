@@ -291,12 +291,47 @@ namespace PolicyPlusPlus
                 catch { }
                 var checkItem = fe.FindName("MenuCheckForUpdates") as MenuFlyoutItem;
                 var storeItem = fe.FindName("MenuOpenStorePage") as MenuFlyoutItem;
+                var prereleaseToggle =
+                    fe.FindName("MenuIncludePrereleaseUpdates") as ToggleMenuFlyoutItem;
                 if (UpdateHelper.IsVelopackAvailable && checkItem != null)
                     checkItem.Visibility = Visibility.Visible;
                 if (UpdateHelper.IsStoreBuild && storeItem != null)
                     storeItem.Visibility = Visibility.Visible;
+                if (UpdateHelper.IsVelopackAvailable && prereleaseToggle != null)
+                {
+                    try
+                    {
+                        var s = SettingsService.Instance.LoadSettings();
+                        prereleaseToggle.IsChecked = s.IncludePrereleaseUpdates ?? false;
+                        prereleaseToggle.Visibility = Visibility.Visible;
+                    }
+                    catch { }
+                }
             }
             catch { }
+        }
+
+        private void MenuIncludePrereleaseUpdates_Click(object sender, RoutedEventArgs e)
+        {
+#if USE_VELOPACK
+            try
+            {
+                if (sender is ToggleMenuFlyoutItem t)
+                {
+                    SettingsService.Instance.UpdateIncludePrereleaseUpdates(t.IsChecked);
+#if USE_VELOPACK
+                    UpdateHelper.ResetVelopackSource();
+#endif
+                    ShowInfo(
+                        t.IsChecked
+                            ? "Prerelease updates enabled (will include pre-release versions)."
+                            : "Prerelease updates disabled (only stable releases).",
+                        InfoBarSeverity.Informational
+                    );
+                }
+            }
+            catch { }
+#endif
         }
 
         private void ToggleAdmxCacheMenu_Click(object sender, RoutedEventArgs e)
@@ -309,7 +344,6 @@ namespace PolicyPlusPlus
                 SettingsService.Instance.UpdateAdmxCacheEnabled(enabled);
                 if (enabled)
                 {
-                    // Start cache host (non-blocking)
                     _ = Services.AdmxCacheHostService.Instance.StartAsync();
                     ShowInfo(
                         "ADMX cache enabled. Building in background...",
@@ -318,7 +352,6 @@ namespace PolicyPlusPlus
                 }
                 else
                 {
-                    // Stop cache host and clear pooled handles (fire-and-forget to avoid blocking UI)
                     _ = Task.Run(async () =>
                     {
                         try
