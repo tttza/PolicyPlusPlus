@@ -96,6 +96,9 @@ namespace PolicyPlusPlus
         private bool _doubleTapHooked; // used by HookDoubleTapHandlers
         private bool _initialized; // guard to run initialization once
         private AppSettings? _settingsCache; // cached settings snapshot
+        private bool _forceComputeStatesOnce; // triggers one-time forced policy state computation on next bind
+        private bool _busyWarmUpgrade; // true while waiting full bundle after warm snapshot
+        private bool _pendingDeferredBusyHide; // internal flag for deferred busy hide scheduling
 
         // Warm snapshot state: when true, UI is running with warm-only bundle and a full background rebuild is in progress.
         private bool _isWarmOnly; // guarded by UI thread access
@@ -789,6 +792,30 @@ namespace PolicyPlusPlus
                 if (Directory.Exists(lastPath))
                 {
                     await LoadAdmxFolderAsync(lastPath);
+                    // When launching directly into ConfiguredOnly view, ensure full bundle so state filtering is accurate.
+                    if (_configuredOnly)
+                    {
+                        bool needWait = _isWarmOnly; // only block if still warm-only
+                        if (needWait)
+                            SetBusy(true, "Loading full policy metadata...");
+                        try
+                        {
+                            await EnsureFullBundleAsync();
+                        }
+                        catch { }
+                        if (needWait)
+                            SetBusy(false);
+                        // If warm-only was true we already scheduled rebind in swap path; only force here if not warm
+                        if (!needWait)
+                        {
+                            _forceComputeStatesOnce = true;
+                            try
+                            {
+                                RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                            }
+                            catch { }
+                        }
+                    }
                 }
 
                 try
@@ -1609,6 +1636,8 @@ namespace PolicyPlusPlus
                 // If we loaded from warm snapshot, rebuild the full bundle in background and swap-in + persist warm snapshot for future runs.
                 if (usedWarm)
                 {
+                    // We stay busy until the full bundle swap finishes so states don't appear to "pop" in later.
+                    _busyWarmUpgrade = true;
                     // initialize warm-only tracking
                     _isWarmOnly = true;
                     _fullBundleReadyTcs = new TaskCompletionSource<bool>(
@@ -1722,6 +1751,15 @@ namespace PolicyPlusPlus
                                         BuildCategoryTreeAsync();
                                         // mark warm-only finished
                                         _isWarmOnly = false;
+                                        if (_busyWarmUpgrade)
+                                        {
+                                            _busyWarmUpgrade = false;
+                                            DeferHideBusyUntilRowsRealized();
+                                        }
+                                        if (_configuredOnly)
+                                        {
+                                            _forceComputeStatesOnce = true;
+                                        }
                                         try
                                         {
                                             _fullBundleReadyTcs?.TrySetResult(true);
@@ -1750,6 +1788,15 @@ namespace PolicyPlusPlus
                                     .Count();
                                 BuildCategoryTreeAsync();
                                 _isWarmOnly = false;
+                                if (_busyWarmUpgrade)
+                                {
+                                    _busyWarmUpgrade = false;
+                                    DeferHideBusyUntilRowsRealized();
+                                }
+                                if (_configuredOnly)
+                                {
+                                    _forceComputeStatesOnce = true;
+                                }
                                 try
                                 {
                                     _fullBundleReadyTcs?.TrySetResult(true);
@@ -1808,7 +1855,103 @@ namespace PolicyPlusPlus
             }
             finally
             {
-                SetBusy(false);
+                // Only hide if not in warm->full pending phase
+                if (!_busyWarmUpgrade)
+                    SetBusy(false);
+            }
+        }
+
+        // Schedules hiding the busy overlay only after the DataGrid has realized at least one policy row (ensuring glyphs appear before flicker).
+        private void DeferHideBusyUntilRowsRealized(int timeoutMs = 1500)
+        {
+            try
+            {
+                if (BusyOverlay == null)
+                {
+                    SetBusy(false);
+                    return;
+                }
+                if (_pendingDeferredBusyHide)
+                    return; // already scheduled
+                _pendingDeferredBusyHide = true;
+
+                DateTime start = DateTime.UtcNow;
+                void TryHide()
+                {
+                    if (PolicyList == null)
+                    {
+                        Finish();
+                        return;
+                    }
+                    // Heuristic: grid has non-zero size and at least one item; layout pass already happened via LayoutUpdated hook.
+                    bool ready = false;
+                    try
+                    {
+                        if (PolicyList.ActualHeight > 0 && PolicyList.ActualWidth > 0)
+                        {
+                            var items = PolicyList.ItemsSource as System.Collections.IEnumerable;
+                            if (items != null)
+                            {
+                                var e = items.GetEnumerator();
+                                if (e.MoveNext())
+                                    ready = true;
+                            }
+                        }
+                    }
+                    catch { }
+                    if (ready || (DateTime.UtcNow - start).TotalMilliseconds > timeoutMs)
+                        Finish();
+                    else
+                        Schedule();
+                }
+                void Schedule()
+                {
+                    try
+                    {
+                        DispatcherQueue.TryEnqueue(
+                            Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                            TryHide
+                        );
+                    }
+                    catch
+                    {
+                        Finish();
+                    }
+                }
+                void Finish()
+                {
+                    try
+                    {
+                        SetBusy(false);
+                    }
+                    catch { }
+                    _pendingDeferredBusyHide = false;
+                }
+                // Hook one-time layout updated to accelerate when grid completes first layout
+                try
+                {
+                    if (PolicyList != null)
+                    {
+                        void Handler(object? s, object e)
+                        {
+                            PolicyList.LayoutUpdated -= Handler;
+                            TryHide();
+                        }
+                        PolicyList.LayoutUpdated += Handler;
+                    }
+                }
+                catch { }
+                // Initial schedule (after small delay to allow bind)
+                Schedule();
+            }
+            catch
+            {
+                try
+                {
+                    SetBusy(false);
+                }
+                catch { }
+                _pendingDeferredBusyHide = false;
             }
         }
 
@@ -2576,6 +2719,28 @@ namespace PolicyPlusPlus
                     if (Directory.Exists(reloadPath))
                     {
                         await LoadAdmxFolderAsync(reloadPath);
+                        if (_configuredOnly)
+                        {
+                            bool needWait = _isWarmOnly;
+                            if (needWait)
+                                SetBusy(true, "Loading full policy metadata...");
+                            try
+                            {
+                                await EnsureFullBundleAsync();
+                            }
+                            catch { }
+                            if (needWait)
+                                SetBusy(false);
+                            if (!needWait)
+                            {
+                                _forceComputeStatesOnce = true;
+                                try
+                                {
+                                    RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                                }
+                                catch { }
+                            }
+                        }
                         ApplySecondLanguageVisibilityToViewMenu();
                         UpdateColumnVisibilityFromFlags();
                     }

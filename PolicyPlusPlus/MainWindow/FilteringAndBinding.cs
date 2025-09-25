@@ -542,7 +542,8 @@ namespace PolicyPlusPlus
 
         private void BindSequenceEnhanced(
             IEnumerable<PolicyPlusPolicy> seq,
-            FilterDecisionResult decision
+            FilterDecisionResult decision,
+            bool forceComputeStates = false
         )
         {
             Func<PolicyPlusPolicy, object>? primary = null;
@@ -608,7 +609,11 @@ namespace PolicyPlusPlus
             if (decision.Limit.HasValue && ordered.Count > decision.Limit.Value)
                 ordered = ordered.Take(decision.Limit.Value).ToList();
             _visiblePolicies = ordered.ToList();
-            bool computeStatesNow = !_navTyping || _visiblePolicies.Count <= LargeResultThreshold;
+            bool computeStatesNow =
+                forceComputeStates
+                || _forceComputeStatesOnce
+                || !_navTyping
+                || _visiblePolicies.Count <= LargeResultThreshold;
             var srcCtx = PolicySourceAccessor.Acquire();
             bool forceProvideSources = srcCtx.Mode == PolicySourceMode.CustomPol;
             _rowByPolicyId.Clear();
@@ -632,6 +637,8 @@ namespace PolicyPlusPlus
             PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
             TryRestoreSelectionAsync(rows);
             MaybePushCurrentState();
+            if (_forceComputeStatesOnce)
+                _forceComputeStatesOnce = false; // consume flag
         }
 
         private List<PolicyPlusPolicy> MatchPolicies(
@@ -1154,13 +1161,13 @@ namespace PolicyPlusPlus
                         if (_navTyping && matches.Count > LargeResultThreshold)
                         {
                             var partial = matches.Take(LargeResultThreshold).ToList();
-                            BindSequenceEnhanced(partial, decision);
+                            BindSequenceEnhanced(partial, decision, forceComputeStates: false);
                             UpdateNavButtons();
                             ScheduleFullResultBind(gen, q, matches, decision);
                         }
                         else
                         {
-                            BindSequenceEnhanced(matches, decision);
+                            BindSequenceEnhanced(matches, decision, forceComputeStates: false);
                             UpdateNavButtons();
                         }
                     }
@@ -1304,7 +1311,11 @@ namespace PolicyPlusPlus
                     }
                     try
                     {
-                        BindSequenceEnhanced(items, decision);
+                        BindSequenceEnhanced(
+                            items,
+                            decision,
+                            forceComputeStates: _forceComputeStatesOnce
+                        );
                         RestorePositionOrSelection();
                         UpdateNavButtons();
                         if (showBaselineOnEmpty && string.IsNullOrWhiteSpace(SearchBox?.Text))
@@ -1348,7 +1359,7 @@ namespace PolicyPlusPlus
                 var ctx = PolicySourceAccessor.Acquire();
                 var seq = BaseSequenceForFilters(decision.IncludeSubcategoryPolicies);
                 seq = ApplyBookmarkFilterIfNeeded(seq);
-                BindSequenceEnhanced(seq, decision);
+                BindSequenceEnhanced(seq, decision, forceComputeStates: _forceComputeStatesOnce);
                 UpdateSearchClearButtonVisibility();
                 if (showBaselineOnEmpty)
                     // Only open baseline suggestions if the search box is already focused.
