@@ -79,6 +79,11 @@ namespace PolicyPlusPlus
             // Store update checks are not performed at startup (manual trigger only).
 #endif
             InitializeComponent();
+            try
+            {
+                Log.ConfigureFromArgs(Environment.GetCommandLineArgs());
+            }
+            catch { }
             Log.Info("App", "Application constructing");
             this.UnhandledException += (s, e) =>
             {

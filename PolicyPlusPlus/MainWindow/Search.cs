@@ -85,12 +85,23 @@ namespace PolicyPlusPlus
             {
                 try
                 {
+                    // React to search option toggle (e.g., InName/InDescription/AndMode changes)
                     SyncSearchFlagsFromViewModel();
                     var q = SearchBox?.Text ?? string.Empty;
+                    Log.Debug(
+                        "MainSearch",
+                        $"OptionsChanged qLen={q?.Length} inName={_searchInName} inId={_searchInId} inDesc={_searchInDescription} inComments={_searchInComments} andMode={_useAndModeFlag}"
+                    );
                     if (string.IsNullOrWhiteSpace(q))
+                    {
+                        Log.Trace("MainSearch", "OptionsChanged triggers filter (empty query)");
                         RunAsyncFilterAndBind();
+                    }
                     else
+                    {
+                        Log.Trace("MainSearch", "OptionsChanged triggers search (non-empty)");
                         RunAsyncSearchAndBind(q);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -130,6 +141,10 @@ namespace PolicyPlusPlus
                     SearchBox.IsSuggestionListOpen = show;
                 }
                 catch { }
+                Log.Debug(
+                    "MainSearch",
+                    $"BaselineSuggestions show={show} count={(list?.Count ?? 0)}"
+                );
             }
             catch (Exception ex)
             {
@@ -164,11 +179,16 @@ namespace PolicyPlusPlus
                                 normalizedText: SearchText.Normalize(p.DisplayExplanation)
                             )
                         );
+                        var swStart = DateTime.UtcNow;
                         idx.Build(items);
                         var snap = idx.GetSnapshot();
                         // Do not persist UI-level N-gram snapshot; ADMX Cache owns search indexing
                         _descIndex.LoadSnapshot(snap);
                         _descIndexBuilt = true;
+                        Log.Info(
+                            "MainSearch",
+                            $"DescIndexPrebuild ok policies={policies.Count} elapsedMs={(int)(DateTime.UtcNow - swStart).TotalMilliseconds}"
+                        );
                     }
                     catch (Exception ex)
                     {
@@ -184,6 +204,7 @@ namespace PolicyPlusPlus
 
         private void RebuildSearchIndex()
         {
+            using var scope = LogScope.Debug("MainSearch", "RebuildSearchIndex");
             try
             {
                 var s = _settingsCache ?? SettingsService.Instance.LoadSettings();
@@ -227,12 +248,18 @@ namespace PolicyPlusPlus
                     _searchIndexById[e.Policy.UniqueID] = e;
                 // Invalidate second index so it can rebuild with new language if needed
                 _secondIndexBuilt = false;
+                scope.Complete();
+                Log.Info(
+                    "MainSearch",
+                    $"SearchIndex rebuilt count={_searchIndex.Count} secondLang={(useSecond ? secondLang : "(none)")}"
+                );
             }
             catch (Exception ex)
             {
                 Log.Error("MainSearch", "RebuildSearchIndex failed", ex);
                 _searchIndex = new();
                 _searchIndexById = new(StringComparer.OrdinalIgnoreCase);
+                scope.Capture(ex);
             }
         }
 
@@ -262,6 +289,7 @@ namespace PolicyPlusPlus
                 _navTyping = false;
                 if (SearchBox != null)
                     SearchBox.Text = string.Empty;
+                Log.Debug("MainSearch", "ClearButton tapped -> empty query");
                 UpdateSearchClearButtonVisibility();
                 RunAsyncFilterAndBind();
                 UpdateNavButtons();
@@ -282,6 +310,10 @@ namespace PolicyPlusPlus
                     btn.Visibility = !string.IsNullOrEmpty(SearchBox?.Text)
                         ? Visibility.Visible
                         : Visibility.Collapsed;
+                Log.Trace(
+                    "MainSearch",
+                    $"ClearBtn visibility={(btn != null ? btn.Visibility.ToString() : "n/a")}"
+                );
             }
             catch (Exception ex)
             {
@@ -321,6 +353,7 @@ namespace PolicyPlusPlus
                     // On focus, always show baseline suggestions immediately.
                     ShowBaselineSuggestions(onlyIfFocused: false);
                     // ShowBaselineSuggestions already opened/closed based on count
+                    Log.Trace("MainSearch", "GotFocus baseline suggestions attempted");
                 }
             }
             catch (Exception ex)
@@ -335,6 +368,7 @@ namespace PolicyPlusPlus
             {
                 if (SearchBox != null)
                     SearchBox.IsSuggestionListOpen = false;
+                Log.Trace("MainSearch", "LostFocus suggestions closed");
             }
             catch (Exception ex)
             {
@@ -362,11 +396,13 @@ namespace PolicyPlusPlus
                     {
                         e.TryCancel();
                         _suppressInitialSearchBoxFocus = false; // one-shot
+                        Log.Debug("MainSearch", "Suppress initial programmatic focus");
                         return;
                     }
 
                     // User explicitly focusing: allow and turn off suppression.
                     _suppressInitialSearchBoxFocus = false;
+                    Log.Trace("MainSearch", "User initiated first focus allowed");
                 }
             }
             catch (Exception ex)
@@ -439,6 +475,7 @@ namespace PolicyPlusPlus
                 // If arrow-key navigating suggestions, avoid recomputing suggestions or committing
                 if (SearchBox != null && SearchBox.IsSuggestionListOpen && _navigatingSuggestions)
                 {
+                    Log.Trace("MainSearch", "TextChanged ignored (navigating suggestions)");
                     return;
                 }
                 // No startup suppression: baseline suggestion behavior follows typing normally.
@@ -471,12 +508,14 @@ namespace PolicyPlusPlus
                         UpdateNavButtons();
                     }
                     catch { }
+                    Log.Debug("MainSearch", "TextChanged empty -> filter only");
                     return;
                 }
                 // Commit only when: user typed, or when a suggestion has been explicitly chosen
                 if (reason is AutoSuggestionBoxTextChangeReason.SuggestionChosen)
                 {
                     _navTyping = false;
+                    Log.Debug("MainSearch", $"TextChanged commit suggestion q='{q}'");
                     RunAsyncSearchAndBind(q);
                     MaybePushCurrentState();
                     try
@@ -489,6 +528,7 @@ namespace PolicyPlusPlus
                 else if (reason is AutoSuggestionBoxTextChangeReason.UserInput)
                 {
                     _navTyping = true;
+                    Log.Trace("MainSearch", $"TextChanged user input qLen={q.Length}");
                     RunAsyncSearchAndBind(q);
                 }
             }
@@ -511,6 +551,7 @@ namespace PolicyPlusPlus
                 )
                 {
                     _navigatingSuggestions = true;
+                    Log.Trace("MainSearch", $"KeyDown nav key={e.Key}");
                 }
 
                 // When Tab is pressed in the search box, move focus to the policy list
@@ -561,6 +602,7 @@ namespace PolicyPlusPlus
                         }
 
                         e.Handled = true;
+                        Log.Debug("MainSearch", "Tab moves focus to list");
                         return;
                     }
                 }
@@ -584,6 +626,7 @@ namespace PolicyPlusPlus
                 )
                 {
                     _navigatingSuggestions = false;
+                    Log.Trace("MainSearch", $"KeyUp nav key={e.Key}");
                 }
             }
             catch (Exception ex)
@@ -624,6 +667,7 @@ namespace PolicyPlusPlus
                             SearchBox.Text = commitText;
                     }
                     catch { }
+                    Log.Info("MainSearch", $"QuerySubmitted commit qLen={commitText.Length}");
                     RunAsyncSearchAndBind(commitText);
                     MaybePushCurrentState();
                     try
@@ -636,6 +680,7 @@ namespace PolicyPlusPlus
                 else
                 {
                     // If Enter pressed on empty query while suggestions are open, do nothing (prevent accidental commit)
+                    Log.Trace("MainSearch", "QuerySubmitted empty ignored");
                 }
             }
             catch (Exception ex)

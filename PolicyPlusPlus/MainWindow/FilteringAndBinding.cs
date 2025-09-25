@@ -18,6 +18,9 @@ namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {
+        private Microsoft.UI.Xaml.Controls.ProgressRing? GetSearchSpinner() =>
+            RootElement?.FindName("SearchSpinner") as Microsoft.UI.Xaml.Controls.ProgressRing;
+
         private const int LargeResultThreshold = 200;
         private const int SearchInitialDelayMs = 120;
         private const int PartialExpandDelayMs = 260;
@@ -60,8 +63,13 @@ namespace PolicyPlusPlus
                 var items = _allPolicies.Select(p =>
                     (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayExplanation))
                 );
+                var start = DateTime.UtcNow;
                 _descIndex.Build(items);
                 _descIndexBuilt = true;
+                Log.Info(
+                    "MainFilter",
+                    $"DescIndex built count={_allPolicies.Count} ms={(int)(DateTime.UtcNow - start).TotalMilliseconds}"
+                );
             }
             catch (Exception ex)
             {
@@ -86,8 +94,13 @@ namespace PolicyPlusPlus
                     var items = _allPolicies.Select(p =>
                         (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayName))
                     );
+                    var start = DateTime.UtcNow;
                     _nameIndex.Build(items);
                     _nameIndexBuilt = true;
+                    Log.Info(
+                        "MainFilter",
+                        $"NameIndex built count={_allPolicies.Count} ms={(int)(DateTime.UtcNow - start).TotalMilliseconds}"
+                    );
                 }
                 catch (Exception ex)
                 {
@@ -121,8 +134,13 @@ namespace PolicyPlusPlus
                                     )
                                 )
                             );
+                            var start2 = DateTime.UtcNow;
                             _secondIndex.Build(items);
                             _secondIndexBuilt = true;
+                            Log.Info(
+                                "MainFilter",
+                                $"SecondIndex built lang={secondLang} count={_allPolicies.Count} ms={(int)(DateTime.UtcNow - start2).TotalMilliseconds}"
+                            );
                         }
                         catch (Exception ex)
                         {
@@ -132,6 +150,7 @@ namespace PolicyPlusPlus
                     else
                     {
                         _secondIndexBuilt = true; // no second language active
+                        Log.Debug("MainFilter", "SecondIndex skipped (disabled or same language)");
                     }
                 }
                 catch (Exception ex)
@@ -147,8 +166,13 @@ namespace PolicyPlusPlus
                     var items = _allPolicies.Select(p =>
                         (id: p.UniqueID, normalizedText: SearchText.Normalize(p.UniqueID))
                     );
+                    var start = DateTime.UtcNow;
                     _idIndex.Build(items);
                     _idIndexBuilt = true;
+                    Log.Info(
+                        "MainFilter",
+                        $"IdIndex built count={_allPolicies.Count} ms={(int)(DateTime.UtcNow - start).TotalMilliseconds}"
+                    );
                 }
                 catch (Exception ex)
                 {
@@ -642,6 +666,7 @@ namespace PolicyPlusPlus
             out HashSet<string> allowedSet
         )
         {
+            var swMatch = System.Diagnostics.Stopwatch.StartNew();
             var qLower = SearchText.Normalize(query);
             allowedSet = new HashSet<string>(
                 baseSeq.Select(p => p.UniqueID),
@@ -767,6 +792,11 @@ namespace PolicyPlusPlus
                     )
                         matched.Add(e.Policy);
             }
+            swMatch.Stop();
+            Log.Trace(
+                "MainSearch",
+                $"MatchPolicies ms={swMatch.ElapsedMilliseconds} qLen={query.Length} matched={matched.Count}"
+            );
             return matched;
         }
 
@@ -813,6 +843,7 @@ namespace PolicyPlusPlus
 
         private List<string> BuildSuggestions(string q, HashSet<string> allowed)
         {
+            var swSuggest = System.Diagnostics.Stopwatch.StartNew();
             var qLower = SearchText.Normalize(q);
             // Tokenize when AND mode is enabled
             string[] tokens = Array.Empty<string>();
@@ -930,26 +961,37 @@ namespace PolicyPlusPlus
                             bestByName[name] = (score, name);
                     }
             }
-            return bestByName
+            var result = bestByName
                 .Values.OrderByDescending(v => v.score)
                 .ThenBy(v => v.name, StringComparer.InvariantCultureIgnoreCase)
                 .Take(10)
                 .Select(v => v.name)
                 .ToList();
+            swSuggest.Stop();
+            Log.Trace(
+                "MainSearch",
+                $"BuildSuggestions ms={swSuggest.ElapsedMilliseconds} qLen={q.Length} cand={bestByName.Count}"
+            );
+            return result;
         }
 
         private void RunAsyncSearchAndBind(string q)
         {
+            // Normalize to empty string to satisfy nullable analysis.
+            q = q ?? string.Empty;
+            var swTotal = System.Diagnostics.Stopwatch.StartNew();
+            Log.Trace("MainSearch", $"RunAsyncSearchAndBind start qLen={q.Length}");
             _searchDebounceCts?.Cancel();
             _searchDebounceCts = new System.Threading.CancellationTokenSource();
             var token = _searchDebounceCts.Token;
             int gen = Interlocked.Increment(ref _searchGeneration);
             try
             {
-                if (SearchSpinner != null)
+                var spinner = GetSearchSpinner();
+                if (spinner != null)
                 {
-                    SearchSpinner.Visibility = Visibility.Visible;
-                    SearchSpinner.IsActive = true;
+                    spinner.Visibility = Visibility.Visible;
+                    spinner.IsActive = true;
                 }
             }
             catch { }
@@ -983,6 +1025,7 @@ namespace PolicyPlusPlus
                     comp,
                     user
                 );
+                var swCompute = System.Diagnostics.Stopwatch.StartNew();
                 List<PolicyPlusPolicy> matches;
                 List<string> suggestions;
                 try
@@ -1112,6 +1155,7 @@ namespace PolicyPlusPlus
                     suggestions = new();
                     matches = new();
                 }
+                swCompute.Stop();
                 if (token.IsCancellationRequested)
                 {
                     Finish();
@@ -1119,6 +1163,7 @@ namespace PolicyPlusPlus
                 }
                 DispatcherQueue.TryEnqueue(() =>
                 {
+                    var swBind = System.Diagnostics.Stopwatch.StartNew();
                     if (token.IsCancellationRequested || gen != _searchGeneration)
                     {
                         Finish();
@@ -1132,12 +1177,13 @@ namespace PolicyPlusPlus
                         bool boxHasFocus = false;
                         try
                         {
+                            var sbFocus = GetSearchBox();
                             boxHasFocus =
-                                SearchBox != null && SearchBox.FocusState != FocusState.Unfocused;
+                                sbFocus != null && sbFocus.FocusState != FocusState.Unfocused;
                         }
                         catch { }
                         bool shouldOpenSuggestions = showSuggestions && boxHasFocus;
-                        var sb = SearchBox;
+                        var sb = GetSearchBox();
                         if (sb != null)
                         {
                             IEnumerable<string> itemsToShow;
@@ -1158,16 +1204,26 @@ namespace PolicyPlusPlus
                             var partial = matches.Take(LargeResultThreshold).ToList();
                             BindSequenceEnhanced(partial, decision, forceComputeStates: false);
                             UpdateNavButtons();
+                            Log.Debug(
+                                "MainSearch",
+                                $"Partial bind count={partial.Count} total={matches.Count}"
+                            );
                             ScheduleFullResultBind(gen, q, matches, decision);
                         }
                         else
                         {
                             BindSequenceEnhanced(matches, decision, forceComputeStates: false);
                             UpdateNavButtons();
+                            Log.Debug("MainSearch", $"Full bind count={matches.Count}");
                         }
                     }
                     finally
                     {
+                        swBind.Stop();
+                        Log.Debug(
+                            "MainSearch",
+                            $"SearchPerf qLen={q.Length} computeMs={swCompute.ElapsedMilliseconds} bindMs={swBind.ElapsedMilliseconds} totalMs={swTotal.ElapsedMilliseconds}"
+                        );
                         Finish();
                     }
                 });
@@ -1178,11 +1234,17 @@ namespace PolicyPlusPlus
                 {
                     try
                     {
-                        if (SearchSpinner != null)
+                        var spinF = GetSearchSpinner();
+                        if (spinF != null)
                         {
-                            SearchSpinner.IsActive = false;
-                            SearchSpinner.Visibility = Visibility.Collapsed;
+                            spinF.IsActive = false;
+                            spinF.Visibility = Visibility.Collapsed;
                         }
+                        swTotal.Stop();
+                        Log.Trace(
+                            "MainSearch",
+                            $"RunAsyncSearchAndBind finish totalMs={swTotal.ElapsedMilliseconds}"
+                        );
                     }
                     catch { }
                 });
@@ -1191,6 +1253,8 @@ namespace PolicyPlusPlus
 
         private void RunAsyncFilterAndBind(bool showBaselineOnEmpty = true)
         {
+            var swTotal = System.Diagnostics.Stopwatch.StartNew();
+            Log.Trace("MainSearch", $"RunAsyncFilterAndBind start baseline={showBaselineOnEmpty}");
             _searchDebounceCts?.Cancel();
             _searchDebounceCts = new System.Threading.CancellationTokenSource();
             var token = _searchDebounceCts.Token;
@@ -1201,10 +1265,11 @@ namespace PolicyPlusPlus
             catch { }
             try
             {
-                if (SearchSpinner != null)
+                var spinner2 = GetSearchSpinner();
+                if (spinner2 != null)
                 {
-                    SearchSpinner.Visibility = Visibility.Visible;
-                    SearchSpinner.IsActive = true;
+                    spinner2.Visibility = Visibility.Visible;
+                    spinner2.IsActive = true;
                 }
             }
             catch { }
@@ -1230,6 +1295,7 @@ namespace PolicyPlusPlus
                     Finish();
                     return;
                 }
+                var swCompute = System.Diagnostics.Stopwatch.StartNew();
                 List<PolicyPlusPolicy> items;
                 try
                 {
@@ -1292,6 +1358,7 @@ namespace PolicyPlusPlus
                 {
                     items = new();
                 }
+                swCompute.Stop();
                 if (token.IsCancellationRequested)
                 {
                     Finish();
@@ -1299,6 +1366,7 @@ namespace PolicyPlusPlus
                 }
                 DispatcherQueue.TryEnqueue(() =>
                 {
+                    var swBind = System.Diagnostics.Stopwatch.StartNew();
                     if (token.IsCancellationRequested)
                     {
                         Finish();
@@ -1313,7 +1381,8 @@ namespace PolicyPlusPlus
                         );
                         RestorePositionOrSelection();
                         UpdateNavButtons();
-                        if (showBaselineOnEmpty && string.IsNullOrWhiteSpace(SearchBox?.Text))
+                        var sb2 = GetSearchBox();
+                        if (showBaselineOnEmpty && string.IsNullOrWhiteSpace(sb2?.Text))
                         {
                             try
                             {
@@ -1322,9 +1391,14 @@ namespace PolicyPlusPlus
                             }
                             catch { }
                         }
+                        Log.Debug(
+                            "MainSearch",
+                            $"FilterPerf count={items.Count} computeMs={swCompute.ElapsedMilliseconds} bindMs={swBind.ElapsedMilliseconds} totalMs={swTotal.ElapsedMilliseconds}"
+                        );
                     }
                     finally
                     {
+                        swBind.Stop();
                         Finish();
                     }
                 });
@@ -1335,11 +1409,17 @@ namespace PolicyPlusPlus
                 {
                     try
                     {
-                        if (SearchSpinner != null)
+                        var spinF2 = GetSearchSpinner();
+                        if (spinF2 != null)
                         {
-                            SearchSpinner.IsActive = false;
-                            SearchSpinner.Visibility = Visibility.Collapsed;
+                            spinF2.IsActive = false;
+                            spinF2.Visibility = Visibility.Collapsed;
                         }
+                        swTotal.Stop();
+                        Log.Trace(
+                            "MainSearch",
+                            $"RunAsyncFilterAndBind finish totalMs={swTotal.ElapsedMilliseconds}"
+                        );
                     }
                     catch { }
                 });
@@ -1350,6 +1430,11 @@ namespace PolicyPlusPlus
         {
             try
             {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                Log.Trace(
+                    "MainSearch",
+                    $"RunImmediateFilterAndBind start baseline={showBaselineOnEmpty}"
+                );
                 var decision = EvaluateDecision();
                 var ctx = PolicySourceAccessor.Acquire();
                 var seq = BaseSequenceForFilters(decision.IncludeSubcategoryPolicies);
@@ -1359,6 +1444,11 @@ namespace PolicyPlusPlus
                 if (showBaselineOnEmpty)
                     // Only open baseline suggestions if the search box is already focused.
                     ShowBaselineSuggestions(onlyIfFocused: true);
+                sw.Stop();
+                Log.Debug(
+                    "MainSearch",
+                    $"ImmediateFilterPerf count={_visiblePolicies?.Count} totalMs={sw.ElapsedMilliseconds}"
+                );
             }
             catch { }
         }

@@ -40,13 +40,17 @@ namespace PolicyPlusPlus.Logging
         }
     }
 
-    public static class Log
+    public static partial class Log
     {
         // Replaceable at runtime (e.g., unit tests or future file logger). Non-null.
         public static ILogSink Sink { get; set; } = new DebugLogSink();
 
-        // Minimum level to emit (default Info to reduce noise in production)
+        // Minimum level to emit. Debug build: Debug (richer diagnostics). Release: Info.
+#if DEBUG
+        public static DebugLevel MinLevel { get; set; } = DebugLevel.Debug;
+#else
         public static DebugLevel MinLevel { get; set; } = DebugLevel.Info;
+#endif
 
         public static bool IsEnabled(DebugLevel level) => level >= MinLevel;
 
@@ -145,5 +149,62 @@ namespace PolicyPlusPlus.Logging
 
         // Correlation helpers
         public static string NewCorrelationId() => Guid.NewGuid().ToString("N");
+
+        // Parses command line style tokens to set log level. Accepts:
+        //   --log-trace | --log-debug | --log-info | --log-warn | --log-error
+        //   --log-level=<trace|debug|info|warn|error>
+        // First matching token wins. Ignores errors.
+        public static void ConfigureFromArgs(IEnumerable<string> args)
+        {
+            if (args == null)
+                return;
+            try
+            {
+                foreach (var raw in args)
+                {
+                    if (string.IsNullOrWhiteSpace(raw))
+                        continue;
+                    var a = raw.Trim();
+                    if (!a.StartsWith("--", StringComparison.Ordinal))
+                        continue;
+                    if (TryMapFlag(a))
+                        break; // first explicit level wins
+                }
+            }
+            catch { }
+        }
+
+        private static bool TryMapFlag(string flag)
+        {
+            static bool Set(DebugLevel level)
+            {
+                MinLevel = level;
+                return true;
+            }
+            if (flag.Equals("--log-trace", StringComparison.OrdinalIgnoreCase))
+                return Set(DebugLevel.Trace);
+            if (flag.Equals("--log-debug", StringComparison.OrdinalIgnoreCase))
+                return Set(DebugLevel.Debug);
+            if (flag.Equals("--log-info", StringComparison.OrdinalIgnoreCase))
+                return Set(DebugLevel.Info);
+            if (flag.Equals("--log-warn", StringComparison.OrdinalIgnoreCase))
+                return Set(DebugLevel.Warn);
+            if (flag.Equals("--log-error", StringComparison.OrdinalIgnoreCase))
+                return Set(DebugLevel.Error);
+            if (flag.StartsWith("--log-level=", StringComparison.OrdinalIgnoreCase))
+            {
+                var val = flag.Substring("--log-level=".Length).Trim();
+                return val.ToLowerInvariant() switch
+                {
+                    "trace" => Set(DebugLevel.Trace),
+                    "debug" => Set(DebugLevel.Debug),
+                    "info" => Set(DebugLevel.Info),
+                    "warn" or "warning" => Set(DebugLevel.Warn),
+                    "error" => Set(DebugLevel.Error),
+                    _ => false,
+                };
+            }
+            return false;
+        }
     }
 }
