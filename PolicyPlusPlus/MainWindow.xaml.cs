@@ -2246,6 +2246,26 @@ namespace PolicyPlusPlus
                             catch { }
                         }
                         ApplySecondLanguageVisibilityToViewMenu();
+                        // Auto-show second name column if user had preference saved and second language just got enabled.
+                        try
+                        {
+                            if (secondEnabledChanged && !beforeSecondEnabled && afterSecondEnabled)
+                            {
+                                var colsPref = updated.Columns;
+                                bool wantSecond = colsPref?.ShowSecondName == true;
+                                if (
+                                    wantSecond
+                                    && ColSecondName != null
+                                    && ViewSecondNameToggle != null
+                                )
+                                {
+                                    ViewSecondNameToggle.IsChecked = true;
+                                    ColSecondName.Visibility = Visibility.Visible;
+                                    SaveColumnPrefs(); // persist visibility change
+                                }
+                            }
+                        }
+                        catch { }
                         UpdateColumnVisibilityFromFlags();
                     }
                 }

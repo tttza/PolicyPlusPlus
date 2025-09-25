@@ -128,8 +128,10 @@ namespace PolicyPlusPlus
                 if (RootGrid?.FindName("ViewBookmarkToggle") is ToggleMenuFlyoutItem vbt)
                     vbt.IsChecked = cols.ShowBookmark;
                 if (ViewSecondNameToggle != null)
-                    ViewSecondNameToggle.IsChecked =
-                        cols.ShowSecondName && (s.SecondLanguageEnabled ?? false);
+                {
+                    // Preserve user preference even if second language currently disabled so it can auto-show once enabled.
+                    ViewSecondNameToggle.IsChecked = cols.ShowSecondName;
+                }
                 ApplyColumnVisibilityFromToggles();
             }
             catch { }
@@ -393,8 +395,12 @@ namespace PolicyPlusPlus
                     ViewSecondNameToggle.Visibility = enabled
                         ? Visibility.Visible
                         : Visibility.Collapsed;
-                    ViewSecondNameToggle.IsChecked =
-                        enabled && (ColSecondName?.Visibility == Visibility.Visible);
+                    if (enabled)
+                    {
+                        // When enabled sync checkbox with actual visibility; when disabled retain prior preference.
+                        ViewSecondNameToggle.IsChecked =
+                            ColSecondName?.Visibility == Visibility.Visible;
+                    }
                 }
             }
             catch { }
@@ -633,8 +639,7 @@ namespace PolicyPlusPlus
                     ViewSecondNameToggle.Text = enabled
                         ? $"2nd Language Name ({lang})"
                         : "2nd Language Name";
-                    if (!enabled)
-                        ViewSecondNameToggle.IsChecked = false;
+                    // Do not clear IsChecked when disabled; keep stored preference for future enable.
                 }
                 if (ColSecondName != null)
                 {
