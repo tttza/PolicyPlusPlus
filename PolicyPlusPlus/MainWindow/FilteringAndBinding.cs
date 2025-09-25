@@ -979,7 +979,8 @@ namespace PolicyPlusPlus
         {
             // Normalize to empty string to satisfy nullable analysis.
             q = q ?? string.Empty;
-            var swTotal = System.Diagnostics.Stopwatch.StartNew();
+            // Start overall stopwatch only for actual compute/bind portion (exclude debounce delay)
+            System.Diagnostics.Stopwatch? swTotal = null;
             Log.Trace("MainSearch", $"RunAsyncSearchAndBind start qLen={q.Length}");
             _searchDebounceCts?.Cancel();
             _searchDebounceCts = new System.Threading.CancellationTokenSource();
@@ -1012,6 +1013,8 @@ namespace PolicyPlusPlus
                 {
                     return;
                 }
+                // Begin total timing after debounce delay so reported totalMs reflects only work.
+                swTotal = System.Diagnostics.Stopwatch.StartNew();
                 if (token.IsCancellationRequested)
                 {
                     Finish();
@@ -1137,6 +1140,10 @@ namespace PolicyPlusPlus
 
                     if (cacheMatches.Count > 0)
                     {
+                        Log.Debug(
+                            "MainSearch",
+                            $"cache-hit qLen={q.Length} hitCount={cacheMatches.Count}"
+                        );
                         matches = cacheMatches;
                         suggestions =
                             cacheSuggestions.Count > 0
@@ -1145,6 +1152,7 @@ namespace PolicyPlusPlus
                     }
                     else
                     {
+                        Log.Debug("MainSearch", $"cache-miss qLen={q.Length}");
                         // Fallback to in-memory search (AND mode always comes here when multi-token)
                         matches = MatchPolicies(q, baseSeq, out var allowed2);
                         suggestions = BuildSuggestions(q, allowed2);
@@ -1220,9 +1228,12 @@ namespace PolicyPlusPlus
                     finally
                     {
                         swBind.Stop();
+                        long totalMs =
+                            swTotal?.ElapsedMilliseconds
+                            ?? (swCompute.ElapsedMilliseconds + swBind.ElapsedMilliseconds);
                         Log.Debug(
                             "MainSearch",
-                            $"SearchPerf qLen={q.Length} computeMs={swCompute.ElapsedMilliseconds} bindMs={swBind.ElapsedMilliseconds} totalMs={swTotal.ElapsedMilliseconds}"
+                            $"SearchPerf qLen={q.Length} computeMs={swCompute.ElapsedMilliseconds} bindMs={swBind.ElapsedMilliseconds} totalMs={totalMs}"
                         );
                         Finish();
                     }
@@ -1240,11 +1251,14 @@ namespace PolicyPlusPlus
                             spinF.IsActive = false;
                             spinF.Visibility = Visibility.Collapsed;
                         }
-                        swTotal.Stop();
-                        Log.Trace(
-                            "MainSearch",
-                            $"RunAsyncSearchAndBind finish totalMs={swTotal.ElapsedMilliseconds}"
-                        );
+                        if (swTotal != null)
+                        {
+                            swTotal.Stop();
+                            Log.Trace(
+                                "MainSearch",
+                                $"RunAsyncSearchAndBind finish totalMs={swTotal.ElapsedMilliseconds}"
+                            );
+                        }
                     }
                     catch { }
                 });
