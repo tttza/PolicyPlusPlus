@@ -60,6 +60,7 @@ namespace PolicyPlusPlus.Logging
                 return;
             try
             {
+                BufferAppend(level, area, msg, ex);
                 Sink.Log(level, area, msg, ex);
             }
             catch
@@ -145,6 +146,121 @@ namespace PolicyPlusPlus.Logging
             if (s.Length <= max)
                 return s;
             return s.Substring(0, max) + "…";
+        }
+
+        // Recent log buffer (ring) to allow Log Viewer to show entries prior to opening.
+        private const int BufferCapacity = 2000; // tune if needed
+        private static readonly object _bufferLock = new();
+        private static readonly LogEntry[] _buffer = new LogEntry[BufferCapacity];
+        private static long _nextSeq = 1; // monotonically increasing sequence id
+        private static int _count; // number of valid entries
+        private static int _head; // index of oldest entry
+
+        private readonly struct LogEntry
+        {
+            public readonly long Seq;
+            public readonly DateTime Time;
+            public readonly DebugLevel Level;
+            public readonly string Area;
+            public readonly string Message;
+            public readonly string? ExType;
+            public readonly string? ExMsg;
+
+            public LogEntry(
+                long seq,
+                DateTime time,
+                DebugLevel level,
+                string area,
+                string message,
+                Exception? ex
+            )
+            {
+                Seq = seq;
+                Time = time;
+                Level = level;
+                Area = area;
+                Message = message;
+                ExType = ex?.GetType().Name;
+                ExMsg = ex?.Message;
+            }
+
+            public string Format()
+            {
+                var ts = Time.ToString("HH:mm:ss.fff");
+                if (ExType != null)
+                    return $"{ts} {Level.ToString().PadRight(5)} {Area} | {Message} :: {ExType}:{ExMsg}";
+                return $"{ts} {Level.ToString().PadRight(5)} {Area} | {Message}";
+            }
+        }
+
+        private static void BufferAppend(DebugLevel level, string area, string msg, Exception? ex)
+        {
+            try
+            {
+                var now = DateTime.Now;
+                lock (_bufferLock)
+                {
+                    var seq = _nextSeq++;
+                    int idx;
+                    if (_count < BufferCapacity)
+                    {
+                        idx = (_head + _count) % BufferCapacity;
+                        _count++;
+                    }
+                    else
+                    {
+                        idx = _head;
+                        _head = (_head + 1) % BufferCapacity;
+                    }
+                    _buffer[idx] = new LogEntry(seq, now, level, area, msg, ex);
+                }
+            }
+            catch { }
+        }
+
+        internal static (long lastSeq, string[] lines) BufferSnapshotAll()
+        {
+            lock (_bufferLock)
+            {
+                if (_count == 0)
+                    return (0, Array.Empty<string>());
+                var arr = new string[_count];
+                int idx = _head;
+                long maxSeq = 0;
+                for (int i = 0; i < _count; i++)
+                {
+                    var e = _buffer[idx];
+                    arr[i] = e.Format();
+                    if (e.Seq > maxSeq)
+                        maxSeq = e.Seq;
+                    idx = (idx + 1) % BufferCapacity;
+                }
+                return (maxSeq, arr);
+            }
+        }
+
+        internal static (long lastSeq, string[] lines) BufferReadSince(long lastSeq)
+        {
+            lock (_bufferLock)
+            {
+                if (_count == 0)
+                    return (lastSeq, Array.Empty<string>());
+                var list = new List<string>(Math.Min(_count, 256));
+                int idx = _head;
+                long maxSeq = lastSeq;
+                for (int i = 0; i < _count; i++)
+                {
+                    var e = _buffer[idx];
+                    if (e.Seq > lastSeq)
+                    {
+                        list.Add(e.Format());
+                        if (e.Seq > maxSeq)
+                            maxSeq = e.Seq;
+                    }
+                    idx = (idx + 1) % BufferCapacity;
+                }
+                return (maxSeq, list.ToArray());
+            }
         }
 
         // Correlation helpers

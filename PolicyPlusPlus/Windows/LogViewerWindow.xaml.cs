@@ -1,4 +1,5 @@
 using System;
+#nullable enable
 using System.Collections.Concurrent;
 using System.Text;
 using Microsoft.UI.Xaml;
@@ -16,13 +17,30 @@ namespace PolicyPlusPlus.Windows
         private bool _paused;
         private DebugLevel _uiLevel = DebugLevel.Info;
         private ILogSink _previous = Log.Sink; // capture at creation
+        private long _lastSeq; // last sequence id from buffer we have displayed
+        private string[]? _preloadedLines; // snapshot lines captured at construction
+
+        // Throttling parameters: avoid UI saturation during bursts
+        private const int MaxLinesPerFlush = 400; // cap per UI update
+        private static readonly TimeSpan MinFlushInterval = TimeSpan.FromMilliseconds(120); // min spacing
+        private DateTime _lastFlushTime = DateTime.MinValue;
 
         public LogViewerWindow()
         {
             InitializeComponent();
             Title = "Logs";
             ChildWindowCommon.Initialize(this, 760, 540, ApplyTheme);
-            // Chain sinks so original still receives messages
+
+            // Capture snapshot BEFORE chaining sink so we don't duplicate early messages
+            try
+            {
+                var snap = Log.BufferSnapshotAll();
+                _lastSeq = snap.lastSeq;
+                _preloadedLines = snap.lines;
+            }
+            catch { }
+
+            // Chain sinks so original still receives messages (only new lines after snapshot)
             Log.Sink = new ChainedSink(this, _previous);
             Closed += (_, __) =>
             {
@@ -38,6 +56,16 @@ namespace PolicyPlusPlus.Windows
                 {
                     try
                     {
+                        // Apply preloaded snapshot.
+                        if (_preloadedLines != null && _preloadedLines.Length > 0 && LogBox != null)
+                        {
+                            LogBox.Text =
+                                string.Join(Environment.NewLine, _preloadedLines)
+                                + Environment.NewLine;
+                            LogBox.SelectionStart = LogBox.Text.Length;
+                            LogBox.SelectionLength = 0;
+                            _preloadedLines = null; // release
+                        }
                         UpdateStatus();
                         if (LevelCombo != null && LevelCombo.SelectedIndex < 0)
                             LevelCombo.SelectedIndex = 2;
@@ -92,23 +120,14 @@ namespace PolicyPlusPlus.Windows
         {
             if (level < _uiLevel || _paused)
                 return;
-            _pending.Enqueue(FormatLine(level, area, message, ex));
+            var delta = Log.BufferReadSince(_lastSeq);
+            if (delta.lines.Length > 0)
+            {
+                _lastSeq = delta.lastSeq;
+                foreach (var l in delta.lines)
+                    _pending.Enqueue(l);
+            }
             ScheduleFlush();
-        }
-
-        private static string FormatLine(DebugLevel l, string a, string m, Exception? ex)
-        {
-            var sb = new StringBuilder();
-            sb.Append(DateTime.Now.ToString("HH:mm:ss.fff"))
-                .Append(' ')
-                .Append(l.ToString().PadRight(5))
-                .Append(' ')
-                .Append(a)
-                .Append(" | ")
-                .Append(m);
-            if (ex != null)
-                sb.Append(" :: ").Append(ex.GetType().Name).Append(':').Append(ex.Message);
-            return sb.ToString();
         }
 
         private void ScheduleFlush()
@@ -121,9 +140,36 @@ namespace PolicyPlusPlus.Windows
                 _flushScheduled = false;
                 if (_paused || _pending.IsEmpty)
                     return;
+                // Enforce minimum interval
+                var now = DateTime.UtcNow;
+                if (now - _lastFlushTime < MinFlushInterval)
+                {
+                    // Requeue a later flush (single)
+                    if (!_flushScheduled)
+                    {
+                        _flushScheduled = true;
+                        var delay = MinFlushInterval - (now - _lastFlushTime);
+                        _ = DispatcherQueue.TryEnqueue(async () =>
+                        {
+                            try
+                            {
+                                if (delay > TimeSpan.Zero)
+                                    await System.Threading.Tasks.Task.Delay(delay);
+                            }
+                            catch { }
+                            _flushScheduled = false;
+                            ScheduleFlush();
+                        });
+                    }
+                    return;
+                }
                 var sb = new StringBuilder();
-                while (_pending.TryDequeue(out var line))
+                int taken = 0;
+                while (taken < MaxLinesPerFlush && _pending.TryDequeue(out var line))
+                {
                     sb.AppendLine(line);
+                    taken++;
+                }
                 try
                 {
                     if (LogBox != null)
@@ -134,6 +180,12 @@ namespace PolicyPlusPlus.Windows
                     }
                 }
                 catch { }
+                _lastFlushTime = DateTime.UtcNow;
+                // If backlog remains, schedule another (respect interval)
+                if (!_pending.IsEmpty)
+                {
+                    ScheduleFlush();
+                }
             });
         }
 

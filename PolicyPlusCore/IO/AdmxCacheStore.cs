@@ -177,4 +177,94 @@ internal sealed class AdmxCacheStore
     }
 
     public SqliteConnection OpenConnection() => new SqliteConnection(ConnectionString);
+
+    public async Task FtsOptimizeAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            using var conn = new SqliteConnection(ConnectionString);
+            await conn.OpenAsync(ct).ConfigureAwait(false);
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "INSERT INTO PolicyIndex(PolicyIndex) VALUES('optimize');";
+            await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+        catch { }
+    }
+
+    // Attempts to reclaim free pages. When forceFullVacuum=true always runs VACUUM; otherwise only if freelist ratio exceeds threshold.
+    public async Task CompactAsync(
+        bool forceFullVacuum = false,
+        double freelistThresholdRatio = 0.25,
+        CancellationToken ct = default
+    )
+    {
+        try
+        {
+            using var conn = new SqliteConnection(ConnectionString);
+            await conn.OpenAsync(ct).ConfigureAwait(false);
+            long pageCount = 0;
+            long freeList = 0;
+            try
+            {
+                using (var q = conn.CreateCommand())
+                {
+                    q.CommandText = "PRAGMA page_count;";
+                    var o = await q.ExecuteScalarAsync(ct).ConfigureAwait(false);
+                    if (o != null && o != DBNull.Value)
+                        pageCount = Convert.ToInt64(
+                            o,
+                            System.Globalization.CultureInfo.InvariantCulture
+                        );
+                }
+                using (var q = conn.CreateCommand())
+                {
+                    q.CommandText = "PRAGMA freelist_count;";
+                    var o = await q.ExecuteScalarAsync(ct).ConfigureAwait(false);
+                    if (o != null && o != DBNull.Value)
+                        freeList = Convert.ToInt64(
+                            o,
+                            System.Globalization.CultureInfo.InvariantCulture
+                        );
+                }
+            }
+            catch { }
+
+            bool shouldVacuum = forceFullVacuum;
+            if (!shouldVacuum && pageCount > 0 && freeList > 0)
+            {
+                var ratio = (double)freeList / pageCount;
+                if (ratio >= freelistThresholdRatio)
+                    shouldVacuum = true;
+            }
+
+            if (shouldVacuum)
+            {
+                try
+                {
+                    using var ck = conn.CreateCommand();
+                    ck.CommandText = "PRAGMA wal_checkpoint(TRUNCATE);";
+                    await ck.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                }
+                catch { }
+                try
+                {
+                    using var vac = conn.CreateCommand();
+                    vac.CommandText = "VACUUM;";
+                    await vac.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                }
+                catch { }
+            }
+            else
+            {
+                try
+                {
+                    using var opt = conn.CreateCommand();
+                    opt.CommandText = "PRAGMA optimize;";
+                    await opt.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                }
+                catch { }
+            }
+        }
+        catch { }
+    }
 }

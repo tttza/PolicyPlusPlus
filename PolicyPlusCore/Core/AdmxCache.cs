@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -143,29 +144,63 @@ public sealed class AdmxCache : IAdmxCache
         int i = 0;
         foreach (var cul in cultureList.Select(NormalizeCultureName))
         {
-            var bundle = new AdmxBundle();
-            try
+            bool allowGlobalRebuild = needGlobalRebuild && (i == 0);
+
+            // Fast path: if not global rebuild and source signature unchanged, skip this culture.
+            bool skipCulture = false;
+            if (!allowGlobalRebuild)
             {
-                foreach (
-                    var admx in Directory.EnumerateFiles(
-                        root,
-                        "*.admx",
-                        SearchOption.TopDirectoryOnly
-                    )
-                )
+                try
                 {
-                    _ = bundle.LoadFile(admx, cul);
+                    string sigKey = "sig_" + cul;
+                    var prior = await GetMetaAsync(sigKey, ct).ConfigureAwait(false);
+                    var currentSig = await ComputeSourceSignatureAsync(root, cul, ct)
+                        .ConfigureAwait(false);
+                    if (
+                        !string.IsNullOrEmpty(prior)
+                        && string.Equals(prior, currentSig, StringComparison.Ordinal)
+                    )
+                    {
+                        skipCulture = true;
+                    }
                 }
-            }
-            catch
-            {
-                // Ignore malformed files during scan; individual failures are non-fatal for the cache build.
+                catch { }
             }
 
-            bool allowGlobalRebuild = needGlobalRebuild && (i == 0);
-            if (allowGlobalRebuild)
-                didGlobalRebuild = true;
-            await DiffAndApplyAsync(bundle, cul, allowGlobalRebuild, ct).ConfigureAwait(false);
+            AdmxBundle? bundle = null;
+            if (!skipCulture)
+            {
+                bundle = new AdmxBundle();
+                try
+                {
+                    foreach (
+                        var admx in Directory.EnumerateFiles(
+                            root,
+                            "*.admx",
+                            SearchOption.TopDirectoryOnly
+                        )
+                    )
+                    {
+                        _ = bundle.LoadFile(admx, cul);
+                    }
+                }
+                catch { }
+            }
+
+            if (!skipCulture)
+            {
+                if (allowGlobalRebuild)
+                    didGlobalRebuild = true;
+                await DiffAndApplyAsync(bundle!, cul, allowGlobalRebuild, ct).ConfigureAwait(false);
+                // Persist signature after successful apply.
+                try
+                {
+                    var sig = await ComputeSourceSignatureAsync(root, cul, ct)
+                        .ConfigureAwait(false);
+                    await SetMetaAsync("sig_" + cul, sig, ct).ConfigureAwait(false);
+                }
+                catch { }
+            }
             i++;
         }
 
@@ -193,6 +228,33 @@ public sealed class AdmxCache : IAdmxCache
                 await ck.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
             catch { }
+            // Lightweight FTS optimize; ignore errors if table absent or busy.
+            try
+            {
+                await _store.FtsOptimizeAsync(ct).ConfigureAwait(false);
+            }
+            catch { }
+        }
+        catch { }
+
+        // Conditional compaction: run occasionally to reclaim space if fragmentation high.
+        try
+        {
+            try
+            {
+                var dbPathField = typeof(AdmxCache)
+                    .Assembly.GetType("PolicyPlusCore.IO.AdmxCacheStore")
+                    ?.GetField(
+                        "_dbPath",
+                        System.Reflection.BindingFlags.NonPublic
+                            | System.Reflection.BindingFlags.Instance
+                    );
+                // Reflection fallback avoided if not found; compaction still attempts heuristic based only on freelist ratio inside CompactAsync.
+            }
+            catch { }
+            await _store
+                .CompactAsync(forceFullVacuum: false, freelistThresholdRatio: 0.30, ct)
+                .ConfigureAwait(false);
         }
         catch { }
     }
@@ -510,6 +572,96 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         cmd.Parameters.AddWithValue("@k", key);
         cmd.Parameters.AddWithValue("@v", value);
         await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    private async Task<string?> GetMetaAsync(string key, CancellationToken ct)
+    {
+        try
+        {
+            using var conn = _store.OpenConnection();
+            await conn.OpenAsync(ct).ConfigureAwait(false);
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT value FROM Meta WHERE key=@k LIMIT 1";
+            cmd.Parameters.AddWithValue("@k", key);
+            var obj = await cmd.ExecuteScalarAsync(ct).ConfigureAwait(false);
+            return obj as string;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    // Builds a stable signature of relevant source inputs for a culture (ADMX + culture-specific ADML).
+    private static Task<string> ComputeSourceSignatureAsync(
+        string root,
+        string culture,
+        CancellationToken ct
+    )
+    {
+        // Accumulate: file relative path + length + lastWriteUtcTicks
+        var sb = new StringBuilder(4096);
+        try
+        {
+            foreach (
+                var f in Directory.EnumerateFiles(root, "*.admx", SearchOption.TopDirectoryOnly)
+            )
+            {
+                ct.ThrowIfCancellationRequested();
+                try
+                {
+                    var fi = new FileInfo(f);
+                    sb.Append(Path.GetFileName(f))
+                        .Append('|')
+                        .Append(fi.Length)
+                        .Append('|')
+                        .Append(fi.LastWriteTimeUtc.Ticks)
+                        .Append('\n');
+                }
+                catch { }
+            }
+            var admlDir = Path.Combine(root, culture);
+            if (Directory.Exists(admlDir))
+            {
+                foreach (
+                    var f in Directory.EnumerateFiles(
+                        admlDir,
+                        "*.adml",
+                        SearchOption.TopDirectoryOnly
+                    )
+                )
+                {
+                    ct.ThrowIfCancellationRequested();
+                    try
+                    {
+                        var fi = new FileInfo(f);
+                        sb.Append(culture)
+                            .Append('/')
+                            .Append(Path.GetFileName(f))
+                            .Append('|')
+                            .Append(fi.Length)
+                            .Append('|')
+                            .Append(fi.LastWriteTimeUtc.Ticks)
+                            .Append('\n');
+                    }
+                    catch { }
+                }
+            }
+        }
+        catch { }
+        var data = Encoding.UTF8.GetBytes(sb.ToString());
+        string sig;
+        try
+        {
+            using var sha = SHA256.Create();
+            var hash = sha.ComputeHash(data);
+            sig = Convert.ToHexString(hash);
+        }
+        catch
+        {
+            sig = Convert.ToBase64String(data); // Fallback (larger but rare)
+        }
+        return Task.FromResult(sig);
     }
 
     private async Task<IReadOnlyList<string>> GetExistingCulturesAsync(CancellationToken ct)
