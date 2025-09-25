@@ -54,8 +54,7 @@ namespace PolicyPlusPlus
         {
             if (_bundle is null)
                 return;
-            // If running on warm-only bundle, await full swap before opening editor to ensure RawPolicy/presentation are available
-            await EnsureFullBundleAsync();
+            // Bundle is fully loaded by initial startup.
             var ctx = PolicySourceAccessor.Acquire();
 
             var displayName = representative.DisplayName;
@@ -117,7 +116,7 @@ namespace PolicyPlusPlus
         {
             if (_bundle == null)
                 return;
-            await EnsureFullBundleAsync();
+            // Bundle already loaded at this point.
             var ctx = PolicySourceAccessor.Acquire();
             PolicyPlusPolicy? representative = _allPolicies.FirstOrDefault(p =>
                 p.UniqueID == policyId
@@ -139,7 +138,7 @@ namespace PolicyPlusPlus
         {
             if (_bundle == null)
                 return;
-            await EnsureFullBundleAsync();
+            // Bundle already loaded.
             var ctx = PolicySourceAccessor.Acquire();
 
             if (!_bundle.Policies.TryGetValue(policyId, out var policy))

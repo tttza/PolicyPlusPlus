@@ -237,15 +237,6 @@ namespace PolicyPlusPlus.Windows
         {
             if (_bundle == null)
                 return;
-            try
-            {
-                // If main window is warming, await full bundle before opening editor
-                if (App.Window is MainWindow mw)
-                {
-                    var _ = mw.EnsureFullBundleAsync();
-                }
-            }
-            catch { }
             if (_editWindows.TryGetValue(policyId, out var existing))
             {
                 try

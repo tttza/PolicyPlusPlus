@@ -152,12 +152,6 @@ namespace PolicyPlusPlus
                         return;
                 }
                 catch { }
-                var path = _currentAdmxPath;
-                var lang = _currentLanguage;
-                var fp =
-                    (!string.IsNullOrEmpty(path) && !string.IsNullOrEmpty(lang))
-                        ? CacheService.ComputeAdmxFingerprint(path!, lang!)
-                        : string.Empty;
                 var policies = _allPolicies.ToList();
                 _ = Task.Run(() =>
                 {
