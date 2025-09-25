@@ -143,7 +143,7 @@ namespace PolicyPlusPlus
                 catch { }
                 Log.Debug(
                     "MainSearch",
-                    $"BaselineSuggestions show={show} count={(list?.Count ?? 0)}"
+                    $"BaselineSuggestions show={show} count={(list?.Count ?? 0)} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
                 );
             }
             catch (Exception ex)
@@ -251,7 +251,7 @@ namespace PolicyPlusPlus
                 scope.Complete();
                 Log.Info(
                     "MainSearch",
-                    $"SearchIndex rebuilt count={_searchIndex.Count} secondLang={(useSecond ? secondLang : "(none)")}"
+                    $"SearchIndex rebuilt count={_searchIndex.Count} secondLang={(useSecond ? secondLang : "(none)")} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
                 );
             }
             catch (Exception ex)
@@ -289,7 +289,10 @@ namespace PolicyPlusPlus
                 _navTyping = false;
                 if (SearchBox != null)
                     SearchBox.Text = string.Empty;
-                Log.Debug("MainSearch", "ClearButton tapped -> empty query");
+                Log.Debug(
+                    "MainSearch",
+                    $"ClearButton tapped -> empty query cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                );
                 UpdateSearchClearButtonVisibility();
                 RunAsyncFilterAndBind();
                 UpdateNavButtons();
@@ -312,7 +315,7 @@ namespace PolicyPlusPlus
                         : Visibility.Collapsed;
                 Log.Trace(
                     "MainSearch",
-                    $"ClearBtn visibility={(btn != null ? btn.Visibility.ToString() : "n/a")}"
+                    $"ClearBtn visibility={(btn != null ? btn.Visibility.ToString() : "n/a")} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
                 );
             }
             catch (Exception ex)
@@ -353,7 +356,10 @@ namespace PolicyPlusPlus
                     // On focus, always show baseline suggestions immediately.
                     ShowBaselineSuggestions(onlyIfFocused: false);
                     // ShowBaselineSuggestions already opened/closed based on count
-                    Log.Trace("MainSearch", "GotFocus baseline suggestions attempted");
+                    Log.Trace(
+                        "MainSearch",
+                        $"GotFocus baseline suggestions attempted cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                    );
                 }
             }
             catch (Exception ex)
@@ -368,7 +374,10 @@ namespace PolicyPlusPlus
             {
                 if (SearchBox != null)
                     SearchBox.IsSuggestionListOpen = false;
-                Log.Trace("MainSearch", "LostFocus suggestions closed");
+                Log.Trace(
+                    "MainSearch",
+                    $"LostFocus suggestions closed cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                );
             }
             catch (Exception ex)
             {
@@ -396,13 +405,19 @@ namespace PolicyPlusPlus
                     {
                         e.TryCancel();
                         _suppressInitialSearchBoxFocus = false; // one-shot
-                        Log.Debug("MainSearch", "Suppress initial programmatic focus");
+                        Log.Debug(
+                            "MainSearch",
+                            $"Suppress initial programmatic focus cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                        );
                         return;
                     }
 
                     // User explicitly focusing: allow and turn off suppression.
                     _suppressInitialSearchBoxFocus = false;
-                    Log.Trace("MainSearch", "User initiated first focus allowed");
+                    Log.Trace(
+                        "MainSearch",
+                        $"User initiated first focus allowed cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                    );
                 }
             }
             catch (Exception ex)
@@ -475,7 +490,10 @@ namespace PolicyPlusPlus
                 // If arrow-key navigating suggestions, avoid recomputing suggestions or committing
                 if (SearchBox != null && SearchBox.IsSuggestionListOpen && _navigatingSuggestions)
                 {
-                    Log.Trace("MainSearch", "TextChanged ignored (navigating suggestions)");
+                    Log.Trace(
+                        "MainSearch",
+                        $"TextChanged ignored (navigating suggestions) cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                    );
                     return;
                 }
                 // No startup suppression: baseline suggestion behavior follows typing normally.
@@ -508,14 +526,20 @@ namespace PolicyPlusPlus
                         UpdateNavButtons();
                     }
                     catch { }
-                    Log.Debug("MainSearch", "TextChanged empty -> filter only");
+                    Log.Debug(
+                        "MainSearch",
+                        $"TextChanged empty -> filter only cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                    );
                     return;
                 }
                 // Commit only when: user typed, or when a suggestion has been explicitly chosen
                 if (reason is AutoSuggestionBoxTextChangeReason.SuggestionChosen)
                 {
                     _navTyping = false;
-                    Log.Debug("MainSearch", $"TextChanged commit suggestion q='{q}'");
+                    Log.Debug(
+                        "MainSearch",
+                        $"TextChanged commit suggestion q='{q}' cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                    );
                     RunAsyncSearchAndBind(q);
                     MaybePushCurrentState();
                     try
@@ -528,7 +552,10 @@ namespace PolicyPlusPlus
                 else if (reason is AutoSuggestionBoxTextChangeReason.UserInput)
                 {
                     _navTyping = true;
-                    Log.Trace("MainSearch", $"TextChanged user input qLen={q.Length}");
+                    Log.Trace(
+                        "MainSearch",
+                        $"TextChanged user input qLen={q.Length} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                    );
                     RunAsyncSearchAndBind(q);
                 }
             }
@@ -551,7 +578,10 @@ namespace PolicyPlusPlus
                 )
                 {
                     _navigatingSuggestions = true;
-                    Log.Trace("MainSearch", $"KeyDown nav key={e.Key}");
+                    Log.Trace(
+                        "MainSearch",
+                        $"KeyDown nav key={e.Key} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                    );
                 }
 
                 // When Tab is pressed in the search box, move focus to the policy list
@@ -602,7 +632,10 @@ namespace PolicyPlusPlus
                         }
 
                         e.Handled = true;
-                        Log.Debug("MainSearch", "Tab moves focus to list");
+                        Log.Debug(
+                            "MainSearch",
+                            $"Tab moves focus to list cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                        );
                         return;
                     }
                 }
@@ -626,7 +659,10 @@ namespace PolicyPlusPlus
                 )
                 {
                     _navigatingSuggestions = false;
-                    Log.Trace("MainSearch", $"KeyUp nav key={e.Key}");
+                    Log.Trace(
+                        "MainSearch",
+                        $"KeyUp nav key={e.Key} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                    );
                 }
             }
             catch (Exception ex)
@@ -667,7 +703,10 @@ namespace PolicyPlusPlus
                             SearchBox.Text = commitText;
                     }
                     catch { }
-                    Log.Info("MainSearch", $"QuerySubmitted commit qLen={commitText.Length}");
+                    Log.Info(
+                        "MainSearch",
+                        $"QuerySubmitted commit qLen={commitText.Length} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                    );
                     RunAsyncSearchAndBind(commitText);
                     MaybePushCurrentState();
                     try
@@ -680,7 +719,10 @@ namespace PolicyPlusPlus
                 else
                 {
                     // If Enter pressed on empty query while suggestions are open, do nothing (prevent accidental commit)
-                    Log.Trace("MainSearch", "QuerySubmitted empty ignored");
+                    Log.Trace(
+                        "MainSearch",
+                        $"QuerySubmitted empty ignored cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                    );
                 }
             }
             catch (Exception ex)

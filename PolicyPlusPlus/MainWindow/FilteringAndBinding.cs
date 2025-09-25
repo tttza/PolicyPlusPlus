@@ -981,7 +981,10 @@ namespace PolicyPlusPlus
             q = q ?? string.Empty;
             // Start overall stopwatch only for actual compute/bind portion (exclude debounce delay)
             System.Diagnostics.Stopwatch? swTotal = null;
-            Log.Trace("MainSearch", $"RunAsyncSearchAndBind start qLen={q.Length}");
+            Log.Trace(
+                "MainSearch",
+                $"RunAsyncSearchAndBind start qLen={q.Length} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+            );
             _searchDebounceCts?.Cancel();
             _searchDebounceCts = new System.Threading.CancellationTokenSource();
             var token = _searchDebounceCts.Token;
@@ -1264,7 +1267,7 @@ namespace PolicyPlusPlus
                             swTotal.Stop();
                             Log.Trace(
                                 "MainSearch",
-                                $"RunAsyncSearchAndBind finish totalMs={swTotal.ElapsedMilliseconds}"
+                                $"RunAsyncSearchAndBind finish totalMs={swTotal.ElapsedMilliseconds} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
                             );
                         }
                     }
@@ -1276,7 +1279,10 @@ namespace PolicyPlusPlus
         private void RunAsyncFilterAndBind(bool showBaselineOnEmpty = true)
         {
             var swTotal = System.Diagnostics.Stopwatch.StartNew();
-            Log.Trace("MainSearch", $"RunAsyncFilterAndBind start baseline={showBaselineOnEmpty}");
+            Log.Trace(
+                "MainSearch",
+                $"RunAsyncFilterAndBind start baseline={showBaselineOnEmpty} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+            );
             _searchDebounceCts?.Cancel();
             _searchDebounceCts = new System.Threading.CancellationTokenSource();
             var token = _searchDebounceCts.Token;
@@ -1440,7 +1446,7 @@ namespace PolicyPlusPlus
                         swTotal.Stop();
                         Log.Trace(
                             "MainSearch",
-                            $"RunAsyncFilterAndBind finish totalMs={swTotal.ElapsedMilliseconds}"
+                            $"RunAsyncFilterAndBind finish totalMs={swTotal.ElapsedMilliseconds} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
                         );
                     }
                     catch { }
@@ -1455,7 +1461,7 @@ namespace PolicyPlusPlus
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 Log.Trace(
                     "MainSearch",
-                    $"RunImmediateFilterAndBind start baseline={showBaselineOnEmpty}"
+                    $"RunImmediateFilterAndBind start baseline={showBaselineOnEmpty} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
                 );
                 var decision = EvaluateDecision();
                 var ctx = PolicySourceAccessor.Acquire();
@@ -1469,7 +1475,7 @@ namespace PolicyPlusPlus
                 sw.Stop();
                 Log.Debug(
                     "MainSearch",
-                    $"ImmediateFilterPerf count={_visiblePolicies?.Count} totalMs={sw.ElapsedMilliseconds}"
+                    $"ImmediateFilterPerf count={_visiblePolicies?.Count} totalMs={sw.ElapsedMilliseconds} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
                 );
             }
             catch { }
