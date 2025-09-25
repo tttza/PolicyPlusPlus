@@ -1071,6 +1071,8 @@ namespace PolicyPlusPlus
                             tryLangs.Add("en-US");
 
                         IReadOnlyList<PolicyPlusCore.Core.PolicyHit>? hits = null;
+                        // Determine cache search cap: align with UI 1000 limit when that feature is enabled; otherwise allow a larger batch to avoid artificial truncation.
+                        int cacheSearchLimit = _limitUnfilteredTo1000 ? 1000 : 5000;
                         foreach (var lang in tryLangs.Distinct(StringComparer.OrdinalIgnoreCase))
                         {
                             var fields = SearchFields.None;
@@ -1090,7 +1092,13 @@ namespace PolicyPlusPlus
                             }
 
                             hits = await AdmxCacheHostService
-                                .Instance.Cache.SearchAsync(q, lang, fields, 300, token)
+                                .Instance.Cache.SearchAsync(
+                                    q,
+                                    lang,
+                                    fields,
+                                    cacheSearchLimit,
+                                    token
+                                )
                                 .ConfigureAwait(false);
                             if (hits != null && hits.Count > 0)
                                 break;
