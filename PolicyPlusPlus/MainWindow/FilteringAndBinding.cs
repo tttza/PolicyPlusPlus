@@ -1077,19 +1077,20 @@ namespace PolicyPlusPlus
                             throw new InvalidOperationException("ADMX cache disabled");
                         if (Services.AdmxCacheHostService.Instance.IsRebuilding)
                             throw new InvalidOperationException("ADMX cache rebuilding");
-                        string primary = !string.IsNullOrWhiteSpace(st.Language)
-                            ? st.Language!
-                            : System.Globalization.CultureInfo.CurrentUICulture.Name;
-                        // Prefer primary for both matching and display; fall back to second, then en-US if enabled.
-                        var tryLangs = new List<string>(3);
-                        tryLangs.Add(primary);
-                        if (
-                            st.SecondLanguageEnabled == true
-                            && !string.IsNullOrWhiteSpace(st.SecondLanguage)
-                        )
-                            tryLangs.Add(st.SecondLanguage!);
-                        if (st.PrimaryLanguageFallbackEnabled == true)
-                            tryLangs.Add("en-US");
+                        var slots = PolicyPlusCore.Utilities.CulturePreference.Build(
+                            new PolicyPlusCore.Utilities.CulturePreference.BuildOptions(
+                                Primary: string.IsNullOrWhiteSpace(st.Language)
+                                    ? System.Globalization.CultureInfo.CurrentUICulture.Name
+                                    : st.Language!,
+                                Second: st.SecondLanguage,
+                                SecondEnabled: st.SecondLanguageEnabled ?? false,
+                                OsUiCulture: System.Globalization.CultureInfo.CurrentUICulture.Name,
+                                EnablePrimaryFallback: st.PrimaryLanguageFallbackEnabled ?? false
+                            )
+                        );
+                        var tryLangs = PolicyPlusCore.Utilities.CulturePreference.FlattenNames(
+                            slots
+                        );
 
                         IReadOnlyList<PolicyPlusCore.Core.PolicyHit>? hits = null;
                         int cacheSearchLimit = _limitUnfilteredTo1000 ? 1000 : 5000;
@@ -1108,9 +1109,7 @@ namespace PolicyPlusPlus
                         }
                         else
                         {
-                            var orderedCultures = tryLangs
-                                .Distinct(StringComparer.OrdinalIgnoreCase)
-                                .ToList();
+                            var orderedCultures = tryLangs; // already distinct via builder
                             hits = await AdmxCacheHostService
                                 .Instance.Cache.SearchAsync(
                                     q,
@@ -1182,9 +1181,50 @@ namespace PolicyPlusPlus
                     else
                     {
                         Log.Debug("MainSearch", $"cache-miss qLen={q.Length}");
-                        // Fallback to in-memory search (AND mode always comes here when multi-token)
-                        matches = MatchPolicies(q, baseSeq, out var allowed2);
-                        suggestions = BuildSuggestions(q, allowed2);
+                        // If cache missed on a single-token query, honor fallback suppression and do not resurrect
+                        // results via in-memory (those would include suppressed fallback cultures like OS / en-US when primary exists).
+                        var tokenCount = 0;
+                        foreach (
+                            var part in q.Split(
+                                new[] { ' ', '\t' },
+                                StringSplitOptions.RemoveEmptyEntries
+                            )
+                        )
+                        {
+                            if (part.Length > 0)
+                                tokenCount++;
+                            if (tokenCount > 10)
+                                break; // hard cap; we only distinguish >1
+                        }
+                        // Recompute minimal context for fallback policy (these locals are out of original scope here)
+                        var stLocal = SettingsService.Instance.LoadSettings();
+                        var slotsLocal = PolicyPlusCore.Utilities.CulturePreference.Build(
+                            new PolicyPlusCore.Utilities.CulturePreference.BuildOptions(
+                                Primary: string.IsNullOrWhiteSpace(stLocal.Language)
+                                    ? System.Globalization.CultureInfo.CurrentUICulture.Name
+                                    : stLocal.Language!,
+                                Second: stLocal.SecondLanguage,
+                                SecondEnabled: stLocal.SecondLanguageEnabled ?? false,
+                                OsUiCulture: System.Globalization.CultureInfo.CurrentUICulture.Name,
+                                EnablePrimaryFallback: stLocal.PrimaryLanguageFallbackEnabled
+                                    ?? false
+                            )
+                        );
+                        var skipMem =
+                            PolicyPlusCore.Utilities.SearchFallbackPolicy.ShouldSkipMemoryFallback(
+                                tokenCount,
+                                slotsLocal
+                            );
+                        if (skipMem)
+                        {
+                            matches = new();
+                            suggestions = BuildSuggestions(q, allowedSet);
+                        }
+                        else
+                        {
+                            matches = MatchPolicies(q, baseSeq, out var allowed2);
+                            suggestions = BuildSuggestions(q, allowed2);
+                        }
                     }
                 }
                 catch

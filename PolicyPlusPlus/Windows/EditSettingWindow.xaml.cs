@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,6 +15,7 @@ using Microsoft.UI.Xaml.Media;
 using PolicyPlusCore.Admx;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
+using PolicyPlusCore.Utilities; // culture preference
 using PolicyPlusPlus.Logging; // logging
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Utils;
@@ -127,7 +130,9 @@ namespace PolicyPlusPlus.Windows
                 bool prefEnabled = st.SecondLanguageEnabled ?? false;
                 string lang = st.SecondLanguage ?? "en-US";
                 bool hasAdml =
-                    prefEnabled && _policy != null && LocalizedTextService.HasAdml(_policy, lang);
+                    prefEnabled
+                    && _policy != null
+                    && LocalizedTextService.HasAdml(_policy, lang, useFallback: false);
 
                 _secondLangToggle.Visibility = prefEnabled
                     ? Visibility.Visible
@@ -286,40 +291,61 @@ namespace PolicyPlusPlus.Windows
                 UpdateSecondLangToggle();
 
                 var s = SettingsService.Instance.LoadSettings();
-                string lang = s.SecondLanguage ?? "en-US";
-                bool prefEnabled = s.SecondLanguageEnabled ?? false;
-                bool hasAdml = prefEnabled && LocalizedTextService.HasAdml(_policy, lang);
+                string secondLang = s.SecondLanguage ?? "en-US";
+                bool secondEnabled = s.SecondLanguageEnabled ?? false;
+                // useFallback:false -> disable toggle when the specific second language ADML is not present
+                bool hasAdml =
+                    secondEnabled
+                    && LocalizedTextService.HasAdml(_policy, secondLang, useFallback: false);
                 bool useSecond = _useSecondLanguage && hasAdml;
 
-                if (useSecond)
-                {
-                    var nameSecond = LocalizedTextService.GetPolicyNameIn(_policy, lang);
-                    SettingTitle.Text = nameSecond;
-                    SetExplanationText(LocalizedTextService.GetPolicyExplanationIn(_policy, lang));
-                }
-                else
-                {
-                    SettingTitle.Text = _policy.DisplayName;
-                    SetExplanationText(_policy.DisplayExplanation ?? string.Empty);
-                }
+                // Primary text first (in-memory); will attempt cache fallback only if missing.
+                string primaryTitle = _policy.DisplayName ?? string.Empty;
+                string primaryExplain = _policy.DisplayExplanation ?? string.Empty;
+                string primarySupported = _policy.SupportedOn?.DisplayName ?? string.Empty;
 
                 if (useSecond)
                 {
-                    var sup = LocalizedTextService.GetSupportedDisplayIn(_policy, lang);
-                    SupportedBox.Text = string.IsNullOrEmpty(sup)
-                        ? (_policy.SupportedOn?.DisplayName ?? string.Empty)
-                        : sup;
+                    // Second language direct from loaded bundle if available.
+                    SettingTitle.Text = LocalizedTextService.GetPolicyNameIn(_policy, secondLang);
+                    SetExplanationText(
+                        LocalizedTextService.GetPolicyExplanationIn(_policy, secondLang)
+                    );
+                    var sup = LocalizedTextService.GetSupportedDisplayIn(_policy, secondLang);
+                    SupportedBox.Text = string.IsNullOrEmpty(sup) ? primarySupported : sup;
                 }
                 else
                 {
-                    var supObj = _policy.SupportedOn;
-                    SupportedBox.Text = supObj != null ? supObj.DisplayName : string.Empty;
+                    SettingTitle.Text = primaryTitle;
+                    SetExplanationText(primaryExplain);
+                    SupportedBox.Text = primarySupported;
+                }
+
+                // If primary language explanation is empty and fallback to en-US is enabled in settings, attempt cache multi-culture retrieval.
+                // This covers scenario where ADML not present at scan time (not persisted) but later available cultures exist.
+                if (!useSecond && string.IsNullOrWhiteSpace(primaryExplain))
+                {
+                    try
+                    {
+                        var cultures = BuildOrderedCulturesForDetailFallback();
+                        if (cultures.Count > 1)
+                        {
+                            _ = TryFillFromCacheAsync(cultures); // fire and forget; UI updates when done
+                        }
+                    }
+                    catch (Exception exFallback)
+                    {
+                        Log.Debug(
+                            "EditSetting",
+                            "detail cache fallback start failed: " + exFallback.Message
+                        );
+                    }
                 }
 
                 if (_policy.RawPolicy.Elements != null)
                 {
                     var pres = useSecond
-                        ? LocalizedTextService.GetPresentationIn(_policy, lang)
+                        ? LocalizedTextService.GetPresentationIn(_policy, secondLang)
                         : null;
                     if (pres != null)
                     {
@@ -344,6 +370,68 @@ namespace PolicyPlusPlus.Windows
                     "EditSetting",
                     "LoadStateFromSource failed (option retrieval): " + ex.Message
                 );
+            }
+        }
+
+        private List<string> BuildOrderedCulturesForDetailFallback()
+        {
+            var st = SettingsService.Instance.LoadSettings();
+            var slots = CulturePreference.Build(
+                new CulturePreference.BuildOptions(
+                    Primary: string.IsNullOrWhiteSpace(st.Language)
+                        ? CultureInfo.CurrentUICulture.Name
+                        : st.Language!,
+                    Second: st.SecondLanguage,
+                    SecondEnabled: st.SecondLanguageEnabled ?? false,
+                    OsUiCulture: CultureInfo.CurrentUICulture.Name,
+                    EnablePrimaryFallback: st.PrimaryLanguageFallbackEnabled ?? false
+                )
+            );
+            return CulturePreference.FlattenNames(slots);
+        }
+
+        private async Task TryFillFromCacheAsync(IReadOnlyList<string> cultures)
+        {
+            try
+            {
+                var cache = AdmxCacheHostService.Instance.Cache;
+                // unique id is namespace:policyName inside _policy.UniqueID; split
+                var uid = _policy.UniqueID;
+                int colon = uid.IndexOf(':');
+                if (colon <= 0 || colon >= uid.Length - 1)
+                    return;
+                var ns = uid.Substring(0, colon);
+                var name = uid.Substring(colon + 1);
+                var detail = await cache
+                    .GetByPolicyNameAsync(ns, name, cultures)
+                    .ConfigureAwait(false);
+                if (detail == null)
+                    return;
+                // Only update fields if UI still shows empty primary explanation (avoid overwriting user toggled view)
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    try
+                    {
+                        if (string.IsNullOrWhiteSpace(_policy.DisplayExplanation))
+                        {
+                            if (string.IsNullOrWhiteSpace(SettingTitle.Text))
+                                SettingTitle.Text = detail.DisplayName;
+                            bool explanationEmpty = ExplainText.Blocks.Count == 0;
+                            if (explanationEmpty)
+                                SetExplanationText(detail.ExplainText ?? string.Empty);
+                            if (string.IsNullOrWhiteSpace(SupportedBox.Text))
+                                SupportedBox.Text = detail.ProductHint ?? string.Empty; // fallback minimal
+                        }
+                    }
+                    catch (Exception exUi)
+                    {
+                        Log.Debug("EditSetting", "cache detail UI apply failed: " + exUi.Message);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "cache detail retrieval failed: " + ex.Message);
             }
         }
 

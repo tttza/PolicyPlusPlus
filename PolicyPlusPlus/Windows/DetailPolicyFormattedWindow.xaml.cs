@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -7,6 +10,7 @@ using Microsoft.UI.Xaml.Media;
 using PolicyPlusCore.Admx;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
+using PolicyPlusCore.Utilities; // culture preference
 using PolicyPlusPlus.Logging; // logging
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Utils;
@@ -304,7 +308,9 @@ namespace PolicyPlusPlus.Windows
             var s = SettingsService.Instance.LoadSettings();
             bool prefEnabled = s.SecondLanguageEnabled ?? false;
             string lang = s.SecondLanguage ?? "en-US";
-            bool hasAdml = prefEnabled && LocalizedTextService.HasAdml(_policy, lang);
+            // useFallback:false -> only count as present if that culture has its own ADML
+            bool hasAdml =
+                prefEnabled && LocalizedTextService.HasAdml(_policy, lang, useFallback: false);
 
             if (_langToggle != null)
             {
@@ -338,6 +344,82 @@ namespace PolicyPlusPlus.Windows
             );
             _regFileCache = RegistryViewFormatter.BuildRegExport(_policy, src, _currentSection);
             RegBox.Text = _showRegFile ? _regFileCache : _regFormattedCache;
+
+            // Attempt asynchronous fallback fill if primary explanation empty and fallback setting enabled
+            if (!useSecond && string.IsNullOrWhiteSpace(_policy.DisplayExplanation))
+            {
+                try
+                {
+                    var cultures = BuildOrderedCulturesForDetailFallback();
+                    if (cultures.Count > 1)
+                        _ = TryFillFromCacheAsync(cultures); // fire and forget
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "DetailPolicyFmt",
+                        "detail cache fallback start failed: " + ex.Message
+                    );
+                }
+            }
+        }
+
+        private List<string> BuildOrderedCulturesForDetailFallback()
+        {
+            var st = SettingsService.Instance.LoadSettings();
+            var slots = CulturePreference.Build(
+                new CulturePreference.BuildOptions(
+                    Primary: string.IsNullOrWhiteSpace(st.Language)
+                        ? CultureInfo.CurrentUICulture.Name
+                        : st.Language!,
+                    Second: st.SecondLanguage,
+                    SecondEnabled: st.SecondLanguageEnabled ?? false,
+                    OsUiCulture: CultureInfo.CurrentUICulture.Name,
+                    EnablePrimaryFallback: st.PrimaryLanguageFallbackEnabled ?? false
+                )
+            );
+            return CulturePreference.FlattenNames(slots);
+        }
+
+        private async Task TryFillFromCacheAsync(IReadOnlyList<string> cultures)
+        {
+            try
+            {
+                var cache = AdmxCacheHostService.Instance.Cache;
+                var uid = _policy.UniqueID;
+                int colon = uid.IndexOf(':');
+                if (colon <= 0 || colon >= uid.Length - 1)
+                    return;
+                var ns = uid.Substring(0, colon);
+                var name = uid.Substring(colon + 1);
+                var detail = await cache
+                    .GetByPolicyNameAsync(ns, name, cultures)
+                    .ConfigureAwait(false);
+                if (detail == null)
+                    return;
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    try
+                    {
+                        if (string.IsNullOrWhiteSpace(_policy.DisplayExplanation))
+                        {
+                            if (string.IsNullOrWhiteSpace(NameBox.Text))
+                                NameBox.Text = detail.DisplayName;
+                        }
+                    }
+                    catch (Exception exUi)
+                    {
+                        Log.Debug(
+                            "DetailPolicyFmt",
+                            "cache detail UI apply failed: " + exUi.Message
+                        );
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("DetailPolicyFmt", "cache detail retrieval failed: " + ex.Message);
+            }
         }
     }
 }

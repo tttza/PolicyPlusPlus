@@ -190,13 +190,20 @@ namespace PolicyPlusPlus.Services
                             string primary2 = !string.IsNullOrWhiteSpace(st2.Language)
                                 ? st2.Language!
                                 : CultureInfo.CurrentUICulture.Name;
-                            var cultures2 = new List<string>(3);
+                            var cultures2 = new List<string>(4);
                             if (
                                 st2.SecondLanguageEnabled == true
                                 && !string.IsNullOrWhiteSpace(st2.SecondLanguage)
                             )
                                 cultures2.Add(st2.SecondLanguage!);
                             cultures2.Add(primary2);
+                            // Insert OS UI culture if different from primary (to allow primary fallback chain: selected -> OS -> en-US)
+                            var os2 = CultureInfo.CurrentUICulture.Name;
+                            if (
+                                !string.IsNullOrWhiteSpace(os2)
+                                && !os2.Equals(primary2, StringComparison.OrdinalIgnoreCase)
+                            )
+                                cultures2.Add(os2);
                             if (st2.PrimaryLanguageFallbackEnabled == true)
                                 cultures2.Add("en-US");
                             var ordered2 = new List<string>(cultures2.Count);
@@ -434,13 +441,19 @@ namespace PolicyPlusPlus.Services
                 string primary = !string.IsNullOrWhiteSpace(st.Language)
                     ? st.Language!
                     : CultureInfo.CurrentUICulture.Name;
-                var cultures = new List<string>(3);
+                var cultures = new List<string>(4);
                 if (
                     st.SecondLanguageEnabled == true
                     && !string.IsNullOrWhiteSpace(st.SecondLanguage)
                 )
                     cultures.Add(st.SecondLanguage!);
                 cultures.Add(primary);
+                var os = CultureInfo.CurrentUICulture.Name;
+                if (
+                    !string.IsNullOrWhiteSpace(os)
+                    && !os.Equals(primary, StringComparison.OrdinalIgnoreCase)
+                )
+                    cultures.Add(os);
                 if (st.PrimaryLanguageFallbackEnabled == true)
                     cultures.Add("en-US");
                 var ordered = new List<string>(cultures.Count);

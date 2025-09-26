@@ -201,6 +201,7 @@ public sealed class AdmxCache : IAdmxCache
             if (!skipCulture)
             {
                 bundle = new AdmxBundle();
+                bundle.EnableLanguageFallback = false; // prevent cross-culture fallback persistence
                 SqliteConnection? usageConn = null;
                 try
                 {
@@ -1154,6 +1155,12 @@ SELECT id FROM Policies WHERE ns=@ns AND policy_name=@name;";
         var catPath = BuildCategoryPath(pol.Category);
         var presJson = pol.Presentation is null ? null : JsonSerializer.Serialize(pol.Presentation);
 
+        if (string.IsNullOrWhiteSpace(dname))
+        {
+            // Do not persist fallback-derived or empty localization rows for this culture.
+            return;
+        }
+
         using (var cmd = conn.CreateCommand())
         {
             cmd.CommandText =
@@ -1281,6 +1288,11 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         var catPath = BuildCategoryPath(pol.Category);
         var presJson = pol.Presentation is null ? null : JsonSerializer.Serialize(pol.Presentation);
 
+        if (string.IsNullOrWhiteSpace(dname))
+        {
+            return; // skip fallback/empty localization persistence
+        }
+
         s_pid.Value = policyId;
         s_culture.Value = culture;
         s_dname.Value = dname;
@@ -1346,45 +1358,9 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
     )
     {
         if (cultures == null || cultures.Count == 0)
-            return await SearchAsync(query, CultureInfo.CurrentUICulture.Name, fields, limit, ct)
-                .ConfigureAwait(false);
-        foreach (var c in cultures)
-        {
-            var hits = await SearchAsync(query, c, fields, limit, ct).ConfigureAwait(false);
-            if (hits != null && hits.Count > 0)
-                return hits; // First culture with results
-        }
-        return Array.Empty<PolicyHit>();
-    }
-
-    public Task<IReadOnlyList<PolicyHit>> SearchAsync(
-        string query,
-        string culture,
-        bool includeDescription,
-        int limit = 50,
-        CancellationToken ct = default
-    )
-    {
-        var fields = SearchFields.Name | SearchFields.Id | SearchFields.Registry;
-        if (includeDescription)
-            fields |= SearchFields.Description;
-        return SearchAsync(query, culture, fields, limit, ct);
-    }
-
-    public async Task<IReadOnlyList<PolicyHit>> SearchAsync(
-        string query,
-        string culture,
-        SearchFields fields,
-        int limit = 50,
-        CancellationToken ct = default
-    )
-    {
+            cultures = new[] { CultureInfo.CurrentUICulture.Name };
         if (string.IsNullOrWhiteSpace(query) || fields == SearchFields.None)
             return Array.Empty<PolicyHit>();
-
-        culture = NormalizeCultureName(culture);
-        using var conn = _store.OpenConnection();
-        await conn.OpenAsync(ct).ConfigureAwait(false);
 
         var qExact = query;
         var qPrefix = query + "%";
@@ -1395,7 +1371,6 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         );
 
         bool useId = (fields & SearchFields.Id) != 0;
-        // Only include registry-path FTS fields when the query looks like a registry path to reduce false positives
         bool useReg = (fields & SearchFields.Registry) != 0 && LooksLikeRegistryQuery(query);
         bool useName = (fields & SearchFields.Name) != 0;
         bool useDesc = (fields & SearchFields.Description) != 0;
@@ -1410,7 +1385,6 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             ftsNormCols.Add("tags");
         if (useReg)
             ftsNormCols.Add("registry_path");
-
         var ftsLooseCols = new List<string>();
         if (useName)
             ftsLooseCols.Add("title_loose");
@@ -1421,7 +1395,6 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         if (useReg)
             ftsLooseCols.Add("registry_path");
 
-        // Build FTS5 MATCH expressions. Each selected column is prefixed in the MATCH query, combined via OR.
         static string EscapeSqlSingle(string s) => s.Replace("'", "''");
         static string BuildMatch(string grams, List<string> cols)
         {
@@ -1433,135 +1406,147 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             );
             if (tokens.Length == 0)
                 return string.Empty;
-            // Sanitize tokens to avoid triggering phrase parsing or column qualifiers in FTS5 MATCH.
-            // Remove characters that are special to the MATCH grammar (quotes, colon, brackets, braces, parentheses).
             static string Sanitize(string t)
             {
                 if (string.IsNullOrEmpty(t))
                     return string.Empty;
                 var sbTok = new StringBuilder(t.Length);
-                for (int i = 0; i < t.Length; i++)
-                {
-                    char ch = t[i];
-                    // Keep letters and digits only; drop all punctuation to avoid MATCH grammar conflicts.
+                foreach (var ch in t)
                     if (char.IsLetterOrDigit(ch))
                         sbTok.Append(ch);
-                    // else drop
-                }
                 return sbTok.ToString();
             }
-            var safeList = tokens
-                .Select(Sanitize)
-                .Where(s0 => !string.IsNullOrWhiteSpace(s0))
-                .ToList();
-            if (safeList.Count == 0)
+            var safe = tokens.Select(Sanitize).Where(s0 => !string.IsNullOrWhiteSpace(s0)).ToList();
+            if (safe.Count == 0)
                 return string.Empty;
-            // With detail=full, space-joining yields a phrase search; tests rely on this behavior for tight matches.
-            var inside = string.Join(' ', safeList);
-            return string.Join(" OR ", cols.Select(c => $"{c}:(" + inside + ")"));
+            var inside = string.Join(' ', safe);
+            return string.Join(" OR ", cols.Select(c => c + ":(" + inside + ")"));
         }
         var matchNorm = BuildMatch(norm, ftsNormCols);
         var matchLoose = BuildMatch(loose, ftsLooseCols);
         var matchNormEsc = EscapeSqlSingle(matchNorm);
         var matchLooseEsc = EscapeSqlSingle(matchLoose);
 
+        using var conn = _store.OpenConnection();
+        await conn.OpenAsync(ct).ConfigureAwait(false);
         var sb = new StringBuilder();
-        sb.AppendLine("WITH K1 AS (");
-        sb.AppendLine("  SELECT NULL AS id, @culture AS culture, '' AS display_name, -1 AS score");
-        sb.AppendLine("  WHERE 1=0");
+        // Build prioritized culture list (order preserved from caller)
+        sb.AppendLine("WITH CulturePref AS (");
+        for (int i = 0; i < cultures.Count; i++)
+        {
+            if (i > 0)
+                sb.AppendLine("UNION ALL");
+            sb.Append("SELECT ")
+                .Append(i.ToString(CultureInfo.InvariantCulture))
+                .Append(" AS prio, @c")
+                .Append(i)
+                .Append(" AS culture")
+                .AppendLine();
+        }
+        sb.AppendLine(") , ExactPrefix AS (");
+        sb.AppendLine(
+            "  SELECT NULL AS id, NULL AS culture, '' AS display_name, -1 AS score WHERE 1=0"
+        );
         if (useId)
         {
             sb.AppendLine("  UNION ALL");
-            sb.AppendLine("  SELECT p.id, @culture AS culture, s.display_name, 1200 AS score");
             sb.AppendLine(
-                "  FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id AND s.culture=@culture"
+                "  SELECT p.id, s.culture, s.display_name, 1200 FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id WHERE p.policy_name=@q_exact AND s.culture IN (SELECT culture FROM CulturePref)"
             );
-            sb.AppendLine("  WHERE p.policy_name = @q_exact");
             sb.AppendLine("  UNION ALL");
-            sb.AppendLine("  SELECT p.id, @culture, s.display_name, 300");
             sb.AppendLine(
-                "  FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id AND s.culture=@culture"
+                "  SELECT p.id, s.culture, s.display_name, 300 FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id WHERE p.policy_name LIKE @q_prefix AND s.culture IN (SELECT culture FROM CulturePref)"
             );
-            sb.AppendLine("  WHERE p.policy_name LIKE @q_prefix");
         }
-        if ((fields & SearchFields.Registry) != 0 && LooksLikeRegistryQuery(query))
+        if (useReg)
         {
             sb.AppendLine("  UNION ALL");
-            sb.AppendLine("  SELECT p.id, @culture, s.display_name, 1000");
             sb.AppendLine(
-                "  FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id AND s.culture=@culture"
+                "  SELECT p.id, s.culture, s.display_name, 1000 FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id WHERE (p.hive||'\\\\'||p.reg_key||'\\\\'||p.reg_value)=@q_exact AND s.culture IN (SELECT culture FROM CulturePref)"
             );
-            sb.AppendLine("  WHERE (p.hive||'\\\\'||p.reg_key||'\\\\'||p.reg_value) = @q_exact");
         }
-        sb.AppendLine(") ,");
-        sb.AppendLine("F1 AS (");
-        sb.AppendLine("  SELECT m.policy_id AS id, m.culture, s.display_name, 100 AS score");
-        sb.AppendLine("  FROM PolicyIndex");
-        sb.AppendLine("  JOIN PolicyIndexMap m ON m.rowid = PolicyIndex.rowid");
-        sb.AppendLine("  JOIN PolicyI18n s ON s.policy_id=m.policy_id AND s.culture=@culture");
-        sb.AppendLine("  WHERE m.culture=@culture AND @enableFts = 1");
+        sb.AppendLine(") , F1 AS (");
+        sb.AppendLine(
+            "  SELECT m.policy_id AS id, m.culture, s.display_name, 100 AS score FROM PolicyIndex JOIN PolicyIndexMap m ON m.rowid=PolicyIndex.rowid JOIN PolicyI18n s ON s.policy_id=m.policy_id AND s.culture=m.culture WHERE @enableFts=1 AND m.culture IN (SELECT culture FROM CulturePref)"
+        );
         if (enableFts && ftsNormCols.Count > 0 && !string.IsNullOrWhiteSpace(matchNorm))
-        {
-            sb.Append("    AND PolicyIndex MATCH '");
-            sb.Append(matchNormEsc);
-            sb.AppendLine("'");
-        }
+            sb.Append("    AND PolicyIndex MATCH '").Append(matchNormEsc).AppendLine("'");
         else
-        {
             sb.AppendLine("    AND (0)");
-        }
-        sb.AppendLine(") ,");
-        sb.AppendLine("F2 AS (");
-        sb.AppendLine("  SELECT m.policy_id AS id, m.culture, s.display_name, 60 AS score");
-        sb.AppendLine("  FROM PolicyIndex");
-        sb.AppendLine("  JOIN PolicyIndexMap m ON m.rowid = PolicyIndex.rowid");
-        sb.AppendLine("  JOIN PolicyI18n s ON s.policy_id=m.policy_id AND s.culture=@culture");
-        sb.AppendLine("  WHERE m.culture=@culture AND @enableFts = 1");
+        sb.AppendLine(") , F2 AS (");
+        sb.AppendLine(
+            "  SELECT m.policy_id AS id, m.culture, s.display_name, 60 AS score FROM PolicyIndex JOIN PolicyIndexMap m ON m.rowid=PolicyIndex.rowid JOIN PolicyI18n s ON s.policy_id=m.policy_id AND s.culture=m.culture WHERE @enableFts=1 AND m.culture IN (SELECT culture FROM CulturePref)"
+        );
         if (enableFts && ftsLooseCols.Count > 0 && !string.IsNullOrWhiteSpace(matchLoose))
-        {
-            sb.Append("    AND PolicyIndex MATCH '");
-            sb.Append(matchLooseEsc);
-            sb.AppendLine("'");
-        }
+            sb.Append("    AND PolicyIndex MATCH '").Append(matchLooseEsc).AppendLine("'");
         else
-        {
             sb.AppendLine("    AND (0)");
-        }
-        sb.AppendLine(")");
-        sb.AppendLine("SELECT Z.id, Z.culture,");
+        sb.AppendLine(") , Candidates AS (");
+        sb.AppendLine("  SELECT id,culture,display_name,score FROM ExactPrefix");
+        sb.AppendLine("  UNION ALL SELECT id,culture,display_name,score FROM F1");
+        sb.AppendLine("  UNION ALL SELECT id,culture,display_name,score FROM F2");
+        // Filtered: allow primary always; allow second always (if provided); allow fallback cultures only when primary row absent for that policy.
+        sb.AppendLine(") , Filtered AS (");
+        sb.AppendLine("  SELECT c.* FROM Candidates c");
+        sb.AppendLine("  WHERE c.culture = @primaryCulture");
+        sb.AppendLine("     OR (@secondCulture IS NOT NULL AND c.culture = @secondCulture)");
+        sb.AppendLine("     OR ( c.culture <> @primaryCulture");
+        sb.AppendLine("          AND (@secondCulture IS NULL OR c.culture <> @secondCulture)");
         sb.AppendLine(
-            "       (SELECT ns||':'||policy_name FROM Policies P WHERE P.id = Z.id) AS unique_id,"
-        );
-        sb.AppendLine("       MAX(Z.score) AS score,");
-        sb.AppendLine("       Z.display_name,");
-        sb.AppendLine(
-            "       (SELECT hive||'\\\\'||reg_key||'\\\\'||reg_value FROM Policies P2 WHERE P2.id = Z.id) AS registry_path,"
+            "          AND NOT EXISTS (SELECT 1 FROM PolicyI18n px WHERE px.policy_id = c.id AND px.culture = @primaryCulture)"
         );
         sb.AppendLine(
-            "       (SELECT product_hint FROM Policies P3 WHERE P3.id = Z.id) AS product_hint,"
+            "          AND ( @secondCulture IS NULL OR NOT EXISTS (SELECT 1 FROM PolicyI18n sx WHERE sx.policy_id = c.id AND sx.culture = @secondCulture) )"
+        );
+        sb.AppendLine("        )");
+        sb.AppendLine(") , Ranked AS (");
+        sb.AppendLine(
+            "  SELECT c.id,c.culture,c.display_name,c.score,cp.prio, ROW_NUMBER() OVER (PARTITION BY c.id ORDER BY cp.prio ASC) AS rnk FROM Filtered c JOIN CulturePref cp ON cp.culture=c.culture"
         );
         sb.AppendLine(
-            "       (SELECT value_type FROM Policies P4 WHERE P4.id = Z.id) AS value_type"
+            ") SELECT R.id,R.culture, (SELECT ns||':'||policy_name FROM Policies P WHERE P.id=R.id) AS unique_id,"
         );
-        sb.AppendLine("FROM (");
-        sb.AppendLine("    SELECT id, culture, display_name, score FROM K1");
-        sb.AppendLine("    UNION ALL SELECT id, culture, display_name, score FROM F1");
-        sb.AppendLine("    UNION ALL SELECT id, culture, display_name, score FROM F2");
-        sb.AppendLine(") AS Z");
-        sb.AppendLine("GROUP BY Z.id, Z.culture");
-        sb.AppendLine("ORDER BY score DESC");
-        sb.AppendLine("LIMIT @limit;");
+        sb.AppendLine("       R.score, R.display_name,");
+        sb.AppendLine(
+            "       (SELECT hive||'\\\\'||reg_key||'\\\\'||reg_value FROM Policies P2 WHERE P2.id=R.id) AS registry_path,"
+        );
+        sb.AppendLine(
+            "       (SELECT product_hint FROM Policies P3 WHERE P3.id=R.id) AS product_hint,"
+        );
+        sb.AppendLine("       (SELECT value_type FROM Policies P4 WHERE P4.id=R.id) AS value_type");
+        sb.AppendLine("  FROM Ranked R WHERE R.rnk = 1 ORDER BY R.score DESC LIMIT @limit; ");
 
         var list = new List<PolicyHit>(Math.Min(limit, 256));
         using var cmd = conn.CreateCommand();
         cmd.CommandText = sb.ToString();
-        cmd.Parameters.AddWithValue("@culture", culture);
         cmd.Parameters.AddWithValue("@q_exact", qExact);
         cmd.Parameters.AddWithValue("@q_prefix", qPrefix);
-
         cmd.Parameters.AddWithValue("@limit", limit);
         cmd.Parameters.AddWithValue("@enableFts", enableFts ? 1 : 0);
-
+        for (int i = 0; i < cultures.Count; i++)
+            cmd.Parameters.AddWithValue("@c" + i, NormalizeCultureName(cultures[i]));
+        // Primary culture = first in list; second = second element if exists; others treated as fallback candidates.
+        var primaryCulture =
+            cultures.Count > 0
+                ? NormalizeCultureName(cultures[0])
+                : CultureInfo.CurrentUICulture.Name;
+        string? secondCulture = cultures.Count > 1 ? NormalizeCultureName(cultures[1]) : null;
+        if (
+            secondCulture != null
+            && string.Equals(secondCulture, primaryCulture, StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            // Explicit duplicate primary acts as placeholder second – treat as absent so fallback suppression logic engages correctly.
+            secondCulture = null;
+        }
+        cmd.Parameters.AddWithValue("@primaryCulture", primaryCulture);
+        var pSecond = cmd.CreateParameter();
+        pSecond.ParameterName = "@secondCulture";
+        if (secondCulture == null)
+            pSecond.Value = DBNull.Value;
+        else
+            pSecond.Value = secondCulture;
+        cmd.Parameters.Add(pSecond);
         using var rdr = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await rdr.ReadAsync(ct).ConfigureAwait(false))
         {
@@ -1577,6 +1562,28 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         }
         return list;
     }
+
+    public Task<IReadOnlyList<PolicyHit>> SearchAsync(
+        string query,
+        string culture,
+        bool includeDescription,
+        int limit = 50,
+        CancellationToken ct = default
+    )
+    {
+        var fields = SearchFields.Name | SearchFields.Id | SearchFields.Registry;
+        if (includeDescription)
+            fields |= SearchFields.Description;
+        return SearchAsync(query, new[] { culture }, fields, limit, ct);
+    }
+
+    public Task<IReadOnlyList<PolicyHit>> SearchAsync(
+        string query,
+        string culture,
+        SearchFields fields,
+        int limit = 50,
+        CancellationToken ct = default
+    ) => SearchAsync(query, new[] { culture }, fields, limit, ct);
 
     public async Task<PolicyDetail?> GetByPolicyNameAsync(
         string ns,
@@ -1615,13 +1622,37 @@ WHERE p.ns=@ns AND p.policy_name=@name LIMIT 1";
         if (cultures == null || cultures.Count == 0)
             return await GetByPolicyNameAsync(ns, policyName, CultureInfo.CurrentUICulture.Name, ct)
                 .ConfigureAwait(false);
-        foreach (var c in cultures)
+        if (cultures.Count == 1)
+            return await GetByPolicyNameAsync(ns, policyName, cultures[0], ct)
+                .ConfigureAwait(false);
+        using var conn = _store.OpenConnection();
+        await conn.OpenAsync(ct).ConfigureAwait(false);
+        var sb = new StringBuilder();
+        sb.AppendLine("WITH CulturePref AS (");
+        for (int i = 0; i < cultures.Count; i++)
         {
-            var d = await GetByPolicyNameAsync(ns, policyName, c, ct).ConfigureAwait(false);
-            if (d != null)
-                return d;
+            if (i > 0)
+                sb.AppendLine("UNION ALL");
+            sb.Append("SELECT ")
+                .Append(i.ToString(CultureInfo.InvariantCulture))
+                .Append(" AS prio, @c")
+                .Append(i)
+                .Append(" AS culture")
+                .AppendLine();
         }
-        return null;
+        sb.AppendLine(
+            ") SELECT p.id, s.culture, p.ns, p.policy_name, s.display_name, s.explain_text, s.category_path, p.hive, p.reg_key, p.reg_value, p.value_type, s.presentation_json, p.supported_min, p.supported_max, p.deprecated, p.product_hint FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id JOIN CulturePref cp ON cp.culture=s.culture WHERE p.ns=@ns AND p.policy_name=@name ORDER BY cp.prio ASC LIMIT 1;"
+        );
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = sb.ToString();
+        cmd.Parameters.AddWithValue("@ns", ns);
+        cmd.Parameters.AddWithValue("@name", policyName);
+        for (int i = 0; i < cultures.Count; i++)
+            cmd.Parameters.AddWithValue("@c" + i, NormalizeCultureName(cultures[i]));
+        using var rdr = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        if (!await rdr.ReadAsync(ct).ConfigureAwait(false))
+            return null;
+        return MapDetail(rdr);
     }
 
     public async Task<PolicyDetail?> GetByRegistryPathAsync(
@@ -1658,13 +1689,36 @@ WHERE (p.hive||'\\'||p.reg_key||'\\'||p.reg_value) = @rp LIMIT 1";
         if (cultures == null || cultures.Count == 0)
             return await GetByRegistryPathAsync(registryPath, CultureInfo.CurrentUICulture.Name, ct)
                 .ConfigureAwait(false);
-        foreach (var c in cultures)
+        if (cultures.Count == 1)
+            return await GetByRegistryPathAsync(registryPath, cultures[0], ct)
+                .ConfigureAwait(false);
+        using var conn = _store.OpenConnection();
+        await conn.OpenAsync(ct).ConfigureAwait(false);
+        var sb = new StringBuilder();
+        sb.AppendLine("WITH CulturePref AS (");
+        for (int i = 0; i < cultures.Count; i++)
         {
-            var d = await GetByRegistryPathAsync(registryPath, c, ct).ConfigureAwait(false);
-            if (d != null)
-                return d;
+            if (i > 0)
+                sb.AppendLine("UNION ALL");
+            sb.Append("SELECT ")
+                .Append(i.ToString(CultureInfo.InvariantCulture))
+                .Append(" AS prio, @c")
+                .Append(i)
+                .Append(" AS culture")
+                .AppendLine();
         }
-        return null;
+        sb.AppendLine(
+            ") SELECT p.id, s.culture, p.ns, p.policy_name, s.display_name, s.explain_text, s.category_path, p.hive, p.reg_key, p.reg_value, p.value_type, s.presentation_json, p.supported_min, p.supported_max, p.deprecated, p.product_hint FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id JOIN CulturePref cp ON cp.culture=s.culture WHERE (p.hive||'\\' || p.reg_key || '\\' || p.reg_value)=@rp ORDER BY cp.prio ASC LIMIT 1;"
+        );
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = sb.ToString();
+        cmd.Parameters.AddWithValue("@rp", registryPath);
+        for (int i = 0; i < cultures.Count; i++)
+            cmd.Parameters.AddWithValue("@c" + i, NormalizeCultureName(cultures[i]));
+        using var rdr = await cmd.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        if (!await rdr.ReadAsync(ct).ConfigureAwait(false))
+            return null;
+        return MapDetail(rdr);
     }
 
     private static bool LooksLikeRegistryQuery(string query)
