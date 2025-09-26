@@ -6,7 +6,26 @@ namespace PolicyPlusPlus.Services
 {
     public sealed class ViewNavigationService
     {
-        public static ViewNavigationService Instance { get; } = new ViewNavigationService();
+        private static readonly ViewNavigationService _sharedInstance = new ViewNavigationService();
+        private static readonly System.Threading.AsyncLocal<ViewNavigationService?> _ambient =
+            new System.Threading.AsyncLocal<ViewNavigationService?>();
+        private static bool _testIsolationEnabled;
+
+        // Returns shared instance unless test isolation enabled (per-test ambient instance).
+        public static ViewNavigationService Instance =>
+            _testIsolationEnabled
+                ? (_ambient.Value ??= new ViewNavigationService())
+                : _sharedInstance;
+
+        internal static void EnableTestIsolation() => _testIsolationEnabled = true;
+
+        internal static void ResetAmbientForTest()
+        {
+            if (_testIsolationEnabled)
+            {
+                _ambient.Value = new ViewNavigationService();
+            }
+        }
 
         private readonly List<ViewState> _items = new List<ViewState>();
         private int _index = -1;

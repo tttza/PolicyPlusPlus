@@ -5,7 +5,7 @@ using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.PolicyList
 {
-    public class PolicyListRowGroupTests
+    public class PolicyListRowGroupTests : PolicyPlusModTests.TestHelpers.PendingIsolationTestBase
     {
         private static (PolicyPlusPolicy userPol, PolicyPlusPolicy compPol) MakePair()
         {

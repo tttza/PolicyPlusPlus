@@ -36,7 +36,32 @@ namespace PolicyPlusPlus.Services
 
     public sealed class PendingChangesService
     {
-        public static PendingChangesService Instance { get; } = new PendingChangesService();
+        // Global shared instance used in normal application runtime.
+        private static readonly PendingChangesService _sharedInstance = new();
+
+        // Async-local instance for test isolation when enabled.
+        private static readonly System.Threading.AsyncLocal<PendingChangesService?> _ambient =
+            new();
+        private static volatile bool _testIsolationEnabled;
+
+        // Returns either the shared singleton (default) or an AsyncLocal-scoped instance when test isolation is enabled.
+        public static PendingChangesService Instance
+        {
+            get
+            {
+                if (_testIsolationEnabled)
+                {
+                    return _ambient.Value ??= new PendingChangesService();
+                }
+                return _sharedInstance;
+            }
+        }
+
+        // Enables per-test isolation; safe to call multiple times (idempotent).
+        public static void EnableTestIsolation() => _testIsolationEnabled = true;
+
+        // Clears the current ambient instance so the next access creates a fresh isolated instance.
+        public static void ResetAmbientForTest() => _ambient.Value = null;
 
         public ObservableCollection<PendingChange> Pending { get; } = new();
         public ObservableCollection<HistoryRecord> History { get; } = new();

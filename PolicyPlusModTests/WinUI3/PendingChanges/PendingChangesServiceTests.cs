@@ -5,6 +5,7 @@ using Xunit;
 namespace PolicyPlusModTests.WinUI3.PendingChanges
 {
     public class PendingChangesServiceTests
+        : PolicyPlusModTests.TestHelpers.PendingIsolationTestBase
     {
         [Fact]
         public void Add_New_And_Update_MergesByPolicyAndScope()

@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using PolicyPlusCore.Core;
+using PolicyPlusCore.IO;
 using PolicyPlusPlus.Models;
 using PolicyPlusPlus.Services;
 using Xunit;
@@ -6,6 +8,7 @@ using Xunit;
 namespace PolicyPlusModTests.WinUI3.PolicyList
 {
     public class PolicyListRowConsistencyTests
+        : PolicyPlusModTests.TestHelpers.PendingIsolationTestBase
     {
         private static PolicyPlusPolicy MakeBothPolicy(string id)
         {

@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using PolicyPlusCore.Admx;
+using PolicyPlusCore.Core;
+using PolicyPlusModTests.TestHelpers;
 using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.Navigation
 {
-    public class ViewNavigationEndToEndTests
+    public class ViewNavigationEndToEndTests : PendingIsolationTestBase
     {
         private static (
             AdmxBundle bundle,

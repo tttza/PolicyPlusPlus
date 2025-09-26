@@ -9,6 +9,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
 {
     // Tests for ensuring that options recorded in HistoryRecord are correctly reapplied.
     public class ReapplyHistoryOptionsTests
+        : PolicyPlusModTests.TestHelpers.PendingIsolationTestBase
     {
         private static (PolicyPlusPolicy policy, Dictionary<string, object> opts) BuildTextCase()
         {

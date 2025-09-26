@@ -10,6 +10,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
 {
     // Validates that after serializing History to JSON and deserializing back, option types are normalized for reapply.
     public class NormalizeOptionsJsonRoundTripTests
+        : PolicyPlusModTests.TestHelpers.PendingIsolationTestBase
     {
         private static (
             PolicyPlusPolicy policy,

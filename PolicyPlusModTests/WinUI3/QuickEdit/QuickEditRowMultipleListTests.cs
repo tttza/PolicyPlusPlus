@@ -12,6 +12,7 @@ using Xunit;
 namespace PolicyPlusModTests.WinUI3.QuickEdit
 {
     public class QuickEditRowMultipleListTests
+        : PolicyPlusModTests.TestHelpers.PendingIsolationTestBase
     {
         public static (QuickEditRow row, PolicyPlusPolicy policy) CreateQuickEditRow(
             string policyId = "DummyListPolicy",

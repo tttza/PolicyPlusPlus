@@ -6,6 +6,7 @@ using Xunit;
 namespace PolicyPlusModTests.WinUI3.Navigation
 {
     public class CategoryVisibilityEvaluatorTests
+        : PolicyPlusModTests.TestHelpers.PendingIsolationTestBase
     {
         private static (
             PolicyPlusCategory root,

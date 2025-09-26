@@ -5,6 +5,7 @@ using Xunit;
 namespace PolicyPlusModTests.WinUI3.PendingChanges
 {
     public class PendingChangesWindowSaveFlowTests
+        : PolicyPlusModTests.TestHelpers.PendingIsolationTestBase
     {
         [Fact(DisplayName = "Save flow builds POL base64 and calls elevation writer")]
         public void SaveFlow_CallsElevationService_WithBuiltBase64()
