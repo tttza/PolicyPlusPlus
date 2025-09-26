@@ -20,6 +20,9 @@ public sealed class AdmxCache : IAdmxCache
     private readonly AdmxCacheStore _store;
     private string? _sourceRoot;
 
+    // Tracks whether FileUsage schema ensured to avoid repeating DDL each scan.
+    private volatile bool _fileUsageSchemaEnsured;
+
     public AdmxCache()
     {
         // Allow tests or advanced scenarios to override cache location via env var.
@@ -171,6 +174,7 @@ public sealed class AdmxCache : IAdmxCache
             if (!skipCulture)
             {
                 bundle = new AdmxBundle();
+                SqliteConnection? usageConn = null;
                 try
                 {
                     foreach (
@@ -181,7 +185,78 @@ public sealed class AdmxCache : IAdmxCache
                         )
                     )
                     {
-                        _ = bundle.LoadFile(admx, cul);
+                        try
+                        {
+                            _ = bundle.LoadFile(admx, cul);
+                            // Record usage (ADMX kind=0) and associated ADML (kind=1) if present.
+                            usageConn ??= await OpenFileUsageConnectionAsync(ct)
+                                .ConfigureAwait(false);
+                            await UpsertFileUsageAsync(usageConn, admx, 0, ct)
+                                .ConfigureAwait(false);
+                            try
+                            {
+                                var admlPath = DeriveAdmlPath(admx, cul);
+                                if (!string.IsNullOrEmpty(admlPath) && File.Exists(admlPath))
+                                {
+                                    await UpsertFileUsageAsync(usageConn, admlPath, 1, ct)
+                                        .ConfigureAwait(false);
+                                }
+                            }
+                            catch { }
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+                finally
+                {
+                    try
+                    {
+                        usageConn?.Dispose();
+                    }
+                    catch { }
+                }
+            }
+            else
+            {
+                // Even if we skip a full parse due to unchanged signature, still refresh last access timestamps.
+                try
+                {
+                    SqliteConnection? usageConn = null;
+                    try
+                    {
+                        foreach (
+                            var admx in Directory.EnumerateFiles(
+                                root,
+                                "*.admx",
+                                SearchOption.TopDirectoryOnly
+                            )
+                        )
+                        {
+                            try
+                            {
+                                usageConn ??= await OpenFileUsageConnectionAsync(ct)
+                                    .ConfigureAwait(false);
+                                await UpsertFileUsageAsync(usageConn, admx, 0, ct)
+                                    .ConfigureAwait(false);
+                                var admlPath = DeriveAdmlPath(admx, cul);
+                                if (!string.IsNullOrEmpty(admlPath) && File.Exists(admlPath))
+                                {
+                                    await UpsertFileUsageAsync(usageConn, admlPath, 1, ct)
+                                        .ConfigureAwait(false);
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+                    finally
+                    {
+                        try
+                        {
+                            usageConn?.Dispose();
+                        }
+                        catch { }
                     }
                 }
                 catch { }
@@ -257,6 +332,157 @@ public sealed class AdmxCache : IAdmxCache
                 .ConfigureAwait(false);
         }
         catch { }
+    }
+
+    // Attempts to derive the ADML path for an ADMX given a culture.
+    private static string? DeriveAdmlPath(string admxPath, string culture)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(admxPath);
+            if (string.IsNullOrEmpty(dir))
+                return null;
+            var cultureDir = Path.Combine(dir, culture);
+            var fileName = Path.GetFileNameWithoutExtension(admxPath);
+            var candidate = Path.Combine(cultureDir, fileName + ".adml");
+            return candidate;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task<SqliteConnection> OpenFileUsageConnectionAsync(CancellationToken ct)
+    {
+        var conn = _store.OpenConnection();
+        await conn.OpenAsync(ct).ConfigureAwait(false);
+        if (!_fileUsageSchemaEnsured)
+        {
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText =
+                    @"CREATE TABLE IF NOT EXISTS FileUsage( file_path TEXT PRIMARY KEY, last_access_utc INTEGER NOT NULL, kind INTEGER NOT NULL ); CREATE INDEX IF NOT EXISTS IX_FileUsage_LastAccess ON FileUsage(last_access_utc);";
+                await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
+            catch { }
+            _fileUsageSchemaEnsured = true;
+        }
+        return (SqliteConnection)conn;
+    }
+
+    private static async Task UpsertFileUsageAsync(
+        SqliteConnection conn,
+        string path,
+        int kind,
+        CancellationToken ct
+    )
+    {
+        try
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                @"INSERT INTO FileUsage(file_path,last_access_utc,kind) VALUES(@p,@now,@k) ON CONFLICT(file_path) DO UPDATE SET last_access_utc=excluded.last_access_utc;";
+            cmd.Parameters.AddWithValue("@p", path);
+            cmd.Parameters.AddWithValue("@now", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            cmd.Parameters.AddWithValue("@k", kind);
+            await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+        catch { }
+    }
+
+    public async Task<int> PurgeStaleCacheEntriesAsync(
+        TimeSpan olderThan,
+        CancellationToken ct = default
+    )
+    {
+        int removed = 0;
+        IDisposable? writerLock = null;
+        try
+        {
+            // Serialize with other writers. Retry briefly to reduce false negative (0 removals) when a rebuild just finished.
+            for (int attempt = 0; attempt < 3 && writerLock is null; attempt++)
+            {
+                writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(5));
+                if (writerLock is null)
+                {
+                    try
+                    {
+                        await Task.Delay(150, ct).ConfigureAwait(false);
+                    }
+                    catch { }
+                }
+            }
+            if (writerLock is null)
+                return 0; // Could not acquire within budget.
+            using var conn = _store.OpenConnection();
+            await conn.OpenAsync(ct).ConfigureAwait(false);
+            // Ensure table exists (no-op if previously created)
+            if (!_fileUsageSchemaEnsured)
+            {
+                try
+                {
+                    using var cmdEnsure = conn.CreateCommand();
+                    cmdEnsure.CommandText =
+                        @"CREATE TABLE IF NOT EXISTS FileUsage( file_path TEXT PRIMARY KEY, last_access_utc INTEGER NOT NULL, kind INTEGER NOT NULL ); CREATE INDEX IF NOT EXISTS IX_FileUsage_LastAccess ON FileUsage(last_access_utc);";
+                    await cmdEnsure.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                }
+                catch { }
+                _fileUsageSchemaEnsured = true;
+            }
+            var threshold = DateTimeOffset.UtcNow.Subtract(olderThan).ToUnixTimeSeconds();
+            var stale = new List<string>(64);
+            try
+            {
+                using var sel = conn.CreateCommand();
+                sel.CommandText = "SELECT file_path FROM FileUsage WHERE last_access_utc < @t";
+                sel.Parameters.AddWithValue("@t", threshold);
+                using var r = await sel.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                while (await r.ReadAsync(ct).ConfigureAwait(false))
+                {
+                    if (!r.IsDBNull(0))
+                        stale.Add(r.GetString(0));
+                }
+            }
+            catch { }
+            if (stale.Count == 0)
+                return 0;
+            try
+            {
+                using var tx = conn.BeginTransaction();
+                using var del = conn.CreateCommand();
+                del.Transaction = tx;
+                del.CommandText = "DELETE FROM FileUsage WHERE file_path=@p";
+                var p = del.Parameters.Add("@p", SqliteType.Text);
+                foreach (var s in stale)
+                {
+                    p.Value = s;
+                    try
+                    {
+                        await del.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                        removed++;
+                    }
+                    catch { }
+                }
+                try
+                {
+                    tx.Commit();
+                }
+                catch { }
+            }
+            catch { }
+        }
+        catch { }
+        finally
+        {
+            try
+            {
+                writerLock?.Dispose();
+            }
+            catch { }
+        }
+        return removed;
     }
 
     private async Task DiffAndApplyAsync(

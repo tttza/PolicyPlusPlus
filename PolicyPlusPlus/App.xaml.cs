@@ -233,6 +233,11 @@ namespace PolicyPlusPlus
                 {
                     _ = mw.EnsureInitializedAsync();
                 }
+                try
+                {
+                    CacheMaintenanceScheduler.Instance.Start();
+                }
+                catch { }
             }
             catch (Exception ex)
             {
