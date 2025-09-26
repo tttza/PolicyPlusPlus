@@ -157,7 +157,10 @@ namespace PolicyPlusPlus.Services
             {
                 SourcesChanged?.Invoke(this, EventArgs.Empty);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("PolicySourceMgr", "SourcesChanged handler failed: " + ex.Message);
+            }
         }
 
         public bool Switch(PolicySourceDescriptor descriptor)

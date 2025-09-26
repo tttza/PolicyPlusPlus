@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using PolicyPlusCore.Core;
+using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus.Services
 {
@@ -37,6 +38,8 @@ namespace PolicyPlusPlus.Services
             _cache = new AdmxCache();
         }
 
+        private const string LogArea = "AdmxCacheHost";
+
         // Ensures the core cache is initialized; if a previous init failed or was canceled, reattempt.
         private async Task EnsureInitializedAsync()
         {
@@ -51,9 +54,11 @@ namespace PolicyPlusPlus.Services
                 {
                     _initTask = _cache.InitializeAsync();
                     init = _initTask;
+                    Log.Debug(LogArea, "Init task created");
                 }
-                catch
-                { /* swallow */
+                catch (Exception ex)
+                {
+                    Log.Warn(LogArea, "Initial cache InitializeAsync threw", ex);
                 }
             }
             if (init != null)
@@ -62,15 +67,19 @@ namespace PolicyPlusPlus.Services
                 {
                     await init.ConfigureAwait(false);
                 }
-                catch
+                catch (Exception ex1)
                 {
-                    // Retry once on failure
+                    Log.Warn(LogArea, "Init task failed, retrying once", ex1);
                     try
                     {
                         _initTask = _cache.InitializeAsync();
                         await _initTask.ConfigureAwait(false);
+                        Log.Info(LogArea, "Init retry succeeded");
                     }
-                    catch { }
+                    catch (Exception ex2)
+                    {
+                        Log.Error(LogArea, "Init retry failed", ex2);
+                    }
                 }
             }
         }
@@ -96,16 +105,21 @@ namespace PolicyPlusPlus.Services
                 var st0 = SettingsService.Instance.LoadSettings();
                 if ((st0.AdmxCacheEnabled ?? true) == false)
                 {
+                    Log.Info(LogArea, "Start skipped - disabled in settings");
                     return; // cache disabled by user settings
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn(LogArea, "Failed to read settings to decide enablement", ex);
+            }
             lock (_gate)
             {
                 if (_started)
                     return;
                 _started = true;
             }
+            Log.Info(LogArea, "StartAsync begin");
 
             try
             {
@@ -124,6 +138,7 @@ namespace PolicyPlusPlus.Services
                         }
                         if (!shouldRun)
                             return;
+                        Log.Debug(LogArea, "LanguagesChanged trigger");
                         RunAndTrack(async () =>
                         {
                             Interlocked.Increment(ref _rebuildActive);
@@ -131,19 +146,31 @@ namespace PolicyPlusPlus.Services
                             {
                                 await EnsureInitializedAsync().ConfigureAwait(false);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Warn(LogArea, "EnsureInitialized failed (languages)", ex);
+                            }
                             try
                             {
                                 EventHub.PublishAdmxCacheRebuildStarted("languages", null);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(
+                                    LogArea,
+                                    "Publish start(languages) failed: " + ex.Message
+                                );
+                            }
                             try
                             {
                                 SettingsService.Instance.PurgeOldCacheEntries(
                                     TimeSpan.FromDays(30)
                                 );
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(LogArea, "PurgeOldCacheEntries failed: " + ex.Message);
+                            }
                             var st2 = SettingsService.Instance.LoadSettings();
                             try
                             {
@@ -153,7 +180,13 @@ namespace PolicyPlusPlus.Services
                                         : st2.AdmxSourcePath
                                 );
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(
+                                    LogArea,
+                                    "SetSourceRoot failed (languages): " + ex.Message
+                                );
+                            }
                             string primary2 = !string.IsNullOrWhiteSpace(st2.Language)
                                 ? st2.Language!
                                 : CultureInfo.CurrentUICulture.Name;
@@ -177,12 +210,24 @@ namespace PolicyPlusPlus.Services
                             {
                                 EventHub.PublishPolicySourcesRefreshed(null);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(
+                                    LogArea,
+                                    "Publish sources refreshed (languages) failed: " + ex.Message
+                                );
+                            }
                             try
                             {
                                 EventHub.PublishAdmxCacheRebuildCompleted("languages");
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(
+                                    LogArea,
+                                    "Publish completed(languages) failed: " + ex.Message
+                                );
+                            }
                             finally
                             {
                                 Interlocked.Decrement(ref _rebuildActive);
@@ -198,6 +243,7 @@ namespace PolicyPlusPlus.Services
                         }
                         if (!shouldRun)
                             return;
+                        Log.Debug(LogArea, "SourcesRootChanged trigger");
                         RunAndTrack(async () =>
                         {
                             Interlocked.Increment(ref _rebuildActive);
@@ -205,19 +251,31 @@ namespace PolicyPlusPlus.Services
                             {
                                 await EnsureInitializedAsync().ConfigureAwait(false);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Warn(LogArea, "EnsureInitialized failed (sourcesRoot)", ex);
+                            }
                             try
                             {
                                 EventHub.PublishAdmxCacheRebuildStarted("sourcesRoot", null);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(
+                                    LogArea,
+                                    "Publish start(sourcesRoot) failed: " + ex.Message
+                                );
+                            }
                             try
                             {
                                 SettingsService.Instance.PurgeOldCacheEntries(
                                     TimeSpan.FromDays(30)
                                 );
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(LogArea, "PurgeOldCacheEntries failed: " + ex.Message);
+                            }
                             var st3 = SettingsService.Instance.LoadSettings();
                             try
                             {
@@ -227,7 +285,13 @@ namespace PolicyPlusPlus.Services
                                         : st3.AdmxSourcePath
                                 );
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(
+                                    LogArea,
+                                    "SetSourceRoot failed (sourcesRoot): " + ex.Message
+                                );
+                            }
                             var langs = _culturesForScan;
                             if (langs == null || langs.Count == 0)
                                 langs = new[] { CultureInfo.CurrentUICulture.Name };
@@ -236,12 +300,24 @@ namespace PolicyPlusPlus.Services
                             {
                                 EventHub.PublishPolicySourcesRefreshed(null);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(
+                                    LogArea,
+                                    "Publish sources refreshed (sourcesRoot) failed: " + ex.Message
+                                );
+                            }
                             try
                             {
                                 EventHub.PublishAdmxCacheRebuildCompleted("sourcesRoot");
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(
+                                    LogArea,
+                                    "Publish completed(sourcesRoot) failed: " + ex.Message
+                                );
+                            }
                             finally
                             {
                                 Interlocked.Decrement(ref _rebuildActive);
@@ -257,6 +333,7 @@ namespace PolicyPlusPlus.Services
                         }
                         if (!shouldRun)
                             return;
+                        Log.Debug(LogArea, "CacheCleared trigger");
                         RunAndTrack(async () =>
                         {
                             Interlocked.Increment(ref _rebuildActive);
@@ -264,12 +341,21 @@ namespace PolicyPlusPlus.Services
                             {
                                 await EnsureInitializedAsync().ConfigureAwait(false);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Warn(LogArea, "EnsureInitialized failed (cacheCleared)", ex);
+                            }
                             try
                             {
                                 EventHub.PublishAdmxCacheRebuildStarted("cacheCleared", null);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(
+                                    LogArea,
+                                    "Publish start(cacheCleared) failed: " + ex.Message
+                                );
+                            }
                             var st4 = SettingsService.Instance.LoadSettings();
                             try
                             {
@@ -279,7 +365,13 @@ namespace PolicyPlusPlus.Services
                                         : st4.AdmxSourcePath
                                 );
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(
+                                    LogArea,
+                                    "SetSourceRoot failed (cacheCleared): " + ex.Message
+                                );
+                            }
                             var langs = _culturesForScan;
                             if (langs == null || langs.Count == 0)
                                 langs = new[] { CultureInfo.CurrentUICulture.Name };
@@ -288,12 +380,24 @@ namespace PolicyPlusPlus.Services
                             {
                                 EventHub.PublishPolicySourcesRefreshed(null);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(
+                                    LogArea,
+                                    "Publish sources refreshed (cacheCleared) failed: " + ex.Message
+                                );
+                            }
                             try
                             {
                                 EventHub.PublishAdmxCacheRebuildCompleted("cacheCleared");
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug(
+                                    LogArea,
+                                    "Publish completed(cacheCleared) failed: " + ex.Message
+                                );
+                            }
                             finally
                             {
                                 Interlocked.Decrement(ref _rebuildActive);
@@ -301,14 +405,20 @@ namespace PolicyPlusPlus.Services
                         });
                     };
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Error(LogArea, "Failed wiring settings event handlers", ex);
+                }
 
                 // Wait for initialization to complete before first scan
                 try
                 {
                     await EnsureInitializedAsync().ConfigureAwait(false);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Warn(LogArea, "EnsureInitialized before first scan failed", ex);
+                }
 
                 // Configure source root and build cultures list: primary + (2nd if enabled) + en-US if fallback enabled
                 var st = SettingsService.Instance.LoadSettings();
@@ -317,7 +427,10 @@ namespace PolicyPlusPlus.Services
                 {
                     _cache.SetSourceRoot(string.IsNullOrWhiteSpace(src) ? null : src);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(LogArea, "SetSourceRoot initial failed: " + ex.Message);
+                }
                 string primary = !string.IsNullOrWhiteSpace(st.Language)
                     ? st.Language!
                     : CultureInfo.CurrentUICulture.Name;
@@ -344,32 +457,47 @@ namespace PolicyPlusPlus.Services
                     {
                         await EnsureInitializedAsync().ConfigureAwait(false);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Warn(LogArea, "EnsureInitialized failed (initial)", ex);
+                    }
                     try
                     {
                         EventHub.PublishAdmxCacheRebuildStarted("initial", null);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(LogArea, "Publish start(initial) failed: " + ex.Message);
+                    }
                     await _cache.ScanAndUpdateAsync(_culturesForScan).ConfigureAwait(false);
                     try
                     {
                         EventHub.PublishAdmxCacheRebuildCompleted("initial");
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(LogArea, "Publish completed(initial) failed: " + ex.Message);
+                    }
                     try
                     {
                         EventHub.PublishPolicySourcesRefreshed(null);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(
+                            LogArea,
+                            "Publish sources refreshed (initial) failed: " + ex.Message
+                        );
+                    }
                     finally
                     {
                         Interlocked.Decrement(ref _rebuildActive);
                     }
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore cache init failures; UI should continue to function.
+                Log.Error(LogArea, "StartAsync outer failed - continuing without cache", ex);
             }
 
             // Attach file system watcher for configured policy definitions root.
@@ -383,17 +511,26 @@ namespace PolicyPlusPlus.Services
                     );
                 if (Directory.Exists(watchRoot))
                 {
+                    Log.Info(LogArea, $"Creating watcher root={watchRoot}");
                     _watcher = new AdmxWatcher(
                         watchRoot,
                         async _ =>
                         {
-                            // Debounce rapid file change bursts
                             var now = DateTime.UtcNow;
                             if ((now - _lastWatcherKickUtc) < _watcherDebounce)
                             {
-                                await Task.Delay(_watcherDebounce).ConfigureAwait(false);
+                                Log.Debug(LogArea, "Watcher debounce");
+                                try
+                                {
+                                    await Task.Delay(_watcherDebounce).ConfigureAwait(false);
+                                }
+                                catch (Exception exDelay)
+                                {
+                                    Log.Debug(LogArea, "Watcher delay failed: " + exDelay.Message);
+                                }
                             }
                             _lastWatcherKickUtc = DateTime.UtcNow;
+                            Log.Debug(LogArea, "Watcher change trigger");
                             RunAndTrack(async () =>
                             {
                                 Interlocked.Increment(ref _rebuildActive);
@@ -401,12 +538,21 @@ namespace PolicyPlusPlus.Services
                                 {
                                     await EnsureInitializedAsync().ConfigureAwait(false);
                                 }
-                                catch { }
+                                catch (Exception ex)
+                                {
+                                    Log.Warn(LogArea, "EnsureInitialized failed (watcher)", ex);
+                                }
                                 try
                                 {
                                     EventHub.PublishAdmxCacheRebuildStarted("watcher", _);
                                 }
-                                catch { }
+                                catch (Exception ex)
+                                {
+                                    Log.Debug(
+                                        LogArea,
+                                        "Publish start(watcher) failed: " + ex.Message
+                                    );
+                                }
                                 var langs = _culturesForScan;
                                 if (langs == null || langs.Count == 0)
                                 {
@@ -417,12 +563,24 @@ namespace PolicyPlusPlus.Services
                                 {
                                     EventHub.PublishPolicySourcesRefreshed(null);
                                 }
-                                catch { }
+                                catch (Exception ex)
+                                {
+                                    Log.Debug(
+                                        LogArea,
+                                        "Publish sources refreshed (watcher) failed: " + ex.Message
+                                    );
+                                }
                                 try
                                 {
                                     EventHub.PublishAdmxCacheRebuildCompleted("watcher");
                                 }
-                                catch { }
+                                catch (Exception ex)
+                                {
+                                    Log.Debug(
+                                        LogArea,
+                                        "Publish completed(watcher) failed: " + ex.Message
+                                    );
+                                }
                                 finally
                                 {
                                     Interlocked.Decrement(ref _rebuildActive);
@@ -432,10 +590,14 @@ namespace PolicyPlusPlus.Services
                         }
                     );
                 }
+                else
+                {
+                    Log.Debug(LogArea, $"Watcher root not found path={watchRoot}");
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                // Best-effort; watcher is optional.
+                Log.Warn(LogArea, "Watcher setup failed (optional)", ex);
             }
         }
 
@@ -456,8 +618,12 @@ namespace PolicyPlusPlus.Services
                 try
                 {
                     await w.DisposeAsync();
+                    Log.Debug(LogArea, "Watcher disposed");
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(LogArea, "Watcher dispose failed: " + ex.Message);
+                }
             }
             if (pending.Length > 0)
             {
@@ -465,13 +631,19 @@ namespace PolicyPlusPlus.Services
                 {
                     await Task.WhenAll(pending);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(LogArea, "Waiting pending tasks failed: " + ex.Message);
+                }
             }
             try
             {
                 PolicyPlusCore.Core.AdmxCacheRuntime.ReleaseSqliteHandles();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(LogArea, "ReleaseSqliteHandles failed: " + ex.Message);
+            }
         }
 
         // Tracks background work to allow StopAsync to wait for DB-using operations to complete.
@@ -495,12 +667,18 @@ namespace PolicyPlusPlus.Services
                                 .ThreadPriority
                                 .BelowNormal;
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Log.Debug(LogArea, "Set priority failed: " + ex.Message);
+                        }
                         try
                         {
                             await work().ConfigureAwait(false);
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Log.Warn(LogArea, "Background rebuild work failed", ex);
+                        }
                         finally
                         {
                             System.Threading.Interlocked.Exchange(ref _rebuildBusy, 0);
@@ -508,6 +686,7 @@ namespace PolicyPlusPlus.Services
                             if (_rebuildPending)
                             {
                                 _rebuildPending = false;
+                                Log.Debug(LogArea, "Running coalesced rebuild");
                                 RunAndTrack(work);
                             }
                         }
@@ -553,12 +732,18 @@ namespace PolicyPlusPlus.Services
                     if (_initTask != null)
                         await _initTask.ConfigureAwait(false);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Warn(LogArea, "EnsureInitialized failed (requestRebuild)", ex);
+                }
                 try
                 {
                     EventHub.PublishAdmxCacheRebuildStarted(reason, null);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(LogArea, "Publish start(request) failed: " + ex.Message);
+                }
                 var langs = _culturesForScan;
                 if (langs == null || langs.Count == 0)
                 {
@@ -569,12 +754,18 @@ namespace PolicyPlusPlus.Services
                 {
                     EventHub.PublishPolicySourcesRefreshed(null);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(LogArea, "Publish sources refreshed (request) failed: " + ex.Message);
+                }
                 try
                 {
                     EventHub.PublishAdmxCacheRebuildCompleted(reason);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(LogArea, "Publish completed(request) failed: " + ex.Message);
+                }
                 finally
                 {
                     Interlocked.Decrement(ref _rebuildActive);

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus.Services
 {
@@ -35,6 +36,7 @@ namespace PolicyPlusPlus.Services
             {
                 _lists = new(StringComparer.OrdinalIgnoreCase) { ["default"] = new List<string>() };
                 _active = "default";
+                Log.Warn("Bookmarks", "Load failed - initialized empty lists");
             }
         }
 
@@ -44,7 +46,10 @@ namespace PolicyPlusPlus.Services
             {
                 SettingsService.Instance.SaveBookmarkLists(_lists, _active);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("Bookmarks", "Persist failed", ex);
+            }
         }
 
         public string ActiveList => _active;
@@ -260,6 +265,7 @@ namespace PolicyPlusPlus.Services
             catch (Exception ex)
             {
                 error = ex.Message;
+                Log.Warn("Bookmarks", "TryImportJson failed: " + ex.Message, ex);
                 return false;
             }
         }
@@ -270,7 +276,10 @@ namespace PolicyPlusPlus.Services
             {
                 Changed?.Invoke(this, EventArgs.Empty);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Bookmarks", "Changed handlers failed: " + ex.Message);
+            }
         }
     }
 }

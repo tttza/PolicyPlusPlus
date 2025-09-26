@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using PolicyPlusPlus.Logging; // logging
 using PolicyPlusPlus.Serialization;
 using Windows.ApplicationModel;
 using Windows.Storage;
@@ -48,6 +49,8 @@ namespace PolicyPlusPlus.Services
 
         private SettingsService() { }
 
+        private const string LogArea = "Settings";
+
         public void Initialize()
         {
             try
@@ -61,8 +64,10 @@ namespace PolicyPlusPlus.Services
                     {
                         Directory.CreateDirectory(CacheDirectory);
                     }
-                    catch { }
-                    // Apply forced language overrides for UI tests if provided.
+                    catch (Exception ex)
+                    {
+                        Log.Warn(LogArea, "Create cache dir (test) failed", ex);
+                    }
                     try
                     {
                         var forceLang = Environment.GetEnvironmentVariable(
@@ -88,9 +93,13 @@ namespace PolicyPlusPlus.Services
                                 s.SecondLanguageEnabled = forceSecondEnabled;
                             }
                             SaveSettings(s);
+                            Log.Debug(LogArea, "Applied forced language overrides");
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Warn(LogArea, "Force language override failed", ex);
+                    }
                     return;
                 }
                 bool packaged = true;
@@ -113,9 +122,16 @@ namespace PolicyPlusPlus.Services
                 {
                     Directory.CreateDirectory(CacheDirectory);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Warn(LogArea, "Create cache dir failed", ex);
+                }
+                Log.Debug(LogArea, $"Initialize baseDir={_baseDir} packaged={packaged}");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Error(LogArea, "Initialize failed", ex);
+            }
         }
 
         internal void InitializeForTests(string baseDirectory)
@@ -144,7 +160,10 @@ namespace PolicyPlusPlus.Services
                         ?? new AppSettings();
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn(LogArea, "Load settings deserialize failed", ex);
+            }
             return new AppSettings();
         }
 
@@ -175,8 +194,12 @@ namespace PolicyPlusPlus.Services
                         UserPath = user ? s.CustomPolUserPath : null,
                         Active = comp || user,
                     };
+                    Log.Debug(LogArea, "Migrated legacy custom pol fields");
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Warn(LogArea, "CustomPol migration failed", ex);
+                }
             }
             if (s.CustomPol != null)
             {
@@ -203,7 +226,10 @@ namespace PolicyPlusPlus.Services
                     {
                         _cachedSettings.IncludePrereleaseUpdates = IsCurrentBuildPrerelease();
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Warn(LogArea, "Detect prerelease failed", ex);
+                    }
                 }
             }
             return _cachedSettings;
@@ -218,11 +244,13 @@ namespace PolicyPlusPlus.Services
                     ?.InformationalVersion;
                 if (string.IsNullOrWhiteSpace(info))
                     return false;
-                // Simple heuristic: semver with a '-' indicates prerelease (e.g., 1.2.3-alpha.1)
                 return info.Contains('-', StringComparison.Ordinal);
             }
-            catch { }
-            return false;
+            catch (Exception ex)
+            {
+                Log.Debug(LogArea, "IsCurrentBuildPrerelease failed: " + ex.Message);
+                return false;
+            }
         }
 
         public AppSettings LoadSettings()
@@ -285,8 +313,12 @@ namespace PolicyPlusPlus.Services
                 var afterPath = after.AdmxSourcePath ?? string.Empty;
                 fireLang = !beforeLang.Equals(afterLang);
                 fireSrc = !string.Equals(beforePath, afterPath, StringComparison.OrdinalIgnoreCase);
+                Log.Debug(LogArea, $"SaveSettings ok fireLang={fireLang} fireSrc={fireSrc}");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn(LogArea, "SaveSettings failed", ex);
+            }
             finally
             {
                 _sem.Release();
@@ -297,13 +329,19 @@ namespace PolicyPlusPlus.Services
                 if (fireLang)
                     LanguagesChanged?.Invoke();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(LogArea, "LanguagesChanged handlers failed: " + ex.Message);
+            }
             try
             {
                 if (fireSrc)
                     SourcesRootChanged?.Invoke();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(LogArea, "SourcesRootChanged handlers failed: " + ex.Message);
+            }
         }
 
         private void Update(Action<AppSettings> mutator)
@@ -337,8 +375,13 @@ namespace PolicyPlusPlus.Services
                 var afterPath = s.AdmxSourcePath ?? string.Empty;
                 fireLang = !beforeLang.Equals(afterLang);
                 fireSrc = !string.Equals(beforePath, afterPath, StringComparison.OrdinalIgnoreCase);
+                if (fireLang || fireSrc)
+                    Log.Debug(LogArea, $"Update changed fireLang={fireLang} fireSrc={fireSrc}");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn(LogArea, "Update failed", ex);
+            }
             finally
             {
                 _sem.Release();
@@ -349,13 +392,19 @@ namespace PolicyPlusPlus.Services
                 if (fireLang)
                     LanguagesChanged?.Invoke();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(LogArea, "LanguagesChanged (Update) handlers failed: " + ex.Message);
+            }
             try
             {
                 if (fireSrc)
                     SourcesRootChanged?.Invoke();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(LogArea, "SourcesRootChanged (Update) handlers failed: " + ex.Message);
+            }
         }
 
         public void ReloadFromDisk()
@@ -405,6 +454,7 @@ namespace PolicyPlusPlus.Services
                             {
                                 File.SetAttributes(file, System.IO.FileAttributes.Normal);
                                 File.Delete(file);
+                                Log.Debug(LogArea, $"Purged cache file name={fi.Name}");
                             }
                         }
                         catch { }
@@ -447,7 +497,10 @@ namespace PolicyPlusPlus.Services
                 }
                 catch { }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(LogArea, "PurgeOldCacheEntries outer failed: " + ex.Message);
+            }
         }
 
         // Deletes the entire Cache directory and recreates it, then notifies subscribers.

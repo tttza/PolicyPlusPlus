@@ -22,10 +22,19 @@ namespace PolicyPlusPlus.Services
                             continue;
                         CopyKeyRecursive(key, policyRoot, pol);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.Debug("PolicySnapshot", "Copy root failed: " + ex.Message);
+                    }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug(
+                    "PolicySnapshot",
+                    "SnapshotLocalPolicyToPol outer failed: " + ex.Message
+                );
+            }
             return pol;
         }
 
@@ -37,12 +46,18 @@ namespace PolicyPlusPlus.Services
             {
                 SnapshotHiveToReg(RegistryHive.LocalMachine, "HKEY_LOCAL_MACHINE", reg);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("PolicySnapshot", "Snapshot HKLM failed: " + ex.Message);
+            }
             try
             {
                 SnapshotHiveToReg(RegistryHive.CurrentUser, "HKEY_CURRENT_USER", reg);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("PolicySnapshot", "Snapshot HKCU failed: " + ex.Message);
+            }
             return reg;
         }
 
@@ -58,7 +73,13 @@ namespace PolicyPlusPlus.Services
                         continue;
                     CopyKeyRecursiveToReg(key, hiveName + "\\" + policyRoot, reg);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Logging.Log.Debug(
+                        "PolicySnapshot",
+                        "SnapshotHiveToReg key failed: " + ex.Message
+                    );
+                }
             }
         }
 
@@ -107,7 +128,10 @@ namespace PolicyPlusPlus.Services
                                 break;
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.Debug("PolicySnapshot", "Value copy failed: " + ex.Message);
+                    }
                 }
 
                 foreach (var sub in key.GetSubKeyNames())
@@ -120,10 +144,16 @@ namespace PolicyPlusPlus.Services
                             CopyKeyRecursive(child, path + "\\" + sub, pol);
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.Debug("PolicySnapshot", "Subkey recurse failed: " + ex.Message);
+                    }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("PolicySnapshot", "CopyKeyRecursive failed: " + ex.Message);
+            }
         }
 
         private static void CopyKeyRecursiveToReg(RegistryKey key, string fullPath, RegFile reg)
@@ -171,7 +201,13 @@ namespace PolicyPlusPlus.Services
                                 break;
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.Debug(
+                            "PolicySnapshot",
+                            "Value copy(reg) failed: " + ex.Message
+                        );
+                    }
                 }
 
                 foreach (var sub in key.GetSubKeyNames())
@@ -184,10 +220,19 @@ namespace PolicyPlusPlus.Services
                             CopyKeyRecursiveToReg(child, fullPath + "\\" + sub, reg);
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.Debug(
+                            "PolicySnapshot",
+                            "Subkey recurse(reg) failed: " + ex.Message
+                        );
+                    }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("PolicySnapshot", "CopyKeyRecursiveToReg failed: " + ex.Message);
+            }
         }
     }
 }

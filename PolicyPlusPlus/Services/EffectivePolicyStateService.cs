@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.UI.Dispatching;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
+using PolicyPlusPlus.Logging; // logging
 using PolicyPlusPlus.ViewModels;
 
 namespace PolicyPlusPlus.Services
@@ -13,6 +14,7 @@ namespace PolicyPlusPlus.Services
     internal sealed class EffectivePolicyStateService
     {
         public static EffectivePolicyStateService Instance { get; } = new();
+        private const string LogArea = "EffectiveState";
 
         private EffectivePolicyStateService() { }
 
@@ -31,8 +33,9 @@ namespace PolicyPlusPlus.Services
                     && string.Equals(p.Scope, scope, StringComparison.OrdinalIgnoreCase)
                 );
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Debug(LogArea, "FindPending failed: " + ex.Message);
                 return null;
             }
         }
@@ -54,12 +57,16 @@ namespace PolicyPlusPlus.Services
                         var opts = PolicyProcessing.GetPolicyOptionStates(source, policy);
                         return (st, opts);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(LogArea, "GetPolicyOptionStates failed: " + ex.Message);
+                    }
                 }
                 return (st, null);
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Debug(LogArea, "GetPolicyState failed: " + ex.Message);
                 return (PolicyState.Unknown, null);
             }
         }
@@ -106,7 +113,10 @@ namespace PolicyPlusPlus.Services
                 {
                     _overlayCts?.Cancel();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(LogArea, "Cancel previous overlay failed: " + ex.Message);
+                }
                 _overlayCts = new CancellationTokenSource();
                 token = _overlayCts.Token;
             }
@@ -119,8 +129,9 @@ namespace PolicyPlusPlus.Services
                         // Debounce multiple rapid calls
                         await Task.Delay(_debounce, token).ConfigureAwait(false);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        Log.Debug(LogArea, "Debounce delay failed: " + ex.Message);
                         return;
                     }
 
@@ -134,8 +145,9 @@ namespace PolicyPlusPlus.Services
                         {
                             await sem.WaitAsync(token).ConfigureAwait(false);
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            Log.Debug(LogArea, "Semaphore wait aborted: " + ex.Message);
                             break;
                         }
 
@@ -189,14 +201,23 @@ namespace PolicyPlusPlus.Services
                                             );
                                         }
                                     }
-                                    catch { }
+                                    catch (Exception ex)
+                                    {
+                                        Log.Debug(LogArea, "Row evaluation failed: " + ex.Message);
+                                    }
                                     finally
                                     {
                                         try
                                         {
                                             sem.Release();
                                         }
-                                        catch { }
+                                        catch (Exception ex)
+                                        {
+                                            Log.Debug(
+                                                LogArea,
+                                                "Semaphore release failed: " + ex.Message
+                                            );
+                                        }
                                     }
                                 },
                                 token
@@ -208,12 +229,18 @@ namespace PolicyPlusPlus.Services
                     {
                         await Task.WhenAll(tasks).ConfigureAwait(false);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(LogArea, "WhenAll failed: " + ex.Message);
+                    }
                     try
                     {
                         sem.Dispose();
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(LogArea, "Semaphore dispose failed: " + ex.Message);
+                    }
                 },
                 token
             );
@@ -232,7 +259,10 @@ namespace PolicyPlusPlus.Services
                 // Avoid implicit Action -> DispatcherQueueHandler conversion issues by constructing the delegate explicitly.
                 dq.TryEnqueue(new DispatcherQueueHandler(action));
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(LogArea, "Dispatcher enqueue failed: " + ex.Message);
+            }
         }
     }
 }

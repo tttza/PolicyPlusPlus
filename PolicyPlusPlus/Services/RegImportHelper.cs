@@ -48,13 +48,19 @@ namespace PolicyPlusPlus.Services
                 if (userReg.Keys.Count > 0)
                     userReg.Apply(userPol);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("RegImport", "Apply user hive failed: " + ex.Message);
+            }
             try
             {
                 if (machineReg.Keys.Count > 0)
                     machineReg.Apply(machinePol);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("RegImport", "Apply machine hive failed: " + ex.Message);
+            }
             return (userPol, machinePol);
         }
 
@@ -124,7 +130,10 @@ namespace PolicyPlusPlus.Services
                 }
                 source.Keys = filtered;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("RegImport", "FilterToPolicyKeysInPlace failed: " + ex.Message);
+            }
         }
 
         private static bool StartsWith(string text, string prefix) =>

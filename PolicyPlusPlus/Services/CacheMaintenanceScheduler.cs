@@ -11,6 +11,7 @@ internal sealed class CacheMaintenanceScheduler
 {
     private static readonly CacheMaintenanceScheduler _instance = new();
     public static CacheMaintenanceScheduler Instance => _instance;
+    private const string LogArea = "CacheMaint"; // Maintenance scheduling / purge lifecycle
 
     private volatile bool _started;
     private CancellationTokenSource? _cts;
@@ -33,6 +34,7 @@ internal sealed class CacheMaintenanceScheduler
             _started = true;
             _cts = new CancellationTokenSource();
         }
+        Log.Info(LogArea, "start");
         _ = RunLoopAsync(_cts.Token);
     }
 
@@ -44,8 +46,12 @@ internal sealed class CacheMaintenanceScheduler
             {
                 _cts?.Cancel();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(LogArea, "cancel failed: " + ex.Message);
+            }
         }
+        Log.Info(LogArea, "stop signaled");
     }
 
     private async Task RunLoopAsync(CancellationToken ct)
@@ -55,7 +61,10 @@ internal sealed class CacheMaintenanceScheduler
         {
             _ = SettingsService.Instance.LoadSettings();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Log.Debug(LogArea, "LoadSettings failed: " + ex.Message);
+        }
         // Future settings for enabling/disabling stale purge could be added; currently always enabled.
         int days = 30; // fixed threshold for now
         int initialDelaySec = 120; // 2 min
@@ -66,8 +75,9 @@ internal sealed class CacheMaintenanceScheduler
         {
             await Task.Delay(TimeSpan.FromSeconds(initialDelaySec), ct).ConfigureAwait(false);
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Debug(LogArea, "initial delay aborted: " + ex.Message);
             return;
         }
         while (!ct.IsCancellationRequested && _attempts < maxAttempts && _executed == 0)
@@ -92,14 +102,17 @@ internal sealed class CacheMaintenanceScheduler
                             .ConfigureAwait(false);
                     }
                 }
-                catch (OperationCanceledException) { }
+                catch (OperationCanceledException)
+                {
+                    Log.Debug(LogArea, "purge canceled");
+                }
                 catch (Exception ex)
                 {
-                    Log.Warn("CacheMaint", "stale purge failed", ex);
+                    Log.Warn(LogArea, "stale purge failed", ex);
                 }
                 _executed = 1;
-                Log.Debug("CacheMaint", $"stale purge finished removed={removed}");
-                Log.Info("CacheMaint", $"stale purge complete removed={removed}");
+                Log.Debug(LogArea, $"stale purge finished removed={removed}");
+                Log.Info(LogArea, $"stale purge complete removed={removed}");
                 break;
             }
             else
@@ -108,8 +121,9 @@ internal sealed class CacheMaintenanceScheduler
                 {
                     await Task.Delay(TimeSpan.FromSeconds(retrySec), ct).ConfigureAwait(false);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Log.Debug(LogArea, "retry delay aborted: " + ex.Message);
                     break;
                 }
             }

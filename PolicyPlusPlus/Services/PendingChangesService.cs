@@ -173,7 +173,10 @@ namespace PolicyPlusPlus.Services
             {
                 EventHub.PublishPendingQueueDelta(new[] { pid }, Array.Empty<string>());
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("PendingChanges", "PublishPendingQueueDelta failed: " + ex.Message);
+            }
             // Broadcast fine-grained change for live UI sync (QuickEdit <-> EditSetting)
             try
             {
@@ -184,7 +187,10 @@ namespace PolicyPlusPlus.Services
                     effectiveOptionsClone
                 );
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("PendingChanges", "PublishPolicyChangeQueued failed: " + ex.Message);
+            }
         }
 
         // Discard: just remove pending entries
@@ -208,12 +214,24 @@ namespace PolicyPlusPlus.Services
                 {
                     EventHub.PublishPendingQueueDelta(Array.Empty<string>(), removedIds);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "PendingChanges",
+                        "PublishPendingQueueDelta (discard) failed: " + ex.Message
+                    );
+                }
                 try
                 {
                     EventHub.PublishPendingAppliedOrDiscarded(removedIds);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "PendingChanges",
+                        "PublishPendingAppliedOrDiscarded (discard) failed: " + ex.Message
+                    );
+                }
             }
         }
 
@@ -252,7 +270,10 @@ namespace PolicyPlusPlus.Services
             {
                 EventHub.PublishHistoryChanged();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("PendingChanges", "PublishHistoryChanged failed: " + ex.Message);
+            }
         }
 
         public void Applied(params PendingChange[] changes)
@@ -292,12 +313,24 @@ namespace PolicyPlusPlus.Services
                 {
                     EventHub.PublishPendingQueueDelta(Array.Empty<string>(), appliedIds);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "PendingChanges",
+                        "PublishPendingQueueDelta (applied) failed: " + ex.Message
+                    );
+                }
                 try
                 {
                     EventHub.PublishPendingAppliedOrDiscarded(appliedIds);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "PendingChanges",
+                        "PublishPendingAppliedOrDiscarded (applied) failed: " + ex.Message
+                    );
+                }
             }
         }
 
@@ -321,12 +354,24 @@ namespace PolicyPlusPlus.Services
                 {
                     EventHub.PublishPendingQueueDelta(Array.Empty<string>(), removedIds);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "PendingChanges",
+                        "PublishPendingQueueDelta (discardAll) failed: " + ex.Message
+                    );
+                }
                 try
                 {
                     EventHub.PublishPendingAppliedOrDiscarded(removedIds);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "PendingChanges",
+                        "PublishPendingAppliedOrDiscarded (discardAll) failed: " + ex.Message
+                    );
+                }
             }
         }
     }
