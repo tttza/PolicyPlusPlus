@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <ImplicitUsings>false</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -29,7 +29,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.*">
+    <!-- Pin Windows App SDK for reproducible test runs -->
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.*">
       <IncludeAssets>runtime;native;contentfiles</IncludeAssets>
       <ExcludeAssets>build;buildTransitive;analyzers</ExcludeAssets>
     </PackageReference>

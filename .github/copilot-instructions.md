@@ -9,14 +9,13 @@ PolicyPlusMod loads Administrative Template (ADMX/ADML) definitions, lets users 
 - Language: C# (.NET 8; legacy VB already removed)
 - Projects / Targets:
   - Core: `PolicyPlusCore` → `net8.0-windows`
-  - WinUI 3 UI: `PolicyPlusPlus` → `net8.0-windows10.0.17763.0` (desktop app)
+  - WinUI 3 UI: `PolicyPlusPlus` → `net8.0-windows10.0.26100.0` (desktop app; min platform 10.0.17763.0)
   - Elevation Host: `PolicyPPElevationHost` → `net8.0-windows` (console/elevation helper)
   - Tests: `PolicyPlusModTests`, `PolicyPlusPlus.Tests.UI` (xUnit)
 - Windows App SDK 1.8; CommunityToolkit WinUI controls
 - SDK pinned by `global.json` (8.0.413) – do not drift
-- Packaging: Unpackaged (Debug/Release + *-Unpackaged configs). Future MSIX / Velopack packaging must be documented before adoption.
+- Packaging: Dual path – Packaged (MSIX) for standard installs and Unpackaged (Velopack-enabled) for self-updating portable style. Config names with *-Unpackaged select the Velopack/update path; others build MSIX packages.
 
-Note: `PolicyPlusModTests` currently sets `<UseWindowsForms>true</UseWindowsForms>` but no WinForms APIs are in use; this can be safely removed in a future cleanup.
 
 ## 3. Repository Layout (High Value)
 ```
@@ -49,7 +48,14 @@ Release build:
 ```
 dotnet build PolicyPlusMod.sln -c Release-Unpackaged
 ```
-(Add packaging instructions here once a packaging format is adopted.)
+Packaged vs Unpackaged quick reference:
+```
+Debug / Release: Packaged=true (MSIX; Store-like deployment)
+Debug-Unpackaged / Release-Unpackaged: Packaged=false (Velopack, self-contained when configured)
+```
+Publishing guidance:
+1. Unpackaged: invoke publish profile (win-<Platform>-standalone) then Velopack pipeline packages outputs.
+2. Packaged: standard dotnet build/publish generates MSIX with signing per certificate settings.
 
 ## 6. Coding Guidelines
 - Favor small, clear methods; keep hot paths lean.
