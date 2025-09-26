@@ -1092,37 +1092,34 @@ namespace PolicyPlusPlus
                             tryLangs.Add("en-US");
 
                         IReadOnlyList<PolicyPlusCore.Core.PolicyHit>? hits = null;
-                        // Determine cache search cap: align with UI 1000 limit when that feature is enabled; otherwise allow a larger batch to avoid artificial truncation.
                         int cacheSearchLimit = _limitUnfilteredTo1000 ? 1000 : 5000;
-                        foreach (var lang in tryLangs.Distinct(StringComparer.OrdinalIgnoreCase))
+                        var searchFields = SearchFields.None;
+                        if (_searchInName)
+                            searchFields |= SearchFields.Name;
+                        if (_searchInId)
+                            searchFields |= SearchFields.Id;
+                        if (_searchInRegistryKey || _searchInRegistryValue)
+                            searchFields |= SearchFields.Registry;
+                        if (_searchInDescription)
+                            searchFields |= SearchFields.Description;
+                        if (searchFields == SearchFields.None)
                         {
-                            var fields = SearchFields.None;
-                            if (_searchInName)
-                                fields |= SearchFields.Name;
-                            if (_searchInId)
-                                fields |= SearchFields.Id;
-                            if (_searchInRegistryKey || _searchInRegistryValue)
-                                fields |= SearchFields.Registry;
-                            if (_searchInDescription)
-                                fields |= SearchFields.Description;
-
-                            if (fields == SearchFields.None)
-                            {
-                                hits = Array.Empty<PolicyPlusCore.Core.PolicyHit>();
-                                continue;
-                            }
-
+                            hits = Array.Empty<PolicyPlusCore.Core.PolicyHit>();
+                        }
+                        else
+                        {
+                            var orderedCultures = tryLangs
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .ToList();
                             hits = await AdmxCacheHostService
                                 .Instance.Cache.SearchAsync(
                                     q,
-                                    lang,
-                                    fields,
+                                    orderedCultures,
+                                    searchFields,
                                     cacheSearchLimit,
                                     token
                                 )
                                 .ConfigureAwait(false);
-                            if (hits != null && hits.Count > 0)
-                                break;
                         }
                         if (hits != null && hits.Count > 0)
                         {

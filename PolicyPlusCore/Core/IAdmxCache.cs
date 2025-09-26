@@ -50,15 +50,40 @@ public interface IAdmxCache
         CancellationToken ct = default
     );
 
+    // Multi-culture search: returns hits resolved using the first culture in cultures that has data; no per-hit mixing.
+    // Implementation should attempt each culture in order until results found (or all exhausted).
+    Task<IReadOnlyList<PolicyHit>> SearchAsync(
+        string query,
+        IReadOnlyList<string> cultures,
+        SearchFields fields,
+        int limit = 50,
+        CancellationToken ct = default
+    );
+
     Task<PolicyDetail?> GetByPolicyNameAsync(
         string ns,
         string policyName,
         string culture,
         CancellationToken ct = default
     );
+
+    // Multi-culture variant: attempts cultures in order; returns first found detail (no merging of fields).
+    Task<PolicyDetail?> GetByPolicyNameAsync(
+        string ns,
+        string policyName,
+        IReadOnlyList<string> cultures,
+        CancellationToken ct = default
+    );
     Task<PolicyDetail?> GetByRegistryPathAsync(
         string registryPath,
         string culture,
+        CancellationToken ct = default
+    );
+
+    // Multi-culture variant for registry path lookup.
+    Task<PolicyDetail?> GetByRegistryPathAsync(
+        string registryPath,
+        IReadOnlyList<string> cultures,
         CancellationToken ct = default
     );
 

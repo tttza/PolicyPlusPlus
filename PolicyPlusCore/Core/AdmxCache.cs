@@ -157,6 +157,25 @@ public sealed class AdmxCache : IAdmxCache
             using var _traceCulture = AdmxCacheTrace.Scope("ScanAndUpdateAsync.Culture:" + cul);
             bool allowGlobalRebuild = needGlobalRebuild && (i == 0);
 
+            // Strategy A: Do not persist fallback. If the exact culture directory (root\culture) does not exist OR contains no *.adml,
+            // treat this culture as absent: remove any prior persisted rows for this culture (they may have been fallback-injected by earlier versions) and skip insertion.
+            try
+            {
+                var cultureDir = Path.Combine(root, cul);
+                bool cultureHasAdml =
+                    Directory.Exists(cultureDir)
+                    && Directory
+                        .EnumerateFiles(cultureDir, "*.adml", SearchOption.TopDirectoryOnly)
+                        .Any();
+                if (!cultureHasAdml)
+                {
+                    await PurgeCultureAsync(cul, ct).ConfigureAwait(false);
+                    i++;
+                    continue; // Skip parse/apply for this culture (fallback handled at query time)
+                }
+            }
+            catch { }
+
             // Fast path: if not global rebuild and source signature unchanged, skip this culture.
             bool skipCulture = false;
             if (!allowGlobalRebuild)
@@ -362,6 +381,114 @@ public sealed class AdmxCache : IAdmxCache
             }
             catch { }
         }
+    }
+
+    // Deletes localized rows (PolicyI18n + FTS index rows) for a culture if present. No-op on failure.
+    private async Task PurgeCultureAsync(string culture, CancellationToken ct)
+    {
+        bool fastMode = string.Equals(
+            Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_FAST"),
+            "1",
+            StringComparison.Ordinal
+        );
+        IDisposable? writerLock = null;
+        if (!fastMode)
+        {
+            for (int attempt = 0; attempt < 3 && writerLock is null; attempt++)
+            {
+                writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(5));
+                if (writerLock is null)
+                {
+                    try
+                    {
+                        await Task.Delay(150, ct).ConfigureAwait(false);
+                    }
+                    catch { }
+                }
+            }
+        }
+        using var _wl = writerLock; // null allowed
+        try
+        {
+            using var conn = _store.OpenConnection();
+            await conn.OpenAsync(ct).ConfigureAwait(false);
+            using var tx = (Microsoft.Data.Sqlite.SqliteTransaction)
+                await conn.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted)
+                    .ConfigureAwait(false);
+            try
+            {
+                // Collect rowids for FTS delete
+                var rowIds = new List<long>(64);
+                using (var getRows = conn.CreateCommand())
+                {
+                    getRows.Transaction = tx;
+                    getRows.CommandText = "SELECT rowid FROM PolicyIndexMap WHERE culture=@c;";
+                    getRows.Parameters.AddWithValue("@c", culture);
+                    using var r = await getRows.ExecuteReaderAsync(ct).ConfigureAwait(false);
+                    while (await r.ReadAsync(ct).ConfigureAwait(false))
+                    {
+                        if (!r.IsDBNull(0))
+                            rowIds.Add(r.GetInt64(0));
+                    }
+                }
+                if (rowIds.Count > 0)
+                {
+                    using var delFts = conn.CreateCommand();
+                    delFts.Transaction = tx;
+                    delFts.CommandText =
+                        "INSERT INTO PolicyIndex(PolicyIndex, rowid) VALUES('delete', @rid);";
+                    var pRid = delFts.Parameters.Add(
+                        "@rid",
+                        Microsoft.Data.Sqlite.SqliteType.Integer
+                    );
+                    foreach (var rid in rowIds)
+                    {
+                        pRid.Value = rid;
+                        try
+                        {
+                            await delFts.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                        }
+                        catch { }
+                    }
+                }
+                using (var delMap = conn.CreateCommand())
+                {
+                    delMap.Transaction = tx;
+                    delMap.CommandText = "DELETE FROM PolicyIndexMap WHERE culture=@c;";
+                    delMap.Parameters.AddWithValue("@c", culture);
+                    try
+                    {
+                        await delMap.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                    }
+                    catch { }
+                }
+                using (var delI18n = conn.CreateCommand())
+                {
+                    delI18n.Transaction = tx;
+                    delI18n.CommandText = "DELETE FROM PolicyI18n WHERE culture=@c;";
+                    delI18n.Parameters.AddWithValue("@c", culture);
+                    try
+                    {
+                        await delI18n.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                    }
+                    catch { }
+                }
+                try
+                {
+                    await tx.CommitAsync(ct).ConfigureAwait(false);
+                }
+                catch { }
+            }
+            catch
+            {
+                try
+                {
+                    await tx.RollbackAsync(ct).ConfigureAwait(false);
+                }
+                catch { }
+            }
+        }
+        catch { }
     }
 
     // Attempts to derive the ADML path for an ADMX given a culture.
@@ -1210,6 +1337,26 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         return SearchAsync(query, culture, fields, limit, ct);
     }
 
+    public async Task<IReadOnlyList<PolicyHit>> SearchAsync(
+        string query,
+        IReadOnlyList<string> cultures,
+        SearchFields fields,
+        int limit = 50,
+        CancellationToken ct = default
+    )
+    {
+        if (cultures == null || cultures.Count == 0)
+            return await SearchAsync(query, CultureInfo.CurrentUICulture.Name, fields, limit, ct)
+                .ConfigureAwait(false);
+        foreach (var c in cultures)
+        {
+            var hits = await SearchAsync(query, c, fields, limit, ct).ConfigureAwait(false);
+            if (hits != null && hits.Count > 0)
+                return hits; // First culture with results
+        }
+        return Array.Empty<PolicyHit>();
+    }
+
     public Task<IReadOnlyList<PolicyHit>> SearchAsync(
         string query,
         string culture,
@@ -1458,6 +1605,25 @@ WHERE p.ns=@ns AND p.policy_name=@name LIMIT 1";
         return MapDetail(rdr);
     }
 
+    public async Task<PolicyDetail?> GetByPolicyNameAsync(
+        string ns,
+        string policyName,
+        IReadOnlyList<string> cultures,
+        CancellationToken ct = default
+    )
+    {
+        if (cultures == null || cultures.Count == 0)
+            return await GetByPolicyNameAsync(ns, policyName, CultureInfo.CurrentUICulture.Name, ct)
+                .ConfigureAwait(false);
+        foreach (var c in cultures)
+        {
+            var d = await GetByPolicyNameAsync(ns, policyName, c, ct).ConfigureAwait(false);
+            if (d != null)
+                return d;
+        }
+        return null;
+    }
+
     public async Task<PolicyDetail?> GetByRegistryPathAsync(
         string registryPath,
         string culture,
@@ -1481,6 +1647,24 @@ WHERE (p.hive||'\\'||p.reg_key||'\\'||p.reg_value) = @rp LIMIT 1";
         if (!await rdr.ReadAsync(ct).ConfigureAwait(false))
             return null;
         return MapDetail(rdr);
+    }
+
+    public async Task<PolicyDetail?> GetByRegistryPathAsync(
+        string registryPath,
+        IReadOnlyList<string> cultures,
+        CancellationToken ct = default
+    )
+    {
+        if (cultures == null || cultures.Count == 0)
+            return await GetByRegistryPathAsync(registryPath, CultureInfo.CurrentUICulture.Name, ct)
+                .ConfigureAwait(false);
+        foreach (var c in cultures)
+        {
+            var d = await GetByRegistryPathAsync(registryPath, c, ct).ConfigureAwait(false);
+            if (d != null)
+                return d;
+        }
+        return null;
     }
 
     private static bool LooksLikeRegistryQuery(string query)
