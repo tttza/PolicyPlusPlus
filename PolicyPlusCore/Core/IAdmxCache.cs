@@ -60,6 +60,16 @@ public interface IAdmxCache
         CancellationToken ct = default
     );
 
+    // Search with optional AND mode (all tokens must match). When andMode=true, only policies where every token appears in at least one selected field are returned.
+    Task<IReadOnlyList<PolicyHit>> SearchAsync(
+        string query,
+        IReadOnlyList<string> cultures,
+        SearchFields fields,
+        bool andMode,
+        int limit = 50,
+        CancellationToken ct = default
+    );
+
     Task<PolicyDetail?> GetByPolicyNameAsync(
         string ns,
         string policyName,

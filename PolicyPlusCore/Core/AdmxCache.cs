@@ -1355,6 +1355,16 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         SearchFields fields,
         int limit = 50,
         CancellationToken ct = default
+    ) =>
+        await SearchAsync(query, cultures, fields, andMode: false, limit, ct).ConfigureAwait(false);
+
+    public async Task<IReadOnlyList<PolicyHit>> SearchAsync(
+        string query,
+        IReadOnlyList<string> cultures,
+        SearchFields fields,
+        bool andMode,
+        int limit = 50,
+        CancellationToken ct = default
     )
     {
         if (cultures == null || cultures.Count == 0)
@@ -1396,34 +1406,152 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             ftsLooseCols.Add("registry_path");
 
         static string EscapeSqlSingle(string s) => s.Replace("'", "''");
-        static string BuildMatch(string grams, List<string> cols)
-        {
-            if (cols.Count == 0 || string.IsNullOrWhiteSpace(grams))
-                return string.Empty;
-            var tokens = grams.Split(
+        static IEnumerable<string> SplitTokens(string grams) =>
+            grams.Split(
                 ' ',
                 StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
             );
-            if (tokens.Length == 0)
+        static string SanitizeTok(string t)
+        {
+            if (string.IsNullOrEmpty(t))
                 return string.Empty;
-            static string Sanitize(string t)
-            {
-                if (string.IsNullOrEmpty(t))
-                    return string.Empty;
-                var sbTok = new StringBuilder(t.Length);
-                foreach (var ch in t)
-                    if (char.IsLetterOrDigit(ch))
-                        sbTok.Append(ch);
-                return sbTok.ToString();
-            }
-            var safe = tokens.Select(Sanitize).Where(s0 => !string.IsNullOrWhiteSpace(s0)).ToList();
-            if (safe.Count == 0)
-                return string.Empty;
-            var inside = string.Join(' ', safe);
-            return string.Join(" OR ", cols.Select(c => c + ":(" + inside + ")"));
+            var sb = new StringBuilder(t.Length);
+            foreach (var ch in t)
+                if (char.IsLetterOrDigit(ch))
+                    sb.Append(ch);
+            return sb.ToString();
         }
-        var matchNorm = BuildMatch(norm, ftsNormCols);
-        var matchLoose = BuildMatch(loose, ftsLooseCols);
+        static string BuildFtsOr(List<string> cols, IEnumerable<string> rawTokens)
+        {
+            var toks = rawTokens
+                .Select(SanitizeTok)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+            if (cols.Count == 0 || toks.Count == 0)
+                return string.Empty;
+            // For each token build (col1:(tok) OR col2:(tok) ...) and join all with OR
+            var perTok = new List<string>(toks.Count);
+            foreach (var t in toks)
+                perTok.Add("(" + string.Join(" OR ", cols.Select(c => c + ":(" + t + ")")) + ")");
+            return string.Join(" OR ", perTok);
+        }
+        static string BuildFtsAnd(List<string> cols, IEnumerable<string> rawTokens)
+        {
+            var toks = rawTokens
+                .Select(SanitizeTok)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+            if (cols.Count == 0 || toks.Count == 0)
+                return string.Empty;
+            var per = new List<string>(toks.Count);
+            foreach (var t in toks)
+                per.Add("(" + string.Join(" OR ", cols.Select(c => c + ":(" + t + ")")) + ")");
+            return string.Join(" AND ", per);
+        }
+        var normTokens = SplitTokens(norm);
+        var looseTokens = SplitTokens(loose);
+
+        // Build expression requiring ALL tokens for a segment: ( (c1:(g1) OR c2:(g1)) AND (c1:(g2) OR c2:(g2)) ... )
+        static string BuildPerSegmentAllGrams(
+            List<string> cols,
+            IEnumerable<string> rawTokens,
+            int maxGrams = 8
+        )
+        {
+            if (cols.Count == 0)
+                return string.Empty;
+            var toks = rawTokens
+                .Select(SanitizeTok)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .Take(maxGrams) // cap to avoid very large FTS expressions on long segments
+                .ToList();
+            if (toks.Count == 0)
+                return string.Empty;
+            if (toks.Count == 1)
+                return "(" + string.Join(" OR ", cols.Select(c => c + ":(" + toks[0] + ")")) + ")";
+            var per = new List<string>(toks.Count);
+            foreach (var t in toks)
+                per.Add("(" + string.Join(" OR ", cols.Select(c => c + ":(" + t + ")")) + ")");
+            return "(" + string.Join(" AND ", per) + ")";
+        }
+        static string BuildFtsSegmentedAnd(List<string> cols, IEnumerable<string> segments)
+        {
+            if (cols.Count == 0)
+                return string.Empty;
+            var segExprs = new List<string>();
+            foreach (var seg in segments)
+            {
+                if (string.IsNullOrWhiteSpace(seg))
+                    continue;
+                var grams = TextNormalization.ToNGramTokens(seg);
+                if (string.IsNullOrWhiteSpace(grams))
+                {
+                    // Fallback: if the segment is 1 char (cannot produce 2-gram), use the raw char directly.
+                    if (seg.Length == 1)
+                    {
+                        var tok = SanitizeTok(seg);
+                        if (!string.IsNullOrWhiteSpace(tok))
+                            grams = tok;
+                    }
+                }
+                var toks = string.IsNullOrEmpty(grams)
+                    ? Array.Empty<string>()
+                    : grams.Split(
+                        ' ',
+                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                    );
+                if (toks.Length > 0)
+                {
+                    // Heuristic: if any 3-grams exist, drop 2-grams to improve precision (common 2-grams cause broad matches in Japanese).
+                    bool hasTri = toks.Any(t => t.Length == 3);
+                    if (hasTri)
+                    {
+                        var filtered = toks.Where(t => t.Length == 3).Take(10).ToArray(); // cap per segment
+                        if (filtered.Length > 0)
+                            toks = filtered;
+                    }
+                }
+                if (toks.Length == 0)
+                    continue;
+                var expr = BuildPerSegmentAllGrams(cols, toks);
+                if (!string.IsNullOrWhiteSpace(expr))
+                    segExprs.Add(expr); // already wrapped
+            }
+            if (segExprs.Count == 0)
+                return string.Empty;
+            return string.Join(" AND ", segExprs);
+        }
+
+        string matchNorm;
+        string matchLoose;
+        if (andMode && qStrict.IndexOf(' ') >= 0)
+        {
+            var segmentsStrict = qStrict.Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+            );
+            matchNorm = BuildFtsSegmentedAnd(ftsNormCols, segmentsStrict);
+            // For loose, re-normalize each strict segment into loose form then build.
+            var segmentsLoose = segmentsStrict.Select(s =>
+                TextNormalization.NormalizeLooseFromStrict(s)
+            );
+            matchLoose = BuildFtsSegmentedAnd(ftsLooseCols, segmentsLoose);
+            // If segmentation produced nothing (e.g., all 1-char segments), fall back to original behavior.
+            if (string.IsNullOrWhiteSpace(matchNorm))
+                matchNorm = BuildFtsAnd(ftsNormCols, normTokens);
+            if (string.IsNullOrWhiteSpace(matchLoose))
+                matchLoose = BuildFtsAnd(ftsLooseCols, looseTokens);
+        }
+        else
+        {
+            matchNorm = andMode
+                ? BuildFtsAnd(ftsNormCols, normTokens)
+                : BuildFtsOr(ftsNormCols, normTokens);
+            matchLoose = andMode
+                ? BuildFtsAnd(ftsLooseCols, looseTokens)
+                : BuildFtsOr(ftsLooseCols, looseTokens);
+        }
         var matchNormEsc = EscapeSqlSingle(matchNorm);
         var matchLooseEsc = EscapeSqlSingle(matchLoose);
 
@@ -1574,7 +1702,7 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         var fields = SearchFields.Name | SearchFields.Id | SearchFields.Registry;
         if (includeDescription)
             fields |= SearchFields.Description;
-        return SearchAsync(query, new[] { culture }, fields, limit, ct);
+        return SearchAsync(query, new[] { culture }, fields, andMode: false, limit, ct);
     }
 
     public Task<IReadOnlyList<PolicyHit>> SearchAsync(
@@ -1583,7 +1711,7 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         SearchFields fields,
         int limit = 50,
         CancellationToken ct = default
-    ) => SearchAsync(query, new[] { culture }, fields, limit, ct);
+    ) => SearchAsync(query, new[] { culture }, fields, andMode: false, limit, ct);
 
     public async Task<PolicyDetail?> GetByPolicyNameAsync(
         string ns,

@@ -87,19 +87,22 @@ namespace PolicyPlusPlus
                 _idIndexBuilt = true;
                 return;
             }
+            // Take an immutable snapshot of _allPolicies to avoid concurrent modification exceptions
+            // while indexes are being built (some background fill operations may still populate missing localized strings).
+            var snapshot = _allPolicies.ToArray();
             if (!_nameIndexBuilt)
             {
                 try
                 {
-                    var items = _allPolicies.Select(p =>
+                    var items = snapshot.Select(p =>
                         (id: p.UniqueID, normalizedText: SearchText.Normalize(p.DisplayName))
                     );
                     var start = DateTime.UtcNow;
                     _nameIndex.Build(items);
-                    _nameIndexBuilt = true;
+                    _nameIndexBuilt = true; // mark after successful build
                     Log.Info(
                         "MainFilter",
-                        $"NameIndex built count={_allPolicies.Count} ms={(int)(DateTime.UtcNow - start).TotalMilliseconds}"
+                        $"NameIndex built count={snapshot.Length} ms={(int)(DateTime.UtcNow - start).TotalMilliseconds}"
                     );
                 }
                 catch (Exception ex)
@@ -126,7 +129,7 @@ namespace PolicyPlusPlus
                     {
                         try
                         {
-                            var items = _allPolicies.Select(p =>
+                            var items = snapshot.Select(p =>
                                 (
                                     id: p.UniqueID,
                                     normalizedText: SearchText.Normalize(
@@ -139,7 +142,7 @@ namespace PolicyPlusPlus
                             _secondIndexBuilt = true;
                             Log.Info(
                                 "MainFilter",
-                                $"SecondIndex built lang={secondLang} count={_allPolicies.Count} ms={(int)(DateTime.UtcNow - start2).TotalMilliseconds}"
+                                $"SecondIndex built lang={secondLang} count={snapshot.Length} ms={(int)(DateTime.UtcNow - start2).TotalMilliseconds}"
                             );
                         }
                         catch (Exception ex)
@@ -163,7 +166,7 @@ namespace PolicyPlusPlus
             {
                 try
                 {
-                    var items = _allPolicies.Select(p =>
+                    var items = snapshot.Select(p =>
                         (id: p.UniqueID, normalizedText: SearchText.Normalize(p.UniqueID))
                     );
                     var start = DateTime.UtcNow;
@@ -171,7 +174,7 @@ namespace PolicyPlusPlus
                     _idIndexBuilt = true;
                     Log.Info(
                         "MainFilter",
-                        $"IdIndex built count={_allPolicies.Count} ms={(int)(DateTime.UtcNow - start).TotalMilliseconds}"
+                        $"IdIndex built count={snapshot.Length} ms={(int)(DateTime.UtcNow - start).TotalMilliseconds}"
                     );
                 }
                 catch (Exception ex)
@@ -186,6 +189,9 @@ namespace PolicyPlusPlus
             // No-cache mode: do not use N-gram candidates at all
             if (!IsAdmxCacheEnabled())
                 return null;
+            // Normalize Japanese full-width spaces to ASCII space once here to align with tokenization.
+            if (qLower.IndexOf('\u3000') >= 0)
+                qLower = qLower.Replace('\u3000', ' ');
             HashSet<string>? union = null;
             try
             {
@@ -224,6 +230,27 @@ namespace PolicyPlusPlus
                 Log.Warn("MainFilter", "GetTextCandidates failed", ex);
             }
             return union;
+        }
+
+        // Additional helper to extract AND-mode tokens for CJK phrases split by spaces, so that
+        // a query like "拡張 インストール" (user typed space) produces two logical tokens instead of relying solely on 2-gram overlap.
+        private static List<string> ExtractExplicitSpaceTokens(string input)
+        {
+            var list = new List<string>();
+            if (string.IsNullOrWhiteSpace(input))
+                return list;
+            // Collapse multiple spaces (already mostly done upstream) and split.
+            var parts = input.Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+            );
+            foreach (var p in parts)
+            {
+                // Only consider CJK-heavy tokens or those longer than 1 char; skip plain ASCII 1-char which adds noise.
+                if (p.Length > 1 || p.Any(ch => ch > 0x7F))
+                    list.Add(p);
+            }
+            return list;
         }
 
         private IEnumerable<PolicyPlusPolicy> BaseSequenceForFilters(bool includeSubcategories)
@@ -1062,16 +1089,20 @@ namespace PolicyPlusPlus
                         StringComparer.OrdinalIgnoreCase
                     );
 
-                    // In AND mode with multi-token query, skip cache for consistent semantics
-                    bool skipCacheForAnd =
+                    // Determine AND mode: user flag + multiple tokens (space or full-width space). We now fully support cache in AND mode.
+                    bool andMode =
                         _useAndModeFlag && (q.IndexOf(' ') >= 0 || q.IndexOf('\u3000') >= 0);
 
                     List<PolicyPlusPolicy> cacheMatches = new();
                     List<string> cacheSuggestions = new();
+                    bool cacheAttempted = false;
+                    bool cacheSucceeded = false;
+                    // Prepare search field flags outside try so diagnostics after catch can access.
+                    var searchFields = SearchFields.None; // will be populated inside try
                     try
                     {
-                        if (skipCacheForAnd)
-                            throw new InvalidOperationException("skip cache for AND");
+                        cacheAttempted = true;
+                        // AND mode also supported by cache (SQL AND implemented) so skipping is unnecessary.
                         var st = SettingsService.Instance.LoadSettings();
                         if ((st.AdmxCacheEnabled ?? true) == false)
                             throw new InvalidOperationException("ADMX cache disabled");
@@ -1094,7 +1125,6 @@ namespace PolicyPlusPlus
 
                         IReadOnlyList<PolicyPlusCore.Core.PolicyHit>? hits = null;
                         int cacheSearchLimit = _limitUnfilteredTo1000 ? 1000 : 5000;
-                        var searchFields = SearchFields.None;
                         if (_searchInName)
                             searchFields |= SearchFields.Name;
                         if (_searchInId)
@@ -1115,6 +1145,7 @@ namespace PolicyPlusPlus
                                     q,
                                     orderedCultures,
                                     searchFields,
+                                    andMode,
                                     cacheSearchLimit,
                                     token
                                 )
@@ -1160,17 +1191,18 @@ namespace PolicyPlusPlus
                                 .Distinct(StringComparer.OrdinalIgnoreCase)
                                 .ToList();
                         }
+                        cacheSucceeded = true; // reached end of try without throwing
                     }
                     catch (Exception ex)
                     {
-                        Log.Debug("MainSearch", "cache search loop failed: " + ex.Message);
+                        Log.Debug("MainSearch", "cache search failed: " + ex.Message);
                     }
 
                     if (cacheMatches.Count > 0)
                     {
                         Log.Debug(
                             "MainSearch",
-                            $"cache-hit qLen={q.Length} hitCount={cacheMatches.Count}"
+                            $"cache-hit mode={(andMode ? "AND" : "OR")} qLen={q.Length} hitCount={cacheMatches.Count}"
                         );
                         matches = cacheMatches;
                         suggestions =
@@ -1180,7 +1212,91 @@ namespace PolicyPlusPlus
                     }
                     else
                     {
-                        Log.Debug("MainSearch", $"cache-miss qLen={q.Length}");
+                        // Diagnostic: attempt to classify why cache returned 0.
+                        try
+                        {
+                            // Derive field flags string.
+                            var sf = searchFields; // use final value
+                            string fieldFlags =
+                                sf == SearchFields.None
+                                    ? "None"
+                                    : string.Join(
+                                        '|',
+                                        new[]
+                                        {
+                                            (sf & SearchFields.Name) != 0 ? "Name" : null,
+                                            (sf & SearchFields.Description) != 0 ? "Desc" : null,
+                                            (sf & SearchFields.Id) != 0 ? "Id" : null,
+                                            (sf & SearchFields.Registry) != 0 ? "Reg" : null,
+                                        }.Where(s => s != null)!
+                                    );
+                            // Basic tokenization similar to core (whitespace split after strict/loose normalization)
+                            var strictNorm =
+                                PolicyPlusCore.Utilities.TextNormalization.NormalizeStrict(q);
+                            var looseNorm =
+                                PolicyPlusCore.Utilities.TextNormalization.NormalizeLoose(q);
+                            string[] SplitTokensLocal(string s) =>
+                                s.Split(
+                                    new[] { ' ' },
+                                    StringSplitOptions.RemoveEmptyEntries
+                                        | StringSplitOptions.TrimEntries
+                                );
+                            var strictTokens = SplitTokensLocal(strictNorm);
+                            var looseTokens = SplitTokensLocal(looseNorm);
+                            // Sanitize like core (letters/digits only)
+                            string Sanitize(string t)
+                            {
+                                if (string.IsNullOrEmpty(t))
+                                    return string.Empty;
+                                var sbLocal = new System.Text.StringBuilder(t.Length);
+                                foreach (var ch in t)
+                                    if (char.IsLetterOrDigit(ch))
+                                        sbLocal.Append(ch);
+                                return sbLocal.ToString();
+                            }
+                            var sanitized = strictTokens
+                                .Select(Sanitize)
+                                .Where(san => !string.IsNullOrWhiteSpace(san))
+                                .ToArray();
+                            string reason;
+                            if (sf == SearchFields.None)
+                                reason = "noFields";
+                            else if (strictTokens.Length == 0 && looseTokens.Length == 0)
+                                reason = "noTokens";
+                            else if (sanitized.Length == 0)
+                                reason = "allTokensSanitizedEmpty";
+                            else
+                                reason = "ftsNoMatch";
+                            var qSample = q.Length > 40 ? q.Substring(0, 40) + "…" : q;
+                            Log.Debug(
+                                "MainSearch",
+                                $"cache-diag mode={(andMode ? "AND" : "OR")} reason={reason} fields={fieldFlags} strictTok={strictTokens.Length} looseTok={looseTokens.Length} sanitizedTok={sanitized.Length} cultures={(cacheAttempted ? "?" : "?")} qSample='{qSample}'"
+                            );
+                        }
+                        catch
+                        { /* swallow diag errors */
+                        }
+                        if (!cacheAttempted)
+                        {
+                            Log.Debug(
+                                "MainSearch",
+                                $"cache-skipped mode={(andMode ? "AND" : "OR")} qLen={q.Length}"
+                            );
+                        }
+                        else if (!cacheSucceeded)
+                        {
+                            Log.Debug(
+                                "MainSearch",
+                                $"cache-unavailable mode={(andMode ? "AND" : "OR")} qLen={q.Length}"
+                            );
+                        }
+                        else
+                        {
+                            Log.Debug(
+                                "MainSearch",
+                                $"cache-empty mode={(andMode ? "AND" : "OR")} qLen={q.Length}"
+                            );
+                        }
                         // If cache missed on a single-token query, honor fallback suppression and do not resurrect
                         // results via in-memory (those would include suppressed fallback cultures like OS / en-US when primary exists).
                         var tokenCount = 0;
