@@ -26,7 +26,7 @@
         <ComboBox x:Name="LevelCombo" Width="120" SelectionChanged="LevelCombo_SelectionChanged">
           <ComboBoxItem Content="Trace" />
           <ComboBoxItem Content="Debug" />
-          <ComboBoxItem Content="Info" IsSelected="True" />
+          <ComboBoxItem Content="Info" />
           <ComboBoxItem Content="Warn" />
           <ComboBoxItem Content="Error" />
         </ComboBox>

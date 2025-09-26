@@ -15,6 +15,7 @@ namespace PolicyPlusPlus.Windows
         private readonly ConcurrentQueue<string> _pending = new();
         private bool _flushScheduled;
         private bool _paused;
+        private bool _initializedSelection; // suppress early SelectionChanged until we set it explicitly
         private DebugLevel _uiLevel = DebugLevel.Info;
         private ILogSink _previous = Log.Sink; // capture at creation
         private long _lastSeq; // last sequence id from buffer we have displayed
@@ -30,6 +31,9 @@ namespace PolicyPlusPlus.Windows
             InitializeComponent();
             Title = "Logs";
             ChildWindowCommon.Initialize(this, 760, 540, ApplyTheme);
+
+            // Initialize viewer filter level from current global emission MinLevel so dropdown matches runtime state.
+            _uiLevel = Log.MinLevel;
 
             // Capture snapshot BEFORE chaining sink so we don't duplicate early messages
             try
@@ -64,16 +68,32 @@ namespace PolicyPlusPlus.Windows
                     {
                         if (_preloadedLines != null && _preloadedLines.Length > 0 && LogBox != null)
                         {
-                            LogBox.Text =
-                                string.Join(Environment.NewLine, _preloadedLines)
-                                + Environment.NewLine;
+                            // Apply current filter to snapshot so initial display is consistent with level selection.
+                            var sbInit = new StringBuilder();
+                            foreach (var line in _preloadedLines)
+                            {
+                                if (IsLineVisible(line))
+                                    sbInit.AppendLine(line);
+                            }
+                            LogBox.Text = sbInit.ToString();
                             LogBox.SelectionStart = LogBox.Text.Length;
                             LogBox.SelectionLength = 0;
                             _preloadedLines = null;
                         }
                         UpdateStatus();
-                        if (LevelCombo != null && LevelCombo.SelectedIndex < 0)
-                            LevelCombo.SelectedIndex = 2;
+                        if (LevelCombo != null)
+                        {
+                            LevelCombo.SelectedIndex = _uiLevel switch
+                            {
+                                DebugLevel.Trace => 0,
+                                DebugLevel.Debug => 1,
+                                DebugLevel.Info => 2,
+                                DebugLevel.Warn => 3,
+                                DebugLevel.Error => 4,
+                                _ => 2,
+                            };
+                            _initializedSelection = true; // now future user changes should be processed
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -138,16 +158,46 @@ namespace PolicyPlusPlus.Windows
 
         private void Receive(DebugLevel level, string area, string message, Exception? ex = null)
         {
-            if (level < _uiLevel || _paused)
-                return;
+            // Always advance buffer position even if current UI level would hide the triggering entry.
+            // Previous logic skipped advancing _lastSeq for suppressed levels; later higher-level events
+            // would then retroactively enqueue hidden lines (unexpected for user) or miss newly allowed ones
+            // after raising verbosity. We now read the delta unconditionally and filter per line.
             var delta = Log.BufferReadSince(_lastSeq);
-            if (delta.lines.Length > 0)
+            _lastSeq = delta.lastSeq;
+            if (_paused || delta.lines.Length == 0)
+                return;
+            foreach (var line in delta.lines)
             {
-                _lastSeq = delta.lastSeq;
-                foreach (var l in delta.lines)
-                    _pending.Enqueue(l);
+                if (IsLineVisible(line))
+                    _pending.Enqueue(line);
             }
-            ScheduleFlush();
+            if (!_pending.IsEmpty)
+                ScheduleFlush();
+        }
+
+        private bool IsLineVisible(string formatted)
+        {
+            try
+            {
+                // Format: HH:mm:ss.fff <Level>[padding] <Area> | message
+                // We parse the second token as level.
+                int firstSpace = formatted.IndexOf(' ');
+                if (firstSpace < 0)
+                    return true; // fail open (show)
+                int secondSpace = formatted.IndexOf(' ', firstSpace + 1);
+                if (secondSpace < 0)
+                    return true;
+                var levelToken = formatted
+                    .Substring(firstSpace + 1, secondSpace - firstSpace - 1)
+                    .Trim();
+                if (Enum.TryParse<DebugLevel>(levelToken, true, out var lvl))
+                    return lvl >= _uiLevel;
+                return true; // unknown token -> show
+            }
+            catch
+            {
+                return true; // never break display on parse errors
+            }
         }
 
         private void ScheduleFlush()
@@ -217,6 +267,8 @@ namespace PolicyPlusPlus.Windows
 
         private void LevelCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (!_initializedSelection)
+                return; // ignore early automatic event fired by XAML materialization
             var txt = (LevelCombo?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Info";
             _uiLevel = txt switch
             {
@@ -227,6 +279,16 @@ namespace PolicyPlusPlus.Windows
                 "Error" => DebugLevel.Error,
                 _ => DebugLevel.Info,
             };
+            // Always apply selected level to global emission threshold.
+            try
+            {
+                if (Log.MinLevel != _uiLevel)
+                    Log.MinLevel = _uiLevel;
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("LogView", "set global level failed", ex);
+            }
             UpdateStatus();
         }
 
@@ -280,7 +342,7 @@ namespace PolicyPlusPlus.Windows
             try
             {
                 if (StatusText != null)
-                    StatusText.Text = _paused ? "Paused" : $"Level >= {_uiLevel}";
+                    StatusText.Text = _paused ? "Paused" : $"Level >= {_uiLevel} (global)";
             }
             catch (Exception ex)
             {
