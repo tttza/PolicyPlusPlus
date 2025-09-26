@@ -3,8 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using PolicyPlusCore.Core;
-using Xunit;
 using PolicyPlusModTests.TestHelpers;
+using SharedTest;
+using Xunit;
 
 namespace PolicyPlusModTests.Core;
 
@@ -17,6 +18,15 @@ public class AdmxCacheTests
     {
         IAdmxCache cache = new AdmxCache();
         await cache.InitializeAsync();
+        // Use the small deterministic test ADMX asset set instead of the full OS PolicyDefinitions to keep this test fast.
+        try
+        {
+            var testRoot = AdmxTestHelper.ResolveAdmxAssetsPath();
+            cache.SetSourceRoot(testRoot);
+        }
+        catch
+        { /* If test assets cannot be resolved fall back to default root; still validate no crash */
+        }
         await cache.ScanAndUpdateAsync();
         var culture = System.Globalization.CultureInfo.CurrentUICulture.Name;
         var hits = await cache.SearchAsync("Dummy", culture, 10);
