@@ -128,6 +128,61 @@ dotnet test PolicyPlusPlus.Tests.UI/PolicyPlus.Tests.UI.csproj -c Debug-Unpackag
 - Use `StringComparer.OrdinalIgnoreCase` where ADMX spec is case-insensitive.
 - No reintroduction of WinForms-specific utility abstractions.
 
+### Logging Guidance (Concise Rules)
+Purpose: Minimize noise while preserving fast failure diagnostics with a single consistent shape across Core / UI / Elevation host.
+
+Core / UI / Elevation shared principles:
+- Use `Info` for significant lifecycle events (start/finish), `Warn` for partial/auto‑recovered conditions, `Error` for user‑visible failures. High frequency inner loop details limited to `Debug` or `Trace`.
+- Log an exception only once at the boundary where it is handled. If rethrowing, do not log again upstream.
+- Avoid PII / raw full data. Represent values as type+size, or prefix snippet + `...`, or a summary (count / hash).
+- Large collections: log `count=` and up to 5 representative IDs only.
+- Correlation ID: multi‑step operations (save / bulk apply / export) start with `var corr = Log.NewCorrelationId();` and prefix each log line with that token (e.g. `corr42`).
+- `LogScope` pattern: `using var scope = LogScope.Info("Area", "corrX start operation"); scope.Complete();` and `scope.Capture(ex);` on exception.
+- Guard expensive string building: `if (Log.IsEnabled(LogLevel.Debug))`.
+- Area name: single PascalCase word or two segments max (`Save.Encode`).
+
+Level guidance:
+- Trace: Temporary deep investigation (disabled by default).
+- Debug: Branch outcomes / statistics in dev/CI.
+- Info: User action boundaries / phase summaries / single recoveries.
+- Warn: Successful retry, partial skip, fallback adopted.
+- Error: Operation failed (user impact) / unrecovered exception.
+
+Core layer:
+- Must not depend on UI logging types. Return DTOs if UI needs structured info.
+- Minimize Trace/Debug inside hot loops (wrap calculations behind level checks).
+
+UI layer:
+- Each user command/button: one Info for start, one Info for completion (success/fail).
+- Bulk list refresh: single Info summary + optional Debug detail; suppress per‑item spam.
+- Rely on UI log viewer filtering instead of verbose duplication.
+
+Elevation host:
+- Always log start/success/failure of elevated operations; hash or normalize inputs instead of dumping raw paths/values.
+- Batch / buffer writes to reduce file I/O.
+
+Performance:
+- Even with Debug enabled on 1000+ policies, average ≤1 line per policy.
+- Add Stopwatch only if existing `LogScope` duration is insufficient.
+
+Testing guidance:
+- Tests assert presence of key tokens (e.g. corr, count) not full message text nor timestamps.
+
+Prohibited (excerpt):
+- Concatenating full user input into exception messages.
+- Dumping raw POL/REG large blobs.
+- Adding public APIs purely for logging.
+
+Recommended format example:
+```
+SAVE42 start changes=12
+SAVE42 validate ok changed=12 skipped=0
+SAVE42 apply warn partial policyId=XYZ missing=Definition
+SAVE42 done elapsedMs=153
+```
+
+This subsection is an additive guidance block and does not affect numbering of later sections.
+
 ## 11. What NOT To Do
 - Do not add domain logic to XAML code-behind that belongs in Core / Services.
 - Do not introduce heavy reflection/dynamic invoke in hot loops.

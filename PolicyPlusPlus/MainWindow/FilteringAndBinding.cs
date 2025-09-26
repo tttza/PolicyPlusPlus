@@ -645,7 +645,10 @@ namespace PolicyPlusPlus
                     foreach (var child in _selectedCategory.Children.OrderBy(c => c.DisplayName))
                         rows.Add(PolicyListRow.FromCategory(child));
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("MainSearch", "Add subcategory headers failed: " + ex.Message);
+            }
             rows.AddRange(
                 ordered.Select(p => (object)PolicyListRow.FromPolicy(p, compSrc, userSrc))
             );
@@ -826,7 +829,13 @@ namespace PolicyPlusPlus
                         BindSequenceEnhanced(fullMatches, decision);
                         UpdateNavButtons();
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(
+                            "MainSearch",
+                            "ScheduleFullResultBind inner bind failed: " + ex.Message
+                        );
+                    }
                 };
                 timer.Start();
             }
@@ -837,7 +846,13 @@ namespace PolicyPlusPlus
                     BindSequenceEnhanced(fullMatches, decision);
                     UpdateNavButtons();
                 }
-                catch { }
+                catch (Exception ex2)
+                {
+                    Log.Debug(
+                        "MainSearch",
+                        "ScheduleFullResultBind fallback bind failed: " + ex2.Message
+                    );
+                }
             }
         }
 
@@ -998,7 +1013,10 @@ namespace PolicyPlusPlus
                     spinner.IsActive = true;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("MainSearch", "Show spinner failed: " + ex.Message);
+            }
             var applies = _appliesFilter;
             var category = _selectedCategory;
             var configuredOnly = _configuredOnly;
@@ -1147,7 +1165,10 @@ namespace PolicyPlusPlus
                                 .ToList();
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug("MainSearch", "cache search loop failed: " + ex.Message);
+                    }
 
                     if (cacheMatches.Count > 0)
                     {
@@ -1200,7 +1221,10 @@ namespace PolicyPlusPlus
                             boxHasFocus =
                                 sbFocus != null && sbFocus.FocusState != FocusState.Unfocused;
                         }
-                        catch { }
+                        catch (Exception exLang)
+                        {
+                            Log.Debug("MainSearch", "cache SearchAsync failed: " + exLang.Message);
+                        }
                         bool shouldOpenSuggestions = showSuggestions && boxHasFocus;
                         var sb = GetSearchBox();
                         if (sb != null)
@@ -1215,7 +1239,13 @@ namespace PolicyPlusPlus
                             {
                                 sb.IsSuggestionListOpen = shouldOpenSuggestions;
                             }
-                            catch { }
+                            catch (Exception exSugg)
+                            {
+                                Log.Debug(
+                                    "MainSearch",
+                                    "suggestion list open failed: " + exSugg.Message
+                                );
+                            }
                         }
                         // _forceCloseSuggestionsOnce removed
                         if (_navTyping && matches.Count > LargeResultThreshold)
@@ -1271,7 +1301,10 @@ namespace PolicyPlusPlus
                             );
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug("MainSearch", "Finish spinner hide failed: " + ex.Message);
+                    }
                 });
             }
         }
@@ -1290,7 +1323,10 @@ namespace PolicyPlusPlus
             {
                 PreserveScrollPosition();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("MainSearch", "PreserveScrollPosition failed: " + ex.Message);
+            }
             try
             {
                 var spinner2 = GetSearchSpinner();
@@ -1300,7 +1336,10 @@ namespace PolicyPlusPlus
                     spinner2.IsActive = true;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("MainSearch", "Show spinner (filter) failed: " + ex.Message);
+            }
             var applies = _appliesFilter;
             var category = _selectedCategory;
             var configuredOnly = _configuredOnly;
@@ -1379,7 +1418,10 @@ namespace PolicyPlusPlus
                             }
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug("MainSearch", "ShowBaselineSuggestions failed: " + ex.Message);
+                    }
                     items = ApplyBookmarkFilterIfNeeded(seq).ToList();
                 }
                 catch
@@ -1449,7 +1491,13 @@ namespace PolicyPlusPlus
                             $"RunAsyncFilterAndBind finish totalMs={swTotal.ElapsedMilliseconds} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
                         );
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(
+                            "MainSearch",
+                            "Finish spinner hide (filter) failed: " + ex.Message
+                        );
+                    }
                 });
             }
         }
@@ -1478,7 +1526,10 @@ namespace PolicyPlusPlus
                     $"ImmediateFilterPerf count={_visiblePolicies?.Count} totalMs={sw.ElapsedMilliseconds} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
                 );
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("MainSearch", "ImmediateFilterAndBind failed: " + ex.Message);
+            }
         }
     }
 }

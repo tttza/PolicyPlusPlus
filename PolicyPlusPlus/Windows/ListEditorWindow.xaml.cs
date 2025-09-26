@@ -34,7 +34,13 @@ namespace PolicyPlusPlus.Windows
                         WindowHelpers.BringToFront(w);
                         w.Activate();
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.Debug(
+                            "ListEditor",
+                            "activate focus retry failed: " + ex.Message
+                        );
+                    }
                 };
                 timer.Start();
                 return true;
@@ -80,7 +86,10 @@ namespace PolicyPlusPlus.Windows
             {
                 AddNewRow(focus: true);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("ListEditor", "Accel_Add failed: " + ex.Message);
+            }
             args.Handled = true;
         }
 
@@ -90,7 +99,10 @@ namespace PolicyPlusPlus.Windows
             {
                 Ok_Click(this, new RoutedEventArgs());
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("ListEditor", "Accel_Ok failed: " + ex.Message);
+            }
             args.Handled = true;
         }
 
@@ -103,7 +115,10 @@ namespace PolicyPlusPlus.Windows
             {
                 Close();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("ListEditor", "Accel_Close failed: " + ex.Message);
+            }
             args.Handled = true;
         }
 
@@ -114,7 +129,10 @@ namespace PolicyPlusPlus.Windows
                 if (Content is FrameworkElement fe)
                     fe.RequestedTheme = App.CurrentTheme;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("ListEditor", "ApplyThemeResources failed: " + ex.Message);
+            }
         }
 
         public void BringToFront() => WindowHelpers.BringToFront(this);
@@ -240,7 +258,10 @@ namespace PolicyPlusPlus.Windows
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("ListEditor", "EnsureTrailingPlaceholder failed: " + ex.Message);
+            }
         }
 
         private void AddNewRow(bool focus)
@@ -387,7 +408,10 @@ namespace PolicyPlusPlus.Windows
                 };
                 await dlg.ShowAsync();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("ListEditor", "ShowValidationDialog failed: " + ex.Message);
+            }
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -444,7 +468,10 @@ namespace PolicyPlusPlus.Windows
                 }
                 EnsureTrailingPlaceholder();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("ListEditor", "Row_PropertyChanged failed: " + ex.Message);
+            }
         }
 
         private void TryFocusRow(object row, bool preferKey)
@@ -469,7 +496,10 @@ namespace PolicyPlusPlus.Windows
                 };
                 timer.Start();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("ListEditor", "TryFocusRow failed: " + ex.Message);
+            }
         }
 
         private void MoveToNextRowAndFocusKey(ref KeyRoutedEventArgs e)

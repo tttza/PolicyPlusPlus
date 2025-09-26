@@ -26,15 +26,29 @@ namespace PolicyPPElevationHost
 
         private const uint RP_FORCE = 0x1;
         private static volatile bool s_logEnabled = false;
+
+        // Minimum severity to log when logging is enabled. Parsed from --log-* flags.
+        private enum HostLogLevel
+        {
+            Trace = 0,
+            Debug = 1,
+            Info = 2,
+            Warn = 3,
+            Error = 4,
+        }
+
+        private static HostLogLevel s_minLevel = HostLogLevel.Info;
         private static string? s_clientSid;
         private static string? s_authToken;
         private static readonly Encoding Utf8NoBom = new UTF8Encoding(false);
         private static string HostLogPath =>
             Path.Combine(Path.GetTempPath(), "PolicyPlus_host.log");
 
-        private static void Log(string msg)
+        private static void Log(string msg, HostLogLevel level = HostLogLevel.Info)
         {
             if (!s_logEnabled)
+                return;
+            if (level < s_minLevel)
                 return;
             try
             {
@@ -48,7 +62,11 @@ namespace PolicyPPElevationHost
                         + Environment.NewLine
                 );
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // Logging failed (e.g., path inaccessible / disk full). Avoid recursion; emit minimal fallback.
+                System.Diagnostics.Debug.WriteLine("[HostLogFail] " + ex.Message);
+            }
         }
 
         public static int Run(string pipeName)
@@ -69,18 +87,65 @@ namespace PolicyPPElevationHost
                     )
                         s_authToken = cmd[i + 1];
                     if (string.Equals(cmd[i], "--log", StringComparison.OrdinalIgnoreCase))
+                    {
+                        s_logEnabled = true; // default level remains Info
+                    }
+                    else if (
+                        string.Equals(cmd[i], "--log-trace", StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
                         s_logEnabled = true;
+                        s_minLevel = HostLogLevel.Trace;
+                    }
+                    else if (
+                        string.Equals(cmd[i], "--log-debug", StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        s_logEnabled = true;
+                        s_minLevel = HostLogLevel.Debug;
+                    }
+                    else if (
+                        string.Equals(cmd[i], "--log-info", StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        s_logEnabled = true;
+                        s_minLevel = HostLogLevel.Info;
+                    }
+                    else if (
+                        string.Equals(cmd[i], "--log-warn", StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        s_logEnabled = true;
+                        s_minLevel = HostLogLevel.Warn;
+                    }
+                    else if (
+                        string.Equals(cmd[i], "--log-error", StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        s_logEnabled = true;
+                        s_minLevel = HostLogLevel.Error;
+                    }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log("Top-level arg parse failed: " + ex.Message, HostLogLevel.Debug);
+            }
 
             if (string.IsNullOrEmpty(s_clientSid) || string.IsNullOrEmpty(s_authToken))
             {
-                Log("Missing client-sid or auth");
+                Log("Missing client-sid or auth", HostLogLevel.Error);
                 return 1;
             }
 
-            Log("Host starting. Pipe=" + pipeName + ", clientSid=" + s_clientSid);
+            Log(
+                "Host starting. Pipe="
+                    + pipeName
+                    + ", clientSid="
+                    + s_clientSid
+                    + ", level="
+                    + s_minLevel
+            );
             try
             {
                 var ps = new PipeSecurity();
@@ -111,7 +176,7 @@ namespace PolicyPPElevationHost
                 }
                 catch (Exception ex)
                 {
-                    Log("PipeSecurity setup failed: " + ex.Message);
+                    Log("PipeSecurity setup failed: " + ex.Message, HostLogLevel.Error);
                     return 1;
                 }
 
@@ -126,9 +191,9 @@ namespace PolicyPPElevationHost
                     ps
                 );
 
-                Log("Server created, waiting for client...");
+                Log("Server created, waiting for client...", HostLogLevel.Debug);
                 server.WaitForConnection();
-                Log("Client connected.");
+                Log("Client connected.", HostLogLevel.Debug);
 
                 using var reader = new StreamReader(
                     server,
@@ -149,7 +214,7 @@ namespace PolicyPPElevationHost
                     string? line = reader.ReadLine();
                     if (line == null)
                     {
-                        Log("Client disconnected.");
+                        Log("Client disconnected.", HostLogLevel.Info);
                         break;
                     }
 
@@ -163,7 +228,14 @@ namespace PolicyPPElevationHost
                                 )
                             );
                         }
-                        catch { }
+                        catch (Exception exInner)
+                        {
+                            Log(
+                                "Oversize request response write failed: " + exInner.Message,
+                                HostLogLevel.Debug
+                            );
+                        }
+                        Log("Rejected oversized request", HostLogLevel.Warn);
                         continue;
                     }
 
@@ -174,7 +246,7 @@ namespace PolicyPPElevationHost
                         var auth = root.TryGetProperty("auth", out var a) ? a.GetString() : null;
                         if (!string.Equals(auth, s_authToken, StringComparison.Ordinal))
                         {
-                            Log("Auth failed");
+                            Log("Auth failed", HostLogLevel.Warn);
                             writer.WriteLine("{\"ok\":false,\"error\":\"unauthorized\"}");
                             break;
                         }
@@ -214,7 +286,14 @@ namespace PolicyPPElevationHost
                                     {
                                         await Task.Delay(100).ConfigureAwait(false);
                                     }
-                                    catch { }
+                                    catch (Exception exDelay)
+                                    {
+                                        Log(
+                                            "Delay between refresh calls failed: "
+                                                + exDelay.Message,
+                                            HostLogLevel.Debug
+                                        );
+                                    }
 
                                     try
                                     {
@@ -259,6 +338,7 @@ namespace PolicyPPElevationHost
                                     new HostResponse { Ok = false, Error = "unknown op" }
                                 )
                             );
+                            Log("Unknown op received", HostLogLevel.Warn);
                         }
                     }
                     catch (Exception ex)
@@ -271,17 +351,24 @@ namespace PolicyPPElevationHost
                                 )
                             );
                         }
-                        catch { }
+                        catch (Exception exWrite)
+                        {
+                            Log(
+                                "Write error (exception serialization) failed: " + exWrite.Message,
+                                HostLogLevel.Debug
+                            );
+                        }
+                        Log("Operation handling failed: " + ex.Message, HostLogLevel.Error);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log("Fatal host error: " + ex);
+                Log("Fatal host error: " + ex, HostLogLevel.Error);
                 return 1;
             }
 
-            Log("Host exiting.");
+            Log("Host exiting.", HostLogLevel.Info);
             return 0;
         }
 
@@ -492,7 +579,10 @@ namespace PolicyPPElevationHost
                 if (val.StartsWith("Computer\\", StringComparison.OrdinalIgnoreCase))
                     return "Computer\\";
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log("TryGetCurrentLastKeyPrefixStyle failed: " + ex.Message, HostLogLevel.Debug);
+            }
             return string.Empty;
         }
 
@@ -548,8 +638,9 @@ namespace PolicyPPElevationHost
                 }
                 return deepest;
             }
-            catch
+            catch (Exception ex)
             {
+                Log("GetDeepestExistingSubKey failed: " + ex.Message, HostLogLevel.Debug);
                 return string.Empty;
             }
         }

@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using PolicyPlusPlus.Logging;
 using PolicyPlusPlus.ViewModels;
 
 namespace PolicyPlusPlus.Windows
@@ -53,7 +54,10 @@ namespace PolicyPlusPlus.Windows
                 if (AutoAdjustOptionColumns)
                     AdjustOptionColumnsToContent();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEditGrid", $"Loaded adjustment failed: {ex.Message}");
+            }
         }
 
         private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -94,7 +98,10 @@ namespace PolicyPlusPlus.Windows
             {
                 target.StartBringIntoView();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEditGrid", $"StartBringIntoView failed: {ex.Message}");
+            }
         }
 
         private List<FrameworkElement> BuildGlobalFocusSequence()
@@ -162,7 +169,10 @@ namespace PolicyPlusPlus.Windows
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEditGrid", $"BuildGlobalFocusSequence failed: {ex.Message}");
+            }
             return list;
         }
 
@@ -195,7 +205,10 @@ namespace PolicyPlusPlus.Windows
                     ParentQuickEditWindow?.OpenEditForPolicy(row.Policy.UniqueID);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEditGrid", $"NameText_DoubleTapped failed: {ex.Message}");
+            }
         }
 
         private double MeasureChildWidth(FrameworkElement fe)
@@ -257,7 +270,13 @@ namespace PolicyPlusPlus.Windows
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(
+                    "QuickEditGrid",
+                    $"AdjustOptionColumnsToContent scan failed: {ex.Message}"
+                );
+            }
             userMax += 16;
             compMax += 16;
             if (userMax < 260)
@@ -435,7 +454,10 @@ namespace PolicyPlusPlus.Windows
                     cur = VisualTreeHelper.GetParent(cur);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEditGrid", $"FindParentRow failed: {ex.Message}");
+            }
             return false;
         }
 

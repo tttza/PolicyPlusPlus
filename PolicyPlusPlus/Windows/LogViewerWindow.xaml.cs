@@ -38,7 +38,10 @@ namespace PolicyPlusPlus.Windows
                 _lastSeq = snap.lastSeq;
                 _preloadedLines = snap.lines;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("LogView", "snapshot capture failed", ex);
+            }
 
             // Chain sinks so original still receives messages (only new lines after snapshot)
             Log.Sink = new ChainedSink(this, _previous);
@@ -48,7 +51,10 @@ namespace PolicyPlusPlus.Windows
                 {
                     Log.Sink = _previous;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("LogView", $"restore sink failed: {ex.Message}");
+                }
             };
             try
             {
@@ -56,7 +62,6 @@ namespace PolicyPlusPlus.Windows
                 {
                     try
                     {
-                        // Apply preloaded snapshot.
                         if (_preloadedLines != null && _preloadedLines.Length > 0 && LogBox != null)
                         {
                             LogBox.Text =
@@ -64,16 +69,22 @@ namespace PolicyPlusPlus.Windows
                                 + Environment.NewLine;
                             LogBox.SelectionStart = LogBox.Text.Length;
                             LogBox.SelectionLength = 0;
-                            _preloadedLines = null; // release
+                            _preloadedLines = null;
                         }
                         UpdateStatus();
                         if (LevelCombo != null && LevelCombo.SelectedIndex < 0)
                             LevelCombo.SelectedIndex = 2;
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Warn("LogView", "initial load apply failed", ex);
+                    }
                 };
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("LogView", "attach RootShell.Loaded failed", ex);
+            }
         }
 
         private void ApplyTheme()
@@ -83,36 +94,45 @@ namespace PolicyPlusPlus.Windows
                 if (Content is FrameworkElement fe)
                     fe.RequestedTheme = App.CurrentTheme;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("LogView", $"ApplyTheme failed: {ex.Message}");
+            }
         }
 
         private sealed class ChainedSink : ILogSink
         {
-            private readonly ILogSink _a;
-            private readonly ILogSink _b;
+            private readonly ILogSink _sinkA;
+            private readonly ILogSink _sinkB;
 
             public ChainedSink(ILogSink a, ILogSink b)
             {
-                _a = a;
-                _b = b;
+                _sinkA = a;
+                _sinkB = b;
             }
 
-            public void Log(DebugLevel l, string ar, string msg, Exception? ex = null)
+            void ILogSink.Log(DebugLevel level, string area, string message, Exception? ex)
             {
                 try
                 {
-                    _a.Log(l, ar, msg, ex);
+                    _sinkA.Log(level, area, message, ex);
                 }
-                catch { }
+                catch (Exception ex2)
+                {
+                    Log.Debug("LogView", $"sinkA failed: {ex2.Message}");
+                }
                 try
                 {
-                    _b.Log(l, ar, msg, ex);
+                    _sinkB.Log(level, area, message, ex);
                 }
-                catch { }
+                catch (Exception ex3)
+                {
+                    Log.Debug("LogView", $"sinkB failed: {ex3.Message}");
+                }
             }
         }
 
-        // ILogSink implementation
+        // ILogSink implementation for LogViewerWindow itself
         void ILogSink.Log(DebugLevel level, string area, string message, Exception? ex) =>
             Receive(level, area, message, ex);
 
@@ -156,7 +176,10 @@ namespace PolicyPlusPlus.Windows
                                 if (delay > TimeSpan.Zero)
                                     await System.Threading.Tasks.Task.Delay(delay);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Log.Debug("LogView", $"delayed flush wait failed: {ex.Message}");
+                            }
                             _flushScheduled = false;
                             ScheduleFlush();
                         });
@@ -179,7 +202,10 @@ namespace PolicyPlusPlus.Windows
                         LogBox.SelectionLength = 0;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Warn("LogView", "flush append failed", ex);
+                }
                 _lastFlushTime = DateTime.UtcNow;
                 // If backlog remains, schedule another (respect interval)
                 if (!_pending.IsEmpty)
@@ -211,7 +237,10 @@ namespace PolicyPlusPlus.Windows
                 if (LogBox != null)
                     LogBox.Text = string.Empty;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("LogView", $"ClearBtn failed: {ex.Message}");
+            }
             UpdateStatus();
         }
 
@@ -223,7 +252,10 @@ namespace PolicyPlusPlus.Windows
                 dp.SetText(LogBox?.Text ?? string.Empty);
                 Clipboard.SetContent(dp);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("LogView", "Copy failed", ex);
+            }
         }
 
         private void PauseBtn_Click(object sender, RoutedEventArgs e)
@@ -236,7 +268,10 @@ namespace PolicyPlusPlus.Windows
                 if (LiveIndicator != null)
                     LiveIndicator.Visibility = _paused ? Visibility.Collapsed : Visibility.Visible;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("LogView", $"PauseBtn toggle failed: {ex.Message}");
+            }
             UpdateStatus();
         }
 
@@ -247,7 +282,10 @@ namespace PolicyPlusPlus.Windows
                 if (StatusText != null)
                     StatusText.Text = _paused ? "Paused" : $"Level >= {_uiLevel}";
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("LogView", $"UpdateStatus failed: {ex.Message}");
+            }
         }
     }
 }

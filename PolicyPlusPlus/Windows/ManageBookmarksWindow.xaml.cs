@@ -21,7 +21,10 @@ namespace PolicyPlusPlus.Windows
             {
                 SystemBackdrop = new MicaBackdrop();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("Bookmarks", "MicaBackdrop init failed: " + ex.Message);
+            }
             ChildWindowCommon.Initialize(this, 460, 420, ApplyTheme);
             try
             {
@@ -30,19 +33,31 @@ namespace PolicyPlusPlus.Windows
                 else
                     DispatcherQueue.TryEnqueue(() => OnLoaded(this, new RoutedEventArgs()));
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("Bookmarks", "RootShell Loaded hook failed: " + ex.Message);
+            }
             Closed += (_, __) =>
             {
                 try
                 {
                     BookmarkService.Instance.ActiveListChanged -= Instance_ActiveListChanged;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Logging.Log.Debug(
+                        "Bookmarks",
+                        "Unhook ActiveListChanged failed: " + ex.Message
+                    );
+                }
                 try
                 {
                     BookmarkService.Instance.Changed -= Instance_ActiveListChanged;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Logging.Log.Debug("Bookmarks", "Unhook Changed failed: " + ex.Message);
+                }
             };
 
             AddBtn.Click += (_, __) => AddList();
@@ -76,7 +91,10 @@ namespace PolicyPlusPlus.Windows
                     SetStatus("Edit name then press Rename.");
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("Bookmarks", "DoubleTapped handler failed: " + ex.Message);
+            }
         }
 
         private void ListNames_ContainerContentChanging(
@@ -101,7 +119,10 @@ namespace PolicyPlusPlus.Windows
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("Bookmarks", "ContainerContentChanging failed: " + ex.Message);
+            }
         }
 
         private void ApplyTheme()
@@ -122,10 +143,19 @@ namespace PolicyPlusPlus.Windows
                     {
                         (ScaleHost as Grid)!.Background = b;
                     }
-                    catch { }
+                    catch (Exception ex2)
+                    {
+                        Logging.Log.Debug(
+                            "Bookmarks",
+                            "ScaleHost background apply failed: " + ex2.Message
+                        );
+                    }
                 }
             }
-            catch { }
+            catch (Exception ex3)
+            {
+                Logging.Log.Debug("Bookmarks", "ApplyTheme failed: " + ex3.Message);
+            }
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -134,12 +164,18 @@ namespace PolicyPlusPlus.Windows
             {
                 BookmarkService.Instance.ActiveListChanged += Instance_ActiveListChanged;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("Bookmarks", "Hook ActiveListChanged failed: " + ex.Message);
+            }
             try
             {
                 BookmarkService.Instance.Changed += Instance_ActiveListChanged;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("Bookmarks", "Hook Changed failed: " + ex.Message);
+            }
             Refresh();
         }
 
@@ -149,7 +185,13 @@ namespace PolicyPlusPlus.Windows
             {
                 Refresh();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug(
+                    "Bookmarks",
+                    "ActiveListChanged invoke Refresh failed: " + ex.Message
+                );
+            }
         }
 
         private void UpdateRowButtons()
@@ -192,7 +234,10 @@ namespace PolicyPlusPlus.Windows
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("Bookmarks", "UpdateRowButtons failed: " + ex.Message);
+            }
         }
 
         private void UpdateAllActiveIcons()
@@ -233,12 +278,21 @@ namespace PolicyPlusPlus.Windows
                             {
                                 UpdateAllActiveIcons();
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.Debug(
+                                    "Bookmarks",
+                                    "UpdateAllActiveIcons requeue failed: " + ex.Message
+                                );
+                            }
                         }
                     );
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("Bookmarks", "UpdateAllActiveIcons failed: " + ex.Message);
+            }
         }
 
         private void Refresh()
@@ -262,7 +316,10 @@ namespace PolicyPlusPlus.Windows
                 UpdateButtons();
                 DispatcherQueue.TryEnqueue(UpdateAllActiveIcons);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("Bookmarks", "Refresh failed: " + ex.Message);
+            }
         }
 
         private string? SelectedName => ListNames.SelectedItem as string;
@@ -277,7 +334,10 @@ namespace PolicyPlusPlus.Windows
                 AddBtn.IsEnabled = hasText; // Add needs text; always allowed
                 RenameBtn.IsEnabled = sel != null && !isDefault && hasText;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("Bookmarks", "UpdateButtons failed: " + ex.Message);
+            }
         }
 
         private void AddList()
@@ -393,7 +453,10 @@ namespace PolicyPlusPlus.Windows
             {
                 StatusText.Text = text;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("Bookmarks", "SetStatus failed: " + ex.Message);
+            }
         }
 
         private async void RowDelete_Click(object sender, RoutedEventArgs e)
@@ -448,7 +511,10 @@ namespace PolicyPlusPlus.Windows
                     SetStatus("Activated.");
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logging.Log.Debug("Bookmarks", "RowActivate_Click failed: " + ex.Message);
+            }
         }
     }
 }

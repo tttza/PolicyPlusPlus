@@ -24,6 +24,8 @@ namespace PolicyPlusPlus.Services
         )
         {
             string corr = Log.NewCorrelationId();
+            // Correlation id used across the save pipeline so all messages can be grouped.
+            using var scope = LogScope.Info("Save", $"{corr} pipeline start");
             if (bundle == null)
             {
                 Log.Error("Save", $"{corr} bundle null");
@@ -43,6 +45,7 @@ namespace PolicyPlusPlus.Services
             if (changeList.Count == 0)
                 return (true, null, null, null);
 
+            var wall = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 var req = changeList
@@ -59,6 +62,7 @@ namespace PolicyPlusPlus.Services
 
                 string? compBase64 = null;
                 string? userBase64 = null;
+                var buildSw = System.Diagnostics.Stopwatch.StartNew();
                 try
                 {
                     var b64 = PolicySavePipeline.BuildLocalGpoBase64(bundle, req);
@@ -68,6 +72,7 @@ namespace PolicyPlusPlus.Services
                         "Save",
                         $"{corr} built payload compLen={compBase64?.Length ?? 0} userLen={userBase64?.Length ?? 0}"
                     );
+                    Log.Trace("Save", $"{corr} build elapsedMs={buildSw.ElapsedMilliseconds}");
                 }
                 catch (Exception ex)
                 {
@@ -75,6 +80,7 @@ namespace PolicyPlusPlus.Services
                     return (false, ex.Message, null, null);
                 }
 
+                var elevateSw = System.Diagnostics.Stopwatch.StartNew();
                 try
                 {
                     var callTask = elevation.WriteLocalGpoBytesAsync(
@@ -97,6 +103,11 @@ namespace PolicyPlusPlus.Services
                         Log.Error("Save", $"{corr} elevation error: {res.Error} code={res.Code}");
                     else
                         Log.Info("Save", $"{corr} success count={changeList.Count}");
+                    Log.Debug(
+                        "Save",
+                        $"{corr} elevation elapsedMs={elevateSw.ElapsedMilliseconds}"
+                    );
+                    Log.Info("Save", $"{corr} total elapsedMs={wall.ElapsedMilliseconds}");
                     return (res.Ok, res.Error, compBase64, userBase64);
                 }
                 catch (Exception ex)

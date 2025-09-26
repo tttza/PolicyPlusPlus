@@ -29,13 +29,34 @@ namespace PolicyPlusCore.Core
         private static readonly bool TestMemoryPol =
             Environment.GetEnvironmentVariable("POLICYPLUS_TEST_MEMORY_POL") == "1";
 
+        // Core cannot depend on UI logging; local lightweight wrappers.
         private static void LogDebug(string msg)
         {
             try
             {
                 Debug.WriteLine("[PolicySavePipeline] " + msg);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // Swallow but fallback minimal output
+                System.Diagnostics.Debug.WriteLine(
+                    "[PolicySavePipeline] debug log failed: " + ex.Message
+                );
+            }
+        }
+
+        private static void LogInfo(string msg)
+        {
+            try
+            {
+                Debug.WriteLine("[PolicySavePipeline] INFO " + msg);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    "[PolicySavePipeline] info log failed: " + ex.Message
+                );
+            }
         }
 
         private static void LogError(string msg, Exception ex)
@@ -46,7 +67,12 @@ namespace PolicyPlusCore.Core
                     $"[PolicySavePipeline] ERROR {msg} :: {ex.GetType().Name} {ex.Message}"
                 );
             }
-            catch { }
+            catch (Exception inner)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    "[PolicySavePipeline] error log failed: " + inner.Message
+                );
+            }
         }
 
         private static PolFile LoadExistingOrNew(bool isUser)
@@ -123,6 +149,10 @@ namespace PolicyPlusCore.Core
             if (userPol == null)
                 userPol = LoadExistingOrNew(isUser: true);
 
+            int appliedEnabled = 0;
+            int appliedDisabled = 0;
+            int appliedCleared = 0;
+            var applySw = Stopwatch.StartNew();
             foreach (var c in changes)
             {
                 if (c == null || string.IsNullOrEmpty(c.PolicyId))
@@ -141,6 +171,7 @@ namespace PolicyPlusCore.Core
                         PolicyState.Enabled,
                         c.Options ?? new Dictionary<string, object>()
                     );
+                    appliedEnabled++;
                 }
                 else if (c.DesiredState == PolicyState.Disabled)
                 {
@@ -150,15 +181,21 @@ namespace PolicyPlusCore.Core
                         PolicyState.Disabled,
                         new Dictionary<string, object>()
                     );
+                    appliedDisabled++;
                 }
                 else
                 {
                     // Not configured => ForgetPolicy already cleared state
+                    appliedCleared++;
                 }
             }
+            LogInfo(
+                $"applied enabled={appliedEnabled} disabled={appliedDisabled} cleared={appliedCleared} elapsedMs={applySw.ElapsedMilliseconds}"
+            );
 
             byte[]? compBytes = null;
             byte[]? userBytes = null;
+            var serSw = Stopwatch.StartNew();
             if (compPol != null)
             {
                 try
@@ -191,6 +228,9 @@ namespace PolicyPlusCore.Core
                     LogError("Serialize user POL failed", ex);
                 }
             }
+            LogDebug(
+                $"serialize sizes machine={compBytes?.Length ?? 0} user={userBytes?.Length ?? 0} elapsedMs={serSw.ElapsedMilliseconds}"
+            );
 
             return new PolicySaveBuffers { MachinePolBytes = compBytes, UserPolBytes = userBytes };
         }

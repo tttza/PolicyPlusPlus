@@ -44,7 +44,10 @@ namespace PolicyPlusPlus.Windows
             {
                 SystemBackdrop = new MicaBackdrop();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEdit", "MicaBackdrop not applied: " + ex.Message);
+            }
             // Initial size will be further refined by ApplyAutoSize. Width here approximates
             // the model: sum of columns + 5 separators (QuickEdit.SeparatorWidth) + right spacer + padding/slack.
             ChildWindowCommon.Initialize(this, 1388, 520, ApplyCurrentTheme);
@@ -109,17 +112,26 @@ namespace PolicyPlusPlus.Windows
             {
                 App.ScaleChanged += (_, __) => ScheduleSize();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEdit", "Subscribe ScaleChanged failed: " + ex.Message);
+            }
             try
             {
                 EventHub.PolicySourcesRefreshed += OnPolicySourcesRefreshed;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("QuickEdit", "Subscribe PolicySourcesRefreshed failed", ex);
+            }
             try
             {
                 EventHub.PolicyChangeQueued += OnPolicyChangeQueued;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("QuickEdit", "Subscribe PolicyChangeQueued failed", ex);
+            }
             Closed += (s, e) =>
             {
                 try
@@ -127,17 +139,29 @@ namespace PolicyPlusPlus.Windows
                     PendingChangesService.Instance.Pending.CollectionChanged -=
                         Pending_CollectionChanged;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("QuickEdit", "Unsubscribe CollectionChanged failed: " + ex.Message);
+                }
                 try
                 {
                     EventHub.PolicySourcesRefreshed -= OnPolicySourcesRefreshed;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "QuickEdit",
+                        "Unsubscribe PolicySourcesRefreshed failed: " + ex.Message
+                    );
+                }
                 try
                 {
                     EventHub.PolicyChangeQueued -= OnPolicyChangeQueued;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("QuickEdit", "Unsubscribe PolicyChangeQueued failed: " + ex.Message);
+                }
                 // Close any edit windows opened from here
                 foreach (var win in _editWindows.Values.ToList())
                 {
@@ -145,7 +169,10 @@ namespace PolicyPlusPlus.Windows
                     {
                         win.Close();
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug("QuickEdit", "Edit window close failed: " + ex.Message);
+                    }
                 }
                 _editWindows.Clear();
                 // Close any list / multi-text editor windows opened from here
@@ -155,7 +182,10 @@ namespace PolicyPlusPlus.Windows
                     {
                         child.Close();
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug("QuickEdit", "Child window close failed: " + ex.Message);
+                    }
                 }
                 _childEditors.Clear();
             };
@@ -178,7 +208,10 @@ namespace PolicyPlusPlus.Windows
                     if (set.Contains(row.Policy.UniqueID))
                         RefreshRowFromSources(row);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("QuickEdit", "OnPolicySourcesRefreshed failed", ex);
+            }
         }
 
         public void Initialize(
@@ -209,7 +242,10 @@ namespace PolicyPlusPlus.Windows
                                 _userSource
                             );
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Log.Warn("QuickEdit", "ApplyEffectiveToRow failed during init", ex);
+                        }
                     }
                 }
                 try
@@ -217,7 +253,13 @@ namespace PolicyPlusPlus.Windows
                     if (_grid.Columns != null)
                         _grid.Columns.PropertyChanged += Columns_PropertyChanged;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "QuickEdit",
+                        "Subscribe Columns.PropertyChanged failed: " + ex.Message
+                    );
+                }
             }
             if (_headerCount != null)
                 _headerCount.Text = $"{_grid?.Rows.Count ?? 0} policies";
@@ -226,7 +268,10 @@ namespace PolicyPlusPlus.Windows
                 PendingChangesService.Instance.Pending.CollectionChanged +=
                     Pending_CollectionChanged;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("QuickEdit", "Subscribe Pending.CollectionChanged failed", ex);
+            }
             UpdateUnsavedIndicator();
             _initialized = true;
             ScheduleSize();
@@ -244,7 +289,10 @@ namespace PolicyPlusPlus.Windows
                     existing.Activate();
                     WindowHelpers.BringToFront(existing);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Warn("QuickEdit", "Activate existing edit window failed", ex);
+                }
                 return;
             }
             var row = _grid?.Rows.FirstOrDefault(r =>
@@ -292,8 +340,12 @@ namespace PolicyPlusPlus.Windows
                                 : AdmxPolicySection.Machine;
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        Log.Debug(
+                            "QuickEdit",
+                            "Initial section detection failed, defaulting to Machine: " + ex.Message
+                        );
                         initialSection = AdmxPolicySection.Machine;
                     }
                 }
@@ -334,14 +386,20 @@ namespace PolicyPlusPlus.Windows
                     win.OverlayFromQuickEdit(row);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEdit", "OverlayFromQuickEdit failed: " + ex.Message);
+            }
             win.Saved += (_, __) =>
             {
                 try
                 {
                     RefreshRowFromSources(row);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Warn("QuickEdit", "RefreshRowFromSources after Save failed", ex);
+                }
             };
             win.SavedDetail += (_, detail) =>
             {
@@ -352,7 +410,10 @@ namespace PolicyPlusPlus.Windows
                         row.ApplyExternal(detail.Scope, detail.State, detail.Options);
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Warn("QuickEdit", "SavedDetail propagation failed", ex);
+                }
             };
             win.LiveChanged += (_, detail) =>
             {
@@ -377,7 +438,10 @@ namespace PolicyPlusPlus.Windows
             {
                 WindowHelpers.BringToFront(win);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEdit", "BringToFront failed: " + ex.Message);
+            }
         }
 
         private void Columns_PropertyChanged(object? s, PropertyChangedEventArgs e) =>
@@ -453,13 +517,19 @@ namespace PolicyPlusPlus.Windows
             {
                 customScale = System.Math.Max(0.1, App.CurrentScale);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEdit", "custom scale read failed: " + ex.Message);
+            }
             double dpiScale = 1.0;
             try
             {
                 dpiScale = WindowHelpers.GetDisplayScale(this);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEdit", "DPI scale read failed: " + ex.Message);
+            }
 
             // Let content measure itself unconstrained (unscaled logical size)
             RootShell.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -483,7 +553,10 @@ namespace PolicyPlusPlus.Windows
                 {
                     sep = _grid.SeparatorWidth;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("QuickEdit", "grid separator width read failed: " + ex.Message);
+                }
                 double model =
                     c.Name.Value
                     + c.Id.Value
@@ -496,12 +569,18 @@ namespace PolicyPlusPlus.Windows
                 {
                     model += _grid.RightSpacerWidth;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("QuickEdit", "right spacer width read failed: " + ex.Message);
+                }
                 try
                 {
                     model += RootShell.Padding.Left + RootShell.Padding.Right;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("QuickEdit", "root shell padding read failed: " + ex.Message);
+                }
                 double baseSlack = 8 + (6 * 8);
                 if (customScale < 0.9)
                     baseSlack += 12;
@@ -532,7 +611,10 @@ namespace PolicyPlusPlus.Windows
                         targetClientH = maxH;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEdit", "display area sizing failed: " + ex.Message);
+            }
 
             var hwnd2 = WinRT.Interop.WindowNative.GetWindowHandle(this);
             var id2 = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd2);
@@ -567,7 +649,10 @@ namespace PolicyPlusPlus.Windows
                 if (_saveCloseButton != null)
                     _saveCloseButton.IsEnabled = _bundle != null && !_isSaving;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEdit", "unsaved indicator update failed: " + ex.Message);
+            }
         }
 
         private async Task<bool> SaveAsync()
@@ -610,7 +695,10 @@ namespace PolicyPlusPlus.Windows
                     {
                         mgr.Refresh();
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug("QuickEdit", "refresh call failed: " + ex.Message);
+                    }
                     try
                     {
                         var affected = relevant
@@ -620,7 +708,10 @@ namespace PolicyPlusPlus.Windows
                         EventHub.PublishPolicySourcesRefreshed(affected);
                         EventHub.PublishPendingAppliedOrDiscarded(affected);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug("QuickEdit", "event publish failed: " + ex.Message);
+                    }
                     return true;
                 }
                 else
@@ -644,7 +735,10 @@ namespace PolicyPlusPlus.Windows
                 if (_savingOverlay != null)
                     _savingOverlay.Visibility = saving ? Visibility.Visible : Visibility.Collapsed;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEdit", "saving overlay toggle failed: " + ex.Message);
+            }
         }
 
         private void SetStatus(string text)
@@ -678,10 +772,16 @@ namespace PolicyPlusPlus.Windows
                     {
                         (ScaleHost as Grid)!.Background = bg;
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug("QuickEdit", "apply ScaleHost background failed: " + ex.Message);
+                    }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEdit", "ApplyCurrentTheme failed: " + ex.Message);
+            }
         }
 
         // Restored helper to register child windows so they close with parent
@@ -731,7 +831,10 @@ namespace PolicyPlusPlus.Windows
                 row.ApplyExternal(scope, state, options);
                 UpdateUnsavedIndicator();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("QuickEdit", "OnPolicyChangeQueued failed: " + ex.Message);
+            }
         }
     }
 }

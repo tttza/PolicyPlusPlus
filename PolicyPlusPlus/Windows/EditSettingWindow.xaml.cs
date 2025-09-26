@@ -80,7 +80,10 @@ namespace PolicyPlusPlus.Windows
                         UpdateSecondLangToggle();
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("EditSetting", "SecondLangToggle init failed: " + ex.Message);
+                }
             };
 
             SectionSelector.SelectionChanged += SectionSelector_SelectionChanged;
@@ -96,14 +99,20 @@ namespace PolicyPlusPlus.Windows
             {
                 EventHub.PolicyChangeQueued += OnExternalPolicyChangeQueued;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "Hook PolicyChangeQueued failed: " + ex.Message);
+            }
             Closed += (s, e) =>
             {
                 try
                 {
                     EventHub.PolicyChangeQueued -= OnExternalPolicyChangeQueued;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("EditSetting", "Unhook PolicyChangeQueued failed: " + ex.Message);
+                }
             };
         }
 
@@ -141,7 +150,10 @@ namespace PolicyPlusPlus.Windows
                     _secondLangToggle.IsChecked = false;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "UpdateSecondLangToggle failed: " + ex.Message);
+            }
         }
 
         // Overlay current QuickEditRow (unsaved) values into this window (both scopes).
@@ -245,7 +257,10 @@ namespace PolicyPlusPlus.Windows
                     ApplyScope(_policy.RawPolicy.Section == AdmxPolicySection.User);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "Initial section detect failed: " + ex.Message);
+            }
             finally
             {
                 _suppressLiveChange = false;
@@ -323,7 +338,13 @@ namespace PolicyPlusPlus.Windows
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug(
+                    "EditSetting",
+                    "LoadStateFromSource failed (option retrieval): " + ex.Message
+                );
+            }
         }
 
         private void Accel_Apply(
@@ -335,7 +356,10 @@ namespace PolicyPlusPlus.Windows
             {
                 ApplyBtn_Click(this, new RoutedEventArgs());
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "GetTextDefault enumeration failed: " + ex.Message);
+            }
             args.Handled = true;
         }
 
@@ -345,7 +369,10 @@ namespace PolicyPlusPlus.Windows
             {
                 OkBtn_Click(this, new RoutedEventArgs());
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "GetDecimalDefault enumeration failed: " + ex.Message);
+            }
             args.Handled = true;
         }
 
@@ -358,7 +385,10 @@ namespace PolicyPlusPlus.Windows
             {
                 ViewDetailApplyBtn_Click(this, new RoutedEventArgs());
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "ClampDecimal bounds logic failed: " + ex.Message);
+            }
             args.Handled = true;
         }
 
@@ -488,7 +518,10 @@ namespace PolicyPlusPlus.Windows
                     WindowHelpers.BringToFront(this);
                     Activate();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("EditSetting", "Activate timer bring-to-front failed: " + ex.Message);
+                }
             };
             tmr.Start();
             App.RegisterEditWindow(_policy.UniqueID, this);
@@ -522,7 +555,10 @@ namespace PolicyPlusPlus.Windows
                 if (change.Options != null)
                     ApplyOptionsToControls(change.Options);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "ApplyPendingOverlayFromQueue failed: " + ex.Message);
+            }
         }
 
         private void ApplyOptionsToControls(Dictionary<string, object> options)
@@ -612,7 +648,10 @@ namespace PolicyPlusPlus.Windows
                         {
                             await global::Windows.System.Launcher.LaunchUriAsync(uri);
                         }
-                        catch { }
+                        catch (Exception ex2)
+                        {
+                            Log.Debug("EditSetting", "LaunchUriAsync failed: " + ex2.Message);
+                        }
                     }
                 };
                 para.Inlines.Add(link);
@@ -692,12 +731,21 @@ namespace PolicyPlusPlus.Windows
                                 }
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Log.Debug(
+                                "EditSetting",
+                                "ListEditorWindow bring-to-front retry failed: " + ex.Message
+                            );
+                        }
                         presentationToUse = lp;
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "RefreshLocalizedTexts failed: " + ex.Message);
+            }
 
             string ResolvePresString(PresentationElement pres, string? fallback)
             {
@@ -955,7 +1003,14 @@ namespace PolicyPlusPlus.Windows
                                     WindowHelpers.BringToFront(win);
                                     win.Activate();
                                 }
-                                catch { }
+                                catch (Exception ex)
+                                {
+                                    Log.Debug(
+                                        "EditSetting",
+                                        "ListEditorWindow nested bring-to-front failed: "
+                                            + ex.Message
+                                    );
+                                }
                             };
                             t.Start();
                         };
@@ -1107,7 +1162,10 @@ namespace PolicyPlusPlus.Windows
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "Accel_Apply failed: " + ex.Message);
+            }
             return null;
         }
 
@@ -1130,7 +1188,10 @@ namespace PolicyPlusPlus.Windows
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "Accel_Ok failed: " + ex.Message);
+            }
             return 0;
         }
 
@@ -1147,7 +1208,10 @@ namespace PolicyPlusPlus.Windows
                     return (uint)Math.Round(value);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "Accel_Preview failed: " + ex.Message);
+            }
             return (uint)Math.Max(0, Math.Round(value));
         }
 
@@ -1261,7 +1325,10 @@ namespace PolicyPlusPlus.Windows
                     }
                 );
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "Accel_SectionComp failed: " + ex.Message);
+            }
 
             try
             {
@@ -1279,11 +1346,26 @@ namespace PolicyPlusPlus.Windows
                             options
                         );
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Debug(
+                            "EditSetting",
+                            "SaveToSource SavedDetail publish failed: " + ex.Message
+                        );
+                    }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "EditSetting",
+                        "SaveToSource SavedDetail outer failed: " + ex.Message
+                    );
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "Accel_SectionUser failed: " + ex.Message);
+            }
         }
 
         private (string shortText, string longText) BuildDetailsForPending(
@@ -1407,7 +1489,13 @@ namespace PolicyPlusPlus.Windows
                         }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "EditSetting",
+                        "StateRadio_Checked init missing-element defaults failed: " + ex.Message
+                    );
+                }
             }
             RaiseLiveChanged();
         }
@@ -1449,7 +1537,10 @@ namespace PolicyPlusPlus.Windows
                 win.Initialize(_policy, _bundle, preview, preview, _currentSection);
                 win.Activate();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "Accel_Close failed: " + ex.Message);
+            }
         }
 
         private void ApplyBtn_Click(object sender, RoutedEventArgs e)
@@ -1608,7 +1699,10 @@ namespace PolicyPlusPlus.Windows
                     options = CollectOptions();
                 LiveChanged?.Invoke(this, (scope, state, options));
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "ApplyWindowTheme failed: " + ex.Message);
+            }
         }
 
         private void OnExternalPolicyChangeQueued(
@@ -1655,7 +1749,10 @@ namespace PolicyPlusPlus.Windows
                     RaiseLiveChanged();
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("EditSetting", "RaiseLiveChanged external publish failed: " + ex.Message);
+            }
         }
     }
 }

@@ -49,7 +49,10 @@ namespace PolicyPlusPlus.Services
                         + Environment.NewLine
                 );
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Elevation", "ClientLog append failed: " + ex.Message);
+            }
         }
 
         private string GetHostExePath()
@@ -61,7 +64,10 @@ namespace PolicyPlusPlus.Services
                 if (File.Exists(candidate))
                     return candidate;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Elevation", "GetHostExePath probe failed: " + ex.Message);
+            }
             throw new FileNotFoundException(
                 "PolicyPPElevationHost.exe not found next to application."
             );
@@ -84,7 +90,10 @@ namespace PolicyPlusPlus.Services
                         return true;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Elevation", "IsHostLoggingEnabled env/cmd parse failed: " + ex.Message);
+            }
             return false;
         }
 
@@ -123,6 +132,17 @@ namespace PolicyPlusPlus.Services
             args.Append(" --auth ").Append(_authToken);
             if (IsHostLoggingEnabled())
                 args.Append(" --log");
+            // Propagate current log level so host can align verbosity.
+            try
+            {
+                var levelFlag = LogLevelToFlag(PolicyPlusPlus.Logging.Log.MinLevel);
+                if (levelFlag != null)
+                    args.Append(' ').Append(levelFlag);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("Elevation", "append level flag failed: " + ex.Message);
+            }
 
             var psi = new ProcessStartInfo
             {
@@ -154,6 +174,7 @@ namespace PolicyPlusPlus.Services
 
             var sw = Stopwatch.StartNew();
             Exception? last = null;
+            int attempt = 0;
             while (sw.Elapsed < TimeSpan.FromSeconds(10))
             {
                 try
@@ -164,6 +185,11 @@ namespace PolicyPlusPlus.Services
                 catch (Exception ex)
                 {
                     last = ex;
+                    attempt++;
+                    Log.Debug(
+                        "Elevation",
+                        $"connect retry attempt={attempt} elapsedMs={sw.ElapsedMilliseconds}"
+                    );
                     try
                     {
                         if (_hostProc != null && _hostProc.HasExited)
@@ -172,7 +198,10 @@ namespace PolicyPlusPlus.Services
                             return (false, ElevationErrorCode.HostExited, ex);
                         }
                     }
-                    catch { }
+                    catch (Exception ex2)
+                    {
+                        Log.Debug("Elevation", "retry host-exited check failed: " + ex2.Message);
+                    }
                     await Task.Delay(100).ConfigureAwait(false);
                 }
             }
@@ -183,6 +212,10 @@ namespace PolicyPlusPlus.Services
                     last is UnauthorizedAccessException
                         ? ElevationErrorCode.Unauthorized
                         : ElevationErrorCode.ConnectFailed;
+                Log.Warn(
+                    "Elevation",
+                    $"pipe connect failed attempts={attempt} msg={last?.Message}"
+                );
                 return (false, code, last);
             }
 
@@ -195,6 +228,17 @@ namespace PolicyPlusPlus.Services
             _connected = true;
             return (true, ElevationErrorCode.None, null);
         }
+
+        private static string? LogLevelToFlag(PolicyPlusPlus.Logging.DebugLevel level) =>
+            level switch
+            {
+                PolicyPlusPlus.Logging.DebugLevel.Trace => "--log-trace",
+                PolicyPlusPlus.Logging.DebugLevel.Debug => "--log-debug",
+                PolicyPlusPlus.Logging.DebugLevel.Info => "--log-info",
+                PolicyPlusPlus.Logging.DebugLevel.Warn => "--log-warn",
+                PolicyPlusPlus.Logging.DebugLevel.Error => "--log-error",
+                _ => null,
+            };
 
         private static ElevationResult ClassifyResponse(bool ok, string? err)
         {
@@ -228,7 +272,11 @@ namespace PolicyPlusPlus.Services
                 {
                     last = await action().ConfigureAwait(false);
                     if (last.Ok)
+                    {
+                        if (attempt > 1)
+                            Log.Debug("Elevation", $"retry succeeded attempt={attempt}");
                         return last;
+                    }
                     if (
                         last.Code
                         is not ElevationErrorCode.NotConnected
@@ -236,31 +284,49 @@ namespace PolicyPlusPlus.Services
                             and not ElevationErrorCode.IoError
                             and not ElevationErrorCode.HostExited
                     )
+                    {
+                        if (attempt > 1)
+                            Log.Debug(
+                                "Elevation",
+                                $"stopping retry attempt={attempt} code={last.Code}"
+                            );
                         return last;
+                    }
                 }
                 catch (Exception ex)
                 {
                     last = ElevationResult.FromError(ElevationErrorCode.IoError, ex.Message);
+                    Log.Warn("Elevation", $"action threw attempt={attempt} msg={ex.Message}");
                 }
                 if (attempt < maxAttempts)
                 {
+                    Log.Debug("Elevation", $"retry scheduling attempt={attempt + 1}");
                     await Task.Delay(initialDelayMs * attempt).ConfigureAwait(false);
                     _connected = false;
                     try
                     {
                         _reader?.Dispose();
                     }
-                    catch { }
+                    catch (Exception ex3)
+                    {
+                        Log.Debug("Elevation", "retry dispose reader failed: " + ex3.Message);
+                    }
                     try
                     {
                         _writer?.Dispose();
                     }
-                    catch { }
+                    catch (Exception ex4)
+                    {
+                        Log.Debug("Elevation", "retry dispose writer failed: " + ex4.Message);
+                    }
                     try
                     {
                         _client?.Dispose();
                     }
-                    catch { }
+                    catch (Exception ex5)
+                    {
+                        Log.Debug("Elevation", "retry dispose client failed: " + ex5.Message);
+                    }
                     _reader = null;
                     _writer = null;
                     _client = null;
@@ -309,6 +375,10 @@ namespace PolicyPlusPlus.Services
                             payload,
                             AppJsonContext.Default.HostRequestWriteLocalGpo
                         );
+                        Log.Debug(
+                            "Elevation",
+                            $"write-local-gpo send bytes m={machinePolBase64?.Length ?? 0} u={userPolBase64?.Length ?? 0}"
+                        );
                         await _writer.WriteLineAsync(json).ConfigureAwait(false);
 
                         var readTask = _reader.ReadLineAsync();
@@ -341,10 +411,17 @@ namespace PolicyPlusPlus.Services
                                 || root.TryGetProperty("Error", out errProp)
                                     ? errProp.GetString()
                                     : null;
-                            return ClassifyResponse(ok, err);
+                            var r = ClassifyResponse(ok, err);
+                            if (!r.Ok)
+                                Log.Warn(
+                                    "Elevation",
+                                    $"write-local-gpo host reported error code={r.Code} err={err}"
+                                );
+                            return r;
                         }
                         catch (Exception ex)
                         {
+                            Log.Error("Elevation", "protocol parse failed", ex);
                             return ElevationResult.FromError(
                                 ElevationErrorCode.ProtocolError,
                                 ex.Message
@@ -430,6 +507,10 @@ namespace PolicyPlusPlus.Services
                             payload,
                             AppJsonContext.Default.HostRequestOpenRegedit
                         );
+                        Log.Debug(
+                            "Elevation",
+                            $"open-regedit hive={hive} subKeyLen={subKey?.Length ?? 0}"
+                        );
                         await _writer.WriteLineAsync(json).ConfigureAwait(false);
 
                         var readTask = _reader.ReadLineAsync();
@@ -462,10 +543,17 @@ namespace PolicyPlusPlus.Services
                                 || root.TryGetProperty("Error", out errProp)
                                     ? errProp.GetString()
                                     : null;
-                            return ClassifyResponse(ok, err);
+                            var r = ClassifyResponse(ok, err);
+                            if (!r.Ok)
+                                Log.Warn(
+                                    "Elevation",
+                                    $"open-regedit host error code={r.Code} err={err}"
+                                );
+                            return r;
                         }
                         catch (Exception ex)
                         {
+                            Log.Error("Elevation", "protocol parse failed (open-regedit)", ex);
                             return ElevationResult.FromError(
                                 ElevationErrorCode.ProtocolError,
                                 ex.Message

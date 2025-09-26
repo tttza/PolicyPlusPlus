@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
+using PolicyPlusPlus.Logging;
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Utils;
 using PolicyPlusPlus.ViewModels;
@@ -67,39 +68,60 @@ namespace PolicyPlusPlus.Windows
             {
                 SubscribeCollectionChanges();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("Pending", "subscribe collection changes failed", ex);
+            }
             try
             {
                 EventHub.PendingAppliedOrDiscarded += OnPendingAppliedOrDiscarded;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("Pending", "event hook PendingAppliedOrDiscarded failed", ex);
+            }
             try
             {
                 EventHub.PendingQueueChanged += OnPendingQueueChanged;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("Pending", "event hook PendingQueueChanged failed", ex);
+            }
             try
             {
                 EventHub.HistoryChanged += OnHistoryChanged;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("Pending", "event hook HistoryChanged failed", ex);
+            }
             Closed += (s, e) =>
             {
                 try
                 {
                     EventHub.PendingAppliedOrDiscarded -= OnPendingAppliedOrDiscarded;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("Pending", $"unhook PendingAppliedOrDiscarded failed: {ex.Message}");
+                }
                 try
                 {
                     EventHub.PendingQueueChanged -= OnPendingQueueChanged;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("Pending", $"unhook PendingQueueChanged failed: {ex.Message}");
+                }
                 try
                 {
                     EventHub.HistoryChanged -= OnHistoryChanged;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("Pending", $"unhook HistoryChanged failed: {ex.Message}");
+                }
             };
         }
 
@@ -109,7 +131,10 @@ namespace PolicyPlusPlus.Windows
             {
                 RefreshViews();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("Pending", "RefreshViews failed (AppliedOrDiscarded)", ex);
+            }
         }
 
         private void OnPendingQueueChanged(
@@ -121,7 +146,10 @@ namespace PolicyPlusPlus.Windows
             {
                 RefreshViews();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("Pending", "RefreshViews failed (QueueChanged)", ex);
+            }
         }
 
         private void OnHistoryChanged()
@@ -130,7 +158,10 @@ namespace PolicyPlusPlus.Windows
             {
                 RefreshViews();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("Pending", "RefreshViews failed (HistoryChanged)", ex);
+            }
         }
 
         public void SelectHistoryTab()
@@ -140,7 +171,10 @@ namespace PolicyPlusPlus.Windows
                 if (MainTabs != null && HistoryTab != null)
                     MainTabs.SelectedItem = HistoryTab;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Pending", $"SelectHistoryTab failed: {ex.Message}");
+            }
         }
 
         private void Accel_SaveAll(
@@ -191,7 +225,10 @@ namespace PolicyPlusPlus.Windows
                 else
                     HistorySearch?.Focus(FocusState.Programmatic);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Pending", $"Accel_FocusSearch failed: {ex.Message}");
+            }
             args.Handled = true;
         }
 
@@ -204,7 +241,10 @@ namespace PolicyPlusPlus.Windows
             {
                 MainTabs.SelectedItem = PendingTab;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Pending", $"Accel_TabPending failed: {ex.Message}");
+            }
             args.Handled = true;
         }
 
@@ -217,7 +257,10 @@ namespace PolicyPlusPlus.Windows
             {
                 MainTabs.SelectedItem = HistoryTab;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Pending", $"Accel_TabHistory failed: {ex.Message}");
+            }
             args.Handled = true;
         }
 
@@ -230,7 +273,10 @@ namespace PolicyPlusPlus.Windows
             {
                 this.Close();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Pending", $"Accel_Close failed: {ex.Message}");
+            }
             args.Handled = true;
         }
 
@@ -260,7 +306,10 @@ namespace PolicyPlusPlus.Windows
                 PendingChangesService.Instance.Pending.CollectionChanged += OnCollectionsChanged;
                 PendingChangesService.Instance.History.CollectionChanged += OnCollectionsChanged;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Warn("Pending", "SubscribeCollectionChanges failed", ex);
+            }
         }
 
         private void UnsubscribeCollectionChanges()
@@ -270,7 +319,10 @@ namespace PolicyPlusPlus.Windows
                 PendingChangesService.Instance.Pending.CollectionChanged -= OnCollectionsChanged;
                 PendingChangesService.Instance.History.CollectionChanged -= OnCollectionsChanged;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Pending", $"UnsubscribeCollectionChanges failed: {ex.Message}");
+            }
         }
 
         private void OnCollectionsChanged(
@@ -288,7 +340,10 @@ namespace PolicyPlusPlus.Windows
                         PendingChangesService.Instance.History.ToList()
                     );
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Warn("Pending", "SaveHistory failed (OnCollectionsChanged)", ex);
+                }
             });
         }
 
@@ -484,7 +539,10 @@ namespace PolicyPlusPlus.Windows
                 if (Content is FrameworkElement fe)
                     fe.RequestedTheme = App.CurrentTheme;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Pending", $"ApplyThemeResources failed: {ex.Message}");
+            }
         }
 
         private void SetSaving(bool saving)
@@ -494,7 +552,10 @@ namespace PolicyPlusPlus.Windows
                 if (SavingOverlay != null)
                     SavingOverlay.Visibility = saving ? Visibility.Visible : Visibility.Collapsed;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Pending", $"SetSaving failed: {ex.Message}");
+            }
         }
 
         private async Task ApplySelectedAsync(IEnumerable<PendingChange> items)
@@ -528,12 +589,18 @@ namespace PolicyPlusPlus.Windows
                             PendingChangesService.Instance.History.ToList()
                         );
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Warn("Pending", "SaveHistory failed", ex);
+                    }
                     try
                     {
                         mgr.Refresh();
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Warn("Pending", "Policy source refresh failed", ex);
+                    }
                     RefreshViews();
                     ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
                     NotifyApplied(appliedList.Count);
@@ -546,7 +613,10 @@ namespace PolicyPlusPlus.Windows
                         EventHub.PublishPolicySourcesRefreshed(affected);
                         EventHub.PublishPendingAppliedOrDiscarded(affected);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Warn("Pending", "EventHub publish failed", ex);
+                    }
                 }
                 else if (!string.IsNullOrEmpty(error))
                     ShowLocalInfo("Save failed: " + error);
@@ -574,7 +644,10 @@ namespace PolicyPlusPlus.Windows
                         )
                         ?.Invoke(mw, new object[] { msg, InfoBarSeverity.Success });
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug("Pending", $"NotifyApplied reflection ShowInfo failed: {ex.Message}");
+                }
             }
         }
 
@@ -594,7 +667,13 @@ namespace PolicyPlusPlus.Windows
                         )
                         ?.Invoke(mw, new object[] { msg, InfoBarSeverity.Informational });
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "Pending",
+                        $"NotifyDiscarded reflection ShowInfo failed: {ex.Message}"
+                    );
+                }
             }
         }
 
@@ -663,12 +742,22 @@ namespace PolicyPlusPlus.Windows
                             PendingChangesService.Instance.History.ToList()
                         );
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Warn("Pending", "SaveHistory failed (ExecuteReapplyAsync)", ex);
+                    }
                     try
                     {
                         mgr.Refresh();
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log.Warn(
+                            "Pending",
+                            "Policy source refresh failed (ExecuteReapplyAsync)",
+                            ex
+                        );
+                    }
                     RefreshViews();
                     ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
                     ShowLocalInfo("Reapplied.");
@@ -729,7 +818,10 @@ namespace PolicyPlusPlus.Windows
                     await main.OpenEditDialogForPolicyIdAsync(selected.PolicyId, section, true);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Pending", $"PendingList_DoubleTapped failed: {ex.Message}");
+            }
         }
 
         private async void HistoryList_DoubleTapped(
@@ -754,7 +846,10 @@ namespace PolicyPlusPlus.Windows
                     await main.OpenEditDialogForPolicyIdAsync(selected.PolicyId, section, true);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Debug("Pending", $"HistoryList_DoubleTapped failed: {ex.Message}");
+            }
         }
 
         private static Dictionary<string, object>? NormalizeOptions(Dictionary<string, object>? raw)

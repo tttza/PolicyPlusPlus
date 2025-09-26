@@ -48,17 +48,45 @@ namespace PolicyPlusPlus.Services
         }
 
         public string ActiveList => _active;
-        public IReadOnlyCollection<string> ListNames => _lists.Keys.ToList();
-        public IReadOnlyCollection<string> ActiveIds =>
-            _lists.TryGetValue(_active, out var l) ? l.AsReadOnly() : Array.Empty<string>();
+        public IReadOnlyCollection<string> ListNames
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return _lists.Keys.ToList(); // snapshot to avoid enumeration during mutation
+                }
+            }
+        }
+        public IReadOnlyCollection<string> ActiveIds
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return _lists.TryGetValue(_active, out var l)
+                        ? l.ToArray() // snapshot; underlying list may mutate
+                        : Array.Empty<string>();
+                }
+            }
+        }
 
         public bool IsBookmarked(string policyId)
         {
             if (string.IsNullOrEmpty(policyId))
                 return false;
-            if (!_lists.TryGetValue(_active, out var l))
+            lock (_gate)
+            {
+                if (!_lists.TryGetValue(_active, out var l))
+                    return false;
+                // Manual loop under lock to avoid "Collection was modified" during LINQ enumeration.
+                for (int i = 0; i < l.Count; i++)
+                {
+                    if (string.Equals(l[i], policyId, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
                 return false;
-            return l.Any(id => string.Equals(id, policyId, StringComparison.OrdinalIgnoreCase));
+            }
         }
 
         public void Toggle(string policyId)
