@@ -126,9 +126,6 @@ internal sealed class AdmxCacheStore
         var sb = new StringBuilder();
         sb.AppendLine("CREATE TABLE IF NOT EXISTS Meta( key TEXT PRIMARY KEY, value TEXT );");
         sb.AppendLine(
-            "CREATE TABLE IF NOT EXISTS Sources( id INTEGER PRIMARY KEY, path TEXT UNIQUE, sha256 TEXT, mtime_utc INTEGER, culture TEXT );"
-        );
-        sb.AppendLine(
             "CREATE TABLE IF NOT EXISTS Policies( id INTEGER PRIMARY KEY, ns TEXT, policy_name TEXT, category_key TEXT, hive TEXT, reg_key TEXT, reg_value TEXT, value_type TEXT, supported_min TEXT, supported_max TEXT, deprecated INTEGER, product_hint TEXT, UNIQUE(ns, policy_name) );"
         );
         sb.AppendLine(
@@ -137,12 +134,6 @@ internal sealed class AdmxCacheStore
         sb.AppendLine("CREATE INDEX IF NOT EXISTS idx_policies_name ON Policies(policy_name);");
         sb.AppendLine(
             "CREATE TABLE IF NOT EXISTS PolicyI18n( policy_id INTEGER REFERENCES Policies(id), culture TEXT, display_name TEXT, explain_text TEXT, category_path TEXT, reading_kana TEXT, presentation_json BLOB, UNIQUE(policy_id, culture) );"
-        );
-        sb.AppendLine(
-            "CREATE TABLE IF NOT EXISTS PolicyDeps( policy_id INTEGER, requires_admx_source_id INTEGER );"
-        );
-        sb.AppendLine(
-            "CREATE TABLE IF NOT EXISTS PolicyStringsDeps( policy_id INTEGER, culture TEXT, adml_source_id INTEGER );"
         );
         sb.AppendLine(
             "CREATE VIRTUAL TABLE IF NOT EXISTS PolicyIndex USING fts5( title_norm, desc_norm, title_loose, desc_loose, registry_path, tags, tokenize='unicode61', detail=full, content='' );"

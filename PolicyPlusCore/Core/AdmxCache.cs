@@ -541,7 +541,7 @@ public sealed class AdmxCache : IAdmxCache
                     {
                         purgeRest.Transaction = txDel;
                         purgeRest.CommandText =
-                            "DELETE FROM PolicyIndexMap; DELETE FROM PolicyI18n; DELETE FROM PolicyDeps; DELETE FROM PolicyStringsDeps; DELETE FROM Policies;";
+                            "DELETE FROM PolicyIndexMap; DELETE FROM PolicyI18n; DELETE FROM Policies;";
                         await purgeRest.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
                     }
                 }
@@ -590,13 +590,6 @@ public sealed class AdmxCache : IAdmxCache
                         delMap.CommandText = "DELETE FROM PolicyIndexMap WHERE culture=@c;";
                         delMap.Parameters.AddWithValue("@c", culture);
                         await delMap.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-                    }
-                    using (var delStr = conn.CreateCommand())
-                    {
-                        delStr.Transaction = txDel;
-                        delStr.CommandText = "DELETE FROM PolicyStringsDeps WHERE culture=@c";
-                        delStr.Parameters.AddWithValue("@c", culture);
-                        await delStr.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
                     }
                 }
                 await txDel.CommitAsync(ct).ConfigureAwait(false);
