@@ -35,9 +35,19 @@ internal sealed class AdmxCacheStore
             DataSource = _dbPath,
             Mode = SqliteOpenMode.ReadWriteCreate,
             // Avoid shared cache mode; default private cache is safer across processes.
-            // Set a reasonable default timeout for commands to wait for locks.
-            DefaultTimeout = 30,
+            // Fast mode (tests) shortens default timeout.
+            DefaultTimeout = IsFastMode ? 3 : 30,
         }.ToString();
+
+    private static bool IsFastMode =>
+        string.Equals(
+            Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_FAST"),
+            "1",
+            StringComparison.Ordinal
+        );
+
+    // Exposed for lightweight heuristics (e.g., skipping heavy maintenance on tiny fresh DBs).
+    internal string DatabasePath => _dbPath;
 
     public async Task InitializeAsync(CancellationToken ct)
     {
@@ -50,8 +60,9 @@ internal sealed class AdmxCacheStore
         {
             using (var cmd = conn.CreateCommand())
             {
+                var busy = IsFastMode ? 5000 : 30000; // Shorter wait in test fast mode
                 cmd.CommandText =
-                    "PRAGMA journal_mode=DELETE; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=30000; PRAGMA page_size=4096; PRAGMA encoding='UTF-8';";
+                    $"PRAGMA journal_mode=DELETE; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout={busy}; PRAGMA page_size=4096; PRAGMA encoding='UTF-8';";
                 await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
         }
@@ -63,8 +74,9 @@ internal sealed class AdmxCacheStore
         {
             using (var cmd = conn.CreateCommand())
             {
+                var busy = IsFastMode ? 5000 : 30000;
                 cmd.CommandText =
-                    "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=30000; PRAGMA page_size=4096;";
+                    $"PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout={busy}; PRAGMA page_size=4096;";
                 await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
         }

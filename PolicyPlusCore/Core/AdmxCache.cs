@@ -48,6 +48,7 @@ public sealed class AdmxCache : IAdmxCache
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
+        using var _traceInit = AdmxCacheTrace.Scope("InitializeAsync");
         // Acquire writer lock during initialization to avoid races with cache deletion.
         IDisposable? writerLock = null;
         try
@@ -67,14 +68,14 @@ public sealed class AdmxCache : IAdmxCache
             }
 
             await _store.InitializeAsync(ct).ConfigureAwait(false);
+            // Heavy optimize (VACUUM) is skipped here; a brand new or tiny DB gains nothing and added ~30s in tests.
+            // A later opportunistic maintenance phase will run after substantial data is inserted.
             using var conn = _store.OpenConnection();
             await conn.OpenAsync(ct).ConfigureAwait(false);
-            await _store.OptimizeAsync(conn, ct).ConfigureAwait(false);
-            // Ensure schema writes are checkpointed so the DB file is not left at 0 bytes.
             try
             {
                 using var ck = conn.CreateCommand();
-                ck.CommandText = "PRAGMA wal_checkpoint(TRUNCATE);";
+                ck.CommandText = "PRAGMA wal_checkpoint(PASSIVE);"; // Passive to avoid forcing truncation on empty DB.
                 await ck.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
             catch { }
@@ -110,6 +111,12 @@ public sealed class AdmxCache : IAdmxCache
         CancellationToken ct = default
     )
     {
+        using var _traceScan = AdmxCacheTrace.Scope("ScanAndUpdateAsync.Total");
+        bool maintenanceDisabled = string.Equals(
+            Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_DISABLE_MAINT"),
+            "1",
+            StringComparison.Ordinal
+        );
         string root =
             _sourceRoot ?? Environment.ExpandEnvironmentVariables(@"%WINDIR%\PolicyDefinitions");
         if (!Directory.Exists(root))
@@ -147,6 +154,7 @@ public sealed class AdmxCache : IAdmxCache
         int i = 0;
         foreach (var cul in cultureList.Select(NormalizeCultureName))
         {
+            using var _traceCulture = AdmxCacheTrace.Scope("ScanAndUpdateAsync.Culture:" + cul);
             bool allowGlobalRebuild = needGlobalRebuild && (i == 0);
 
             // Fast path: if not global rebuild and source signature unchanged, skip this culture.
@@ -266,6 +274,9 @@ public sealed class AdmxCache : IAdmxCache
             {
                 if (allowGlobalRebuild)
                     didGlobalRebuild = true;
+                using var _traceDiffApply = AdmxCacheTrace.Scope(
+                    "DiffAndApply:" + cul + (allowGlobalRebuild ? "(global)" : "")
+                );
                 await DiffAndApplyAsync(bundle!, cul, allowGlobalRebuild, ct).ConfigureAwait(false);
                 // Persist signature after successful apply.
                 try
@@ -289,49 +300,68 @@ public sealed class AdmxCache : IAdmxCache
             catch { }
         }
 
-        // Run a single optimize after processing all cultures to reduce contention and I/O.
-        try
+        if (!maintenanceDisabled)
         {
-            using var conn = _store.OpenConnection();
-            await conn.OpenAsync(ct).ConfigureAwait(false);
-            await _store.OptimizeAsync(conn, ct).ConfigureAwait(false);
-            // Ensure WAL contents are checkpointed so the base DB reflects writes promptly.
+            // Opportunistic maintenance (skipped for tiny DBs to keep tests fast).
             try
             {
-                using var ck = conn.CreateCommand();
-                ck.CommandText = "PRAGMA wal_checkpoint(TRUNCATE);";
-                await ck.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-            }
-            catch { }
-            // Lightweight FTS optimize; ignore errors if table absent or busy.
-            try
-            {
-                await _store.FtsOptimizeAsync(ct).ConfigureAwait(false);
-            }
-            catch { }
-        }
-        catch { }
+                using var mconn = _store.OpenConnection();
+                await mconn.OpenAsync(ct).ConfigureAwait(false);
+                long pageCount = 0;
+                try
+                {
+                    using var pc = mconn.CreateCommand();
+                    pc.CommandText = "PRAGMA page_count;";
+                    var o = await pc.ExecuteScalarAsync(ct).ConfigureAwait(false);
+                    if (o != null && o != DBNull.Value)
+                        pageCount = Convert.ToInt64(
+                            o,
+                            System.Globalization.CultureInfo.InvariantCulture
+                        );
+                }
+                catch { }
 
-        // Conditional compaction: run occasionally to reclaim space if fragmentation high.
-        try
-        {
-            try
-            {
-                var dbPathField = typeof(AdmxCache)
-                    .Assembly.GetType("PolicyPlusCore.IO.AdmxCacheStore")
-                    ?.GetField(
-                        "_dbPath",
-                        System.Reflection.BindingFlags.NonPublic
-                            | System.Reflection.BindingFlags.Instance
-                    );
-                // Reflection fallback avoided if not found; compaction still attempts heuristic based only on freelist ratio inside CompactAsync.
+                const int MinPagesForMaintenance = 128; // Skip optimize/compact when extremely small.
+                if (pageCount >= MinPagesForMaintenance)
+                {
+                    try
+                    {
+                        await _store.OptimizeAsync(mconn, ct).ConfigureAwait(false);
+                    }
+                    catch { }
+                    try
+                    {
+                        using var ck = mconn.CreateCommand();
+                        ck.CommandText = "PRAGMA wal_checkpoint(TRUNCATE);";
+                        await ck.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                    }
+                    catch { }
+                    try
+                    {
+                        await _store.FtsOptimizeAsync(ct).ConfigureAwait(false);
+                    }
+                    catch { }
+                    try
+                    {
+                        await _store
+                            .CompactAsync(forceFullVacuum: false, freelistThresholdRatio: 0.30, ct)
+                            .ConfigureAwait(false);
+                    }
+                    catch { }
+                }
+                else
+                {
+                    try
+                    {
+                        using var ck2 = mconn.CreateCommand();
+                        ck2.CommandText = "PRAGMA wal_checkpoint(PASSIVE);";
+                        await ck2.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                    }
+                    catch { }
+                }
             }
             catch { }
-            await _store
-                .CompactAsync(forceFullVacuum: false, freelistThresholdRatio: 0.30, ct)
-                .ConfigureAwait(false);
         }
-        catch { }
     }
 
     // Attempts to derive the ADML path for an ADMX given a culture.
@@ -399,23 +429,31 @@ public sealed class AdmxCache : IAdmxCache
     {
         int removed = 0;
         IDisposable? writerLock = null;
+        bool fastMode = string.Equals(
+            Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_FAST"),
+            "1",
+            StringComparison.Ordinal
+        );
         try
         {
-            // Serialize with other writers. Retry briefly to reduce false negative (0 removals) when a rebuild just finished.
-            for (int attempt = 0; attempt < 3 && writerLock is null; attempt++)
+            if (!fastMode)
             {
-                writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(5));
-                if (writerLock is null)
+                // Serialize with other writers. Retry briefly to reduce false negative (0 removals) when a rebuild just finished.
+                for (int attempt = 0; attempt < 3 && writerLock is null; attempt++)
                 {
-                    try
+                    writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(5));
+                    if (writerLock is null)
                     {
-                        await Task.Delay(150, ct).ConfigureAwait(false);
+                        try
+                        {
+                            await Task.Delay(150, ct).ConfigureAwait(false);
+                        }
+                        catch { }
                     }
-                    catch { }
                 }
+                if (writerLock is null)
+                    return 0; // Could not acquire within budget.
             }
-            if (writerLock is null)
-                return 0; // Could not acquire within budget.
             using var conn = _store.OpenConnection();
             await conn.OpenAsync(ct).ConfigureAwait(false);
             // Ensure table exists (no-op if previously created)
@@ -494,23 +532,31 @@ public sealed class AdmxCache : IAdmxCache
     {
         // Serialize writers across processes to avoid WAL write conflicts and cache deletion races.
         // Try a few short retries to reduce chances of missing a rebuild entirely during transient contention.
+        bool fastMode = string.Equals(
+            Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_FAST"),
+            "1",
+            StringComparison.Ordinal
+        );
         IDisposable? writerLock = null;
-        for (int attempt = 0; attempt < 3 && writerLock is null; attempt++)
+        if (!fastMode)
         {
-            writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(5));
+            for (int attempt = 0; attempt < 3 && writerLock is null; attempt++)
+            {
+                writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(5));
+                if (writerLock is null)
+                {
+                    try
+                    {
+                        await Task.Delay(250, ct).ConfigureAwait(false);
+                    }
+                    catch { }
+                }
+            }
             if (writerLock is null)
             {
-                try
-                {
-                    await Task.Delay(250, ct).ConfigureAwait(false);
-                }
-                catch { }
+                // Could not acquire within budget; skip this pass to avoid blocking UI. A coalesced rerun should follow.
+                return;
             }
-        }
-        if (writerLock is null)
-        {
-            // Could not acquire within budget; skip this pass to avoid blocking UI. A coalesced rerun should follow.
-            return;
         }
         using var _writerLockScope = writerLock;
 
