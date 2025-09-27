@@ -6,7 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>PolicyPPElevationHost</AssemblyName>
     <RootNamespace>PolicyPPElevationHost</RootNamespace>
-    <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
+    <!-- Per-platform build alignment with main WinUI project -->
+    <Platforms>x86;x64;ARM64</Platforms>
+    <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+    <!-- Assign a single RID matching the current Platform (normalized to lowercase; skips during design-time). -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)'=='' and '$(DesignTimeBuild)'!='true'"
+      >win-$([System.String]::Copy('$(Platform)').ToLowerInvariant())</RuntimeIdentifier
+    >
     <UseWPF>false</UseWPF>
     <UseWindowsForms>false</UseWindowsForms>
     <LangVersion>latest</LangVersion>
