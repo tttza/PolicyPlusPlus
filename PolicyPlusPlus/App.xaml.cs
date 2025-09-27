@@ -30,7 +30,6 @@ namespace PolicyPlusPlus
                     if (!string.IsNullOrWhiteSpace(info))
                     {
                         var v = info.Trim();
-                        // AssemblyInformationalVersion is set by MSBuild target (git describe output). Use as-is.
                         _cached = v;
                         return _cached;
                     }

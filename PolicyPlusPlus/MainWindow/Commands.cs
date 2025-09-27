@@ -367,15 +367,9 @@ namespace PolicyPlusPlus
                     WindowHelpers.BringToFront(win);
                 }
                 catch { }
-                // Switch to history tab if method exists
                 try
                 {
-                    var method = typeof(PendingChangesWindow).GetMethod(
-                        "SelectHistoryTab",
-                        System.Reflection.BindingFlags.Public
-                            | System.Reflection.BindingFlags.Instance
-                    );
-                    method?.Invoke(win, null);
+                    win.SelectHistoryTab();
                 }
                 catch { }
             }

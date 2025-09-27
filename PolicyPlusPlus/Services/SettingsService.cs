@@ -239,16 +239,10 @@ namespace PolicyPlusPlus.Services
         {
             try
             {
-                var info = typeof(SettingsService)
-                    .Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                    ?.InformationalVersion;
-                if (string.IsNullOrWhiteSpace(info))
-                    return false;
-                return info.Contains('-', StringComparison.Ordinal);
+                return BuildInfo.Version.Contains('-', StringComparison.Ordinal);
             }
-            catch (Exception ex)
+            catch
             {
-                Log.Debug(LogArea, "IsCurrentBuildPrerelease failed: " + ex.Message);
                 return false;
             }
         }

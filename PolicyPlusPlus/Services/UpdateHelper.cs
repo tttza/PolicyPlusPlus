@@ -124,22 +124,6 @@ namespace PolicyPlusPlus.Services
                 var updates = await _updateManager.CheckForUpdatesAsync().ConfigureAwait(false);
                 if (updates == null)
                     return (true, false, "No updates available");
-
-                try
-                {
-                    var prop =
-                        updates.GetType().GetProperty("Updates") ?? updates
-                            .GetType()
-                            .GetProperty("ReleasesToApply");
-                    if (prop != null)
-                    {
-                        var list = prop.GetValue(updates) as System.Collections.ICollection;
-                        if (list == null || list.Count == 0)
-                            return (true, false, "No updates available");
-                    }
-                }
-                catch { }
-
                 _pendingUpdates = updates;
                 return (true, true, "Update available");
             }
@@ -290,23 +274,6 @@ namespace PolicyPlusPlus.Services
         public static string? GetPendingUpdateNotes()
         {
 #if USE_VELOPACK
-            if (_pendingUpdates == null)
-                return null;
-            try
-            {
-                var t = _pendingUpdates.GetType();
-                var notesProp =
-                    t.GetProperty("ReleaseNotes")
-                    ?? t.GetProperty("Changelog")
-                    ?? t.GetProperty("Notes");
-                if (notesProp != null)
-                {
-                    var val = notesProp.GetValue(_pendingUpdates) as string;
-                    if (!string.IsNullOrWhiteSpace(val))
-                        return val;
-                }
-            }
-            catch { }
             return null;
 #else
             return null;
