@@ -1,4 +1,4 @@
-# PolicyPlusPlus
+# Policy++
 
 A tool to search, view, edit, and share Local Group Policy (Administrative Templates/ADMX).  
 This repository is a fork of Fleex255’s [PolicyPlus](https://github.com/Fleex255/PolicyPlus) with additional features and a modernized UI.
