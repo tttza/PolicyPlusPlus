@@ -41,6 +41,9 @@ namespace PolicyPlusPlus.Windows
 
             CopyPathBtn.Click += (s, e) => CopyToClipboard(PathBox.Text);
             CopyRegBtn.Click += (s, e) => CopyToClipboard(RegBox.Text);
+            CopyNameBtn.Click += (s, e) => CopyToClipboard(NameBox.Text);
+            CopyIdBtn.Click += (s, e) => CopyToClipboard(IdBox.Text);
+            CopyDefinedInBtn.Click += (s, e) => CopyToClipboard(DefinedInBox.Text);
             ToggleViewBtn.Click += ToggleViewBtn_Click;
             CloseBtn.Click += (s, e) => this.Close();
             OpenRegBtn.Click += OpenRegBtn_Click;

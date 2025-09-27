@@ -41,12 +41,45 @@
       <!-- Name -->
       <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center" />
       <TextBox Grid.Row="0" Grid.Column="1" x:Name="NameBox" IsReadOnly="True" />
+      <Button
+        x:Name="CopyNameBtn"
+        Grid.Row="0"
+        Grid.Column="2"
+        ToolTipService.ToolTip="Copy"
+        Style="{StaticResource IconAccentButtonStyle}"
+        MinWidth="36"
+        MinHeight="36"
+      >
+        <FontIcon Glyph="{g:GlyphHex Code=E8C8}" />
+      </Button>
       <!-- Unique ID -->
       <TextBlock Grid.Row="1" Grid.Column="0" Text="Unique ID" VerticalAlignment="Center" />
       <TextBox x:Name="IdBox" Grid.Row="1" Grid.Column="1" IsReadOnly="True" />
+      <Button
+        x:Name="CopyIdBtn"
+        Grid.Row="1"
+        Grid.Column="2"
+        ToolTipService.ToolTip="Copy"
+        Style="{StaticResource IconAccentButtonStyle}"
+        MinWidth="36"
+        MinHeight="36"
+      >
+        <FontIcon Glyph="{g:GlyphHex Code=E8C8}" />
+      </Button>
       <!-- Defined in -->
       <TextBlock Grid.Row="2" Grid.Column="0" Text="Defined in" VerticalAlignment="Center" />
       <TextBox x:Name="DefinedInBox" Grid.Row="2" Grid.Column="1" IsReadOnly="True" />
+      <Button
+        x:Name="CopyDefinedInBtn"
+        Grid.Row="2"
+        Grid.Column="2"
+        ToolTipService.ToolTip="Copy"
+        Style="{StaticResource IconAccentButtonStyle}"
+        MinWidth="36"
+        MinHeight="36"
+      >
+        <FontIcon Glyph="{g:GlyphHex Code=E8C8}" />
+      </Button>
       <!-- Policy Path -->
       <TextBlock Grid.Row="3" Grid.Column="0" Text="Policy Path" VerticalAlignment="Top" />
       <ScrollViewer
