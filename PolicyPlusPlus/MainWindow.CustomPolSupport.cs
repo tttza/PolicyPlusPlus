@@ -133,7 +133,7 @@ namespace PolicyPlusPlus
                             var t = GetToggleUseCustomPolMenu();
                             if (t != null)
                                 t.IsChecked = false;
-                            ShowInfo("Custom POL not configured.", InfoBarSeverity.Warning);
+                            ShowInfo("Custom .pol not configured.", InfoBarSeverity.Warning);
                         }
                     }
                     else
@@ -142,7 +142,7 @@ namespace PolicyPlusPlus
                         var t = GetToggleUseCustomPolMenu();
                         if (t != null)
                             t.IsChecked = false;
-                        ShowInfo("Custom POL not configured.", InfoBarSeverity.Warning);
+                        ShowInfo("Custom .pol not configured.", InfoBarSeverity.Warning);
                     }
                 }
                 catch
@@ -265,7 +265,7 @@ namespace PolicyPlusPlus
             EnsurePolFileExists(vm.UserPath);
             vm.Active = true;
             SwitchToCustomPol(false);
-            ShowInfo("Custom .pol loaded.");
+            ShowInfo("Custom .pol loaded.", InfoBarSeverity.Success);
         }
 
         private async Task PickSinglePolAsync(bool isUser)
@@ -288,7 +288,7 @@ namespace PolicyPlusPlus
                 vm.EnableComputer = true;
             }
             EnsurePolFileExists(picked);
-            ShowInfo((isUser ? "User" : "Computer") + " .pol set.");
+            ShowInfo((isUser ? "User" : "Computer") + " .pol set.", InfoBarSeverity.Success);
             if (vm.Active && (vm.ComputerPath != null || vm.UserPath != null))
             {
                 SwitchToCustomPol();

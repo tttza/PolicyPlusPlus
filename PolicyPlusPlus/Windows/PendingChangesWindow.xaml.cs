@@ -353,15 +353,42 @@ namespace PolicyPlusPlus.Windows
             UpdateTabButtonsVisibility();
         }
 
-        private async void ShowLocalInfo(string message)
+        private async void ShowLocalInfo(
+            string message,
+            InfoBarSeverity severity = InfoBarSeverity.Success,
+            int? overrideDurationMs = null
+        )
         {
             if (LocalStatusBar == null)
                 return;
             LocalStatusBar.Message = message;
-            LocalStatusBar.Severity = InfoBarSeverity.Success;
+            LocalStatusBar.Severity = severity;
+            LocalStatusBar.IsClosable =
+                severity == InfoBarSeverity.Error || severity == InfoBarSeverity.Warning;
             LocalStatusBar.IsOpen = true;
-            await System.Threading.Tasks.Task.Delay(2500);
-            LocalStatusBar.IsOpen = false;
+
+            int duration =
+                overrideDurationMs
+                ?? severity switch
+                {
+                    InfoBarSeverity.Informational => 2500,
+                    InfoBarSeverity.Success => 2800,
+                    InfoBarSeverity.Warning => 6000,
+                    InfoBarSeverity.Error => 0,
+                    _ => 2800,
+                };
+            if (duration <= 0)
+                return; // leave open
+            try
+            {
+                await Task.Delay(duration);
+            }
+            catch
+            {
+                return;
+            }
+            if (LocalStatusBar.Severity == severity)
+                LocalStatusBar.IsOpen = false;
         }
 
         private void RefreshViews()
@@ -408,7 +435,7 @@ namespace PolicyPlusPlus.Windows
             }
             catch (Exception ex)
             {
-                ShowLocalInfo("Save failed: " + ex.Message);
+                ShowLocalInfo("Save failed: " + ex.Message, InfoBarSeverity.Error);
             }
         }
 
@@ -426,7 +453,7 @@ namespace PolicyPlusPlus.Windows
             }
             catch (Exception ex)
             {
-                ShowLocalInfo("Save failed: " + ex.Message);
+                ShowLocalInfo("Save failed: " + ex.Message, InfoBarSeverity.Error);
             }
         }
 
@@ -463,7 +490,7 @@ namespace PolicyPlusPlus.Windows
                 }
                 catch (Exception ex)
                 {
-                    ShowLocalInfo("Save failed: " + ex.Message);
+                    ShowLocalInfo("Save failed: " + ex.Message, InfoBarSeverity.Error);
                 }
             }
         }
@@ -619,7 +646,7 @@ namespace PolicyPlusPlus.Windows
                     }
                 }
                 else if (!string.IsNullOrEmpty(error))
-                    ShowLocalInfo("Save failed: " + error);
+                    ShowLocalInfo("Save failed: " + error, InfoBarSeverity.Error);
             }
             finally
             {
@@ -634,20 +661,7 @@ namespace PolicyPlusPlus.Windows
             ShowLocalInfo(msg);
             if (App.Window is MainWindow mw)
             {
-                try
-                {
-                    mw.GetType()
-                        .GetMethod(
-                            "ShowInfo",
-                            System.Reflection.BindingFlags.NonPublic
-                                | System.Reflection.BindingFlags.Instance
-                        )
-                        ?.Invoke(mw, new object[] { msg, InfoBarSeverity.Success });
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug("Pending", $"NotifyApplied reflection ShowInfo failed: {ex.Message}");
-                }
+                mw.ShowInfo(msg, InfoBarSeverity.Success);
             }
         }
 
@@ -657,23 +671,7 @@ namespace PolicyPlusPlus.Windows
             ShowLocalInfo(msg);
             if (App.Window is MainWindow mw)
             {
-                try
-                {
-                    mw.GetType()
-                        .GetMethod(
-                            "ShowInfo",
-                            System.Reflection.BindingFlags.NonPublic
-                                | System.Reflection.BindingFlags.Instance
-                        )
-                        ?.Invoke(mw, new object[] { msg, InfoBarSeverity.Informational });
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug(
-                        "Pending",
-                        $"NotifyDiscarded reflection ShowInfo failed: {ex.Message}"
-                    );
-                }
+                mw.ShowInfo(msg, InfoBarSeverity.Informational);
             }
         }
 

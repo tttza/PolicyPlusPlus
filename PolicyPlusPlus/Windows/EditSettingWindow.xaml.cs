@@ -1635,23 +1635,10 @@ namespace PolicyPlusPlus.Windows
         {
             if (OptEnabled.IsChecked == true && !ValidateRequiredElements())
             {
-                try
+                if (App.Window is MainWindow mw)
                 {
-                    if (App.Window is MainWindow mw)
-                        mw.GetType()
-                            .GetMethod(
-                                "ShowInfo",
-                                System.Reflection.BindingFlags.NonPublic
-                                    | System.Reflection.BindingFlags.Instance
-                            )
-                            ?.Invoke(
-                                mw,
-                                new object[] { "Required value missing.", InfoBarSeverity.Error }
-                            );
-                }
-                catch (Exception ex)
-                {
-                    Log.Warn("EditSetting", "ShowInfo failed (Apply validation)", ex);
+                    // Show missing required value notice at error severity (no auto close).
+                    mw.ShowInfo("Required value missing.", InfoBarSeverity.Error);
                 }
                 return;
             }
@@ -1663,22 +1650,9 @@ namespace PolicyPlusPlus.Windows
             {
                 Log.Error("EditSetting", "SaveToSource failed in Apply", ex);
             }
-            try
+            if (App.Window is MainWindow mwQueuedApply)
             {
-                if (App.Window is MainWindow mw)
-                {
-                    mw.GetType()
-                        .GetMethod(
-                            "ShowInfo",
-                            System.Reflection.BindingFlags.NonPublic
-                                | System.Reflection.BindingFlags.Instance
-                        )
-                        ?.Invoke(mw, new object[] { "Queued.", InfoBarSeverity.Informational });
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warn("EditSetting", "ShowInfo failed (Apply queued)", ex);
+                mwQueuedApply.ShowInfo("Queued.", InfoBarSeverity.Informational);
             }
         }
 
@@ -1686,23 +1660,9 @@ namespace PolicyPlusPlus.Windows
         {
             if (OptEnabled.IsChecked == true && !ValidateRequiredElements())
             {
-                try
+                if (App.Window is MainWindow mw)
                 {
-                    if (App.Window is MainWindow mw)
-                        mw.GetType()
-                            .GetMethod(
-                                "ShowInfo",
-                                System.Reflection.BindingFlags.NonPublic
-                                    | System.Reflection.BindingFlags.Instance
-                            )
-                            ?.Invoke(
-                                mw,
-                                new object[] { "Required value missing.", InfoBarSeverity.Error }
-                            );
-                }
-                catch (Exception ex)
-                {
-                    Log.Warn("EditSetting", "ShowInfo failed (OK validation)", ex);
+                    mw.ShowInfo("Required value missing.", InfoBarSeverity.Error);
                 }
                 return;
             }
@@ -1715,22 +1675,9 @@ namespace PolicyPlusPlus.Windows
                 Log.Error("EditSetting", "SaveToSource failed in OK", ex);
             }
             Close();
-            try
+            if (App.Window is MainWindow mwQueuedOk)
             {
-                if (App.Window is MainWindow mw)
-                {
-                    mw.GetType()
-                        .GetMethod(
-                            "ShowInfo",
-                            System.Reflection.BindingFlags.NonPublic
-                                | System.Reflection.BindingFlags.Instance
-                        )
-                        ?.Invoke(mw, new object[] { "Queued.", InfoBarSeverity.Informational });
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warn("EditSetting", "ShowInfo failed (OK queued)", ex);
+                mwQueuedOk.ShowInfo("Queued.", InfoBarSeverity.Informational);
             }
         }
 
