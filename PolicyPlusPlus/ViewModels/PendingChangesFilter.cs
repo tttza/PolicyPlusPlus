@@ -52,12 +52,14 @@ namespace PolicyPlusPlus.ViewModels
             string query,
             string type,
             string range,
+            string scope,
             DateTime? now = null
         )
         {
             string q = (query ?? string.Empty).Trim();
             string ty = string.IsNullOrWhiteSpace(type) ? "All" : type;
             string rg = string.IsNullOrWhiteSpace(range) ? "All" : range;
+            string sc = string.IsNullOrWhiteSpace(scope) ? "Both" : scope; // Computer/User/Both
 
             DateTime baseNow = now ?? DateTime.Now;
             DateTime today = baseNow.Date;
@@ -74,6 +76,13 @@ namespace PolicyPlusPlus.ViewModels
             {
                 if (h == null)
                     continue;
+                bool scopeOk =
+                    (sc == "Both")
+                    || string.Equals(
+                        h.Scope ?? string.Empty,
+                        sc,
+                        StringComparison.OrdinalIgnoreCase
+                    );
                 bool typeOk =
                     (ty == "All")
                     || string.Equals(
@@ -86,7 +95,7 @@ namespace PolicyPlusPlus.ViewModels
                     string.IsNullOrEmpty(q)
                     || (h.PolicyName?.Contains(q, StringComparison.OrdinalIgnoreCase) == true)
                     || (h.Details?.Contains(q, StringComparison.OrdinalIgnoreCase) == true);
-                if (typeOk && sinceOk && textOk)
+                if (scopeOk && typeOk && sinceOk && textOk)
                     list.Add(h);
             }
             return list.OrderByDescending(h => h.AppliedAt).ToList();

@@ -38,16 +38,7 @@ namespace PolicyPlusPlus.Windows
             BtnClose.Click += (s, e) => this.Close();
             BtnApplySelected.Click += BtnApplySelected_Click;
             BtnDiscardSelected.Click += BtnDiscardSelected_Click;
-            BtnClearFilters.Click += (s, e) =>
-            {
-                if (SearchBox != null)
-                    SearchBox.Text = string.Empty;
-                if (ScopeFilter != null)
-                    ScopeFilter.SelectedIndex = 0;
-                if (OperationFilter != null)
-                    OperationFilter.SelectedIndex = 0;
-                RefreshViews();
-            };
+            // Removed Clear Filters buttons; users can adjust individual controls directly.
             if (RootShell != null)
                 RootShell.Loaded += (s, e) =>
                 {
@@ -410,7 +401,8 @@ namespace PolicyPlusPlus.Windows
                 srcHistory,
                 HistorySearch?.Text ?? string.Empty,
                 ((HistoryType?.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "All",
-                ((HistoryTimeRange?.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "All"
+                ((HistoryTimeRange?.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "All",
+                ((HistoryScope?.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "Both"
             );
             if (HistoryList != null)
                 HistoryList.ItemsSource = _historyView;

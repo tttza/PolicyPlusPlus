@@ -101,6 +101,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                 {
                     PolicyId = "A",
                     PolicyName = "Alpha",
+                    Scope = "Both",
                     Result = "Applied",
                     Details = "one",
                     AppliedAt = baseNow.Date.AddHours(1),
@@ -109,6 +110,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                 {
                     PolicyId = "B",
                     PolicyName = "Beta",
+                    Scope = "Computer",
                     Result = "Discarded",
                     Details = "two",
                     AppliedAt = baseNow.Date.AddDays(-2),
@@ -117,6 +119,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                 {
                     PolicyId = "C",
                     PolicyName = "Gamma",
+                    Scope = "User",
                     Result = "Applied",
                     Details = "three",
                     AppliedAt = baseNow.Date.AddDays(-10),
@@ -125,6 +128,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                 {
                     PolicyId = "D",
                     PolicyName = "Delta",
+                    Scope = "Both",
                     Result = "Reapplied",
                     Details = "four",
                     AppliedAt = baseNow.Date.AddDays(-40),
@@ -142,6 +146,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                 query: "",
                 type: "Applied",
                 range: "All",
+                scope: "Both",
                 now: now
             );
             Assert.All(res, h => Assert.Equal("Applied", h.Result));
@@ -157,6 +162,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                 query: "",
                 type: "All",
                 range: "Today",
+                scope: "Both",
                 now: now
             );
             Assert.All(res, h => Assert.True(h.AppliedAt >= now.Date));
@@ -172,6 +178,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                 query: "",
                 type: "All",
                 range: "Last 7 days",
+                scope: "Both",
                 now: now
             );
             Assert.All(res, h => Assert.True(h.AppliedAt >= now.Date.AddDays(-7)));
@@ -188,6 +195,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
                 query: "bet",
                 type: "All",
                 range: "All",
+                scope: "Both",
                 now: now
             );
             Assert.Single(res);
