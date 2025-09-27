@@ -445,7 +445,7 @@ public sealed class TestAppHost : IDisposable
         var dir = AppContext.BaseDirectory;
         while (!string.IsNullOrEmpty(dir))
         {
-            if (File.Exists(Path.Combine(dir, "PolicyPlusMod.sln")))
+            if (File.Exists(Path.Combine(dir, "PolicyPlusPlus.sln")))
                 return dir;
             dir = Directory.GetParent(dir)?.FullName ?? string.Empty;
         }

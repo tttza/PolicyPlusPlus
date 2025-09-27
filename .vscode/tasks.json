@@ -16,7 +16,7 @@
       "command": "dotnet",
       "args": [
         "build",
-        "PolicyPlusMod.sln",
+        "PolicyPlusPlus.sln",
         "-c",
         "Debug-Unpackaged"
       ],
@@ -28,7 +28,7 @@
       "command": "dotnet",
       "args": [
         "build",
-        "PolicyPlusMod.sln",
+        "PolicyPlusPlus.sln",
         "-c",
         "Release-Unpackaged"
       ],

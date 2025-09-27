@@ -19,7 +19,7 @@ PolicyPlusMod loads Administrative Template (ADMX/ADML) definitions, lets users 
 
 ## 3. Repository Layout (High Value)
 ```
-PolicyPlusMod.sln
+PolicyPlusPlus.sln
 PolicyPlusCore/            Domain models & policy processing
 PolicyPlusPlus/            WinUI 3 UI
 PolicyPPElevationHost/     Elevation helper process
@@ -40,13 +40,13 @@ Generated output: `artifacts/`, `obj/`, `bin/`.
 ## 5. Build & Run (cmd.exe)
 ```
 dotnet --version
-dotnet restore PolicyPlusMod.sln
-dotnet build PolicyPlusMod.sln -c Debug-Unpackaged
+dotnet restore PolicyPlusPlus.sln
+dotnet build PolicyPlusPlus.sln -c Debug-Unpackaged
 dotnet run --project PolicyPlusPlus/PolicyPlusPlus.csproj -c Debug-Unpackaged
 ```
 Release build:
 ```
-dotnet build PolicyPlusMod.sln -c Release-Unpackaged
+dotnet build PolicyPlusPlus.sln -c Release-Unpackaged
 ```
 Packaged vs Unpackaged quick reference:
 ```
@@ -89,7 +89,7 @@ Comment style (strict):
 
 ## 8. Test Guidance
 ```
-dotnet test PolicyPlusMod.sln -c Debug-Unpackaged
+dotnet test PolicyPlusPlus.sln -c Debug-Unpackaged
 ```
 - Mock `IPolicySource` for persistence tests.
 - Parser tests: minimal synthetic ADMX/ADML fixtures; assert structural shape.
@@ -204,9 +204,9 @@ During:
 
 After:
 ```
-dotnet build PolicyPlusMod.sln -c Debug-Unpackaged
-dotnet test PolicyPlusMod.sln -c Debug-Unpackaged
-dotnet build PolicyPlusMod.sln -c Release-Unpackaged
+dotnet build PolicyPlusPlus.sln -c Debug-Unpackaged
+dotnet test PolicyPlusPlus.sln -c Debug-Unpackaged
+dotnet build PolicyPlusPlus.sln -c Release-Unpackaged
 ```
 Optionally run a quick UI smoke (launch app, open a policy, view the pending changes window).
 

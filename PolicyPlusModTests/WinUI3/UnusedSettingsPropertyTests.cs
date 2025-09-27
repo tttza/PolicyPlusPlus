@@ -19,7 +19,7 @@ namespace PolicyPlusModTests.WinUI3
         private string GetSolutionRoot()
         {
             var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir != null && !File.Exists(Path.Combine(dir.FullName, "PolicyPlusMod.sln")))
+            while (dir != null && !File.Exists(Path.Combine(dir.FullName, "PolicyPlusPlus.sln")))
                 dir = dir.Parent;
             if (dir == null)
                 throw new InvalidOperationException("Solution root not found");

@@ -94,8 +94,8 @@ https://github.com/tttza/PolicyPlusPlus/releases
   - `PolicyPlusModTests` / `PolicyPlusPlus.Tests.UI`: Unit / UI tests
 - Build and run (cmd.exe)
   ```cmd
-  dotnet restore PolicyPlusMod.sln
-  dotnet build PolicyPlusMod.sln -c Debug-Unpackaged
+  dotnet restore PolicyPlusPlus.sln
+  dotnet build PolicyPlusPlus.sln -c Debug-Unpackaged
   dotnet run --project PolicyPlusPlus\PolicyPlusPlus.csproj -c Debug-Unpackaged
   ```
 - Tests
