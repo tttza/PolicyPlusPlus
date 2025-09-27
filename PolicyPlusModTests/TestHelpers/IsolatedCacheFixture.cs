@@ -24,6 +24,9 @@ public sealed class IsolatedCacheFixture : IDisposable
         Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_DISABLE_MAINT", "1");
         // Enable tracing for high-level AdmxCache timings (root cause profiling A).
         Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_TRACE", "1");
+        // Limit loaded ADMX files in tests to keep indexing fast.
+        Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_ONLY_FILES", "Dummy.admx");
+        Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_MAX_POLICIES", "200");
     }
 
     public void Dispose()
@@ -34,6 +37,8 @@ public sealed class IsolatedCacheFixture : IDisposable
             Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_FAST", null);
             Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_DISABLE_MAINT", null);
             Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_TRACE", null);
+            Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_ONLY_FILES", null);
+            Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_MAX_POLICIES", null);
             if (Directory.Exists(CacheDir))
                 Directory.Delete(CacheDir, recursive: true);
         }

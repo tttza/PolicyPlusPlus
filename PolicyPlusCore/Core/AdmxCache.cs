@@ -72,6 +72,16 @@ public sealed class AdmxCache : IAdmxCache
             // A later opportunistic maintenance phase will run after substantial data is inserted.
             using var conn = _store.OpenConnection();
             await conn.OpenAsync(ct).ConfigureAwait(false);
+            // Proactively ensure FileUsage schema so tests can query it immediately after Initialize without waiting for first scan.
+            try
+            {
+                using var cmdFU = conn.CreateCommand();
+                cmdFU.CommandText =
+                    @"CREATE TABLE IF NOT EXISTS FileUsage( file_path TEXT PRIMARY KEY, last_access_utc INTEGER NOT NULL, kind INTEGER NOT NULL ); CREATE INDEX IF NOT EXISTS IX_FileUsage_LastAccess ON FileUsage(last_access_utc);";
+                await cmdFU.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                _fileUsageSchemaEnsured = true;
+            }
+            catch { }
             try
             {
                 using var ck = conn.CreateCommand();
@@ -205,18 +215,11 @@ public sealed class AdmxCache : IAdmxCache
                 SqliteConnection? usageConn = null;
                 try
                 {
-                    foreach (
-                        var admx in Directory.EnumerateFiles(
-                            root,
-                            "*.admx",
-                            SearchOption.TopDirectoryOnly
-                        )
-                    )
+                    foreach (var admx in EnumerateAdmxFilesFiltered(root))
                     {
                         try
                         {
                             _ = bundle.LoadFile(admx, cul);
-                            // Record usage (ADMX kind=0) and associated ADML (kind=1) if present.
                             usageConn ??= await OpenFileUsageConnectionAsync(ct)
                                 .ConfigureAwait(false);
                             await UpsertFileUsageAsync(usageConn, admx, 0, ct)
@@ -253,13 +256,7 @@ public sealed class AdmxCache : IAdmxCache
                     SqliteConnection? usageConn = null;
                     try
                     {
-                        foreach (
-                            var admx in Directory.EnumerateFiles(
-                                root,
-                                "*.admx",
-                                SearchOption.TopDirectoryOnly
-                            )
-                        )
+                        foreach (var admx in EnumerateAdmxFilesFiltered(root))
                         {
                             try
                             {
@@ -382,6 +379,49 @@ public sealed class AdmxCache : IAdmxCache
             }
             catch { }
         }
+    }
+
+    // Allows test environment to restrict which ADMX files are parsed to accelerate indexing.
+    // If POLICYPLUS_CACHE_ONLY_FILES is set (semicolon separated list of file names), only those are yielded.
+    private static IEnumerable<string> EnumerateAdmxFilesFiltered(string root)
+    {
+        var filterEnv = Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_ONLY_FILES");
+        if (!string.IsNullOrWhiteSpace(filterEnv))
+        {
+            var allowedSet = new HashSet<string>(
+                filterEnv.Split(
+                    ';',
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                ),
+                StringComparer.OrdinalIgnoreCase
+            );
+            foreach (var name in allowedSet)
+            {
+                string p;
+                try
+                {
+                    p = Path.Combine(root, name);
+                }
+                catch
+                {
+                    continue;
+                }
+                if (File.Exists(p))
+                    yield return p;
+            }
+            yield break;
+        }
+        IEnumerable<string> files;
+        try
+        {
+            files = Directory.EnumerateFiles(root, "*.admx", SearchOption.TopDirectoryOnly);
+        }
+        catch
+        {
+            yield break;
+        }
+        foreach (var f in files)
+            yield return f;
     }
 
     // Deletes localized rows (PolicyI18n + FTS index rows) for a culture if present. No-op on failure.
@@ -848,6 +888,20 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         // Phase 2: insert/update in batches to yield and keep UI responsive.
         const int BatchSize = 500;
         var policies = bundle.Policies.Values.ToList();
+        try
+        {
+            var capEnv = Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_MAX_POLICIES");
+            if (
+                !string.IsNullOrWhiteSpace(capEnv)
+                && int.TryParse(capEnv, out var maxPol)
+                && maxPol > 0
+                && policies.Count > maxPol
+            )
+            {
+                policies = policies.Take(maxPol).ToList();
+            }
+        }
+        catch { }
         int total = policies.Count;
         int index = 0;
         while (index < total)
@@ -992,45 +1046,43 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         CancellationToken ct
     )
     {
-        // Accumulate: file relative path + length + lastWriteUtcTicks
-        var sb = new StringBuilder(4096);
+        var sb = new StringBuilder(1024);
+        HashSet<string>? allowed = null;
         try
         {
-            foreach (
-                var f in Directory.EnumerateFiles(root, "*.admx", SearchOption.TopDirectoryOnly)
-            )
+            var filter = Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_ONLY_FILES");
+            if (!string.IsNullOrWhiteSpace(filter))
+                allowed = new HashSet<string>(
+                    filter.Split(
+                        ';',
+                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                    ),
+                    StringComparer.OrdinalIgnoreCase
+                );
+        }
+        catch { }
+        try
+        {
+            if (allowed != null)
             {
-                ct.ThrowIfCancellationRequested();
-                try
-                {
-                    var fi = new FileInfo(f);
-                    sb.Append(Path.GetFileName(f))
-                        .Append('|')
-                        .Append(fi.Length)
-                        .Append('|')
-                        .Append(fi.LastWriteTimeUtc.Ticks)
-                        .Append('\n');
-                }
-                catch { }
-            }
-            var admlDir = Path.Combine(root, culture);
-            if (Directory.Exists(admlDir))
-            {
-                foreach (
-                    var f in Directory.EnumerateFiles(
-                        admlDir,
-                        "*.adml",
-                        SearchOption.TopDirectoryOnly
-                    )
-                )
+                foreach (var fn in allowed)
                 {
                     ct.ThrowIfCancellationRequested();
+                    string path;
                     try
                     {
-                        var fi = new FileInfo(f);
-                        sb.Append(culture)
-                            .Append('/')
-                            .Append(Path.GetFileName(f))
+                        path = Path.Combine(root, fn);
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                    if (!File.Exists(path))
+                        continue;
+                    try
+                    {
+                        var fi = new FileInfo(path);
+                        sb.Append(fn)
                             .Append('|')
                             .Append(fi.Length)
                             .Append('|')
@@ -1040,6 +1092,88 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
                     catch { }
                 }
             }
+            else
+            {
+                foreach (
+                    var f in Directory.EnumerateFiles(root, "*.admx", SearchOption.TopDirectoryOnly)
+                )
+                {
+                    ct.ThrowIfCancellationRequested();
+                    try
+                    {
+                        var fi = new FileInfo(f);
+                        sb.Append(Path.GetFileName(f))
+                            .Append('|')
+                            .Append(fi.Length)
+                            .Append('|')
+                            .Append(fi.LastWriteTimeUtc.Ticks)
+                            .Append('\n');
+                    }
+                    catch { }
+                }
+            }
+            var admlDir = Path.Combine(root, culture);
+            if (Directory.Exists(admlDir))
+            {
+                if (allowed != null)
+                {
+                    foreach (var fn in allowed)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        var admlName = Path.GetFileNameWithoutExtension(fn) + ".adml";
+                        string path;
+                        try
+                        {
+                            path = Path.Combine(admlDir, admlName);
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+                        if (!File.Exists(path))
+                            continue;
+                        try
+                        {
+                            var fi = new FileInfo(path);
+                            sb.Append(culture)
+                                .Append('/')
+                                .Append(admlName)
+                                .Append('|')
+                                .Append(fi.Length)
+                                .Append('|')
+                                .Append(fi.LastWriteTimeUtc.Ticks)
+                                .Append('\n');
+                        }
+                        catch { }
+                    }
+                }
+                else
+                {
+                    foreach (
+                        var f in Directory.EnumerateFiles(
+                            admlDir,
+                            "*.adml",
+                            SearchOption.TopDirectoryOnly
+                        )
+                    )
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        try
+                        {
+                            var fi = new FileInfo(f);
+                            sb.Append(culture)
+                                .Append('/')
+                                .Append(Path.GetFileName(f))
+                                .Append('|')
+                                .Append(fi.Length)
+                                .Append('|')
+                                .Append(fi.LastWriteTimeUtc.Ticks)
+                                .Append('\n');
+                        }
+                        catch { }
+                    }
+                }
+            }
         }
         catch { }
         var data = Encoding.UTF8.GetBytes(sb.ToString());
@@ -1047,12 +1181,11 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         try
         {
             using var sha = SHA256.Create();
-            var hash = sha.ComputeHash(data);
-            sig = Convert.ToHexString(hash);
+            sig = Convert.ToHexString(sha.ComputeHash(data));
         }
         catch
         {
-            sig = Convert.ToBase64String(data); // Fallback (larger but rare)
+            sig = Convert.ToBase64String(data);
         }
         return Task.FromResult(sig);
     }

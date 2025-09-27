@@ -162,7 +162,8 @@ public class AdmxCacheFileUsageTests : IClassFixture<IsolatedCacheFixture>
             await conn.OpenAsync();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT MAX(last_access_utc) FROM FileUsage";
-            firstMax = Convert.ToInt64(await cmd.ExecuteScalarAsync());
+            var obj = await cmd.ExecuteScalarAsync();
+            firstMax = (obj == null || obj == DBNull.Value) ? 0 : Convert.ToInt64(obj);
         }
         await Task.Delay(1500);
         await cacheImpl.ScanAndUpdateAsync(new[] { "en-US" });
@@ -171,7 +172,8 @@ public class AdmxCacheFileUsageTests : IClassFixture<IsolatedCacheFixture>
             await conn2.OpenAsync();
             using var cmd2 = conn2.CreateCommand();
             cmd2.CommandText = "SELECT MAX(last_access_utc) FROM FileUsage";
-            var secondMax = Convert.ToInt64(await cmd2.ExecuteScalarAsync());
+            var obj2 = await cmd2.ExecuteScalarAsync();
+            var secondMax = (obj2 == null || obj2 == DBNull.Value) ? 0 : Convert.ToInt64(obj2);
             Assert.True(
                 secondMax >= firstMax,
                 $"Expected secondMax >= firstMax (first={firstMax}, second={secondMax})"
