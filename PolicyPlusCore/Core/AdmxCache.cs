@@ -1545,12 +1545,26 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         }
         else
         {
-            matchNorm = andMode
-                ? BuildFtsAnd(ftsNormCols, normTokens)
-                : BuildFtsOr(ftsNormCols, normTokens);
-            matchLoose = andMode
-                ? BuildFtsAnd(ftsLooseCols, looseTokens)
-                : BuildFtsOr(ftsLooseCols, looseTokens);
+            // Precision tweak: if searching only by Name (no Id/Registry/Description) and not explicitly in AND mode,
+            // require all grams (AND) instead of any (OR). The previous OR behavior caused false positives where a token
+            // chosen from description (not present in display name) shared a single common 2-gram with the title, making
+            // the Name-only search incorrectly match. This aligns with integration test expectation that a description-only
+            // token will not hit a Name-only search.
+            bool nameOnly = useName && !useDesc && !useReg && !useId;
+            if (!andMode && nameOnly)
+            {
+                matchNorm = BuildFtsAnd(ftsNormCols, normTokens);
+                matchLoose = BuildFtsAnd(ftsLooseCols, looseTokens);
+            }
+            else
+            {
+                matchNorm = andMode
+                    ? BuildFtsAnd(ftsNormCols, normTokens)
+                    : BuildFtsOr(ftsNormCols, normTokens);
+                matchLoose = andMode
+                    ? BuildFtsAnd(ftsLooseCols, looseTokens)
+                    : BuildFtsOr(ftsLooseCols, looseTokens);
+            }
         }
         var matchNormEsc = EscapeSqlSingle(matchNorm);
         var matchLooseEsc = EscapeSqlSingle(matchLoose);
