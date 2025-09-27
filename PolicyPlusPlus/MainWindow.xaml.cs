@@ -705,7 +705,7 @@ namespace PolicyPlusPlus
                     UpdateSearchPlaceholder();
                 }
                 catch { }
-                ApplySavedDetailPaneRatioIfAny();
+                // Detail pane ratio now applied lazily on first Show via ShowDetailsPane(); legacy call removed.
 
                 _showDetails = s.ShowDetails ?? true;
                 try

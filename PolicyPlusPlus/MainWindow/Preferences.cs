@@ -28,80 +28,149 @@ namespace PolicyPlusPlus
             "Supported",
         };
 
+        private double? GetCurrentDetailRatio()
+        {
+            try
+            {
+                if (PolicyDetailGrid == null || DetailRow == null || SplitterRow == null)
+                    return null;
+                if (PolicyDetailGrid.RowDefinitions.Count < 3)
+                    return null;
+                var top = PolicyDetailGrid.RowDefinitions[0];
+                if (
+                    top.Height.IsStar
+                    && DetailRow.Height.IsStar
+                    && top.Height.Value > 0
+                    && DetailRow.Height.Value > 0
+                )
+                {
+                    return Math.Clamp(
+                        DetailRow.Height.Value / (top.Height.Value + DetailRow.Height.Value),
+                        0.05,
+                        0.95
+                    );
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private void ApplyRatio(double ratio)
+        {
+            if (PolicyDetailGrid == null || DetailRow == null || SplitterRow == null)
+                return;
+            ratio = Math.Clamp(ratio, 0.05, 0.95);
+            if (PolicyDetailGrid.RowDefinitions.Count >= 3)
+            {
+                var topRow = PolicyDetailGrid.RowDefinitions[0];
+                topRow.Height = new GridLength(1.0 - ratio, GridUnitType.Star);
+                DetailRow.Height = new GridLength(ratio, GridUnitType.Star);
+                SplitterRow.Height = new GridLength(8);
+            }
+        }
+
+        private void HideDetailsPane()
+        {
+            try
+            {
+                var ratio = GetCurrentDetailRatio();
+                if (ratio.HasValue)
+                    _savedDetailRowHeight = new GridLength(ratio.Value, GridUnitType.Star);
+                if (SplitterRow?.Height.Value > 0)
+                    _savedSplitterRowHeight = SplitterRow.Height;
+                if (PolicyDetailGrid?.RowDefinitions.Count >= 3)
+                {
+                    var topRow = PolicyDetailGrid.RowDefinitions[0];
+                    topRow.Height = new GridLength(1.0, GridUnitType.Star);
+                }
+                if (DetailRow != null)
+                    DetailRow.Height = new GridLength(0);
+                if (SplitterRow != null)
+                    SplitterRow.Height = new GridLength(0);
+                if (DetailsPane != null)
+                    DetailsPane.Visibility = Visibility.Collapsed;
+                if (DetailsSplitter != null)
+                    DetailsSplitter.Visibility = Visibility.Collapsed;
+            }
+            catch { }
+        }
+
+        private void ShowDetailsPane()
+        {
+            try
+            {
+                if (DetailsPane != null)
+                    DetailsPane.Visibility = Visibility.Visible;
+                if (DetailsSplitter != null)
+                    DetailsSplitter.Visibility = Visibility.Visible;
+                // Lazy-load saved ratio/star height if not yet cached
+                if (!_savedDetailRowHeight.HasValue)
+                {
+                    try
+                    {
+                        var s = SettingsService.Instance.LoadSettings();
+                        if (s.DetailPaneHeightStar.HasValue)
+                        {
+                            double v = s.DetailPaneHeightStar.Value;
+                            if (v > 0 && v <= 1.0)
+                                _savedDetailRowHeight = new GridLength(v, GridUnitType.Star);
+                            else if (v > 1.0)
+                                _savedDetailRowHeight = new GridLength(v, GridUnitType.Star);
+                        }
+                    }
+                    catch { }
+                }
+                double ratio;
+                if (
+                    _savedDetailRowHeight.HasValue
+                    && _savedDetailRowHeight.Value.IsStar
+                    && _savedDetailRowHeight.Value.Value > 0
+                    && _savedDetailRowHeight.Value.Value <= 1.0
+                )
+                {
+                    ratio = _savedDetailRowHeight.Value.Value;
+                }
+                else if (
+                    _savedDetailRowHeight.HasValue
+                    && _savedDetailRowHeight.Value.IsStar
+                    && _savedDetailRowHeight.Value.Value > 1.0
+                )
+                {
+                    // Legacy star value: convert to ratio using XAML original top (8*) approx mapping; best-effort
+                    double legacyBottom = _savedDetailRowHeight.Value.Value;
+                    ratio = legacyBottom / (8.0 + legacyBottom);
+                }
+                else
+                {
+                    ratio = 0.33; // default
+                }
+                ApplyRatio(ratio);
+            }
+            catch { }
+        }
+
         private void ApplyDetailsPaneVisibility()
         {
             try
             {
                 if (
-                    DetailsPane == null
-                    || DetailRow == null
-                    || DetailsSplitter == null
+                    DetailRow == null
                     || SplitterRow == null
-                )
-                    return;
-                // Use _showDetails which is sourced from ViewModel binding
-                if (_showDetails)
-                {
-                    DetailsPane.Visibility = Visibility.Visible;
-                    DetailsSplitter.Visibility = Visibility.Visible;
-                    if (!_savedDetailRowHeight.HasValue || _savedDetailRowHeight.Value.Value <= 0)
-                        _savedDetailRowHeight = new GridLength(0.3, GridUnitType.Star);
-                    DetailRow.Height = _savedDetailRowHeight.Value;
-                    SplitterRow.Height = _savedSplitterRowHeight ?? new GridLength(8);
-                }
-                else
-                {
-                    if (DetailRow.Height.IsStar && DetailRow.Height.Value > 0)
-                        _savedDetailRowHeight = DetailRow.Height;
-                    if (SplitterRow.Height.Value > 0)
-                        _savedSplitterRowHeight = SplitterRow.Height;
-                    DetailsPane.Visibility = Visibility.Collapsed;
-                    DetailsSplitter.Visibility = Visibility.Collapsed;
-                    DetailRow.Height = new GridLength(0);
-                    SplitterRow.Height = new GridLength(0);
-                }
-            }
-            catch { }
-        }
-
-        private void ApplySavedDetailPaneRatioIfAny()
-        {
-            try
-            {
-                var s = SettingsService.Instance.LoadSettings();
-                if (
-                    !s.DetailPaneHeightStar.HasValue
                     || PolicyDetailGrid == null
-                    || DetailRow == null
-                    || SplitterRow == null
+                    || DetailsPane == null
+                    || DetailsSplitter == null
                 )
                     return;
-
-                double v = s.DetailPaneHeightStar.Value;
-                // Treat values in [0,1] as ratio; legacy values (>1) as star units for DetailRow only
-                if (v > 0 && v <= 1.0)
-                {
-                    double r = Math.Clamp(v, 0.05, 0.95);
-                    var topStar = 1.0 - r;
-                    var botStar = r;
-                    // Apply both rows as star so the ratio is preserved
-                    if (PolicyDetailGrid.RowDefinitions.Count >= 3)
-                    {
-                        var topRow = PolicyDetailGrid.RowDefinitions[0];
-                        topRow.Height = new GridLength(topStar, GridUnitType.Star);
-                        SplitterRow.Height = new GridLength(8);
-                        DetailRow.Height = new GridLength(botStar, GridUnitType.Star);
-                        _savedDetailRowHeight = DetailRow.Height;
-                    }
-                }
-                else if (v > 1.0)
-                {
-                    DetailRow.Height = new GridLength(v, GridUnitType.Star);
-                    _savedDetailRowHeight = DetailRow.Height;
-                }
+                if (_showDetails)
+                    ShowDetailsPane();
+                else
+                    HideDetailsPane();
+                PolicyDetailGrid.UpdateLayout();
             }
             catch { }
         }
+
+        // Legacy method removed: logic folded into ShowDetailsPane()
 
         private void LoadColumnPrefs()
         {
@@ -712,25 +781,7 @@ namespace PolicyPlusPlus
                     CategoryColumn.Width = new GridLength(w);
                 }
 
-                // Apply detail pane height (ratio or legacy star)
-                if (s.DetailPaneHeightStar.HasValue && PolicyDetailGrid != null)
-                {
-                    double v = s.DetailPaneHeightStar.Value;
-                    if (v > 0 && v <= 1.0)
-                    {
-                        double r = Math.Clamp(v, 0.05, 0.95);
-                        var topRow = PolicyDetailGrid.RowDefinitions[0];
-                        topRow.Height = new GridLength(1.0 - r, GridUnitType.Star);
-                        SplitterRow.Height = new GridLength(8);
-                        DetailRow.Height = new GridLength(r, GridUnitType.Star);
-                        _savedDetailRowHeight = DetailRow.Height;
-                    }
-                    else if (v > 1.0)
-                    {
-                        DetailRow.Height = new GridLength(v, GridUnitType.Star);
-                        _savedDetailRowHeight = DetailRow.Height;
-                    }
-                }
+                // Detail pane sizing handled lazily in ShowDetailsPane(); avoid early conflicting application here.
 
                 // Restore sorting
                 _sortColumn = s.SortColumn;
