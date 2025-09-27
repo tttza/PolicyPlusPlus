@@ -23,6 +23,17 @@
     <PackageIcon>PolicyPlusPlus_Elevated_icon.png</PackageIcon>
     <ApplicationIcon>Assets\PolicyPlusPlus_Elevated_icon.ico</ApplicationIcon>
   </PropertyGroup>
+  <!-- Derive concrete Platform when omitted (mirrors logic in main PolicyPlusPlus project) -->
+  <PropertyGroup Condition="'$(Platform)'=='' or '$(Platform)'=='AnyCPU'">
+    <_HostArch>$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</_HostArch>
+    <Platform Condition="'$(_HostArch)'=='x64'">x64</Platform>
+    <Platform Condition="'$(_HostArch)'=='arm64'">ARM64</Platform>
+    <Platform Condition="'$(_HostArch)'=='x86'">x86</Platform>
+    <Platform
+      Condition="'$(Platform)'=='' and '$(Platform)'!='x64' and '$(Platform)'!='ARM64' and '$(Platform)'!='x86'"
+      >x64</Platform
+    >
+  </PropertyGroup>
   <ItemGroup>
     <None Remove="Assets\PolicyPlusPlus_Elevated_icon.ico" />
   </ItemGroup>

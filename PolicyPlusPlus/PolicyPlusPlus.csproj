@@ -171,20 +171,28 @@
     <!-- Prevent SDK from auto-appending +<commit> to informational version -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
-  <!-- Compute git describe output and set AssemblyInformationalVersion dynamically -->
+  <!-- Compute git describe output and set AssemblyInformationalVersion dynamically.
+       NOTE:
+         - Exec task does NOT invoke a shell, so shell redirection (>) cannot be used. We capture stdout instead.
+         - GitVersionOverride (passed from CI) short-circuits git invocation to allow deterministic release builds.
+  -->
   <Target
     Name="ComputeGitDescribe"
     BeforeTargets="PrepareForBuild;GenerateAssemblyInfo;CoreCompile"
   >
+    <!-- When an explicit override is not supplied, invoke git describe and capture its stdout -->
     <Exec
-      Command="git describe --tags --always --dirty &gt; &quot;$(IntermediateOutputPath)git-describe.txt&quot;"
+      Condition="'$(GitVersionOverride)'==''"
+      Command="git describe --tags --always --dirty"
       IgnoreExitCode="true"
-    />
-    <ReadLinesFromFile File="$(IntermediateOutputPath)git-describe.txt">
-      <Output TaskParameter="Lines" PropertyName="GitDescribeRaw" />
-    </ReadLinesFromFile>
+      ConsoleToMSBuild="true"
+    >
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitDescribeRaw" />
+    </Exec>
     <PropertyGroup>
-      <GitDescribe>$(GitDescribeRaw)</GitDescribe>
+      <!-- Prefer explicit override if provided -->
+      <GitDescribe Condition="'$(GitVersionOverride)'!=''">$(GitVersionOverride)</GitDescribe>
+      <GitDescribe Condition="'$(GitVersionOverride)'==''">$(GitDescribeRaw)</GitDescribe>
       <GitDescribe Condition="'$(GitDescribe)'==''">dev</GitDescribe>
       <!-- Derive numeric version parts.
            Supported tags:
