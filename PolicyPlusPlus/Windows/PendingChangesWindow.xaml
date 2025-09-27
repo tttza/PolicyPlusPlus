@@ -98,7 +98,7 @@
                 <ComboBoxItem Content="Computer" />
                 <ComboBoxItem Content="User" />
               </ComboBox>
-              <TextBlock Text="Operation:" VerticalAlignment="Center" />
+              <TextBlock Text="Type:" VerticalAlignment="Center" />
               <ComboBox
                 x:Name="OperationFilter"
                 Width="140"
@@ -113,7 +113,7 @@
                 x:Name="SearchBox"
                 Width="300"
                 QueryIcon="Find"
-                PlaceholderText="Search pending items (policy, path)"
+                PlaceholderText="Search pending items"
                 TextChanged="SearchBox_TextChanged"
               />
               <!-- Clear filters button removed -->
@@ -190,6 +190,13 @@
                 <ComboBoxItem Content="Computer" />
                 <ComboBoxItem Content="User" />
               </ComboBox>
+              <TextBlock Text="Type:" VerticalAlignment="Center" />
+              <ComboBox x:Name="HistoryType" Width="140" SelectionChanged="HistoryFilter_Changed">
+                <ComboBoxItem Content="All" IsSelected="True" />
+                <ComboBoxItem Content="Applied" />
+                <ComboBoxItem Content="Discarded" />
+                <ComboBoxItem Content="Reapplied" />
+              </ComboBox>
               <TextBlock Text="Time:" VerticalAlignment="Center" />
               <ComboBox
                 x:Name="HistoryTimeRange"
@@ -201,18 +208,11 @@
                 <ComboBoxItem Content="Last 7 days" />
                 <ComboBoxItem Content="Last 30 days" />
               </ComboBox>
-              <TextBlock Text="Type:" VerticalAlignment="Center" />
-              <ComboBox x:Name="HistoryType" Width="140" SelectionChanged="HistoryFilter_Changed">
-                <ComboBoxItem Content="All" IsSelected="True" />
-                <ComboBoxItem Content="Applied" />
-                <ComboBoxItem Content="Discarded" />
-                <ComboBoxItem Content="Reapplied" />
-              </ComboBox>
               <AutoSuggestBox
                 x:Name="HistorySearch"
                 Width="260"
                 QueryIcon="Find"
-                PlaceholderText="Search history (policy, path)"
+                PlaceholderText="Search history"
                 TextChanged="HistorySearch_TextChanged"
               />
               <!-- Clear history filters button removed -->
