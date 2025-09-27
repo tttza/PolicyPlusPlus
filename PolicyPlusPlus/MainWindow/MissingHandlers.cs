@@ -80,6 +80,102 @@ namespace PolicyPlusPlus
             UpdateNavButtons();
         }
 
+        private void HintDisableConfiguredOnly_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _configuredOnly = false;
+                if (ChkConfiguredOnly != null)
+                    ChkConfiguredOnly.IsChecked = false;
+                try
+                {
+                    SettingsService.Instance.UpdateConfiguredOnly(false);
+                }
+                catch { }
+                RebindConsideringAsync(GetSearchBox()?.Text ?? string.Empty);
+            }
+            catch { }
+        }
+
+        private void HintDisableBookmarksOnly_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _bookmarksOnly = false;
+                if (ChkBookmarksOnly != null)
+                {
+                    _suppressBookmarksOnlyChanged = true;
+                    ChkBookmarksOnly.IsChecked = false;
+                    _suppressBookmarksOnlyChanged = false;
+                }
+                try
+                {
+                    SettingsService.Instance.UpdateBookmarksOnly(false);
+                }
+                catch { }
+                RebindConsideringAsync(GetSearchBox()?.Text ?? string.Empty);
+            }
+            catch { }
+        }
+
+        private void HintClearAllFilters_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                bool any = false;
+                if (_configuredOnly)
+                {
+                    _configuredOnly = false;
+                    if (ChkConfiguredOnly != null)
+                        ChkConfiguredOnly.IsChecked = false;
+                    try
+                    {
+                        SettingsService.Instance.UpdateConfiguredOnly(false);
+                    }
+                    catch { }
+                    any = true;
+                }
+                if (_bookmarksOnly)
+                {
+                    _bookmarksOnly = false;
+                    if (ChkBookmarksOnly != null)
+                    {
+                        _suppressBookmarksOnlyChanged = true;
+                        ChkBookmarksOnly.IsChecked = false;
+                        _suppressBookmarksOnlyChanged = false;
+                    }
+                    try
+                    {
+                        SettingsService.Instance.UpdateBookmarksOnly(false);
+                    }
+                    catch { }
+                    any = true;
+                }
+                if (_selectedCategory != null)
+                {
+                    _selectedCategory = null;
+                    if (CategoryTree != null)
+                    {
+                        _suppressCategorySelectionChanged = true;
+                        var old = CategoryTree.SelectionMode;
+                        CategoryTree.SelectionMode = TreeViewSelectionMode.None;
+                        BuildCategoryTree();
+                        CategoryTree.SelectionMode = old;
+                        _suppressCategorySelectionChanged = false;
+                    }
+                    any = true;
+                }
+                if (any)
+                {
+                    UpdateSearchPlaceholder();
+                    _navTyping = false;
+                    RebindConsideringAsync(GetSearchBox()?.Text ?? string.Empty);
+                    UpdateNavButtons();
+                }
+            }
+            catch { }
+        }
+
         private void PolicyList_Sorting(object? sender, DataGridColumnEventArgs e)
         {
             try

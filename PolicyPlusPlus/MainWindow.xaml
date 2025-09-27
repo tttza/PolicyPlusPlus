@@ -616,273 +616,370 @@
               <RowDefinition x:Name="SplitterRow" Height="7" />
               <RowDefinition x:Name="DetailRow" Height="3.9*" />
             </Grid.RowDefinitions>
-            <!-- DataGrid -->
-            <datagrid:DataGrid
-              x:Name="PolicyList"
-              AutomationProperties.AutomationId="PolicyList"
-              Grid.Row="0"
-              AutoGenerateColumns="False"
-              IsReadOnly="True"
-              SelectionMode="Single"
-              HeadersVisibility="Column"
-              GridLinesVisibility="Horizontal"
-              AlternatingRowBackground="{StaticResource AltRowBrush}"
-              SelectionChanged="PolicyList_SelectionChanged"
-              DoubleTapped="PolicyList_DoubleTapped"
-              RightTapped="PolicyList_RightTapped"
-              KeyDown="PolicyList_KeyDown"
-              CanUserSortColumns="True"
-              CanUserResizeColumns="True"
-              CanUserReorderColumns="True"
-              Sorting="PolicyList_Sorting"
-              ScrollViewer.HorizontalScrollBarVisibility="Auto"
-              ScrollViewer.HorizontalScrollMode="Auto"
-              ScrollViewer.VerticalScrollBarVisibility="Auto"
-              ScrollViewer.VerticalScrollMode="Auto"
-            >
-              <datagrid:DataGrid.Columns>
-                <datagrid:DataGridTemplateColumn
-                  x:Name="ColBookmark"
-                  Header="★"
-                  Width="SizeToCells"
-                  CanUserSort="False"
-                  Visibility="Visible"
-                >
-                  <datagrid:DataGridTemplateColumn.CellStyle>
-                    <Style TargetType="datagrid:DataGridCell">
-                      <Setter Property="Padding" Value="0" />
-                      <Setter Property="HorizontalContentAlignment" Value="Center" />
-                      <Setter Property="VerticalContentAlignment" Value="Center" />
-                    </Style>
-                  </datagrid:DataGridTemplateColumn.CellStyle>
-                  <datagrid:DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate>
-                      <Grid
-                        HorizontalAlignment="Center"
-                        Visibility="{Binding IsCategory, Converter={StaticResource NotBoolToVisibilityConverter}}"
-                      >
-                        <Button
-                          Padding="2"
-                          MinWidth="0"
-                          Background="Transparent"
-                          BorderThickness="0"
-                          BorderBrush="Transparent"
-                          IsTabStop="False"
-                          Click="BookmarkToggle_Click"
-                          DoubleTapped="BookmarkToggle_DoubleTapped"
-                          Tag="{Binding Policy}"
-                          ToolTipService.ToolTip="Toggle bookmark"
+            <!-- Policy list host allows overlay panel when list is empty -->
+            <Grid Grid.Row="0" x:Name="PolicyListHost">
+              <datagrid:DataGrid
+                x:Name="PolicyList"
+                AutomationProperties.AutomationId="PolicyList"
+                AutoGenerateColumns="False"
+                IsReadOnly="True"
+                SelectionMode="Single"
+                HeadersVisibility="Column"
+                GridLinesVisibility="Horizontal"
+                AlternatingRowBackground="{StaticResource AltRowBrush}"
+                SelectionChanged="PolicyList_SelectionChanged"
+                DoubleTapped="PolicyList_DoubleTapped"
+                RightTapped="PolicyList_RightTapped"
+                KeyDown="PolicyList_KeyDown"
+                CanUserSortColumns="True"
+                CanUserResizeColumns="True"
+                CanUserReorderColumns="True"
+                Sorting="PolicyList_Sorting"
+                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                ScrollViewer.HorizontalScrollMode="Auto"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.VerticalScrollMode="Auto"
+              >
+                <datagrid:DataGrid.Columns>
+                  <datagrid:DataGridTemplateColumn
+                    x:Name="ColBookmark"
+                    Header="★"
+                    Width="SizeToCells"
+                    CanUserSort="False"
+                    Visibility="Visible"
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Center" />
+                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <Grid
+                          HorizontalAlignment="Center"
+                          Visibility="{Binding IsCategory, Converter={StaticResource NotBoolToVisibilityConverter}}"
                         >
-                          <FontIcon
-                            x:Name="BookmarkGlyph"
-                            Glyph="{g:GlyphHex Code=E735}"
-                            FontSize="14"
-                            Foreground="Gold"
+                          <Button
+                            Padding="2"
                             MinWidth="0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            BorderBrush="Transparent"
+                            IsTabStop="False"
+                            Click="BookmarkToggle_Click"
+                            DoubleTapped="BookmarkToggle_DoubleTapped"
+                            Tag="{Binding Policy}"
+                            ToolTipService.ToolTip="Toggle bookmark"
+                          >
+                            <FontIcon
+                              x:Name="BookmarkGlyph"
+                              Glyph="{g:GlyphHex Code=E735}"
+                              FontSize="14"
+                              Foreground="Gold"
+                              MinWidth="0"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Opacity="{Binding IsBookmarked, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Opacity}"
+                            />
+                          </Button>
+                        </Grid>
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
+                    x:Name="ColCatIcon"
+                    Header=""
+                    Width="SizeToCells"
+                    CanUserSort="False"
+                  >
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <FontIcon
+                          Glyph="{g:GlyphHex Code=E8B7}"
+                          Opacity="0.8"
+                          Visibility="{Binding IsCategory, Converter={StaticResource BoolToVisibilityConverter}}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <!-- User configured state icon -->
+                  <datagrid:DataGridTemplateColumn
+                    x:Name="ColUserIcon"
+                    Header="User"
+                    Width="SizeToCells"
+                    CanUserSort="False"
+                  >
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <Grid Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
+                          <FontIcon
+                            Glyph="{g:GlyphHex Code=E77B}"
+                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                            Opacity="0.9"
+                          />
+                          <FontIcon
+                            Glyph="{Binding UserGlyph}"
+                            Foreground="{Binding UserBrush}"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            Opacity="{Binding IsBookmarked, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Opacity}"
                           />
-                        </Button>
-                      </Grid>
-                    </DataTemplate>
-                  </datagrid:DataGridTemplateColumn.CellTemplate>
-                </datagrid:DataGridTemplateColumn>
-                <datagrid:DataGridTemplateColumn
-                  x:Name="ColCatIcon"
-                  Header=""
-                  Width="SizeToCells"
-                  CanUserSort="False"
+                          <!-- Pending asterisk overlay -->
+                          <TextBlock
+                            Text="*"
+                            FontSize="10"
+                            FontWeight="Bold"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            Visibility="{Binding UserPending, Converter={StaticResource BoolToVisibilityConverter}}"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="0,-2,-2,0"
+                          />
+                        </Grid>
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <!-- Computer configured state icon -->
+                  <datagrid:DataGridTemplateColumn
+                    x:Name="ColComputerIcon"
+                    Header="Computer"
+                    Width="SizeToCells"
+                    CanUserSort="False"
+                  >
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <Grid Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
+                          <FontIcon
+                            Glyph="{g:GlyphHex Code=E211}"
+                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                            Opacity="0.9"
+                          />
+                          <FontIcon
+                            Glyph="{Binding ComputerGlyph}"
+                            Foreground="{Binding ComputerBrush}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                          />
+                          <!-- Pending asterisk overlay -->
+                          <TextBlock
+                            Text="*"
+                            FontSize="10"
+                            FontWeight="Bold"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            Visibility="{Binding ComputerPending, Converter={StaticResource BoolToVisibilityConverter}}"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="0,-2,-2,0"
+                          />
+                        </Grid>
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTextColumn
+                    x:Name="ColName"
+                    Header="Name"
+                    Binding="{Binding DisplayName}"
+                    Width="3*"
+                    MinWidth="260"
+                  />
+                  <datagrid:DataGridTextColumn
+                    x:Name="ColSecondName"
+                    Header="2nd Language Name"
+                    Binding="{Binding SecondName}"
+                    Width="2*"
+                    MinWidth="200"
+                    Visibility="Collapsed"
+                  />
+                  <datagrid:DataGridTextColumn
+                    x:Name="ColId"
+                    Header="ID"
+                    Binding="{Binding ShortId}"
+                    Width="2*"
+                  />
+                  <datagrid:DataGridTextColumn
+                    x:Name="ColCategory"
+                    Header="Parent Category"
+                    Binding="{Binding CategoryName}"
+                    Width="2*"
+                  />
+                  <datagrid:DataGridTextColumn
+                    x:Name="ColTopCategory"
+                    Header="Top Category"
+                    Binding="{Binding TopCategoryName}"
+                    Width="2*"
+                    Visibility="Collapsed"
+                  />
+                  <datagrid:DataGridTextColumn
+                    x:Name="ColCategoryPath"
+                    Header="Category Path"
+                    Binding="{Binding CategoryFullPath}"
+                    Width="3*"
+                    Visibility="Collapsed"
+                  />
+                  <datagrid:DataGridTextColumn
+                    x:Name="ColApplies"
+                    Header="Applies to"
+                    Binding="{Binding AppliesText}"
+                    Width="*"
+                  />
+                  <datagrid:DataGridTextColumn
+                    x:Name="ColSupported"
+                    Header="Supported on"
+                    Binding="{Binding SupportedText}"
+                    Width="2*"
+                  />
+                </datagrid:DataGrid.Columns>
+                <datagrid:DataGrid.RowStyle>
+                  <Style TargetType="datagrid:DataGridRow">
+                    <Setter Property="ContextFlyout">
+                      <Setter.Value>
+                        <MenuFlyout>
+                          <MenuFlyoutItem
+                            Text="Edit..."
+                            Tag="{Binding Policy}"
+                            Click="ContextEdit_Click"
+                          />
+                          <MenuFlyoutItem
+                            Text="View formatted..."
+                            Tag="{Binding Policy}"
+                            Click="ContextViewFormatted_Click"
+                          />
+                          <MenuFlyoutSeparator />
+                          <MenuFlyoutItem
+                            Text="Toggle bookmark"
+                            Tag="{Binding Policy}"
+                            Click="ContextBookmarkToggle_Click"
+                          />
+                          <MenuFlyoutSeparator />
+                          <MenuFlyoutItem
+                            Text="Copy name"
+                            Tag="{Binding Policy}"
+                            Click="ContextCopyName_Click"
+                          />
+                          <MenuFlyoutItem
+                            Text="Copy ID"
+                            Tag="{Binding Policy}"
+                            Click="ContextCopyId_Click"
+                          />
+                          <MenuFlyoutItem
+                            Text="Copy path"
+                            Tag="{Binding Policy}"
+                            Click="ContextCopyPath_Click"
+                          />
+                          <MenuFlyoutItem
+                            Text="Reveal in tree"
+                            Tag="{Binding Policy}"
+                            Click="ContextRevealInTree_Click"
+                          />
+                          <MenuFlyoutItem
+                            Text="Copy .reg export"
+                            Tag="{Binding Policy}"
+                            Click="ContextCopyRegExport_Click"
+                          />
+                        </MenuFlyout>
+                      </Setter.Value>
+                    </Setter>
+                  </Style>
+                </datagrid:DataGrid.RowStyle>
+              </datagrid:DataGrid>
+              <!-- Overlay hint panel shown when zero results; buttons appear for active filters -->
+              <StackPanel
+                x:Name="EmptyHintPanel"
+                Visibility="Collapsed"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Spacing="14"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                Padding="22,24"
+                CornerRadius="10"
+                MaxWidth="640"
+                AutomationProperties.Name="Empty result hint"
+              >
+                <StackPanel
+                  Orientation="Vertical"
+                  HorizontalAlignment="Center"
+                  Spacing="10"
+                  Width="520"
                 >
-                  <datagrid:DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate>
-                      <FontIcon
-                        Glyph="{g:GlyphHex Code=E8B7}"
-                        Opacity="0.8"
-                        Visibility="{Binding IsCategory, Converter={StaticResource BoolToVisibilityConverter}}"
+                  <FontIcon
+                    Glyph="{g:GlyphHex Code=E946}"
+                    FontSize="32"
+                    Foreground="{ThemeResource AccentFillColorDefaultBrush}"
+                    HorizontalAlignment="Center"
+                  />
+                  <TextBlock
+                    x:Name="EmptyHintMessage"
+                    Text="No policies to display."
+                    TextWrapping="Wrap"
+                    TextAlignment="Center"
+                    FontSize="14"
+                    HorizontalAlignment="Center"
+                  />
+                </StackPanel>
+                <StackPanel
+                  Orientation="Vertical"
+                  HorizontalAlignment="Stretch"
+                  Spacing="4"
+                  Margin="0,4,0,0"
+                >
+                  <HyperlinkButton
+                    x:Name="HintDisableConfiguredOnly"
+                    Visibility="Collapsed"
+                    Click="HintDisableConfiguredOnly_Click"
+                    HorizontalAlignment="Center"
+                  >
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <!-- MultiSelect glyph -->
+                      <FontIcon Glyph="{g:GlyphHex Code=E762}" />
+                      <TextBlock
+                        x:Name="HintDisableConfiguredOnlyText"
+                        Text="Disable 'Configured only' filter"
                       />
-                    </DataTemplate>
-                  </datagrid:DataGridTemplateColumn.CellTemplate>
-                </datagrid:DataGridTemplateColumn>
-                <!-- User configured state icon -->
-                <datagrid:DataGridTemplateColumn
-                  x:Name="ColUserIcon"
-                  Header="User"
-                  Width="SizeToCells"
-                  CanUserSort="False"
-                >
-                  <datagrid:DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate>
-                      <Grid Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <FontIcon
-                          Glyph="{g:GlyphHex Code=E77B}"
-                          Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                          Opacity="0.9"
-                        />
-                        <FontIcon
-                          Glyph="{Binding UserGlyph}"
-                          Foreground="{Binding UserBrush}"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Center"
-                        />
-                        <!-- Pending asterisk overlay -->
-                        <TextBlock
-                          Text="*"
-                          FontSize="10"
-                          FontWeight="Bold"
-                          Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                          Visibility="{Binding UserPending, Converter={StaticResource BoolToVisibilityConverter}}"
-                          HorizontalAlignment="Right"
-                          VerticalAlignment="Top"
-                          Margin="0,-2,-2,0"
-                        />
-                      </Grid>
-                    </DataTemplate>
-                  </datagrid:DataGridTemplateColumn.CellTemplate>
-                </datagrid:DataGridTemplateColumn>
-                <!-- Computer configured state icon -->
-                <datagrid:DataGridTemplateColumn
-                  x:Name="ColComputerIcon"
-                  Header="Computer"
-                  Width="SizeToCells"
-                  CanUserSort="False"
-                >
-                  <datagrid:DataGridTemplateColumn.CellTemplate>
-                    <DataTemplate>
-                      <Grid Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <FontIcon
-                          Glyph="{g:GlyphHex Code=E211}"
-                          Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                          Opacity="0.9"
-                        />
-                        <FontIcon
-                          Glyph="{Binding ComputerGlyph}"
-                          Foreground="{Binding ComputerBrush}"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Center"
-                        />
-                        <!-- Pending asterisk overlay -->
-                        <TextBlock
-                          Text="*"
-                          FontSize="10"
-                          FontWeight="Bold"
-                          Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                          Visibility="{Binding ComputerPending, Converter={StaticResource BoolToVisibilityConverter}}"
-                          HorizontalAlignment="Right"
-                          VerticalAlignment="Top"
-                          Margin="0,-2,-2,0"
-                        />
-                      </Grid>
-                    </DataTemplate>
-                  </datagrid:DataGridTemplateColumn.CellTemplate>
-                </datagrid:DataGridTemplateColumn>
-                <datagrid:DataGridTextColumn
-                  x:Name="ColName"
-                  Header="Name"
-                  Binding="{Binding DisplayName}"
-                  Width="3*"
-                  MinWidth="260"
-                />
-                <datagrid:DataGridTextColumn
-                  x:Name="ColSecondName"
-                  Header="2nd Language Name"
-                  Binding="{Binding SecondName}"
-                  Width="2*"
-                  MinWidth="200"
-                  Visibility="Collapsed"
-                />
-                <datagrid:DataGridTextColumn
-                  x:Name="ColId"
-                  Header="ID"
-                  Binding="{Binding ShortId}"
-                  Width="2*"
-                />
-                <datagrid:DataGridTextColumn
-                  x:Name="ColCategory"
-                  Header="Parent Category"
-                  Binding="{Binding CategoryName}"
-                  Width="2*"
-                />
-                <datagrid:DataGridTextColumn
-                  x:Name="ColTopCategory"
-                  Header="Top Category"
-                  Binding="{Binding TopCategoryName}"
-                  Width="2*"
-                  Visibility="Collapsed"
-                />
-                <datagrid:DataGridTextColumn
-                  x:Name="ColCategoryPath"
-                  Header="Category Path"
-                  Binding="{Binding CategoryFullPath}"
-                  Width="3*"
-                  Visibility="Collapsed"
-                />
-                <datagrid:DataGridTextColumn
-                  x:Name="ColApplies"
-                  Header="Applies to"
-                  Binding="{Binding AppliesText}"
-                  Width="*"
-                />
-                <datagrid:DataGridTextColumn
-                  x:Name="ColSupported"
-                  Header="Supported on"
-                  Binding="{Binding SupportedText}"
-                  Width="2*"
-                />
-              </datagrid:DataGrid.Columns>
-              <datagrid:DataGrid.RowStyle>
-                <Style TargetType="datagrid:DataGridRow">
-                  <Setter Property="ContextFlyout">
-                    <Setter.Value>
-                      <MenuFlyout>
-                        <MenuFlyoutItem
-                          Text="Edit..."
-                          Tag="{Binding Policy}"
-                          Click="ContextEdit_Click"
-                        />
-                        <MenuFlyoutItem
-                          Text="View formatted..."
-                          Tag="{Binding Policy}"
-                          Click="ContextViewFormatted_Click"
-                        />
-                        <MenuFlyoutSeparator />
-                        <MenuFlyoutItem
-                          Text="Toggle bookmark"
-                          Tag="{Binding Policy}"
-                          Click="ContextBookmarkToggle_Click"
-                        />
-                        <MenuFlyoutSeparator />
-                        <MenuFlyoutItem
-                          Text="Copy name"
-                          Tag="{Binding Policy}"
-                          Click="ContextCopyName_Click"
-                        />
-                        <MenuFlyoutItem
-                          Text="Copy ID"
-                          Tag="{Binding Policy}"
-                          Click="ContextCopyId_Click"
-                        />
-                        <MenuFlyoutItem
-                          Text="Copy path"
-                          Tag="{Binding Policy}"
-                          Click="ContextCopyPath_Click"
-                        />
-                        <MenuFlyoutItem
-                          Text="Reveal in tree"
-                          Tag="{Binding Policy}"
-                          Click="ContextRevealInTree_Click"
-                        />
-                        <MenuFlyoutItem
-                          Text="Copy .reg export"
-                          Tag="{Binding Policy}"
-                          Click="ContextCopyRegExport_Click"
-                        />
-                      </MenuFlyout>
-                    </Setter.Value>
-                  </Setter>
-                </Style>
-              </datagrid:DataGrid.RowStyle>
-            </datagrid:DataGrid>
+                    </StackPanel>
+                  </HyperlinkButton>
+                  <HyperlinkButton
+                    x:Name="HintDisableBookmarksOnly"
+                    Visibility="Collapsed"
+                    Click="HintDisableBookmarksOnly_Click"
+                    HorizontalAlignment="Center"
+                  >
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <!-- FavoriteStar glyph -->
+                      <FontIcon Glyph="{g:GlyphHex Code=E734}" />
+                      <TextBlock
+                        x:Name="HintDisableBookmarksOnlyText"
+                        Text="Disable 'Bookmarks only' filter"
+                      />
+                    </StackPanel>
+                  </HyperlinkButton>
+                  <HyperlinkButton
+                    x:Name="HintClearCategory"
+                    Visibility="Collapsed"
+                    Click="ClearCategoryFilter_Click"
+                    HorizontalAlignment="Center"
+                  >
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <!-- GroupList glyph -->
+                      <FontIcon Glyph="{g:GlyphHex Code=F168}" />
+                      <TextBlock x:Name="HintClearCategoryText" Text="Clear category filter" />
+                    </StackPanel>
+                  </HyperlinkButton>
+                  <HyperlinkButton
+                    x:Name="HintClearAllFilters"
+                    Visibility="Collapsed"
+                    Click="HintClearAllFilters_Click"
+                    HorizontalAlignment="Center"
+                  >
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <!-- Use 'Clear' like glyph (E894 = Clear) -->
+                      <FontIcon Glyph="{g:GlyphHex Code=E894}" />
+                      <TextBlock x:Name="HintClearAllFiltersText" Text="Disable all filters" />
+                    </StackPanel>
+                  </HyperlinkButton>
+                </StackPanel>
+              </StackPanel>
+            </Grid>
             <toolkit:GridSplitter
               x:Name="DetailsSplitter"
               Grid.Row="1"

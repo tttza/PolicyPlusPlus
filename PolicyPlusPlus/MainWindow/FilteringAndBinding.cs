@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls; // for TextBlock
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
 using PolicyPlusCore.Utilities;
@@ -18,6 +19,15 @@ namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {
+        // Pre-filter counts to compute potential gains if a filter is disabled (Config A scope).
+        private int _preConfiguredFilterCount = -1;
+        private int _preBookmarksFilterCount = -1;
+        private int _deltaConfigured = 0;
+        private int _deltaBookmarks = 0;
+        private int _deltaCategory = 0; // count if category filter cleared
+        private bool _hasAnyBookmarks = true; // set by ApplyBookmarkFilterIfNeeded
+        private bool _hasAnyConfiguredInScope = true; // set by ApplyConfiguredFilterIfNeeded
+
         private Microsoft.UI.Xaml.Controls.ProgressRing? GetSearchSpinner() =>
             RootElement?.FindName("SearchSpinner") as Microsoft.UI.Xaml.Controls.ProgressRing;
 
@@ -261,7 +271,6 @@ namespace PolicyPlusPlus
                     _appliesFilter,
                     _selectedCategory,
                     includeSubcategories,
-                    _configuredOnly,
                     ctx.Comp,
                     ctx.User
                 )
@@ -274,7 +283,6 @@ namespace PolicyPlusPlus
                 AdmxPolicySection applies,
                 PolicyPlusCategory? category,
                 bool includeSubcats,
-                bool configuredOnly,
                 IPolicySource? comp,
                 IPolicySource? user
             )
@@ -282,7 +290,6 @@ namespace PolicyPlusPlus
                 Applies = applies;
                 Category = category;
                 IncludeSubcategories = includeSubcats;
-                ConfiguredOnly = configuredOnly;
                 CompSource = comp;
                 UserSource = user;
             }
@@ -290,7 +297,6 @@ namespace PolicyPlusPlus
             public AdmxPolicySection Applies { get; }
             public PolicyPlusCategory? Category { get; }
             public bool IncludeSubcategories { get; }
-            public bool ConfiguredOnly { get; }
             public IPolicySource? CompSource { get; }
             public IPolicySource? UserSource { get; }
         }
@@ -332,79 +338,91 @@ namespace PolicyPlusPlus
                     seq = seq.Where(p => direct.Contains(p.UniqueID));
                 }
             }
-            if (snap.ConfiguredOnly)
+            return seq;
+        }
+
+        private IEnumerable<PolicyPlusPolicy> ApplyConfiguredFilterIfNeeded(
+            IEnumerable<PolicyPlusPolicy> seq,
+            IPolicySource? compSrc,
+            IPolicySource? userSrc
+        )
+        {
+            if (!_configuredOnly)
             {
-                var pending =
-                    PendingChangesService.Instance.Pending?.ToList() ?? new List<PendingChange>();
-                if (snap.CompSource != null || snap.UserSource != null || pending.Count > 0)
+                _preConfiguredFilterCount = -1;
+                _deltaConfigured = 0;
+                _hasAnyConfiguredInScope = true; // not applicable
+                return seq;
+            }
+            // Materialize once for count + filtering pass.
+            var list = seq as IList<PolicyPlusPolicy> ?? seq.ToList();
+            _preConfiguredFilterCount = list.Count;
+            var pending =
+                PendingChangesService.Instance.Pending?.ToList() ?? new List<PendingChange>();
+            if (compSrc == null && userSrc == null && pending.Count == 0)
+            {
+                // No sources, so configured-only degenerates to empty.
+                _hasAnyConfiguredInScope = false;
+                return Array.Empty<PolicyPlusPolicy>();
+            }
+            var compLocal = compSrc;
+            var userLocal = userSrc;
+            bool Predicate(PolicyPlusPolicy p)
+            {
+                try
                 {
-                    var compLocal = snap.CompSource;
-                    var userLocal = snap.UserSource;
-                    seq = seq.Where(p =>
+                    bool effUser = false,
+                        effComp = false;
+                    if (
+                        p.RawPolicy.Section == AdmxPolicySection.User
+                        || p.RawPolicy.Section == AdmxPolicySection.Both
+                    )
                     {
-                        try
-                        {
-                            bool effUser = false,
-                                effComp = false;
-                            if (
-                                p.RawPolicy.Section == AdmxPolicySection.User
-                                || p.RawPolicy.Section == AdmxPolicySection.Both
-                            )
-                            {
-                                var pu = pending.FirstOrDefault(pc =>
-                                    pc.PolicyId == p.UniqueID
-                                    && pc.Scope.Equals("User", StringComparison.OrdinalIgnoreCase)
+                        var pu = pending.FirstOrDefault(pc =>
+                            pc.PolicyId == p.UniqueID
+                            && pc.Scope.Equals("User", StringComparison.OrdinalIgnoreCase)
+                        );
+                        effUser =
+                            pu != null
+                                ? (pu.DesiredState is PolicyState.Enabled or PolicyState.Disabled)
+                                : (
+                                    userLocal != null
+                                    && PolicyProcessing.GetPolicyState(userLocal, p)
+                                        is PolicyState.Enabled
+                                            or PolicyState.Disabled
                                 );
-                                effUser =
-                                    pu != null
-                                        ? (
-                                            pu.DesiredState
-                                            is PolicyState.Enabled
-                                                or PolicyState.Disabled
-                                        )
-                                        : (
-                                            userLocal != null
-                                            && PolicyProcessing.GetPolicyState(userLocal, p)
-                                                is PolicyState.Enabled
-                                                    or PolicyState.Disabled
-                                        );
-                            }
-                            if (
-                                p.RawPolicy.Section == AdmxPolicySection.Machine
-                                || p.RawPolicy.Section == AdmxPolicySection.Both
-                            )
-                            {
-                                var pc = pending.FirstOrDefault(pc2 =>
-                                    pc2.PolicyId == p.UniqueID
-                                    && pc2.Scope.Equals(
-                                        "Computer",
-                                        StringComparison.OrdinalIgnoreCase
-                                    )
+                    }
+                    if (
+                        p.RawPolicy.Section == AdmxPolicySection.Machine
+                        || p.RawPolicy.Section == AdmxPolicySection.Both
+                    )
+                    {
+                        var pc = pending.FirstOrDefault(pc2 =>
+                            pc2.PolicyId == p.UniqueID
+                            && pc2.Scope.Equals("Computer", StringComparison.OrdinalIgnoreCase)
+                        );
+                        effComp =
+                            pc != null
+                                ? (pc.DesiredState is PolicyState.Enabled or PolicyState.Disabled)
+                                : (
+                                    compLocal != null
+                                    && PolicyProcessing.GetPolicyState(compLocal, p)
+                                        is PolicyState.Enabled
+                                            or PolicyState.Disabled
                                 );
-                                effComp =
-                                    pc != null
-                                        ? (
-                                            pc.DesiredState
-                                            is PolicyState.Enabled
-                                                or PolicyState.Disabled
-                                        )
-                                        : (
-                                            compLocal != null
-                                            && PolicyProcessing.GetPolicyState(compLocal, p)
-                                                is PolicyState.Enabled
-                                                    or PolicyState.Disabled
-                                        );
-                            }
-                            return effUser || effComp;
-                        }
-                        catch
-                        {
-                            return false;
-                        }
-                    });
+                    }
+                    return effUser || effComp;
+                }
+                catch
+                {
+                    return false;
                 }
             }
-            return seq;
+            var any = list.Any(Predicate);
+            _hasAnyConfiguredInScope = any;
+            if (!any)
+                return Array.Empty<PolicyPlusPolicy>();
+            return list.Where(Predicate);
         }
 
         private FilterDecisionResult EvaluateDecision(string? prospective = null)
@@ -425,14 +443,22 @@ namespace PolicyPlusPlus
         )
         {
             if (!_bookmarksOnly)
+            {
+                _preBookmarksFilterCount = -1;
+                _deltaBookmarks = 0;
+                _hasAnyBookmarks = true; // Irrelevant when filter disabled.
                 return seq;
+            }
             try
             {
+                var list = seq as IList<PolicyPlusPolicy> ?? seq.ToList();
+                _preBookmarksFilterCount = list.Count;
                 var ids = BookmarkService.Instance.ActiveIds;
-                if (ids == null || ids.Count == 0)
+                _hasAnyBookmarks = ids != null && ids.Count > 0;
+                if (!_hasAnyBookmarks || ids == null)
                     return Array.Empty<PolicyPlusPolicy>();
-                var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
-                return seq.Where(p => set.Contains(p.UniqueID));
+                var set = new HashSet<string>(ids!, StringComparer.OrdinalIgnoreCase);
+                return list.Where(p => set.Contains(p.UniqueID));
             }
             catch
             {
@@ -452,7 +478,10 @@ namespace PolicyPlusPlus
             IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(
                 decision.IncludeSubcategoryPolicies
             );
+            // Bookmarks first so configured delta is relative to the already bookmark-filtered set.
             seq = ApplyBookmarkFilterIfNeeded(seq);
+            var srcCtx = PolicySourceAccessor.Acquire();
+            seq = ApplyConfiguredFilterIfNeeded(seq, srcCtx.Comp, srcCtx.User);
             if (!string.IsNullOrWhiteSpace(query))
             {
                 seq = MatchPolicies(query, seq, out _);
@@ -684,10 +713,35 @@ namespace PolicyPlusPlus
                     _rowByPolicyId[r.Policy.UniqueID] = r;
             PolicyList.ItemsSource = rows;
             PolicyCount.Text = $"{_visiblePolicies.Count} / {_allPolicies.Count} policies";
+            // Compute deltas after final visible count is known.
+            if (
+                _configuredOnly
+                && _preConfiguredFilterCount >= 0
+                && _preConfiguredFilterCount >= _visiblePolicies.Count
+            )
+                _deltaConfigured = _preConfiguredFilterCount - _visiblePolicies.Count;
+            else
+                _deltaConfigured = 0;
+            if (
+                _bookmarksOnly
+                && _preBookmarksFilterCount >= 0
+                && _preBookmarksFilterCount >= _visiblePolicies.Count
+            )
+                _deltaBookmarks = _preBookmarksFilterCount - _visiblePolicies.Count;
+            else
+                _deltaBookmarks = 0;
             TryRestoreSelectionAsync(rows);
             MaybePushCurrentState();
             if (_forceComputeStatesOnce)
                 _forceComputeStatesOnce = false; // consume flag
+
+            // Update empty-results hint after binding completes.
+            try
+            {
+                string? qNow = GetSearchBox()?.Text;
+                UpdateEmptyHint(qNow);
+            }
+            catch { }
         }
 
         private List<PolicyPlusPolicy> MatchPolicies(
@@ -1046,7 +1100,6 @@ namespace PolicyPlusPlus
             }
             var applies = _appliesFilter;
             var category = _selectedCategory;
-            var configuredOnly = _configuredOnly;
             var ctx = PolicySourceAccessor.Acquire();
             var comp = ctx.Comp;
             var user = ctx.User;
@@ -1072,7 +1125,6 @@ namespace PolicyPlusPlus
                     applies,
                     category,
                     decision.IncludeSubcategoryPolicies,
-                    configuredOnly,
                     comp,
                     user
                 );
@@ -1084,6 +1136,8 @@ namespace PolicyPlusPlus
                     // Try cache-backed search first (if enabled)
                     var baseSeq = BaseSequenceForFilters(snap);
                     baseSeq = ApplyBookmarkFilterIfNeeded(baseSeq);
+                    // Apply configured-only after bookmarks to capture delta metrics.
+                    baseSeq = ApplyConfiguredFilterIfNeeded(baseSeq, comp, user);
                     var allowedSet = new HashSet<string>(
                         baseSeq.Select(p => p.UniqueID),
                         StringComparer.OrdinalIgnoreCase
@@ -1495,7 +1549,6 @@ namespace PolicyPlusPlus
             }
             var applies = _appliesFilter;
             var category = _selectedCategory;
-            var configuredOnly = _configuredOnly;
             var ctx = PolicySourceAccessor.Acquire();
             var comp = ctx.Comp;
             var user = ctx.User;
@@ -1523,7 +1576,6 @@ namespace PolicyPlusPlus
                         applies,
                         category,
                         decision.IncludeSubcategoryPolicies,
-                        configuredOnly,
                         comp,
                         user
                     );
@@ -1575,7 +1627,9 @@ namespace PolicyPlusPlus
                     {
                         Log.Debug("MainSearch", "ShowBaselineSuggestions failed: " + ex.Message);
                     }
-                    items = ApplyBookmarkFilterIfNeeded(seq).ToList();
+                    seq = ApplyBookmarkFilterIfNeeded(seq);
+                    seq = ApplyConfiguredFilterIfNeeded(seq, comp, user);
+                    items = seq.ToList();
                 }
                 catch
                 {
@@ -1668,6 +1722,7 @@ namespace PolicyPlusPlus
                 var ctx = PolicySourceAccessor.Acquire();
                 var seq = BaseSequenceForFilters(decision.IncludeSubcategoryPolicies);
                 seq = ApplyBookmarkFilterIfNeeded(seq);
+                seq = ApplyConfiguredFilterIfNeeded(seq, ctx.Comp, ctx.User);
                 BindSequenceEnhanced(seq, decision, forceComputeStates: _forceComputeStatesOnce);
                 UpdateSearchClearButtonVisibility();
                 if (showBaselineOnEmpty)
@@ -1683,6 +1738,301 @@ namespace PolicyPlusPlus
             {
                 Log.Debug("MainSearch", "ImmediateFilterAndBind failed: " + ex.Message);
             }
+        }
+
+        private void UpdateEmptyHint(string? q)
+        {
+            try
+            {
+                // Resolve panel and early exit if missing.
+                var panel = RootGrid?.FindName("EmptyHintPanel") as FrameworkElement;
+                if (panel == null)
+                    return;
+                if (_visiblePolicies != null && _visiblePolicies.Count > 0)
+                {
+                    panel.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
+                bool configured = _configuredOnly;
+                bool bookmarks = _bookmarksOnly;
+                bool categoryFiltered = _selectedCategory != null;
+                var btnConf = RootGrid?.FindName("HintDisableConfiguredOnly") as FrameworkElement;
+                var btnBmk = RootGrid?.FindName("HintDisableBookmarksOnly") as FrameworkElement;
+                var btnCat = RootGrid?.FindName("HintClearCategory") as FrameworkElement;
+                var btnAll = RootGrid?.FindName("HintClearAllFilters") as FrameworkElement;
+                if (btnConf != null)
+                    btnConf.Visibility = configured ? Visibility.Visible : Visibility.Collapsed;
+                if (btnBmk != null)
+                    btnBmk.Visibility = bookmarks ? Visibility.Visible : Visibility.Collapsed;
+                if (btnCat != null)
+                    btnCat.Visibility = categoryFiltered
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
+                if (btnAll != null)
+                {
+                    int activeCount =
+                        (configured ? 1 : 0) + (bookmarks ? 1 : 0) + (categoryFiltered ? 1 : 0);
+                    btnAll.Visibility =
+                        activeCount >= 2 ? Visibility.Visible : Visibility.Collapsed;
+                }
+
+                var msg = RootGrid?.FindName("EmptyHintMessage") as TextBlock;
+                var confText = RootGrid?.FindName("HintDisableConfiguredOnlyText") as TextBlock;
+                var bmkText = RootGrid?.FindName("HintDisableBookmarksOnlyText") as TextBlock;
+                var catText = RootGrid?.FindName("HintClearCategoryText") as TextBlock;
+                if (confText != null)
+                {
+                    confText.Text =
+                        _deltaConfigured > 0
+                            ? $"Disable 'Configured only' filter ( +{_deltaConfigured} )"
+                            : "Disable 'Configured only' filter";
+                }
+                if (bmkText != null)
+                {
+                    bmkText.Text =
+                        _deltaBookmarks > 0
+                            ? $"Disable 'Bookmarks only' filter ( +{_deltaBookmarks} )"
+                            : "Disable 'Bookmarks only' filter";
+                }
+                if (catText != null && categoryFiltered)
+                {
+                    catText.Text =
+                        _deltaCategory > 0
+                            ? $"Clear category filter ( +{_deltaCategory} )"
+                            : "Clear category filter";
+                }
+                if (msg != null)
+                {
+                    // Base fallback messages are overridden below for specific zero-result causes.
+                    if (configured || bookmarks || categoryFiltered)
+                        msg.Text =
+                            "No results due to active filters.\nDisable filters below to broaden the result.";
+                    else if (!string.IsNullOrWhiteSpace(q))
+                        msg.Text =
+                            "No policies match the current search query.\nTry different or fewer keywords.";
+                    else
+                        msg.Text = "No policies to display.";
+                }
+
+                // Override previously computed approximate deltas with precise values when we are in a zero-result state.
+                // We only recompute when zero and at least one of the toggle filters is active to avoid cost on normal paths.
+                if (_visiblePolicies != null && _visiblePolicies.Count == 0)
+                {
+                    try
+                    {
+                        // Recompute counts hypothetically removing each filter independently while keeping the search query and other filters.
+                        // This produces the true number of items that would appear if ONLY that filter were disabled.
+                        if (configured)
+                        {
+                            _deltaConfigured = ComputeCountForFilters(
+                                configuredOnly: false,
+                                bookmarksOnly: bookmarks,
+                                category: _selectedCategory,
+                                query: q
+                            );
+                            if (confText != null)
+                            {
+                                confText.Text =
+                                    _deltaConfigured > 0
+                                        ? $"Disable 'Configured only' filter ( +{_deltaConfigured} )"
+                                        : "Disable 'Configured only' filter";
+                            }
+                        }
+                        if (bookmarks)
+                        {
+                            _deltaBookmarks = ComputeCountForFilters(
+                                configuredOnly: configured,
+                                bookmarksOnly: false,
+                                category: _selectedCategory,
+                                query: q
+                            );
+                            if (bmkText != null)
+                            {
+                                bmkText.Text =
+                                    _deltaBookmarks > 0
+                                        ? $"Disable 'Bookmarks only' filter ( +{_deltaBookmarks} )"
+                                        : "Disable 'Bookmarks only' filter";
+                            }
+                        }
+                        if (categoryFiltered)
+                        {
+                            _deltaCategory = ComputeCountForFilters(
+                                configuredOnly: configured,
+                                bookmarksOnly: bookmarks,
+                                category: null, // clear category
+                                query: q
+                            );
+                            if (catText != null)
+                            {
+                                catText.Text =
+                                    _deltaCategory > 0
+                                        ? $"Clear category filter ( +{_deltaCategory} )"
+                                        : "Clear category filter";
+                            }
+                        }
+
+                        // Specialized message overrides.
+                        if (msg != null)
+                        {
+                            // 1. Bookmark-only with zero bookmarks existing at all.
+                            if (bookmarks && !_hasAnyBookmarks)
+                                msg.Text =
+                                    "No bookmarked policies.\nAdd bookmarks or disable the filter.";
+                            // 2. Configured-only with no configured policies in scope.
+                            else if (configured && !_hasAnyConfiguredInScope)
+                                msg.Text =
+                                    "No configured policies in the current scope.\nConfigure a policy or disable the filter.";
+                            // 3. Category-only (no search, no other filters) and intrinsically empty category.
+                            else if (
+                                categoryFiltered
+                                && !configured
+                                && !bookmarks
+                                && string.IsNullOrWhiteSpace(q)
+                            )
+                            {
+                                // Treat as intrinsically empty if clearing category introduces any policies.
+                                if (_deltaCategory > 0)
+                                    msg.Text = "This category contains no policies."; // short enough, single line
+                            }
+                            // 4. Search yields zero even after clearing all filters (suggest different keywords).
+                            else if (!string.IsNullOrWhiteSpace(q))
+                            {
+                                var searchOnlyCount = ComputeCountForFilters(false, false, null, q);
+                                if (searchOnlyCount == 0)
+                                    msg.Text =
+                                        "No policies match the current search.\nTry different or fewer keywords.";
+                            }
+                        }
+                    }
+                    catch
+                    { /* best effort */
+                    }
+                }
+                panel.Visibility = Visibility.Visible;
+            }
+            catch
+            {
+                // Best effort; ignore UI errors.
+            }
+        }
+
+        // Computes how many policies would be visible if the specified flags (configuredOnly/bookmarksOnly) were applied
+        // with the current category selection and search query. This intentionally mimics the main pipeline but is simplified
+        // and only used for zero-result hint recalculation so minor perf cost is acceptable.
+        private int ComputeCountForFilters(
+            bool configuredOnly,
+            bool bookmarksOnly,
+            PolicyPlusCategory? category,
+            string? query
+        )
+        {
+            // Build decision with hypothetical flags.
+            bool hasCategory = category != null;
+            bool hasSearch = !string.IsNullOrWhiteSpace(query);
+            var decision = FilterDecisionEngine.Evaluate(
+                hasCategory,
+                hasSearch,
+                configuredOnly,
+                bookmarksOnly,
+                _limitUnfilteredTo1000
+            );
+            // Temporarily substitute selected category for base sequence generation.
+            var originalCat = _selectedCategory;
+            _selectedCategory = category;
+            IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(
+                decision.IncludeSubcategoryPolicies
+            );
+            _selectedCategory = originalCat; // restore
+            if (bookmarksOnly)
+            {
+                var ids = BookmarkService.Instance.ActiveIds;
+                if (ids == null || ids.Count == 0)
+                    return 0;
+                var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
+                seq = seq.Where(p => set.Contains(p.UniqueID));
+            }
+            if (configuredOnly)
+            {
+                var ctx = PolicySourceAccessor.Acquire();
+                var pending =
+                    PendingChangesService.Instance.Pending?.ToList() ?? new List<PendingChange>();
+                var list = seq as IList<PolicyPlusPolicy> ?? seq.ToList();
+                if (ctx.Comp == null && ctx.User == null && pending.Count == 0)
+                    return 0;
+                seq = list.Where(p =>
+                {
+                    try
+                    {
+                        bool effUser = false,
+                            effComp = false;
+                        if (
+                            p.RawPolicy.Section == AdmxPolicySection.User
+                            || p.RawPolicy.Section == AdmxPolicySection.Both
+                        )
+                        {
+                            var pu = pending.FirstOrDefault(pc =>
+                                pc.PolicyId == p.UniqueID
+                                && pc.Scope.Equals("User", StringComparison.OrdinalIgnoreCase)
+                            );
+                            effUser =
+                                pu != null
+                                    ? (
+                                        pu.DesiredState
+                                        is PolicyState.Enabled
+                                            or PolicyState.Disabled
+                                    )
+                                    : (
+                                        ctx.User != null
+                                        && PolicyProcessing.GetPolicyState(ctx.User, p)
+                                            is PolicyState.Enabled
+                                                or PolicyState.Disabled
+                                    );
+                        }
+                        if (
+                            p.RawPolicy.Section == AdmxPolicySection.Machine
+                            || p.RawPolicy.Section == AdmxPolicySection.Both
+                        )
+                        {
+                            var pc = pending.FirstOrDefault(pc2 =>
+                                pc2.PolicyId == p.UniqueID
+                                && pc2.Scope.Equals("Computer", StringComparison.OrdinalIgnoreCase)
+                            );
+                            effComp =
+                                pc != null
+                                    ? (
+                                        pc.DesiredState
+                                        is PolicyState.Enabled
+                                            or PolicyState.Disabled
+                                    )
+                                    : (
+                                        ctx.Comp != null
+                                        && PolicyProcessing.GetPolicyState(ctx.Comp, p)
+                                            is PolicyState.Enabled
+                                                or PolicyState.Disabled
+                                    );
+                        }
+                        return effUser || effComp;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                });
+            }
+            // Apply search last.
+            List<PolicyPlusPolicy> listAfter;
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                listAfter = MatchPolicies(query, seq, out _);
+            }
+            else
+            {
+                listAfter = seq as List<PolicyPlusPolicy> ?? seq.ToList();
+                if (decision.Limit.HasValue && listAfter.Count > decision.Limit.Value)
+                    listAfter = listAfter.Take(decision.Limit.Value).ToList();
+            }
+            return listAfter.Count;
         }
     }
 }
