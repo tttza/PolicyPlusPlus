@@ -280,6 +280,30 @@ namespace PolicyPlusPlus.Services
 #endif
         }
 
+        // Returns semantic version string (if available) of the pending update discovered by the last check.
+        internal static string? GetPendingUpdateVersion()
+        {
+#if USE_VELOPACK
+            try
+            {
+                var info = _pendingUpdates;
+                if (info == null)
+                    return null;
+                var target = info.TargetFullRelease;
+                string? ver = target?.Version?.ToString();
+                if (string.IsNullOrEmpty(ver))
+                    return null;
+                return ver; // TargetFullRelease appears to be sole reliable source in current Velopack version
+            }
+            catch
+            {
+                return null;
+            }
+#else
+            return null;
+#endif
+        }
+
         public static async Task<(bool ok, string? message)> OpenStorePageAsync()
         {
 #if USE_STORE_UPDATE

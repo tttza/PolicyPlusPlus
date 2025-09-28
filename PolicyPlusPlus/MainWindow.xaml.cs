@@ -454,15 +454,40 @@ namespace PolicyPlusPlus
                     ShowInfo(message, InfoBarSeverity.Informational);
                 return;
             }
+            string? updVersion = UpdateHelper.GetPendingUpdateVersion();
+            string versionSuffix = updVersion != null ? " v" + updVersion : string.Empty;
+
+            // Update badge text if present.
+            try
+            {
+                if (RootGrid?.FindName("UpdateAvailableBadge") is TextBlock badge)
+                {
+                    if (updVersion != null)
+                    {
+                        string badgeVer = updVersion;
+                        if (badgeVer.Length > 12)
+                        {
+                            var parts = badgeVer.Split('-', StringSplitOptions.RemoveEmptyEntries);
+                            if (parts.Length > 0)
+                                badgeVer = parts[0];
+                        }
+                        badge.Text = "Update " + badgeVer;
+                        ToolTipService.SetToolTip(badge, "Update to version " + updVersion);
+                    }
+                }
+            }
+            catch { }
 
             string notes = UpdateHelper.GetPendingUpdateNotes() ?? string.Empty;
-            string body = string.IsNullOrEmpty(notes)
-                ? "An update is available. Choose how to apply it."
-                : "An update is available. Choose how to apply it.\n\n" + notes;
+            string baseBody =
+                updVersion != null
+                    ? $"Update to version {updVersion} is available. Choose how to apply it."
+                    : "An update is available. Choose how to apply it.";
+            string body = string.IsNullOrEmpty(notes) ? baseBody : baseBody + "\n\n" + notes;
 
             ContentDialog choiceDlg = new()
             {
-                Title = "Update Available",
+                Title = "Update Available" + versionSuffix,
                 Content = body,
                 PrimaryButtonText = "Install & Restart Now",
                 SecondaryButtonText = "Install On Exit",
@@ -499,8 +524,16 @@ namespace PolicyPlusPlus
                     : UpdateHelper.VelopackUpdateApplyChoice.OnExit;
             ShowInfo(
                 applyChoice == UpdateHelper.VelopackUpdateApplyChoice.RestartNow
-                    ? "Applying update and restarting..."
-                    : "Downloading update for apply-on-exit..."
+                    ? (
+                        updVersion != null
+                            ? $"Applying update to v{updVersion} and restarting..."
+                            : "Applying update and restarting..."
+                    )
+                    : (
+                        updVersion != null
+                            ? $"Downloading update v{updVersion} for apply-on-exit..."
+                            : "Downloading update for apply-on-exit..."
+                    )
             );
             var (applyOk, restartInitiated, applyMessage) =
                 await UpdateHelper.ApplyVelopackPendingAsync(applyChoice);
@@ -519,13 +552,26 @@ namespace PolicyPlusPlus
                 if (applyChoice == UpdateHelper.VelopackUpdateApplyChoice.OnExit)
                 {
                     ShowInfo(
-                        applyMessage ?? "Update will be applied on exit.",
+                        applyMessage
+                            ?? (
+                                updVersion != null
+                                    ? $"Update v{updVersion} will be applied on exit."
+                                    : "Update will be applied on exit."
+                            ),
                         InfoBarSeverity.Informational
                     );
                 }
                 else
                 {
-                    ShowInfo(applyMessage ?? "Update staged.", InfoBarSeverity.Informational);
+                    ShowInfo(
+                        applyMessage
+                            ?? (
+                                updVersion != null
+                                    ? $"Update v{updVersion} staged."
+                                    : "Update staged."
+                            ),
+                        InfoBarSeverity.Informational
+                    );
                 }
             }
         }
