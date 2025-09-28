@@ -1754,6 +1754,22 @@ namespace PolicyPlusPlus
                     return;
                 }
 
+                // Suppress empty hint when only a category filter is active (no search / other filters)
+                // and the selected category has no direct policies but at least one matching policy exists in descendant subcategories.
+                if (
+                    _visiblePolicies != null
+                    && _visiblePolicies.Count == 0
+                    && _selectedCategory != null
+                    && !_configuredOnly
+                    && !_bookmarksOnly
+                    && string.IsNullOrWhiteSpace(q)
+                    && HasAnyPoliciesInSubcategoriesForCurrentApplies(_selectedCategory)
+                )
+                {
+                    panel.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
                 bool configured = _configuredOnly;
                 bool bookmarks = _bookmarksOnly;
                 bool categoryFiltered = _selectedCategory != null;
@@ -1915,6 +1931,44 @@ namespace PolicyPlusPlus
             {
                 // Best effort; ignore UI errors.
             }
+        }
+
+        // Returns true if any descendant category contains at least one policy matching the current applies filter.
+        private bool HasAnyPoliciesInSubcategoriesForCurrentApplies(PolicyPlusCategory root)
+        {
+            foreach (var child in root.Children)
+            {
+                if (SubtreeHasPolicyMatchingApplies(child))
+                    return true;
+            }
+            return false;
+        }
+
+        private bool SubtreeHasPolicyMatchingApplies(PolicyPlusCategory cat)
+        {
+            foreach (var p in cat.Policies)
+            {
+                if (AppliesFilterMatches(p))
+                    return true;
+            }
+            foreach (var ch in cat.Children)
+            {
+                if (SubtreeHasPolicyMatchingApplies(ch))
+                    return true;
+            }
+            return false;
+        }
+
+        private bool AppliesFilterMatches(PolicyPlusPolicy p)
+        {
+            return _appliesFilter switch
+            {
+                AdmxPolicySection.User => p.RawPolicy.Section == AdmxPolicySection.User
+                    || p.RawPolicy.Section == AdmxPolicySection.Both,
+                AdmxPolicySection.Machine => p.RawPolicy.Section == AdmxPolicySection.Machine
+                    || p.RawPolicy.Section == AdmxPolicySection.Both,
+                _ => true,
+            };
         }
 
         // Computes how many policies would be visible if the specified flags (configuredOnly/bookmarksOnly) were applied
