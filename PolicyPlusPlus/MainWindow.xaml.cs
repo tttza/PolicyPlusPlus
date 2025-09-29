@@ -60,8 +60,6 @@ namespace PolicyPlusPlus
         );
 
         // Temp .pol mode and save tracking
-        private string? _tempPolCompPath = null;
-        private string? _tempPolUserPath = null;
 
         private static readonly System.Text.RegularExpressions.Regex UrlRegex = new(
             @"(https?://[^\s]+)",
@@ -1942,86 +1940,17 @@ namespace PolicyPlusPlus
                 var result = await dlg.ShowAsync();
                 if (result == ContentDialogResult.Primary && dlg.ParsedReg != null)
                 {
-                    SetBusy(true, "Saving...");
+                    SetBusy(true, "Queuing...");
                     try
                     {
-                        bool tempMode =
-                            PolicySourceManager.Instance.Mode == PolicySourceMode.TempPol;
-                        if (tempMode)
+                        if (_bundle == null)
                         {
-                            EnsureTempPolPaths();
-                            var (userPolNew, machinePolNew) = RegImportHelper.ToPolByHive(
-                                dlg.ParsedReg
-                            );
-                            if (!string.IsNullOrEmpty(_tempPolUserPath))
-                            {
-                                var userPath = _tempPolUserPath!;
-                                var existingUser = File.Exists(userPath)
-                                    ? PolFile.Load(userPath)
-                                    : new PolFile();
-                                userPolNew.Apply(existingUser);
-                                existingUser.Save(userPath);
-                            }
-                            if (!string.IsNullOrEmpty(_tempPolCompPath))
-                            {
-                                var compPath = _tempPolCompPath!;
-                                var existingComp = File.Exists(compPath)
-                                    ? PolFile.Load(compPath)
-                                    : new PolFile();
-                                machinePolNew.Apply(existingComp);
-                                existingComp.Save(compPath);
-                            }
-                            ShowInfo(
-                                ".reg imported to temp POLs (User/Machine).",
-                                InfoBarSeverity.Success
-                            );
+                            ShowInfo("No ADMX bundle loaded.", InfoBarSeverity.Error);
+                            return;
                         }
-                        else
-                        {
-                            var (userPol, machinePol) = RegImportHelper.ToPolByHive(dlg.ParsedReg);
-                            string? machineB64 = null,
-                                userB64 = null;
-                            if (machinePol != null)
-                            {
-                                using var msM = new MemoryStream();
-                                using var bwM = new BinaryWriter(
-                                    msM,
-                                    System.Text.Encoding.Unicode,
-                                    true
-                                );
-                                machinePol.Save(bwM);
-                                msM.Position = 0;
-                                machineB64 = Convert.ToBase64String(msM.ToArray());
-                            }
-                            if (userPol != null)
-                            {
-                                using var msU = new MemoryStream();
-                                using var bwU = new BinaryWriter(
-                                    msU,
-                                    System.Text.Encoding.Unicode,
-                                    true
-                                );
-                                userPol.Save(bwU);
-                                msU.Position = 0;
-                                userB64 = Convert.ToBase64String(msU.ToArray());
-                            }
-                            var res = await ElevationService.Instance.WriteLocalGpoBytesAsync(
-                                machineB64,
-                                userB64,
-                                triggerRefresh: true
-                            );
-                            if (!res.Ok)
-                            {
-                                ShowInfo(
-                                    ".reg import failed: " + (res.Error ?? "elevation error"),
-                                    InfoBarSeverity.Error
-                                );
-                                return;
-                            }
-                            RefreshLocalSources();
-                            ShowInfo(".reg imported to Local GPO.");
-                        }
+                        int total = PolicyPolDiffImporter.QueueFromReg(dlg.ParsedReg, _bundle);
                         RefreshVisibleRows();
+                        ShowInfo($".reg queued as pending changes ({total} policies).");
                     }
                     finally
                     {

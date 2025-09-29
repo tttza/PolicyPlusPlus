@@ -50,7 +50,16 @@ namespace PolicyPlusPlus.Services
             }
             catch (Exception ex)
             {
-                Logging.Log.Debug("RegImport", "Apply user hive failed: " + ex.Message);
+                // Partial failure applying user hive; proceeding with whatever succeeded.
+                Logging.Log.Warn(
+                    "RegImport",
+                    "Apply user hive failed type="
+                        + ex.GetType().Name
+                        + " msg="
+                        + ex.Message
+                        + " keys="
+                        + userReg.Keys.Count
+                );
             }
             try
             {
@@ -59,7 +68,16 @@ namespace PolicyPlusPlus.Services
             }
             catch (Exception ex)
             {
-                Logging.Log.Debug("RegImport", "Apply machine hive failed: " + ex.Message);
+                // Partial failure applying machine hive; continuing.
+                Logging.Log.Warn(
+                    "RegImport",
+                    "Apply machine hive failed type="
+                        + ex.GetType().Name
+                        + " msg="
+                        + ex.Message
+                        + " keys="
+                        + machineReg.Keys.Count
+                );
             }
             return (userPol, machinePol);
         }
@@ -80,7 +98,7 @@ namespace PolicyPlusPlus.Services
                     if (string.IsNullOrEmpty(fullName))
                         return false;
                     var lower = fullName.ToLowerInvariant();
-                    lower = StripHive(lower); // Remove hive for comparison
+                    lower = PolicyPlusCore.Utilities.RegistryHiveNormalization.StripHive(lower); // Remove hive for comparison
                     foreach (var r in policyRoots)
                     {
                         if (lower.StartsWith(r, StringComparison.OrdinalIgnoreCase))
@@ -93,35 +111,6 @@ namespace PolicyPlusPlus.Services
                     return false;
                 }
 
-                string StripHive(string path)
-                {
-                    static bool Try(string path, string prefix, out string remainder)
-                    {
-                        if (path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                        {
-                            remainder = path.Substring(prefix.Length);
-                            if (remainder.StartsWith("\\"))
-                                remainder = remainder.Substring(1);
-                            return true;
-                        }
-                        remainder = path;
-                        return false;
-                    }
-                    if (Try(path, "hkey_local_machine\\", out var r))
-                        return r;
-                    if (Try(path, "hklm\\", out r))
-                        return r;
-                    if (Try(path, "hkey_current_user\\", out r))
-                        return r;
-                    if (Try(path, "hkcu\\", out r))
-                        return r;
-                    if (Try(path, "hkey_users\\", out r))
-                        return r;
-                    if (Try(path, "hku\\", out r))
-                        return r;
-                    return path;
-                }
-
                 var filtered = new List<RegFile.RegFileKey>();
                 foreach (var k in source.Keys)
                 {
@@ -132,7 +121,14 @@ namespace PolicyPlusPlus.Services
             }
             catch (Exception ex)
             {
-                Logging.Log.Debug("RegImport", "FilterToPolicyKeysInPlace failed: " + ex.Message);
+                // Non-fatal filter failure; upstream caller will decide how to proceed.
+                Logging.Log.Warn(
+                    "RegImport",
+                    "FilterToPolicyKeysInPlace failed type="
+                        + ex.GetType().Name
+                        + " msg="
+                        + ex.Message
+                );
             }
         }
 

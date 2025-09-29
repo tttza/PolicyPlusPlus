@@ -380,17 +380,26 @@ namespace PolicyPlusCore.Core
                         }
                         else if (cached.WillDeleteValue(elemKey, elem.RegistryValue))
                         {
-                            if (!hasRegistryValue)
-                            {
+                            // When policy lacks explicit On/Off values (synthetic root inference) allow element evidence even if hasRegistryValue was set earlier.
+                            bool allow =
+                                !hasRegistryValue
+                                || (
+                                    rawpol.AffectedValues?.OnValue == null
+                                    && rawpol.AffectedValues?.OffValue == null
+                                );
+                            if (allow)
                                 deletedElements += 1m;
-                            }
                         }
                         else if (cached.ContainsValue(elemKey, elem.RegistryValue))
                         {
-                            if (!hasRegistryValue)
-                            {
+                            bool allow =
+                                !hasRegistryValue
+                                || (
+                                    rawpol.AffectedValues?.OnValue == null
+                                    && rawpol.AffectedValues?.OffValue == null
+                                );
+                            if (allow)
                                 presentElements += 1m;
-                            }
                         }
                     }
                     catch (Exception ex)
