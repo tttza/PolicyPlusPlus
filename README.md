@@ -11,6 +11,15 @@ This repository is a fork of Fleex255’s [PolicyPlus](https://github.com/Fleex2
 
 ---
 
+## Download
+
+Release builds are available on GitHub Releases and Microsoft Store:  
+https://github.com/tttza/PolicyPlusPlus/releases
+
+[![Get it from Microsoft](https://get.microsoft.com/images/en-us%20dark.svg)](https://apps.microsoft.com/detail/9NJC1R1PGVF2?referrer=appbadge&cid=gh&mode=full)
+
+---
+
 ## What it can do
 
 - Search and display
@@ -75,13 +84,6 @@ Original (PolicyPlus by Fleex255): https://github.com/Fleex255/PolicyPlus
 - If ADMX/ADML are missing, obtain Microsoft’s administrative templates and place them in `PolicyDefinitions` and the corresponding language folder
 - This tool directly manipulates the registry; mistakes can affect your system. Use with caution
 - Much of the implementation was assisted by GitHub Copilot. While improvements are ongoing, it may contain critical errors that are easy to overlook. Please use with care.
-
----
-
-## Download
-
-Release builds are available on GitHub Releases:  
-https://github.com/tttza/PolicyPlusPlus/releases
 
 ---
 
