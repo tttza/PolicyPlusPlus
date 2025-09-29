@@ -1,6 +1,6 @@
 # Policy++
 
-A tool to search, view, edit, and share Local Group Policy settings (Administrative Templates/ADMX).  
+A tool to search, view and edit Local Group Policy (Administrative Templates/ADMX).  
 This repository is a fork of Fleex255’s [PolicyPlus](https://github.com/Fleex255/PolicyPlus) with additional features and a modernized UI.
 
 [![build & release](https://github.com/tttza/PolicyPlusPlus/actions/workflows/publish.yml/badge.svg)](https://github.com/tttza/PolicyPlusPlus/actions/workflows/publish.yml)
