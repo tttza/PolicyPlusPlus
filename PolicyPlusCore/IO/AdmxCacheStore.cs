@@ -60,7 +60,7 @@ internal sealed class AdmxCacheStore
         {
             using (var cmd = conn.CreateCommand())
             {
-                var busy = IsFastMode ? 5000 : 30000; // Shorter wait in test fast mode
+                var busy = IsFastMode ? GetFastBusyTimeoutMs() : 30000; // Shorter wait in test fast mode (override via env)
                 cmd.CommandText =
                     $"PRAGMA journal_mode=DELETE; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout={busy}; PRAGMA page_size=4096; PRAGMA encoding='UTF-8';";
                 await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -74,7 +74,7 @@ internal sealed class AdmxCacheStore
         {
             using (var cmd = conn.CreateCommand())
             {
-                var busy = IsFastMode ? 5000 : 30000;
+                var busy = IsFastMode ? GetFastBusyTimeoutMs() : 30000;
                 cmd.CommandText =
                     $"PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout={busy}; PRAGMA page_size=4096;";
                 await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
@@ -83,6 +83,23 @@ internal sealed class AdmxCacheStore
         catch { }
 
         await OptimizeAsync(conn, ct).ConfigureAwait(false);
+    }
+
+    private static int GetFastBusyTimeoutMs()
+    {
+        try
+        {
+            var env = Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_FAST_BUSY_MS");
+            if (
+                !string.IsNullOrWhiteSpace(env)
+                && int.TryParse(env, out var v)
+                && v > 0
+                && v <= 10000
+            )
+                return v;
+        }
+        catch { }
+        return 1200; // default fast-mode busy timeout (ms) to avoid multi-second stalls in tests
     }
 
     private static async Task ApplyPragmasAsync(SqliteConnection conn, CancellationToken ct)
