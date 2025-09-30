@@ -110,7 +110,7 @@ Handy commands (cmd.exe):
 # Unit tests only (fast)
 dotnet test PolicyPlusModTests/PolicyPlusModTests.csproj -c Debug-Unpackaged
 
-# UI tests only (heavy / only when needed)
+# UI tests only (heavy / only when needed or requested)
 dotnet test PolicyPlusPlus.Tests.UI/PolicyPlus.Tests.UI.csproj -c Debug-Unpackaged -- --stop-on-fail on
 ```
 
