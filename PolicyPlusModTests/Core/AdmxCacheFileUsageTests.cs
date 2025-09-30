@@ -10,6 +10,7 @@ namespace PolicyPlusModTests.Core;
 
 // Disable parallel execution for this collection to avoid env var collisions.
 // Reuse IsolatedCacheFixture so each test gets its own cache directory and env var automatically.
+[Collection("AdmxCache.Isolated")]
 public class AdmxCacheFileUsageTests : IClassFixture<IsolatedCacheFixture>
 {
     private readonly IsolatedCacheFixture _fixture;
@@ -30,7 +31,7 @@ public class AdmxCacheFileUsageTests : IClassFixture<IsolatedCacheFixture>
     {
         var root = CreateTempDir();
         // Minimal ADMX + ADML pair sufficient for parser
-        var admx = "test.admx";
+        var admx = "Dummy.admx"; // Align with POLICYPLUS_CACHE_ONLY_FILES to ensure file is scanned
         var admlDir = Path.Combine(root, "en-US");
         Directory.CreateDirectory(admlDir);
         File.WriteAllText(
@@ -59,7 +60,7 @@ public class AdmxCacheFileUsageTests : IClassFixture<IsolatedCacheFixture>
                 + "</policyDefinitions>\n"
         );
         File.WriteAllText(
-            Path.Combine(admlDir, "test.adml"),
+            Path.Combine(admlDir, "Dummy.adml"),
             ""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<policyDefinitionResources revision=\"1.0\" schemaVersion=\"1.0\">\n"
@@ -128,9 +129,17 @@ public class AdmxCacheFileUsageTests : IClassFixture<IsolatedCacheFixture>
                 catch { }
                 using var verify = conn.CreateCommand();
                 verify.CommandText = "SELECT MIN(last_access_utc) FROM FileUsage";
-                var minVal = Convert.ToInt64(await verify.ExecuteScalarAsync());
-                if (minVal <= oldEpoch)
-                    break;
+                var raw = await verify.ExecuteScalarAsync();
+                if (raw == null || raw == DBNull.Value)
+                {
+                    // Table not yet populated; retry.
+                }
+                else
+                {
+                    var minVal = Convert.ToInt64(raw);
+                    if (minVal <= oldEpoch)
+                        break;
+                }
             }
             await Task.Delay(150);
         }

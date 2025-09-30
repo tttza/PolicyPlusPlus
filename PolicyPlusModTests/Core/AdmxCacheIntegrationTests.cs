@@ -18,23 +18,28 @@ public class AdmxCacheIntegrationTests
     // Keeps implementation local to avoid introducing new test infrastructure dependencies.
     private static async Task RunWithTimeoutAsync(Func<Task> body, int timeoutSeconds = 15)
     {
+        // Launch test body on the thread pool immediately so initial synchronous work (e.g., writer lock acquisition)
+        // does not postpone the timeout timer start.
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        var task = body();
+        var bodyTask = Task.Run(body);
         var timeoutTask = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds));
-        var finished = await Task.WhenAny(task, timeoutTask).ConfigureAwait(false);
-        sw.Stop();
+        var finished = await Task.WhenAny(bodyTask, timeoutTask).ConfigureAwait(false);
         if (finished == timeoutTask)
         {
+            sw.Stop();
+            // Do not await bodyTask here to avoid extending total elapsed time when the body is hung.
             Assert.Fail(
                 $"Test exceeded timeout of {timeoutSeconds}s (elapsed {sw.Elapsed.TotalSeconds:F2}s)"
             );
         }
-        // Propagate any failure from original task
-        await task.ConfigureAwait(false);
+        await bodyTask.ConfigureAwait(false);
+        sw.Stop();
         if (sw.Elapsed.TotalSeconds > timeoutSeconds)
+        {
             Assert.Fail(
                 $"Test logic completed but exceeded timeout {timeoutSeconds}s (elapsed {sw.Elapsed.TotalSeconds:F2}s)"
             );
+        }
     }
 
     private static string FindAdmxRoot()

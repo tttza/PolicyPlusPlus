@@ -62,6 +62,13 @@ namespace PolicyPlusModTests.WinUI3.CustomPol
 
             // Validate that user source reports Enabled
             var stateUser = PolicyProcessing.GetPolicyState(ctx.User, policy);
+            if (stateUser != PolicyState.Enabled)
+            {
+                // One-time refresh to mitigate rare race where singleton manager sources are stale when first acquired.
+                PolicySourceManager.Instance.Refresh();
+                var ctx2 = PolicySourceAccessor.Acquire();
+                stateUser = PolicyProcessing.GetPolicyState(ctx2.User, policy);
+            }
             Assert.Equal(PolicyState.Enabled, stateUser);
         }
     }

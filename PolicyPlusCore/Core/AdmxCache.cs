@@ -51,19 +51,26 @@ public sealed class AdmxCache : IAdmxCache
         using var _traceInit = AdmxCacheTrace.Scope("InitializeAsync");
         // Acquire writer lock during initialization to avoid races with cache deletion.
         IDisposable? writerLock = null;
+        bool fastMode = string.Equals(
+            Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_FAST"),
+            "1",
+            StringComparison.Ordinal
+        );
         try
         {
-            for (int attempt = 0; attempt < 3 && writerLock is null; attempt++)
+            if (!fastMode)
             {
-                writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(10));
-                if (writerLock is null)
+                for (int attempt = 0; attempt < 3 && writerLock is null; attempt++)
                 {
-                    // Best-effort short backoff before retrying
-                    try
+                    writerLock = AdmxCacheRuntime.TryAcquireWriterLock(TimeSpan.FromSeconds(10));
+                    if (writerLock is null)
                     {
-                        await Task.Delay(250, ct).ConfigureAwait(false);
+                        try
+                        {
+                            await Task.Delay(250, ct).ConfigureAwait(false);
+                        }
+                        catch { }
                     }
-                    catch { }
                 }
             }
 
