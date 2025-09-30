@@ -269,3 +269,5 @@ Rephrase or omit.
 - Tests updated for semantic changes?
 - Public surface minimized?
 - Reflection avoided in hot paths?
+- Prohibited comment patterns avoided?
+- Comments English only?
