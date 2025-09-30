@@ -1,11 +1,16 @@
 using System;
+using System.IO;
+using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using PolicyPlusCore.IO;
 using PolicyPlusCore.Utilities;
 using PolicyPlusPlus.Services;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
+using StorageFileWinRT = Windows.Storage.StorageFile;
 
 namespace PolicyPlusPlus.Dialogs
 {
@@ -25,6 +30,59 @@ namespace PolicyPlusPlus.Dialogs
                     RebuildParsedFromOriginal();
                     RefreshPreview();
                 };
+            }
+        }
+
+        private void Dialog_DragOver(object sender, DragEventArgs e)
+        {
+            // Accept a single .reg file.
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                e.AcceptedOperation = DataPackageOperation.Copy;
+            }
+            else if (e.DataView.Contains(StandardDataFormats.Text))
+            {
+                e.AcceptedOperation = DataPackageOperation.Copy;
+            }
+            else
+            {
+                e.AcceptedOperation = DataPackageOperation.None;
+            }
+        }
+
+        private async void Dialog_Drop(object sender, DragEventArgs e)
+        {
+            try
+            {
+                string? candidatePath = null;
+                if (e.DataView.Contains(StandardDataFormats.StorageItems))
+                {
+                    var items = await e.DataView.GetStorageItemsAsync();
+                    var file = items.FirstOrDefault() as StorageFileWinRT;
+                    if (file != null)
+                    {
+                        candidatePath = file.Path;
+                    }
+                }
+                else if (e.DataView.Contains(StandardDataFormats.Text))
+                {
+                    var text = await e.DataView.GetTextAsync();
+                    if (!string.IsNullOrWhiteSpace(text) && File.Exists(text.Trim()))
+                        candidatePath = text.Trim();
+                }
+
+                if (string.IsNullOrWhiteSpace(candidatePath))
+                    return;
+
+                if (!candidatePath.EndsWith(".reg", StringComparison.OrdinalIgnoreCase))
+                    return; // Only accept .reg
+
+                RegPath.Text = candidatePath;
+                TryLoad(candidatePath);
+            }
+            catch
+            {
+                // Swallow; UI should remain stable. User can still browse manually.
             }
         }
 

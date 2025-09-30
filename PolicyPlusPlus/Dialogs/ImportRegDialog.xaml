@@ -8,9 +8,14 @@
   CloseButtonText="Cancel"
   DefaultButton="Primary"
   MinWidth="520"
+  AllowDrop="True"
+  DragOver="Dialog_DragOver"
+  Drop="Dialog_Drop"
 >
   <StackPanel Spacing="12">
-    <TextBlock Text="Choose .reg file. Root hive will be detected automatically." />
+    <StackPanel Spacing="2">
+      <TextBlock Text="Choose or drag &amp; drop a .reg file onto this dialog." />
+    </StackPanel>
     <StackPanel Orientation="Horizontal" Spacing="8">
       <TextBox
         x:Name="RegPath"
