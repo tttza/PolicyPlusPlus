@@ -30,6 +30,19 @@
       Header="Keep only policy-related keys (recommended)"
       IsOn="True"
     />
+    <StackPanel Spacing="4">
+      <TextBlock Text="Import mode" />
+      <StackPanel Orientation="Horizontal" Spacing="24">
+        <RadioButton
+          x:Name="MergeModeRadio"
+          Content="Merge"
+          IsChecked="True"
+          GroupName="ImportMode"
+        />
+        <RadioButton x:Name="ReplaceModeRadio" Content="Replace" GroupName="ImportMode" />
+      </StackPanel>
+      <TextBlock Text="Merge: keep existing pending changes and add differences. Replace: discard all existing pending changes and policy settings before queuing imported policies." />
+    </StackPanel>
     <TextBox
       x:Name="PreviewBox"
       AcceptsReturn="True"

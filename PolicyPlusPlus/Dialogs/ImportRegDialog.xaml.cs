@@ -18,6 +18,8 @@ namespace PolicyPlusPlus.Dialogs
     {
         public RegFile? ParsedReg { get; private set; }
         private RegFile? _originalReg; // Unmodified source snapshot
+        public bool IsReplaceMode =>
+            (ReplaceModeRadio?.IsChecked ?? false) && !(MergeModeRadio?.IsChecked ?? false);
 
         public ImportRegDialog()
         {

@@ -1948,9 +1948,13 @@ namespace PolicyPlusPlus
                             ShowInfo("No ADMX bundle loaded.", InfoBarSeverity.Error);
                             return;
                         }
-                        int total = PolicyPolDiffImporter.QueueFromReg(dlg.ParsedReg, _bundle);
+                        bool replace = dlg.IsReplaceMode; // Replace: discard existing pending first
+                        int total = RegImportQueueHelper.Queue(dlg.ParsedReg, _bundle, replace);
                         RefreshVisibleRows();
-                        ShowInfo($".reg queued as pending changes ({total} policies).");
+                        ShowInfo(
+                            $".reg queued as pending changes ({total} policies)."
+                                + (replace ? " (replaced existing)" : string.Empty)
+                        );
                     }
                     finally
                     {

@@ -10,165 +10,184 @@ namespace PolicyPlusPlus.Services
     // Builds pending changes by diffing current policy sources vs in-memory POLs produced from a .reg import.
     internal static class PolicyPolDiffImporter
     {
-        public static int QueueFromReg(RegFile reg, AdmxBundle bundle)
+        public static int QueueFromReg(RegFile reg, AdmxBundle bundle) =>
+            QueueFromReg(reg, bundle, includeClearsForMissing: false);
+
+        // includeClearsForMissing: when true, policies currently configured but absent from imported .reg are queued as Clear (NotConfigured) operations.
+        public static int QueueFromReg(RegFile reg, AdmxBundle bundle, bool includeClearsForMissing)
         {
             if (reg == null || bundle == null)
                 return 0;
-            // Split hive early so we respect User / Computer scope.
+
+            // Build POL views split by hive so we respect Machine/User scope.
             var (userPolFile, machinePolFile) = RegImportHelper.ToPolByHive(reg);
-            // Additionally build hive-stripped variants to maximize match with ADMX keys (which store hive-less paths).
-            var (userStripped, machineStripped) = BuildHiveStrippedPols(reg);
             int total = 0;
+
             if (PolicySourceManager.Instance.CompSource is IPolicySource compSrc)
             {
-                // Prefer stripped if it contains entries; fallback to original.
-                var imported = HasAnyEntries(machineStripped) ? machineStripped : machinePolFile;
-                total += QueueDiff(imported, compSrc, bundle, "Computer");
+                total += QueueDiff(
+                    machinePolFile,
+                    compSrc,
+                    bundle,
+                    scope: "Computer",
+                    includeClearsForMissing
+                );
             }
             if (PolicySourceManager.Instance.UserSource is IPolicySource userSrc)
             {
-                var imported = HasAnyEntries(userStripped) ? userStripped : userPolFile;
-                total += QueueDiff(imported, userSrc, bundle, "User");
-            }
-            return total;
-        }
-
-        private static bool HasAnyEntries(PolFile pol)
-        {
-            if (pol == null)
-                return false;
-            try
-            {
-                // Fast emptiness heuristic using only public APIs.
-                // A POL has content if it defines at least one normal value at the root OR any child key segment.
-                // GetValueNames("") excludes special "**" deletion markers (which we do not expect from stripped builds).
-                if (pol.GetValueNames(string.Empty).Count > 0)
-                    return true;
-                if (pol.GetKeyNames(string.Empty).Count > 0)
-                    return true;
-                // Fallback: probe a representative policy root key that commonly appears; short-circuits if absent.
-                // This avoids scanning all policies when file is genuinely empty (already O(n) earlier but cheap here).
-                var commonRoots = new[] { "software", "system" };
-                foreach (var root in commonRoots)
-                {
-                    if (pol.GetKeyNames(root).Count > 0 || pol.GetValueNames(root).Count > 0)
-                        return true;
-                }
-                return false;
-            }
-            catch
-            {
-                // Defensive: if introspection fails treat as non-empty so caller will still attempt diff (safer than skipping).
-                return true;
-            }
-        }
-
-        private static (PolFile userNoHive, PolFile machineNoHive) BuildHiveStrippedPols(
-            RegFile original
-        )
-        {
-            var userReg = new RegFile();
-            userReg.SetPrefix(string.Empty);
-            var machineReg = new RegFile();
-            machineReg.SetPrefix(string.Empty);
-            foreach (var k in original.Keys)
-            {
-                if (k?.Name == null)
-                    continue;
-                var hive = DetectHive(k.Name);
-                if (hive == HiveType.Machine)
-                    machineReg.Keys.Add(CloneWithStrippedName(k));
-                else if (hive == HiveType.User)
-                    userReg.Keys.Add(CloneWithStrippedName(k));
-            }
-            var userPol = new PolFile();
-            var machinePol = new PolFile();
-            try
-            {
-                userReg.Apply(userPol);
-            }
-            catch { }
-            try
-            {
-                machineReg.Apply(machinePol);
-            }
-            catch { }
-            return (userPol, machinePol);
-        }
-
-        private enum HiveType
-        {
-            Unknown,
-            Machine,
-            User,
-        }
-
-        private static HiveType DetectHive(string key)
-        {
-            if (
-                key.StartsWith("HKEY_LOCAL_MACHINE\\", StringComparison.OrdinalIgnoreCase)
-                || key.StartsWith("HKLM\\", StringComparison.OrdinalIgnoreCase)
-            )
-                return HiveType.Machine;
-            if (
-                key.StartsWith("HKEY_CURRENT_USER\\", StringComparison.OrdinalIgnoreCase)
-                || key.StartsWith("HKCU\\", StringComparison.OrdinalIgnoreCase)
-                || key.StartsWith("HKEY_USERS\\", StringComparison.OrdinalIgnoreCase)
-                || key.StartsWith("HKU\\", StringComparison.OrdinalIgnoreCase)
-            )
-                return HiveType.User;
-            return HiveType.Unknown;
-        }
-
-        private static RegFile.RegFileKey CloneWithStrippedName(RegFile.RegFileKey src)
-        {
-            var name = PolicyPlusCore.Utilities.RegistryHiveNormalization.StripHive(
-                src.Name ?? string.Empty
-            );
-            var nk = new RegFile.RegFileKey { Name = name, IsDeleter = src.IsDeleter };
-            foreach (var v in src.Values)
-            {
-                nk.Values.Add(
-                    new RegFile.RegFileValue
-                    {
-                        Name = v.Name,
-                        Data = v.Data,
-                        Kind = v.Kind,
-                        IsDeleter = v.IsDeleter,
-                    }
+                total += QueueDiff(
+                    userPolFile,
+                    userSrc,
+                    bundle,
+                    scope: "User",
+                    includeClearsForMissing
                 );
             }
-            return nk;
+            return total;
         }
 
         private static int QueueDiff(
             PolFile imported,
             IPolicySource current,
             AdmxBundle bundle,
-            string scope
+            string scope,
+            bool includeClearsForMissing
         )
         {
-            if (imported == null || current == null)
+            if (imported == null || current == null || bundle?.Policies == null)
                 return 0;
+
             int queued = 0;
-            int policyErrors = 0; // count per-policy evaluation errors for diagnostics
-            // Wrap imported PolFile with hive-normalizing read-only view so that policies defined without hive still match.
+            int policyErrors = 0;
+
+            // Adapter allows hive-less lookups to still succeed.
             var importedView =
                 new PolicyPlusCore.Utilities.RegistryHiveNormalization.HiveFlexiblePolicySource(
                     imported,
                     scope.Equals("Computer", StringComparison.OrdinalIgnoreCase)
                 );
+
             foreach (var policy in bundle.Policies.Values)
             {
                 try
                 {
-                    // State in imported REG-derived view
-                    var newState = PolicyProcessing.GetPolicyState(importedView, policy);
-                    if (newState == PolicyState.NotConfigured)
-                        continue; // Not present in imported data -> skip
+                    // Scope gating early.
+                    var section = policy.RawPolicy?.Section ?? AdmxPolicySection.Machine;
+                    if (
+                        section == AdmxPolicySection.Machine
+                        && !scope.Equals("Computer", StringComparison.OrdinalIgnoreCase)
+                    )
+                        continue;
+                    if (
+                        section == AdmxPolicySection.User
+                        && !scope.Equals("User", StringComparison.OrdinalIgnoreCase)
+                    )
+                        continue;
 
-                    // Current state from existing source for diff.
+                    var newState = PolicyProcessing.GetPolicyState(importedView, policy);
                     var currentState = PolicyProcessing.GetPolicyState(current, policy);
+
+                    // Heuristic: Some simple toggle ADMX entries rely on synthetic on=1/off=delete inference.
+                    // When a .reg import provides an explicit numeric 0 (or 1) value for such a policy the core
+                    // evaluation can return NotConfigured (because OffValue is modeled as deletion). That leads
+                    // Replace mode to incorrectly queue Clear instead of Disable. Map numeric root values back
+                    // to Enabled/Disabled only when the policy defines neither explicit OnValue nor OffValue.
+                    if (newState == PolicyState.NotConfigured)
+                    {
+                        try
+                        {
+                            var raw = policy.RawPolicy;
+                            if (
+                                raw != null
+                                && raw.AffectedValues != null
+                                && raw.AffectedValues.OnValue == null
+                                && raw.AffectedValues.OffValue == null
+                            )
+                            {
+                                if (
+                                    !string.IsNullOrEmpty(raw.RegistryKey)
+                                    && !string.IsNullOrEmpty(raw.RegistryValue)
+                                )
+                                {
+                                    // Ensure the value name truly exists in the imported reg snapshot (avoid default numeric fallbacks).
+                                    var importedNames = importedView.GetValueNames(raw.RegistryKey);
+                                    bool namePresent =
+                                        importedNames != null
+                                        && importedNames.Any(n =>
+                                            string.Equals(
+                                                n,
+                                                raw.RegistryValue,
+                                                StringComparison.OrdinalIgnoreCase
+                                            )
+                                        );
+                                    if (
+                                        namePresent
+                                        && importedView.ContainsValue(
+                                            raw.RegistryKey,
+                                            raw.RegistryValue
+                                        )
+                                    )
+                                    {
+                                        var rootVal = importedView.GetValue(
+                                            raw.RegistryKey,
+                                            raw.RegistryValue
+                                        );
+                                        if (rootVal != null && IsNumeric(rootVal))
+                                        {
+                                            try
+                                            {
+                                                long num = Convert.ToInt64(rootVal);
+                                                if (num == 0)
+                                                    newState = PolicyState.Disabled; // numeric 0 explicitly represents Disabled
+                                                else if (num == 1)
+                                                    newState = PolicyState.Enabled; // numeric 1 explicitly represents Enabled
+                                            }
+                                            catch { }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+
+                    if (
+                        includeClearsForMissing
+                        && newState == PolicyState.NotConfigured
+                        && currentState != PolicyState.NotConfigured
+                    )
+                    {
+                        if (
+                            !PendingChangesService.Instance.Pending.Any(p =>
+                                string.Equals(
+                                    p.PolicyId,
+                                    policy.UniqueID,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                                && string.Equals(p.Scope, scope, StringComparison.OrdinalIgnoreCase)
+                            )
+                        )
+                        {
+                            PendingChangesService.Instance.Add(
+                                new PendingChange
+                                {
+                                    PolicyId = policy.UniqueID,
+                                    PolicyName = policy.DisplayName ?? policy.UniqueID,
+                                    Scope = scope,
+                                    Action = "Clear",
+                                    Details = "Clear",
+                                    DetailsFull = "Clear",
+                                    DesiredState = PolicyState.NotConfigured,
+                                    Options = null,
+                                }
+                            );
+                            queued++;
+                        }
+                        continue;
+                    }
+
+                    if (newState == PolicyState.NotConfigured)
+                        continue; // merge mode or replace with both sides NotConfigured
 
                     Dictionary<string, object>? newOpts = null;
                     Dictionary<string, object>? curOpts = null;
@@ -194,7 +213,7 @@ namespace PolicyPlusPlus.Services
                     }
 
                     if (!HasMeaningfulChange(currentState, newState, curOpts, newOpts))
-                        continue; // No diff -> skip queue
+                        continue;
 
                     var action = newState switch
                     {
@@ -202,6 +221,7 @@ namespace PolicyPlusPlus.Services
                         PolicyState.Disabled => "Disable",
                         _ => "Clear",
                     };
+
                     (string details, string detailsFull) = BuildDetails(
                         action,
                         newState,
@@ -226,7 +246,7 @@ namespace PolicyPlusPlus.Services
                 catch (Exception ex)
                 {
                     policyErrors++;
-                    if (policyErrors <= 5) // cap detailed logs to avoid spam on large failures
+                    if (policyErrors <= 5)
                     {
                         Logging.Log.Warn(
                             "RegImportDiff",
@@ -242,6 +262,7 @@ namespace PolicyPlusPlus.Services
                     }
                 }
             }
+
             if (policyErrors > 0)
             {
                 Logging.Log.Info(
@@ -267,8 +288,7 @@ namespace PolicyPlusPlus.Services
             if (currentState != newState)
                 return true;
             if (newState != PolicyState.Enabled)
-                return false; // Disabled/NotConfigured equality already handled above
-            // Both Enabled -> compare options
+                return false; // Disabled/NotConfigured equality handled by state compare
             return !OptionsEqual(currentOptions, newOptions);
         }
 
@@ -282,13 +302,19 @@ namespace PolicyPlusPlus.Services
                 return true;
             if (IsEmpty(a) || IsEmpty(b))
                 return false;
-            if (a!.Count != b!.Count)
-                return false; // Fast path – if counts differ treat as changed (some policies may allow missing optional keys; we consider that meaningful)
-            foreach (var kv in a)
+            var na = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            var nb = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in a!)
+                na[kv.Key] = kv.Value;
+            foreach (var kv in b!)
+                nb[kv.Key] = kv.Value;
+            if (na.Count != nb.Count)
+                return false;
+            foreach (var kv in na)
             {
-                if (!b.TryGetValue(kv.Key, out var other))
+                if (!nb.TryGetValue(kv.Key, out var other))
                     return false;
-                if (!ValueEquals(kv.Value, other))
+                if (!ValueEquals(NormalizeOpt(kv.Value), NormalizeOpt(other)))
                     return false;
             }
             return true;
@@ -300,6 +326,10 @@ namespace PolicyPlusPlus.Services
                 return true;
             if (x == null || y == null)
                 return false;
+            if (x is List<string> lxs)
+                x = lxs.ToArray();
+            if (y is List<string> lys)
+                y = lys.ToArray();
             if (x is string xs && y is string ys)
                 return string.Equals(xs, ys, StringComparison.Ordinal);
             if (IsNumeric(x) && IsNumeric(y))
@@ -319,11 +349,19 @@ namespace PolicyPlusPlus.Services
                         return false;
                 return true;
             }
-            if (x is IEnumerable<object> eo && y is IEnumerable<object> eo2)
+            if (
+                x is System.Collections.IEnumerable enx
+                && y is System.Collections.IEnumerable eny
+                && x is not string
+                && y is not string
+            )
             {
-                // Fallback sequence comparison (rare path). Materialize small sets.
-                var left = eo.ToList();
-                var right = eo2.ToList();
+                var left = new List<object?>();
+                foreach (var o in enx)
+                    left.Add(o);
+                var right = new List<object?>();
+                foreach (var o in eny)
+                    right.Add(o);
                 if (left.Count != right.Count)
                     return false;
                 for (int i = 0; i < left.Count; i++)
@@ -440,6 +478,37 @@ namespace PolicyPlusPlus.Services
                 return "[" + string.Join(",", list) + "]";
             }
             return Convert.ToString(v) ?? string.Empty;
+        }
+
+        private static object? NormalizeOpt(object? v)
+        {
+            if (v == null)
+                return null;
+            if (v is string s)
+                return s.Trim();
+            if (v is Array arr)
+            {
+                var clone = new object?[arr.Length];
+                for (int i = 0; i < arr.Length; i++)
+                    clone[i] = NormalizeOpt(arr.GetValue(i));
+                return clone;
+            }
+            if (v is List<string> ls)
+                return ls.Select(e => (object?)NormalizeOpt(e)).ToArray();
+            if (v is IEnumerable<string> es && v.GetType().Name != "String")
+                return es.Select(e => (object?)NormalizeOpt(e)).ToArray();
+            if (v is System.Collections.IDictionary dict)
+            {
+                var kvs = new List<string>();
+                foreach (var key in dict.Keys)
+                {
+                    var val = dict[key];
+                    kvs.Add(Convert.ToString(key) + "=" + Convert.ToString(val));
+                }
+                kvs.Sort(StringComparer.OrdinalIgnoreCase);
+                return kvs.ToArray();
+            }
+            return v;
         }
     }
 }

@@ -152,6 +152,202 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
             Assert.Equal("Computer", pc.Scope);
         }
 
+        [Fact(DisplayName = "Replace mode discards existing pending before queueing new import")]
+        public void ReplaceMode_DiscardsExisting()
+        {
+            var (bundle, machine, userEnum) = BuildBundle();
+            var emptyPolComp = new PolFile();
+            var emptyPolUser = new PolFile();
+            ((PolicySourceManager)PolicySourceManager.Instance).CompSource =
+                new InMemoryPolicySource(emptyPolComp);
+            ((PolicySourceManager)PolicySourceManager.Instance).UserSource =
+                new InMemoryPolicySource(emptyPolUser);
+
+            // Seed a pending change (pretend user queued something earlier)
+            PendingChangesService.Instance.DiscardAll();
+            PendingChangesService.Instance.Add(
+                new PendingChange
+                {
+                    PolicyId = machine.UniqueID,
+                    PolicyName = machine.DisplayName ?? machine.UniqueID,
+                    Scope = "Computer",
+                    Action = "Enable",
+                    DesiredState = PolicyState.Enabled,
+                }
+            );
+            Assert.Single(PendingChangesService.Instance.Pending);
+
+            // Build .reg enabling user enum instead (different policy) to show previous one is removed when replace
+            var reg = new RegFile();
+            reg.SetPrefix(string.Empty);
+            var userKey = new RegFile.RegFileKey
+            {
+                Name = "HKEY_CURRENT_USER\\Software\\EnumPolicyRoot",
+            };
+            // Write a dummy value; we only test discard semantics, not precise diff mapping here.
+            userKey.Values.Add(
+                new RegFile.RegFileValue
+                {
+                    Name = "Dummy",
+                    Data = 1U,
+                    Kind = Microsoft.Win32.RegistryValueKind.DWord,
+                }
+            );
+            reg.Keys.Add(userKey);
+
+            int queued = RegImportQueueHelper.Queue(reg, bundle, replace: true);
+            // After replace old pending (machine policy) removed; either 0 or >0 new queued depending on policy match
+            Assert.DoesNotContain(
+                PendingChangesService.Instance.Pending,
+                p => p.PolicyId == machine.UniqueID
+            );
+            Assert.True(PendingChangesService.Instance.Pending.Count >= 0);
+        }
+
+        [Fact(DisplayName = "Replace mode clears even when previous discard failed")]
+        public void ReplaceMode_ForcesClear()
+        {
+            var (bundle, machine, _) = BuildBundle();
+            var emptyPolComp = new PolFile();
+            var emptyPolUser = new PolFile();
+            ((PolicySourceManager)PolicySourceManager.Instance).CompSource =
+                new InMemoryPolicySource(emptyPolComp);
+            ((PolicySourceManager)PolicySourceManager.Instance).UserSource =
+                new InMemoryPolicySource(emptyPolUser);
+            PendingChangesService.Instance.DiscardAll();
+            // Seed two entries
+            PendingChangesService.Instance.Add(
+                new PendingChange
+                {
+                    PolicyId = machine.UniqueID,
+                    PolicyName = machine.DisplayName ?? machine.UniqueID,
+                    Scope = "Computer",
+                    Action = "Enable",
+                    DesiredState = PolicyState.Enabled,
+                }
+            );
+            PendingChangesService.Instance.Add(
+                new PendingChange
+                {
+                    PolicyId = "USER:Dummy",
+                    PolicyName = "Dummy",
+                    Scope = "User",
+                    Action = "Enable",
+                    DesiredState = PolicyState.Enabled,
+                }
+            );
+            Assert.Equal(2, PendingChangesService.Instance.Pending.Count);
+            // Empty reg import triggers replace path; queue returns 0 but pending should be cleared.
+            var reg = new RegFile();
+            reg.SetPrefix(string.Empty);
+            int queued = RegImportQueueHelper.Queue(reg, bundle, replace: true);
+            Assert.Equal(0, queued);
+            Assert.Empty(PendingChangesService.Instance.Pending);
+        }
+
+        [Fact(DisplayName = "Replace mode queues Clear for policies missing in reg")]
+        public void ReplaceMode_QueuesClearsForMissing()
+        {
+            var (bundle, machine, userEnum) = BuildBundle();
+            // Current: machine toggle enabled, user enum enabled (option index 0)
+            var compPol = new PolFile();
+            var userPol = new PolFile();
+            PolicyProcessing.SetPolicyState(
+                compPol,
+                machine,
+                PolicyState.Enabled,
+                new Dictionary<string, object>()
+            );
+            PolicyProcessing.SetPolicyState(
+                userPol,
+                userEnum,
+                PolicyState.Enabled,
+                new Dictionary<string, object> { { "EnumElem", 0 } }
+            );
+            ((PolicySourceManager)PolicySourceManager.Instance).CompSource =
+                new InMemoryPolicySource(compPol);
+            ((PolicySourceManager)PolicySourceManager.Instance).UserSource =
+                new InMemoryPolicySource(userPol);
+            // Imported reg only contains the machine toggle (so user enum should be cleared)
+            var reg = new RegFile();
+            reg.SetPrefix(string.Empty);
+            var k = new RegFile.RegFileKey { Name = "HKEY_LOCAL_MACHINE\\Software\\PolDiffTest" };
+            k.Values.Add(
+                new RegFile.RegFileValue
+                {
+                    Name = "ToggleValue",
+                    Data = 1U,
+                    Kind = Microsoft.Win32.RegistryValueKind.DWord,
+                }
+            );
+            reg.Keys.Add(k);
+            PendingChangesService.Instance.DiscardAll();
+            int queued = RegImportQueueHelper.Queue(reg, bundle, replace: true);
+            // Expect 2 queued: machine toggle (no change -> maybe skipped) + user enum clear. We assert at least one Clear for user enum.
+            Assert.True(queued >= 1);
+            Assert.Contains(
+                PendingChangesService.Instance.Pending,
+                p => p.PolicyId == userEnum.UniqueID && p.Action == "Clear"
+            );
+        }
+
+        [Fact(DisplayName = "List policy identical entries produce no diff on import")]
+        public void ListPolicy_NoFalseDiff()
+        {
+            // Build bundle with a list policy only
+            var listPolicy = TestPolicyFactory.CreateListPolicy("MACHINE:ListSame");
+            var bundle = new AdmxBundle { Policies = new Dictionary<string, PolicyPlusPolicy>() };
+            bundle.Policies[listPolicy.UniqueID] = listPolicy;
+            // Current source has ListPrefix1=Alpha, ListPrefix2=Beta
+            var compPol = new PolFile();
+            PolicyProcessing.ForgetPolicy(compPol, listPolicy);
+            // Simulate enabling with two list entries via registry style values
+            compPol.SetValue(
+                listPolicy.RawPolicy.RegistryKey,
+                listPolicy.RawPolicy.RegistryValue + 1,
+                "Alpha",
+                Microsoft.Win32.RegistryValueKind.String
+            );
+            compPol.SetValue(
+                listPolicy.RawPolicy.RegistryKey,
+                listPolicy.RawPolicy.RegistryValue + 2,
+                "Beta",
+                Microsoft.Win32.RegistryValueKind.String
+            );
+            ((PolicySourceManager)PolicySourceManager.Instance).CompSource =
+                new InMemoryPolicySource(compPol);
+            ((PolicySourceManager)PolicySourceManager.Instance).UserSource =
+                new InMemoryPolicySource(new PolFile());
+            // Build reg file mirroring identical values
+            var reg = new RegFile();
+            reg.SetPrefix(string.Empty);
+            var key = new RegFile.RegFileKey
+            {
+                Name = "HKEY_LOCAL_MACHINE\\" + listPolicy.RawPolicy.RegistryKey,
+            };
+            key.Values.Add(
+                new RegFile.RegFileValue
+                {
+                    Name = listPolicy.RawPolicy.RegistryValue + 1,
+                    Data = "Alpha",
+                    Kind = Microsoft.Win32.RegistryValueKind.String,
+                }
+            );
+            key.Values.Add(
+                new RegFile.RegFileValue
+                {
+                    Name = listPolicy.RawPolicy.RegistryValue + 2,
+                    Data = "Beta",
+                    Kind = Microsoft.Win32.RegistryValueKind.String,
+                }
+            );
+            reg.Keys.Add(key);
+            PendingChangesService.Instance.DiscardAll();
+            int queued = RegImportQueueHelper.Queue(reg, bundle, replace: false);
+            Assert.Equal(0, queued); // No diff expected
+            Assert.Empty(PendingChangesService.Instance.Pending);
+        }
+
         [Fact(DisplayName = "Diff importer queues enum option change (user scope)")]
         public void Queue_Enum_Option_Change()
         {

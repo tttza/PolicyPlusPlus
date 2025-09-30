@@ -108,10 +108,10 @@ UI test re-run policy (time saver):
 Handy commands (cmd.exe):
 ```
 # Unit tests only (fast)
-dotnet test PolicyPlusModTests/PolicyPlusModTests.csproj -c Debug-Unpackaged
+dotnet test PolicyPlusModTests/PolicyPlusModTests.csproj -c Debug-Unpackaged -r win-x64
 
 # UI tests only (heavy / only when needed or requested)
-dotnet test PolicyPlusPlus.Tests.UI/PolicyPlus.Tests.UI.csproj -c Debug-Unpackaged -- --stop-on-fail on
+dotnet test PolicyPlusPlus.Tests.UI/PolicyPlus.Tests.UI.csproj -c Debug-Unpackaged -r win-x64 -- --stop-on-fail on
 ```
 
 ## 9. Performance & Edge Cases
@@ -205,7 +205,7 @@ During:
 After:
 ```
 dotnet build PolicyPlusPlus.sln -c Debug-Unpackaged
-dotnet test PolicyPlusPlus.sln -c Debug-Unpackaged
+dotnet test PolicyPlusModTests/PolicyPlusModTests.csproj -c Debug-Unpackaged -r win-x64
 dotnet build PolicyPlusPlus.sln -c Release-Unpackaged
 ```
 Optionally run a quick UI smoke (launch app, open a policy, view the pending changes window).
