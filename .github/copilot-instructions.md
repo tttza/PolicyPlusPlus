@@ -6,7 +6,7 @@
 PolicyPlusMod loads Administrative Template (ADMX/ADML) definitions, lets users search / view / edit Windows Group Policy (registry-based) settings, and export/import them (REG / semantic policy). The modern WinUI 3 UI (`PolicyPlusPlus`) is the only UI. Core logic resides in `PolicyPlusCore` and stays UI-agnostic. An elevation host (`PolicyPPElevationHost`) handles privileged operations.
 
 ## 2. Tech Stack
-- Language: C# (.NET 8; legacy VB already removed)
+- Language: C#
 - Projects / Targets:
   - Core: `PolicyPlusCore` → `net8.0-windows`
   - WinUI 3 UI: `PolicyPlusPlus` → `net8.0-windows10.0.26100.0` (desktop app; min platform 10.0.17763.0)

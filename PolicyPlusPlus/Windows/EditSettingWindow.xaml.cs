@@ -576,11 +576,48 @@ namespace PolicyPlusPlus.Windows
             {
                 if (policy.RawPolicy.Section == AdmxPolicySection.Both)
                 {
-                    var compState = PolicyProcessing.GetPolicyState(_compSource, _policy);
-                    bool compConfigured =
-                        compState == PolicyState.Enabled || compState == PolicyState.Disabled;
-                    if (compConfigured)
-                        initialSection = AdmxPolicySection.Machine;
+                    // Prefer pending scope (Computer over User) before inspecting committed source states.
+                    try
+                    {
+                        var pend = PendingChangesService
+                            .Instance.Pending.Where(p =>
+                                string.Equals(
+                                    p.PolicyId,
+                                    policy.UniqueID,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            )
+                            .ToList();
+                        bool hasCompPending = pend.Any(p =>
+                            string.Equals(p.Scope, "Computer", StringComparison.OrdinalIgnoreCase)
+                        );
+                        bool hasUserPending = pend.Any(p =>
+                            string.Equals(p.Scope, "User", StringComparison.OrdinalIgnoreCase)
+                        );
+                        if (hasCompPending)
+                        {
+                            initialSection = AdmxPolicySection.Machine;
+                        }
+                        else if (hasUserPending)
+                        {
+                            initialSection = AdmxPolicySection.User;
+                        }
+                        else
+                        {
+                            // Fall through to committed state detection below
+                        }
+                    }
+                    catch { }
+
+                    // Only inspect committed state when no pending scope decided yet.
+                    if (initialSection == section) // unchanged so far
+                    {
+                        var compState = PolicyProcessing.GetPolicyState(_compSource, _policy);
+                        bool compConfigured =
+                            compState == PolicyState.Enabled || compState == PolicyState.Disabled;
+                        if (compConfigured)
+                            initialSection = AdmxPolicySection.Machine;
+                    }
                 }
             }
             catch { }

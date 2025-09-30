@@ -1691,7 +1691,25 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             // the Name-only search incorrectly match. This aligns with integration test expectation that a description-only
             // token will not hit a Name-only search.
             bool nameOnly = useName && !useDesc && !useReg && !useId;
+            // Helper to detect CJK-ish chars (broad ranges: CJK Unified, Hiragana, Katakana, compatibility).
+            static bool IsCjk(char ch) =>
+                (ch >= '\u3040' && ch <= '\u30FF') // Hiragana + Katakana
+                || (ch >= '\u3400' && ch <= '\u9FFF') // CJK Unified Ext A + Basic
+                || (ch >= '\uF900' && ch <= '\uFAFF'); // CJK Compatibility Ideographs
+            bool isSingle = qStrict.IndexOf(' ') < 0;
+            bool isAsciiWord =
+                isSingle
+                && qStrict.Length >= 8
+                && qStrict.All(ch => ch < 128 && (char.IsLetterOrDigit(ch)));
+            // For CJK, even短い語でも部分一致のノイズが多いので、長さ>=3 の単一語なら精密検索扱い。
+            bool isCjkWord = isSingle && qStrict.Length >= 3 && qStrict.Any(IsCjk);
+            bool forcePreciseSingleToken = !andMode && (isAsciiWord || isCjkWord);
             if (!andMode && nameOnly)
+            {
+                matchNorm = BuildFtsAnd(ftsNormCols, normTokens);
+                matchLoose = BuildFtsAnd(ftsLooseCols, looseTokens);
+            }
+            else if (forcePreciseSingleToken)
             {
                 matchNorm = BuildFtsAnd(ftsNormCols, normTokens);
                 matchLoose = BuildFtsAnd(ftsLooseCols, looseTokens);
@@ -1709,9 +1727,24 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         var matchNormEsc = EscapeSqlSingle(matchNorm);
         var matchLooseEsc = EscapeSqlSingle(matchLoose);
 
+        // Precompute query gram set (strict) for overlap-based secondary weighting (tie-breaking Name vs Description dominance).
+        var queryGramSet = new HashSet<string>(normTokens, StringComparer.Ordinal);
+
         using var conn = _store.OpenConnection();
         await conn.OpenAsync(ct).ConfigureAwait(false);
         var sb = new StringBuilder();
+        bool phraseMode = !andMode && qStrict.Contains(' ');
+        // In phraseMode we do an additional LIKE scan to prioritize exact multi-word sequences.
+        // This complements FTS (which removes spaces when building n-grams) so otherwise "virtual extension" would
+        // match broadly via disjoint grams. We keep FTS for recall but bump phrase matches via higher score.
+        string? phraseLike = null;
+        if (phraseMode)
+        {
+            // qStrict is already lower-cased and spaces collapsed.
+            // Escape SQL wildcard characters to avoid accidental broadening.
+            var esc = qStrict.Replace("%", "\\%").Replace("_", "\\_");
+            phraseLike = "%" + esc + "%"; // substring search
+        }
         // Build prioritized culture list (order preserved from caller)
         sb.AppendLine("WITH CulturePref AS (");
         for (int i = 0; i < cultures.Count; i++)
@@ -1747,6 +1780,24 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
                 "  SELECT p.id, s.culture, s.display_name, 1000 FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id WHERE (p.hive||'\\\\'||p.reg_key||'\\\\'||p.reg_value)=@q_exact AND s.culture IN (SELECT culture FROM CulturePref)"
             );
         }
+        sb.AppendLine(") , Phrase AS (");
+        if (phraseMode)
+        {
+            sb.AppendLine(
+                "  SELECT p.id, s.culture, s.display_name, 160 AS score FROM Policies p JOIN PolicyI18n s ON s.policy_id=p.id WHERE s.culture IN (SELECT culture FROM CulturePref) AND ("
+            );
+            // Lower-case fields for comparison (display_name, explain_text); qStrict already lower.
+            sb.AppendLine(
+                "      LOWER(s.display_name) LIKE @phraseLike ESCAPE '\\' OR LOWER(s.explain_text) LIKE @phraseLike ESCAPE '\\'"
+            );
+            sb.AppendLine("  )");
+        }
+        else
+        {
+            sb.AppendLine(
+                "  SELECT NULL AS id, NULL AS culture, '' AS display_name, -1 AS score WHERE 1=0"
+            );
+        }
         sb.AppendLine(") , F1 AS (");
         sb.AppendLine(
             "  SELECT m.policy_id AS id, m.culture, s.display_name, 100 AS score FROM PolicyIndex JOIN PolicyIndexMap m ON m.rowid=PolicyIndex.rowid JOIN PolicyI18n s ON s.policy_id=m.policy_id AND s.culture=m.culture WHERE @enableFts=1 AND m.culture IN (SELECT culture FROM CulturePref)"
@@ -1765,6 +1816,7 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             sb.AppendLine("    AND (0)");
         sb.AppendLine(") , Candidates AS (");
         sb.AppendLine("  SELECT id,culture,display_name,score FROM ExactPrefix");
+        sb.AppendLine("  UNION ALL SELECT id,culture,display_name,score FROM Phrase");
         sb.AppendLine("  UNION ALL SELECT id,culture,display_name,score FROM F1");
         sb.AppendLine("  UNION ALL SELECT id,culture,display_name,score FROM F2");
         // Filtered: allow primary always; allow second always (if provided); allow fallback cultures only when primary row absent for that policy.
@@ -1795,16 +1847,46 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         sb.AppendLine(
             "       (SELECT product_hint FROM Policies P3 WHERE P3.id=R.id) AS product_hint,"
         );
-        sb.AppendLine("       (SELECT value_type FROM Policies P4 WHERE P4.id=R.id) AS value_type");
+        sb.AppendLine(
+            "       (SELECT value_type FROM Policies P4 WHERE P4.id=R.id) AS value_type,"
+        );
+        sb.AppendLine(
+            "       (SELECT explain_text FROM PolicyI18n PX WHERE PX.policy_id=R.id AND PX.culture=R.culture) AS explain_text"
+        );
         sb.AppendLine("  FROM Ranked R WHERE R.rnk = 1 ORDER BY R.score DESC LIMIT @limit; ");
 
-        var list = new List<PolicyHit>(Math.Min(limit, 256));
+        // Expand internal fetch limit when description is included so that post-reordering can surface Name/ID hits
+        // even if raw SQL top-N was dominated by description-only matches.
+        int internalLimit = limit;
+        if (useDesc && (useName || useId || useReg))
+        {
+            try
+            {
+                checked
+                {
+                    internalLimit = Math.Min(limit * 3, 300);
+                }
+            }
+            catch
+            {
+                internalLimit = Math.Min(limit * 2, 300);
+            }
+        }
+        // Collect hits with phrase flag (for phase ordering when phraseMode=true)
+        var hits = new List<(PolicyHit Hit, bool Phrase)>(Math.Min(internalLimit, 512));
         using var cmd = conn.CreateCommand();
         cmd.CommandText = sb.ToString();
         cmd.Parameters.AddWithValue("@q_exact", qExact);
         cmd.Parameters.AddWithValue("@q_prefix", qPrefix);
-        cmd.Parameters.AddWithValue("@limit", limit);
+        cmd.Parameters.AddWithValue("@limit", internalLimit);
         cmd.Parameters.AddWithValue("@enableFts", enableFts ? 1 : 0);
+        if (phraseMode && phraseLike != null)
+        {
+            var pPhrase = cmd.CreateParameter();
+            pPhrase.ParameterName = "@phraseLike";
+            pPhrase.Value = phraseLike;
+            cmd.Parameters.Add(pPhrase);
+        }
         for (int i = 0; i < cultures.Count; i++)
             cmd.Parameters.AddWithValue("@c" + i, NormalizeCultureName(cultures[i]));
         // Primary culture = first in list; second = second element if exists; others treated as fallback candidates.
@@ -1840,9 +1922,339 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             var reg = rdr.IsDBNull(5) ? string.Empty : rdr.GetString(5);
             var prod = rdr.IsDBNull(6) ? string.Empty : rdr.GetString(6);
             var vtype = rdr.IsDBNull(7) ? string.Empty : rdr.GetString(7);
-            list.Add(new PolicyHit(pid, cul, uid, dname, reg, prod, vtype, score));
+            var explainText = rdr.IsDBNull(8) ? string.Empty : rdr.GetString(8);
+            // Precision tightening: for long single-token queries we require a full substring hit in at least one enabled field
+            // (ID / Name / Registry path / Description). This suppresses cases where high-frequency 2-grams inside a long token
+            // all appear scattered across a long description, yielding false positives.
+            bool singleToken = qStrict.IndexOf(' ') < 0;
+            bool singleAsciiLong =
+                singleToken
+                && qStrict.Length >= 8
+                && qStrict.All(ch => ch < 128 && (char.IsLetterOrDigit(ch)));
+            bool singleCjkLong =
+                singleToken
+                && qStrict.Length >= 3
+                && qStrict.Any(ch =>
+                    (ch >= '\u3040' && ch <= '\u30FF')
+                    || (ch >= '\u3400' && ch <= '\u9FFF')
+                    || (ch >= '\uF900' && ch <= '\uFAFF')
+                );
+            if ((singleAsciiLong || singleCjkLong))
+            {
+                var qLowerSub = qStrict;
+                bool substringHit = false;
+                if (
+                    !substringHit
+                    && useId
+                    && !string.IsNullOrEmpty(uid)
+                    && uid.IndexOf(qLowerSub, StringComparison.OrdinalIgnoreCase) >= 0
+                )
+                    substringHit = true;
+                if (
+                    !substringHit
+                    && useName
+                    && !string.IsNullOrEmpty(dname)
+                    && dname.IndexOf(qLowerSub, StringComparison.OrdinalIgnoreCase) >= 0
+                )
+                    substringHit = true;
+                if (
+                    !substringHit
+                    && useReg
+                    && !string.IsNullOrEmpty(reg)
+                    && reg.IndexOf(qLowerSub, StringComparison.OrdinalIgnoreCase) >= 0
+                )
+                    substringHit = true;
+                if (
+                    !substringHit
+                    && useDesc
+                    && !string.IsNullOrEmpty(explainText)
+                    && explainText.IndexOf(qLowerSub, StringComparison.OrdinalIgnoreCase) >= 0
+                )
+                    substringHit = true;
+                if (!substringHit)
+                {
+                    // Skip this candidate entirely (acts as hard filter rather than soft penalty for clarity of results).
+                    continue;
+                }
+            }
+            // Boost near-exact large overlap: if user entered a long single token and it matches start of ID or DisplayName.
+            // Boost for precise single-token searches (>=8 chars ASCII) so exact/substring matches outrank loose n-gram overlaps.
+            bool boostAscii =
+                qStrict.IndexOf(' ') < 0
+                && qStrict.Length >= 8
+                && qStrict.All(ch => ch < 128 && (char.IsLetterOrDigit(ch)));
+            bool boostCjk =
+                qStrict.IndexOf(' ') < 0
+                && qStrict.Length >= 3
+                && qStrict.Any(ch =>
+                    (ch >= '\u3040' && ch <= '\u30FF')
+                    || (ch >= '\u3400' && ch <= '\u9FFF')
+                    || (ch >= '\uF900' && ch <= '\uFAFF')
+                );
+            if (boostAscii || boostCjk)
+            {
+                var qLower = qStrict.ToLowerInvariant();
+                if (!string.IsNullOrEmpty(uid) && uid.ToLowerInvariant().Contains(qLower))
+                    score += 240; // elevate ID-contained hits above loose grams
+                else if (!string.IsNullOrEmpty(dname) && dname.ToLowerInvariant().Contains(qLower))
+                    score += 140; // display name match secondary boost
+            }
+            // Field priority weighting: ID/Name > registry value > registry key > description (only within normal FTS/Phrase score band)
+            if (score >= 20 && score <= 400)
+            {
+                var qLower2 = qStrict;
+                bool idHit =
+                    !string.IsNullOrEmpty(uid)
+                    && uid.IndexOf(qLower2, StringComparison.OrdinalIgnoreCase) >= 0;
+                bool nameHit =
+                    !string.IsNullOrEmpty(dname)
+                    && dname.IndexOf(qLower2, StringComparison.OrdinalIgnoreCase) >= 0;
+                bool regHit =
+                    !string.IsNullOrEmpty(reg)
+                    && reg.IndexOf(qLower2, StringComparison.OrdinalIgnoreCase) >= 0;
+                bool descHit =
+                    !string.IsNullOrEmpty(explainText)
+                    && explainText.IndexOf(qLower2, StringComparison.OrdinalIgnoreCase) >= 0;
+                bool regValueHit = false;
+                if (regHit)
+                {
+                    try
+                    {
+                        var parts = reg.Split('\\');
+                        if (parts.Length > 0)
+                        {
+                            var last = parts[^1];
+                            if (
+                                !string.IsNullOrEmpty(last)
+                                && last.IndexOf(qLower2, StringComparison.OrdinalIgnoreCase) >= 0
+                            )
+                                regValueHit = true;
+                        }
+                    }
+                    catch { }
+                }
+                int add = 0;
+                if (idHit || nameHit)
+                    add = 55; // top tier
+                else if (regValueHit)
+                    add = 40; // mid tier
+                else if (regHit)
+                    add = 28; // key path only
+                else if (descHit)
+                    add = 12; // lowest tier
+                score += add;
+
+                // Secondary weighting: relative overlap of n-grams with query (Name優先). Helps when substring exact matchなし (スペルミス等) の場合。
+                // Compute only for small result set; limit already caps to 'limit'.
+                try
+                {
+                    static bool IsAsciiLetterOrDigit(char c) =>
+                        (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+                    static bool WordBoundaryContains(string src, string needle)
+                    {
+                        if (string.IsNullOrEmpty(src) || string.IsNullOrEmpty(needle))
+                            return false;
+                        var lowerSrc = src.ToLowerInvariant();
+                        var lowerNeedle = needle.ToLowerInvariant();
+                        int idx = 0;
+                        while (
+                            (idx = lowerSrc.IndexOf(lowerNeedle, idx, StringComparison.Ordinal))
+                            >= 0
+                        )
+                        {
+                            bool startOk = idx == 0 || !IsAsciiLetterOrDigit(lowerSrc[idx - 1]);
+                            int endPos = idx + lowerNeedle.Length;
+                            bool endOk =
+                                endPos >= lowerSrc.Length
+                                || !IsAsciiLetterOrDigit(lowerSrc[endPos]);
+                            if (startOk && endOk)
+                                return true;
+                            idx = idx + 1;
+                        }
+                        return false;
+                    }
+                    int nameOverlap = 0;
+                    int descOverlap = 0;
+                    if (!string.IsNullOrEmpty(dname))
+                    {
+                        var dnStrict = TextNormalization.NormalizeStrict(dname);
+                        var dnTok = TextNormalization.ToNGramTokens(dnStrict);
+                        if (!string.IsNullOrWhiteSpace(dnTok))
+                        {
+                            foreach (
+                                var t in dnTok.Split(
+                                    ' ',
+                                    StringSplitOptions.RemoveEmptyEntries
+                                        | StringSplitOptions.TrimEntries
+                                )
+                            )
+                                if (t.Length > 0 && queryGramSet.Contains(t))
+                                    nameOverlap++;
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(explainText))
+                    {
+                        var exStrict = TextNormalization.NormalizeStrict(explainText);
+                        var exTok = TextNormalization.ToNGramTokens(exStrict);
+                        if (!string.IsNullOrWhiteSpace(exTok))
+                        {
+                            foreach (
+                                var t in exTok.Split(
+                                    ' ',
+                                    StringSplitOptions.RemoveEmptyEntries
+                                        | StringSplitOptions.TrimEntries
+                                )
+                            )
+                                if (t.Length > 0 && queryGramSet.Contains(t))
+                                    descOverlap++;
+                        }
+                    }
+                    if (nameOverlap > 0 || descOverlap > 0)
+                    {
+                        // Weight: each name overlap stronger than description; cap to avoid runaway.
+                        if (nameOverlap > 0)
+                            score += Math.Min(60, nameOverlap * 6); // up to +60 (unchanged)
+                        if (descOverlap > 0)
+                            score += Math.Min(20, descOverlap * 2); // cap lower (max +20) to reduce description dominance
+                        // Word-boundary exact match in Name or ID gets an extra bump (strong intent signal)
+                        if (
+                            WordBoundaryContains(dname ?? string.Empty, qLower2)
+                            || WordBoundaryContains(uid ?? string.Empty, qLower2)
+                        )
+                            score += 35; // boundary exact bonus
+                        // Description-only penalty stronger now
+                        if (!idHit && !nameHit && nameOverlap == 0 && descOverlap > 0 && !regHit)
+                            score -= 35; // stronger penalty so description-only rarely tops list
+                    }
+                }
+                catch { }
+            }
+            // All string arguments must be non-null for PolicyHit; ensure empty fallback.
+            var hit = new PolicyHit(
+                pid,
+                cul,
+                uid ?? string.Empty,
+                dname ?? string.Empty,
+                reg ?? string.Empty,
+                prod ?? string.Empty,
+                vtype ?? string.Empty,
+                score
+            );
+            bool phraseHit = false;
+            if (phraseMode)
+            {
+                // Phrase detection limited to enabled fields.
+                if (
+                    useName
+                    && !string.IsNullOrEmpty(dname)
+                    && dname.IndexOf(qStrict, StringComparison.OrdinalIgnoreCase) >= 0
+                )
+                    phraseHit = true;
+                if (
+                    !phraseHit
+                    && useDesc
+                    && !string.IsNullOrEmpty(explainText)
+                    && explainText.IndexOf(qStrict, StringComparison.OrdinalIgnoreCase) >= 0
+                )
+                    phraseHit = true;
+                if (
+                    !phraseHit
+                    && useId
+                    && !string.IsNullOrEmpty(uid)
+                    && uid.IndexOf(qStrict, StringComparison.OrdinalIgnoreCase) >= 0
+                )
+                    phraseHit = true;
+                if (
+                    !phraseHit
+                    && useReg
+                    && !string.IsNullOrEmpty(reg)
+                    && reg.IndexOf(qStrict, StringComparison.OrdinalIgnoreCase) >= 0
+                )
+                    phraseHit = true;
+            }
+            hits.Add((hit, phraseHit));
         }
-        return list;
+        // Phase ordering: if phraseMode and we have phrase hits, show them first (score order), then fallback applying priority ordering to remainder.
+        var finalList = new List<PolicyHit>(limit);
+        if (phraseMode)
+        {
+            var phraseHits = hits.Where(h => h.Phrase)
+                .Select(h => h.Hit)
+                .OrderByDescending(h => h.Score)
+                .ThenBy(h => h.UniqueId, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (phraseHits.Count > 0)
+            {
+                foreach (var h in phraseHits.Take(limit))
+                    finalList.Add(h);
+                if (finalList.Count < limit)
+                {
+                    var remaining = hits.Where(h => !h.Phrase).Select(h => h.Hit).ToList();
+                    AppendPriorityOrdered(remaining, finalList, limit, qStrict);
+                }
+                return finalList;
+            }
+        }
+        // No phrase phase or no phrase hits -> just priority ordering of all hits.
+        AppendPriorityOrdered(hits.Select(h => h.Hit), finalList, limit, qStrict);
+        return finalList;
+    }
+
+    private static void AppendPriorityOrdered(
+        IEnumerable<PolicyHit> source,
+        List<PolicyHit> dest,
+        int limit,
+        string qLowerOrder
+    )
+    {
+        int Priority(PolicyHit h)
+        {
+            bool idHit =
+                !string.IsNullOrEmpty(h.UniqueId)
+                && h.UniqueId.IndexOf(qLowerOrder, StringComparison.OrdinalIgnoreCase) >= 0;
+            bool nameHit =
+                !string.IsNullOrEmpty(h.DisplayName)
+                && h.DisplayName.IndexOf(qLowerOrder, StringComparison.OrdinalIgnoreCase) >= 0;
+            bool regHit =
+                !string.IsNullOrEmpty(h.RegistryPath)
+                && h.RegistryPath.IndexOf(qLowerOrder, StringComparison.OrdinalIgnoreCase) >= 0;
+            bool regValueHit = false;
+            if (regHit)
+            {
+                try
+                {
+                    var parts = h.RegistryPath.Split('\\');
+                    if (parts.Length > 0)
+                    {
+                        var last = parts[^1];
+                        if (
+                            !string.IsNullOrEmpty(last)
+                            && last.IndexOf(qLowerOrder, StringComparison.OrdinalIgnoreCase) >= 0
+                        )
+                            regValueHit = true;
+                    }
+                }
+                catch { }
+            }
+            if (idHit || nameHit || regValueHit)
+                return 3;
+            if (regHit)
+                return 2;
+            return 1;
+        }
+        foreach (
+            var h in source
+                .Select(h => (h, pri: Priority(h)))
+                .OrderByDescending(t => t.pri)
+                .ThenByDescending(t => t.h.Score)
+                .ThenBy(t => t.h.UniqueId, StringComparer.OrdinalIgnoreCase)
+                .Select(t => t.h)
+        )
+        {
+            if (dest.Count >= limit)
+                break;
+            dest.Add(h);
+        }
     }
 
     public Task<IReadOnlyList<PolicyHit>> SearchAsync(
@@ -2089,9 +2501,23 @@ WHERE (p.hive||'\\'||p.reg_key||'\\'||p.reg_value) = @rp LIMIT 1";
     {
         if (string.IsNullOrWhiteSpace(query))
             return false;
-        // Unique IDs are typically in the form namespace:PolicyName
-        // Keep heuristic lightweight to avoid slowing hot path.
-        return query.Contains(':');
+        // Unique IDs are typically in the form namespace:PolicyName (contains ':').
+        if (query.Contains(':'))
+            return true;
+        // Heuristic: treat long single CamelCase token as potential ID (user omitted namespace).
+        // Rationale: Users often paste just the policy's short name (e.g. VirtualComponentsAllowList) and expect ID-level precision.
+        if (query.IndexOf(' ') < 0 && query.Length >= 12)
+        {
+            int transitions = 0;
+            for (int i = 1; i < query.Length; i++)
+            {
+                if (char.IsUpper(query[i]) && char.IsLower(query[i - 1]))
+                    transitions++;
+                if (transitions >= 2)
+                    return true; // Good enough signal; avoid scanning entire string further.
+            }
+        }
+        return false;
     }
 
     public async Task<IReadOnlyCollection<string>> GetPolicyUniqueIdsByCategoriesAsync(
