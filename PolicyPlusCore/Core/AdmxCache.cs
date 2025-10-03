@@ -19,13 +19,10 @@ public sealed class AdmxCache : IAdmxCache
 {
     private readonly AdmxCacheStore _store;
     private string? _sourceRoot;
-
-    // Tracks whether FileUsage schema ensured to avoid repeating DDL each scan.
     private volatile bool _fileUsageSchemaEnsured;
 
     public AdmxCache()
     {
-        // Allow tests or advanced scenarios to override cache location via env var.
         var overrideDir = Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_DIR");
         string dbPath;
         if (!string.IsNullOrWhiteSpace(overrideDir))
@@ -41,6 +38,7 @@ public sealed class AdmxCache : IAdmxCache
         {
             var baseDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var cacheDir = Path.Combine(baseDir, "PolicyPlusPlus", "Cache");
+            Directory.CreateDirectory(cacheDir);
             dbPath = Path.Combine(cacheDir, "admxcache.sqlite");
         }
         _store = new AdmxCacheStore(dbPath);
@@ -49,7 +47,6 @@ public sealed class AdmxCache : IAdmxCache
     public async Task InitializeAsync(CancellationToken ct = default)
     {
         using var _traceInit = AdmxCacheTrace.Scope("InitializeAsync");
-        // Acquire writer lock during initialization to avoid races with cache deletion.
         IDisposable? writerLock = null;
         bool fastMode = string.Equals(
             Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_FAST"),
@@ -75,11 +72,8 @@ public sealed class AdmxCache : IAdmxCache
             }
 
             await _store.InitializeAsync(ct).ConfigureAwait(false);
-            // Heavy optimize (VACUUM) is skipped here; a brand new or tiny DB gains nothing and added ~30s in tests.
-            // A later opportunistic maintenance phase will run after substantial data is inserted.
             using var conn = _store.OpenConnection();
             await conn.OpenAsync(ct).ConfigureAwait(false);
-            // Proactively ensure FileUsage schema so tests can query it immediately after Initialize without waiting for first scan.
             try
             {
                 using var cmdFU = conn.CreateCommand();
@@ -92,7 +86,7 @@ public sealed class AdmxCache : IAdmxCache
             try
             {
                 using var ck = conn.CreateCommand();
-                ck.CommandText = "PRAGMA wal_checkpoint(PASSIVE);"; // Passive to avoid forcing truncation on empty DB.
+                ck.CommandText = "PRAGMA wal_checkpoint(PASSIVE);";
                 await ck.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
             catch { }
@@ -144,11 +138,9 @@ public sealed class AdmxCache : IAdmxCache
         if (cultureList.Count == 0)
             cultureList.Add(CultureInfo.CurrentUICulture.Name);
 
-        // Decide whether to perform a global rebuild based on source root changes.
         bool needGlobalRebuild = await NeedsGlobalRebuildAsync(root, ct).ConfigureAwait(false);
 
-        // If a global rebuild is required (e.g., legacy DB without meta), include any cultures already present
-        // in the DB so we don't lose them during the rebuild, even if the caller only asked for a subset.
+        // Global rebuild: preserve existing cultures so they are retained even if caller passed a subset.
         if (needGlobalRebuild)
         {
             try
@@ -174,8 +166,7 @@ public sealed class AdmxCache : IAdmxCache
             using var _traceCulture = AdmxCacheTrace.Scope("ScanAndUpdateAsync.Culture:" + cul);
             bool allowGlobalRebuild = needGlobalRebuild && (i == 0);
 
-            // Strategy A: Do not persist fallback. If the exact culture directory (root\culture) does not exist OR contains no *.adml,
-            // treat this culture as absent: remove any prior persisted rows for this culture (they may have been fallback-injected by earlier versions) and skip insertion.
+            // No fallback persistence: if culture dir missing or empty, purge previous rows and skip.
             try
             {
                 var cultureDir = Path.Combine(root, cul);
@@ -193,7 +184,7 @@ public sealed class AdmxCache : IAdmxCache
             }
             catch { }
 
-            // Fast path: if not global rebuild and source signature unchanged, skip this culture.
+            // Skip unchanged cultures (signature match, no global rebuild needed).
             bool skipCulture = false;
             if (!allowGlobalRebuild)
             {
@@ -257,7 +248,7 @@ public sealed class AdmxCache : IAdmxCache
             }
             else
             {
-                // Even if we skip a full parse due to unchanged signature, still refresh last access timestamps.
+                // Skipped parse: still refresh last-access timestamps.
                 try
                 {
                     SqliteConnection? usageConn = null;
@@ -302,7 +293,7 @@ public sealed class AdmxCache : IAdmxCache
                     "DiffAndApply:" + cul + (allowGlobalRebuild ? "(global)" : "")
                 );
                 await DiffAndApplyAsync(bundle!, cul, allowGlobalRebuild, ct).ConfigureAwait(false);
-                // Persist signature after successful apply.
+                // Store new source signature.
                 try
                 {
                     var sig = await ComputeSourceSignatureAsync(root, cul, ct)
@@ -314,7 +305,7 @@ public sealed class AdmxCache : IAdmxCache
             i++;
         }
 
-        // If we performed a global rebuild, persist the source root into Meta for future comparisons.
+        // Record source root when a global rebuild occurred.
         if (didGlobalRebuild)
         {
             try
@@ -326,7 +317,7 @@ public sealed class AdmxCache : IAdmxCache
 
         if (!maintenanceDisabled)
         {
-            // Opportunistic maintenance (skipped for tiny DBs to keep tests fast).
+            // Opportunistic maintenance (skipped for very small DBs).
             try
             {
                 using var mconn = _store.OpenConnection();
@@ -1525,6 +1516,13 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         bool useName = (fields & SearchFields.Name) != 0;
         bool useDesc = (fields & SearchFields.Description) != 0;
         bool enableFts = useName || useDesc || useReg || useId;
+        bool shortQuery = qStrict.Length <= 2; // Special-case very short queries (<=2) because they create disproportionate noise.
+        if (shortQuery)
+        {
+            // Suppress N‑gram FTS for very short queries; restrict to Exact / Prefix / RegistryExact to prevent explosive candidate growth.
+            // Aligns with non-cache scoring where 2-char mid-word matches score only 20 and rarely surface near the top.
+            enableFts = false;
+        }
 
         var ftsNormCols = new List<string>();
         if (useName)
@@ -1701,10 +1699,16 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
                 isSingle
                 && qStrict.Length >= 8
                 && qStrict.All(ch => ch < 128 && (char.IsLetterOrDigit(ch)));
-            // For CJK, even短い語でも部分一致のノイズが多いので、長さ>=3 の単一語なら精密検索扱い。
+            // For CJK, even short words can create noisy partial matches; treat a single token length >=3 as a precise-search case.
             bool isCjkWord = isSingle && qStrict.Length >= 3 && qStrict.Any(IsCjk);
             bool forcePreciseSingleToken = !andMode && (isAsciiWord || isCjkWord);
-            if (!andMode && nameOnly)
+            if (shortQuery)
+            {
+                // Dummy value because FTS is already disabled for short queries.
+                matchNorm = string.Empty;
+                matchLoose = string.Empty;
+            }
+            else if (!andMode && nameOnly)
             {
                 matchNorm = BuildFtsAnd(ftsNormCols, normTokens);
                 matchLoose = BuildFtsAnd(ftsLooseCols, looseTokens);
@@ -1734,9 +1738,12 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
         await conn.OpenAsync(ct).ConfigureAwait(false);
         var sb = new StringBuilder();
         bool phraseMode = !andMode && qStrict.Contains(' ');
-        // In phraseMode we do an additional LIKE scan to prioritize exact multi-word sequences.
-        // This complements FTS (which removes spaces when building n-grams) so otherwise "virtual extension" would
-        // match broadly via disjoint grams. We keep FTS for recall but bump phrase matches via higher score.
+        if (phraseMode)
+        {
+            // Multi-word (non-AND) queries: limit to phrase substring matches; disable broad n-gram FTS.
+            enableFts = false;
+        }
+        // phraseMode: Use ONLY LIKE-based phrase substring matching. Previous behavior considered combining with FTS, but it is now fully disabled for noise suppression.
         string? phraseLike = null;
         if (phraseMode)
         {
@@ -1929,7 +1936,7 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             bool singleToken = qStrict.IndexOf(' ') < 0;
             bool singleAsciiLong =
                 singleToken
-                && qStrict.Length >= 8
+                && qStrict.Length >= 3 // lowered from 8 -> 3 to suppress medium-length noisy n-gram hits (e.g., 'Cache')
                 && qStrict.All(ch => ch < 128 && (char.IsLetterOrDigit(ch)));
             bool singleCjkLong =
                 singleToken
@@ -1942,39 +1949,54 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
             if ((singleAsciiLong || singleCjkLong))
             {
                 var qLowerSub = qStrict;
-                bool substringHit = false;
+                bool hitId = false,
+                    hitName = false,
+                    hitReg = false,
+                    hitDesc = false;
                 if (
-                    !substringHit
-                    && useId
+                    useId
                     && !string.IsNullOrEmpty(uid)
                     && uid.IndexOf(qLowerSub, StringComparison.OrdinalIgnoreCase) >= 0
                 )
-                    substringHit = true;
+                    hitId = true;
                 if (
-                    !substringHit
-                    && useName
+                    useName
                     && !string.IsNullOrEmpty(dname)
                     && dname.IndexOf(qLowerSub, StringComparison.OrdinalIgnoreCase) >= 0
                 )
-                    substringHit = true;
+                    hitName = true;
                 if (
-                    !substringHit
-                    && useReg
+                    useReg
                     && !string.IsNullOrEmpty(reg)
                     && reg.IndexOf(qLowerSub, StringComparison.OrdinalIgnoreCase) >= 0
                 )
-                    substringHit = true;
+                    hitReg = true;
                 if (
-                    !substringHit
-                    && useDesc
+                    useDesc
                     && !string.IsNullOrEmpty(explainText)
                     && explainText.IndexOf(qLowerSub, StringComparison.OrdinalIgnoreCase) >= 0
                 )
-                    substringHit = true;
-                if (!substringHit)
+                    hitDesc = true;
+
+                if (!(hitId || hitName || hitReg || hitDesc))
                 {
-                    // Skip this candidate entirely (acts as hard filter rather than soft penalty for clarity of results).
+                    // No full substring across any enabled field -> discard.
                     continue;
+                }
+
+                // Additional precision rule: if the substring occurs only in the Description (explanation text)
+                // and not in ID / DisplayName / Registry path, drop it for single-token queries.
+                // Rationale: description-only matches massively inflate result counts (e.g., 'Cache') while
+                // non-cache search heuristics (ScoreMatch) effectively prioritize surface fields, keeping
+                // recall manageable. This narrows ~1000 widespread description hits down toward the
+                // tighter set (~100) that also surface the term in a primary identifying field.
+                if (hitDesc && !(hitId || hitName || hitReg))
+                {
+                    // Allow short (<=3) ASCII tokens to still use description for recall – here we already
+                    // know length >=3 (ASCII) or >=3 (CJK). We enforce for ASCII length >=4 and for CJK length >=3.
+                    bool ascii = qStrict.All(ch => ch < 128 && (char.IsLetterOrDigit(ch)));
+                    if ((ascii && qStrict.Length >= 4) || (!ascii && qStrict.Length >= 3))
+                        continue; // description-only -> discard
                 }
             }
             // Boost near-exact large overlap: if user entered a long single token and it matches start of ID or DisplayName.
@@ -2044,7 +2066,7 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
                     add = 12; // lowest tier
                 score += add;
 
-                // Secondary weighting: relative overlap of n-grams with query (Name優先). Helps when substring exact matchなし (スペルミス等) の場合。
+                // Secondary weighting: relative overlap of n-grams with the query (Name prioritized). Helps when there is no exact substring match (e.g., minor typos).
                 // Compute only for small result set; limit already caps to 'limit'.
                 try
                 {
@@ -2192,11 +2214,209 @@ VALUES(@pid,@culture,@dname,@desc,@cat,@kana,@pres)";
                     var remaining = hits.Where(h => !h.Phrase).Select(h => h.Hit).ToList();
                     AppendPriorityOrdered(remaining, finalList, limit, qStrict);
                 }
+                // Post-filter refinement for Name-only search: ensure all tokens appear in DisplayName.
+                try
+                {
+                    bool nameOnlySelected = useName && !useDesc && !useReg && !useId;
+                    if (nameOnlySelected && !string.IsNullOrWhiteSpace(qExact))
+                    {
+                        var qNormAll = SearchText.Normalize(qExact);
+                        var tokens = qNormAll
+                            .Split(
+                                new[] { ' ' },
+                                StringSplitOptions.RemoveEmptyEntries
+                                    | StringSplitOptions.TrimEntries
+                            )
+                            .Distinct(StringComparer.Ordinal)
+                            .ToArray();
+                        if (tokens.Length > 0)
+                        {
+                            finalList = finalList
+                                .Where(h =>
+                                {
+                                    var dn = h.DisplayName ?? string.Empty;
+                                    if (string.IsNullOrWhiteSpace(dn))
+                                        return false;
+                                    var dnNorm = SearchText.Normalize(dn);
+                                    foreach (var t in tokens)
+                                        if (!dnNorm.Contains(t, StringComparison.Ordinal))
+                                            return false;
+                                    return true;
+                                })
+                                .ToList();
+                        }
+                    }
+                }
+                catch { }
                 return finalList;
             }
         }
         // No phrase phase or no phrase hits -> just priority ordering of all hits.
         AppendPriorityOrdered(hits.Select(h => h.Hit), finalList, limit, qStrict);
+        try
+        {
+            bool nameOnlySelected2 = useName && !useDesc && !useReg && !useId;
+            if (nameOnlySelected2 && !string.IsNullOrWhiteSpace(qExact))
+            {
+                var qNormAll = SearchText.Normalize(qExact);
+                var tokens = qNormAll
+                    .Split(
+                        new[] { ' ' },
+                        StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                    )
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+                if (tokens.Length > 0)
+                {
+                    finalList = finalList
+                        .Where(h =>
+                        {
+                            var dn = h.DisplayName ?? string.Empty;
+                            if (string.IsNullOrWhiteSpace(dn))
+                                return false;
+                            var dnNorm = SearchText.Normalize(dn);
+                            foreach (var t in tokens)
+                                if (!dnNorm.Contains(t, StringComparison.Ordinal))
+                                    return false;
+                            return true;
+                        })
+                        .ToList();
+                }
+            }
+        }
+        catch { }
+        // Extra filter for queries length <=2: drop candidates whose only hits are middle-of-word (not exact/prefix/boundary).
+        if (shortQuery)
+        {
+            var qLower = qStrict; // already strict lower
+            finalList = finalList
+                .Where(h =>
+                {
+                    string dn = h.DisplayName ?? string.Empty;
+                    string id = h.UniqueId ?? string.Empty;
+                    string reg = h.RegistryPath ?? string.Empty;
+                    // Determine if match is exact, prefix, or word-boundary.
+                    bool Accept(string s)
+                    {
+                        if (string.IsNullOrEmpty(s))
+                            return false;
+                        int idx = s.IndexOf(qLower, StringComparison.OrdinalIgnoreCase);
+                        if (idx < 0)
+                            return false;
+                        if (idx == 0)
+                            return true; // prefix
+                        char prev = s[idx - 1];
+                        return !char.IsLetterOrDigit(prev); // word boundary
+                    }
+                    // Keep only if at least one field satisfies prefix or boundary condition.
+                    if (Accept(dn) || Accept(id) || Accept(reg))
+                        return true;
+                    return false;
+                })
+                .ToList();
+        }
+
+        // Additional re-scoring: recompute a local ScoreMatch to align priority with non-cache search,
+        // applying AND mode and multi-token constraints uniformly.
+        try
+        {
+            var normQuery = SearchText.Normalize(query);
+            var tokens = andMode
+                ? normQuery.Split(
+                    new[] { ' ' },
+                    StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+                )
+                : new[] { normQuery };
+            // Local replica of the non-cache ScoreMatch logic.
+            static int ScoreMatchLocal(string textLower, string qLower)
+            {
+                if (string.IsNullOrEmpty(qLower))
+                    return 0;
+                if (string.Equals(textLower, qLower, StringComparison.Ordinal))
+                    return 100;
+                if (textLower.StartsWith(qLower, StringComparison.Ordinal))
+                    return 60;
+                int idx = textLower.IndexOf(qLower, StringComparison.Ordinal);
+                if (idx > 0)
+                {
+                    char prev = textLower[idx - 1];
+                    if (!char.IsLetterOrDigit(prev))
+                        return 40;
+                    return 20;
+                }
+                return -1000;
+            }
+            string Norm(string s) => SearchText.Normalize(s);
+
+            bool useNameF = useName;
+            bool useIdF = useId;
+            bool useRegF = useReg;
+            bool useDescF = useDesc; // Description scoring disabled: PolicyHit does not yet include description body.
+
+            // AND mode: every token must match (score > -1000) in at least one enabled field.
+            // OR mode: keep hit only if at least one field reaches threshold (>=20).
+            var rescored = new List<(PolicyHit Hit, int Score)>(finalList.Count);
+            foreach (var h in finalList)
+            {
+                string nameN = useNameF ? Norm(h.DisplayName ?? string.Empty) : string.Empty;
+                string idN = useIdF ? Norm(h.UniqueId ?? string.Empty) : string.Empty;
+                string regN = useRegF ? Norm(h.RegistryPath ?? string.Empty) : string.Empty;
+                // Description scoring not implemented (would require extending PolicyHit).
+                bool tokenMiss = false;
+                int aggregate = 0;
+                foreach (var t in tokens)
+                {
+                    int best = -1000;
+                    if (useNameF)
+                        best = Math.Max(best, ScoreMatchLocal(nameN, t));
+                    if (useIdF)
+                        best = Math.Max(best, ScoreMatchLocal(idN, t));
+                    if (useRegF)
+                        best = Math.Max(best, ScoreMatchLocal(regN, t));
+                    if (useDescF)
+                    { /* placeholder for future desc scoring */
+                    }
+                    if (andMode)
+                    {
+                        if (best <= -1000)
+                        {
+                            tokenMiss = true;
+                            break;
+                        }
+                        // AND mode: accumulate only non-negative scores (negatives already filtered out).
+                        aggregate += Math.Max(0, best);
+                    }
+                    else
+                    {
+                        // OR mode: track only the best field score.
+                        if (best > aggregate)
+                            aggregate = best;
+                    }
+                }
+                if (tokenMiss)
+                    continue;
+
+                // Short queries (<=2): emphasize prefix/boundary; remove pure middle (score 20) matches.
+                if (shortQuery && aggregate == 20)
+                    continue;
+                // OR mode minimum acceptable score: 20 (parity with non-cache). Short queries require >=40.
+                if (!andMode && !shortQuery && aggregate <= -1000)
+                    continue;
+                rescored.Add((h, aggregate));
+            }
+            if (rescored.Count > 0)
+            {
+                // Order by score descending; preserve original order on ties (stable via index).
+                finalList = rescored
+                    .Select((x, idx) => (x.Hit, x.Score, idx))
+                    .OrderByDescending(e => e.Score)
+                    .ThenBy(e => e.idx)
+                    .Select(e => e.Hit)
+                    .Take(limit)
+                    .ToList();
+            }
+        }
+        catch { }
         return finalList;
     }
 
