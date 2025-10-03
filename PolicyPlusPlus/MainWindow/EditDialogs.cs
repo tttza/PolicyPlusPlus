@@ -56,23 +56,7 @@ namespace PolicyPlusPlus
                 return;
             // Bundle is fully loaded by initial startup.
             var ctx = PolicySourceAccessor.Acquire();
-
-            var displayName = representative.DisplayName;
-            _nameGroups.TryGetValue(displayName, out var groupList);
-            groupList ??= _allPolicies
-                .Where(p =>
-                    string.Equals(
-                        p.DisplayName,
-                        displayName,
-                        StringComparison.InvariantCultureIgnoreCase
-                    )
-                )
-                .ToList();
-
-            PolicyPlusPolicy targetPolicy =
-                groupList.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.User)
-                ?? groupList.FirstOrDefault(p => p.RawPolicy.Section == AdmxPolicySection.Machine)
-                ?? representative;
+            var targetPolicy = representative;
 
             var initialSection =
                 targetPolicy.RawPolicy.Section == AdmxPolicySection.Both
