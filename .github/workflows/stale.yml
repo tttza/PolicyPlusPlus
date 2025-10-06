@@ -1,4 +1,9 @@
 name: Close inactive issues
+# Housekeeping policy:
+# - Inactivity 60 days -> mark stale; +21 days -> auto-close (adds auto-archived).
+# - Any new comment / edit automatically removes stale & resets timers (reopen if closed).
+# - Exempt labels: pinned, security, regression, in progress, help wanted.
+# - Archiving is not a rejection; issues can be revived anytime with new info.
 on:
   schedule:
     - cron: "45 3 * * *"
@@ -14,8 +19,27 @@ jobs:
         with:
           days-before-issue-stale: 60
           days-before-issue-close: 21
+
+          # Labels & exemptions
           stale-issue-label: "stale"
-          stale-issue-message: "This issue is stale because it has been open for 60 days with no activity."
-          close-issue-message: "This issue was closed because it has been inactive for 21 days since being marked as stale."
+          close-issue-label: "auto-archived"
+          exempt-issue-labels: "pinned,security,regression,in progress,help wanted"
+          remove-stale-when-updated: true
+
+          # Exclude PRs from this workflow
           days-before-pr-stale: -1
           days-before-pr-close: -1
+
+          # Stale warning message
+          stale-issue-message: >-
+            This issue had no activity for 60 days and was marked stale for housekeeping.
+            It will be auto-closed in 21 more days unless there is any new comment or update.
+            This is NOT a rejection. If you have new information (repro, impact, logs),
+            please post it and the issue will be automatically reopened.
+
+          # Auto close message
+          close-issue-message: >-
+            Closing to archive after extended inactivity (housekeeping). This is not a final “won’t fix”.
+            Any new comment with details (repro, impact, logs) will automatically reopen. Feel free
+            to add regression / in progress / help wanted labels to indicate priority. Thanks!
+
