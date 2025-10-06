@@ -130,6 +130,9 @@ namespace PolicyPlusPlus.Services
     {
         public static IPolicySourceManager Instance { get; } = new PolicySourceManager();
 
+        // Single synchronization root used to serialize test SetSources operations and diff/import queueing.
+        internal static readonly object SourcesSync = new();
+
         private PolicySourceManager()
         {
             _strategies = new Dictionary<PolicySourceMode, IPolicySourceStrategy>
@@ -143,8 +146,42 @@ namespace PolicyPlusPlus.Services
         private readonly Dictionary<PolicySourceMode, IPolicySourceStrategy> _strategies;
 
         public PolicySourceMode Mode { get; internal set; } = PolicySourceMode.LocalGpo;
-        public IPolicySource? CompSource { get; internal set; }
-        public IPolicySource? UserSource { get; internal set; }
+        private IPolicySource? _compSource;
+        private IPolicySource? _userSource;
+        public IPolicySource? CompSource
+        {
+            get
+            {
+                lock (SourcesSync)
+                {
+                    return _compSource;
+                }
+            }
+            internal set
+            {
+                lock (SourcesSync)
+                {
+                    _compSource = value;
+                }
+            }
+        }
+        public IPolicySource? UserSource
+        {
+            get
+            {
+                lock (SourcesSync)
+                {
+                    return _userSource;
+                }
+            }
+            internal set
+            {
+                lock (SourcesSync)
+                {
+                    _userSource = value;
+                }
+            }
+        }
         public string? CustomCompPath { get; internal set; }
         public string? CustomUserPath { get; internal set; }
         public string? TempCompPath { get; internal set; }

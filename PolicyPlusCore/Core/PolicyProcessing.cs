@@ -37,7 +37,10 @@ namespace PolicyPlusCore.Core
             var cached = new CachedPolicySource(PolicySource);
             if (Policy == null)
                 return PolicyState.NotConfigured; // defensive
-            var rawpol = Policy.RawPolicy;
+            var rawpolTemp = Policy.RawPolicy;
+            if (rawpolTemp == null)
+                return PolicyState.NotConfigured; // defensive null guard
+            var rawpol = rawpolTemp; // non-null local
             if (rawpol.AffectedValues == null)
                 rawpol.AffectedValues = new PolicyRegistryList();
 
@@ -752,15 +755,21 @@ namespace PolicyPlusCore.Core
                             var entries = new List<string>();
                             if (listElem.HasPrefix)
                             {
+                                // Enumerate contiguous numeric-suffixed values (prefix + 1..n) and stop at first gap.
                                 int n = 1;
-                                while (PolicySource.ContainsValue(elemKey, elem.RegistryValue + n))
+                                while (true)
                                 {
-                                    entries.Add(
-                                        Convert.ToString(
-                                            PolicySource.GetValue(elemKey, elem.RegistryValue + n)
-                                        ) ?? string.Empty
-                                    );
-                                    n += 1;
+                                    string name = elem.RegistryValue + n;
+                                    if (PolicySource.ContainsValue(elemKey, name))
+                                    {
+                                        entries.Add(
+                                            Convert.ToString(PolicySource.GetValue(elemKey, name))
+                                                ?? string.Empty
+                                        );
+                                        n++;
+                                        continue;
+                                    }
+                                    break; // first missing index terminates sequence per ADMX list semantics
                                 }
                             }
                             else
@@ -891,7 +900,7 @@ namespace PolicyPlusCore.Core
             ;
             var rawpol = Policy.RawPolicy;
             if (rawpol == null)
-                return entries;
+                return entries; // defensive null guard
             if (!string.IsNullOrEmpty(rawpol.RegistryValue))
                 addReg(rawpol.RegistryKey, rawpol.RegistryValue);
             void addSingleList(PolicyRegistrySingleList? SingleList, string OverrideKey)
@@ -986,6 +995,26 @@ namespace PolicyPlusCore.Core
             Dictionary<string, object> Options
         )
         {
+            // Record that this policy has been explicitly configured (Enabled/Disabled) for heuristic diffing later.
+            try
+            {
+                if (
+                    Policy != null
+                    && (State == PolicyState.Enabled || State == PolicyState.Disabled)
+                )
+                {
+                    var raw = Policy.RawPolicy;
+                    if (raw != null)
+                    {
+                        var section = raw.Section;
+                        string scope = section == AdmxPolicySection.User ? "User" : "Computer";
+                        var pid = Policy.UniqueID ?? string.Empty;
+                        if (!string.IsNullOrEmpty(pid))
+                            ConfiguredPolicyTracker.MarkConfigured(pid, scope);
+                    }
+                }
+            }
+            catch { }
             void setValue(string Key, string ValueName, PolicyRegistryValue? Value)
             {
                 if (Value is null)
@@ -1044,28 +1073,36 @@ namespace PolicyPlusCore.Core
                 }
             }
             ;
-            var rawpol = Policy.RawPolicy;
+            var p = Policy; // local copy to help null-flow analysis
+            if (p == null)
+                return;
+            if (p.RawPolicy is not AdmxPolicy rp)
+                return; // Defensive guard: no raw policy to act on
+            // Ensure we work with a non-null registry list reference
+            var av = rp.AffectedValues;
+            if (av == null)
+            {
+                av = new PolicyRegistryList();
+                rp.AffectedValues = av;
+            }
             switch (State)
             {
                 case PolicyState.Enabled:
                 {
-                    if (
-                        rawpol.AffectedValues.OnValue is null
-                        && !string.IsNullOrEmpty(rawpol.RegistryValue)
-                    )
+                    if (av.OnValue is null && !string.IsNullOrEmpty(rp.RegistryValue))
                         PolicySource.SetValue(
-                            rawpol.RegistryKey,
-                            rawpol.RegistryValue,
+                            rp.RegistryKey,
+                            rp.RegistryValue,
                             1U,
                             Microsoft.Win32.RegistryValueKind.DWord
                         );
-                    setList(rawpol.AffectedValues, rawpol.RegistryKey, rawpol.RegistryValue, true);
-                    if (rawpol.Elements is object)
+                    setList(av, rp.RegistryKey, rp.RegistryValue, true);
+                    if (rp.Elements is object)
                     {
-                        foreach (var elem in rawpol.Elements)
+                        foreach (var elem in rp.Elements)
                         {
                             string elemKey = string.IsNullOrEmpty(elem.RegistryKey)
-                                ? rawpol.RegistryKey
+                                ? rp.RegistryKey
                                 : elem.RegistryKey;
                             if (Options == null || !Options.ContainsKey(elem.ID))
                             {
@@ -1288,17 +1325,17 @@ namespace PolicyPlusCore.Core
                 case PolicyState.Disabled:
                 {
                     if (
-                        rawpol.AffectedValues.OffValue is null
-                        && !string.IsNullOrEmpty(rawpol.RegistryValue)
+                        rp.AffectedValues.OffValue is null
+                        && !string.IsNullOrEmpty(rp.RegistryValue)
                     )
-                        PolicySource.DeleteValue(rawpol.RegistryKey, rawpol.RegistryValue);
-                    setList(rawpol.AffectedValues, rawpol.RegistryKey, rawpol.RegistryValue, false);
-                    if (rawpol.Elements is object)
+                        PolicySource.DeleteValue(rp.RegistryKey, rp.RegistryValue);
+                    setList(rp.AffectedValues, rp.RegistryKey, rp.RegistryValue, false);
+                    if (rp.Elements is object)
                     {
-                        foreach (var elem in rawpol.Elements)
+                        foreach (var elem in rp.Elements)
                         {
                             string elemKey = string.IsNullOrEmpty(elem.RegistryKey)
-                                ? rawpol.RegistryKey
+                                ? rp.RegistryKey
                                 : elem.RegistryKey;
                             if (elem.ElementType == "list")
                             {

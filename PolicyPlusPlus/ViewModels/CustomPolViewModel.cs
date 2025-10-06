@@ -117,7 +117,10 @@ namespace PolicyPlusPlus.ViewModels
             var snap = Snapshot();
             try
             {
-                _settings.UpdateCustomPol(snap);
+                if (snap != null)
+                {
+                    _settings.UpdateCustomPol(snap);
+                }
                 IsDirty = false;
                 Committed?.Invoke(this, EventArgs.Empty);
             }

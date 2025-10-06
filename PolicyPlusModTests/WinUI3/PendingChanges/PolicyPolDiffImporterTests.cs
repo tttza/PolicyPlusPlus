@@ -155,6 +155,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
         [Fact(DisplayName = "Replace mode discards existing pending before queueing new import")]
         public void ReplaceMode_DiscardsExisting()
         {
+            ConfiguredPolicyTracker.Reset();
             var (bundle, machine, userEnum) = BuildBundle();
             var emptyPolComp = new PolFile();
             var emptyPolUser = new PolFile();
@@ -207,6 +208,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
         [Fact(DisplayName = "Replace mode clears even when previous discard failed")]
         public void ReplaceMode_ForcesClear()
         {
+            ConfiguredPolicyTracker.Reset();
             var (bundle, machine, _) = BuildBundle();
             var emptyPolComp = new PolFile();
             var emptyPolUser = new PolFile();

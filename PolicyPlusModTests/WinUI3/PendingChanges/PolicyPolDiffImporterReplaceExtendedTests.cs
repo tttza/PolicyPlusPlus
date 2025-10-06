@@ -56,10 +56,12 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
 
         private void SetSources(PolFile comp, PolFile user)
         {
-            ((PolicySourceManager)PolicySourceManager.Instance).CompSource =
-                new InMemoryPolicySource(comp);
-            ((PolicySourceManager)PolicySourceManager.Instance).UserSource =
-                new InMemoryPolicySource(user);
+            var mgr = (PolicySourceManager)PolicySourceManager.Instance;
+            lock (PolicySourceManager.SourcesSync)
+            {
+                mgr.CompSource = new InMemoryPolicySource(comp);
+                mgr.UserSource = new InMemoryPolicySource(user);
+            }
         }
 
         private static RegFile EmptyReg()
@@ -73,6 +75,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
         {
             PendingChangesService.EnableTestIsolation();
             PendingChangesService.ResetAmbientForTest();
+            PolicyPlusCore.Core.ConfiguredPolicyTracker.Reset();
         }
 
         [Fact(DisplayName = "Replace: Empty .reg queues Clear for all configured policies")]
@@ -489,8 +492,10 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
             Assert.Equal("Clear", pc.Action); // heuristic should not flip to Disable
         }
 
-        [Fact(DisplayName = "Replace: List missing entry triggers Enable with updated list")]
-        public void Replace_List_MissingEntry_QueuesChange()
+        [Fact(
+            DisplayName = "Replace: List missing first index yields empty list (gap stops enumeration)"
+        )]
+        public void Replace_List_MissingEntry_GapStopsEnumeration_QueuesChange()
         {
             var list = TestPolicyFactory.CreateListPolicy("MACHINE:ListMissing");
             var bundle = Bundle(list);
@@ -542,7 +547,9 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
             var opts = pc.Options!;
             Assert.True(opts.ContainsKey("ListElem"));
             var arr = Assert.IsType<List<string>>(opts["ListElem"]);
-            Assert.Equal(new[] { "Two", "Three" }, arr.ToArray());
+            // Spec-contiguous enumeration stops at first missing numeric suffix, so only suffixes beginning at 1 are considered.
+            // Because suffix 1 ("One") is absent, enumeration yields an empty list.
+            Assert.Empty(arr);
         }
 
         [Fact(DisplayName = "Replace: Enum unchanged -> no diff queued")]

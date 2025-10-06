@@ -16,34 +16,41 @@ namespace PolicyPlusPlus.Services
         // includeClearsForMissing: when true, policies currently configured but absent from imported .reg are queued as Clear (NotConfigured) operations.
         public static int QueueFromReg(RegFile reg, AdmxBundle bundle, bool includeClearsForMissing)
         {
-            if (reg == null || bundle == null)
-                return 0;
-
-            // Build POL views split by hive so we respect Machine/User scope.
-            var (userPolFile, machinePolFile) = RegImportHelper.ToPolByHive(reg);
-            int total = 0;
-
-            if (PolicySourceManager.Instance.CompSource is IPolicySource compSrc)
+            // Use shared synchronization root with PolicySourceManager to keep source snapshots stable during diff.
+            lock (PolicySourceManager.SourcesSync)
             {
-                total += QueueDiff(
-                    machinePolFile,
-                    compSrc,
-                    bundle,
-                    scope: "Computer",
-                    includeClearsForMissing
-                );
+                if (reg == null || bundle == null)
+                    return 0;
+
+                // Build POL views split by hive so we respect Machine/User scope.
+                var (userPolFile, machinePolFile) = RegImportHelper.ToPolByHive(reg);
+                int total = 0;
+
+                var compSrcRef = PolicySourceManager.Instance.CompSource;
+                var userSrcRef = PolicySourceManager.Instance.UserSource;
+
+                if (compSrcRef is IPolicySource compSrc)
+                {
+                    total += QueueDiff(
+                        machinePolFile,
+                        compSrc,
+                        bundle,
+                        scope: "Computer",
+                        includeClearsForMissing
+                    );
+                }
+                if (userSrcRef is IPolicySource userSrc)
+                {
+                    total += QueueDiff(
+                        userPolFile,
+                        userSrc,
+                        bundle,
+                        scope: "User",
+                        includeClearsForMissing
+                    );
+                }
+                return total;
             }
-            if (PolicySourceManager.Instance.UserSource is IPolicySource userSrc)
-            {
-                total += QueueDiff(
-                    userPolFile,
-                    userSrc,
-                    bundle,
-                    scope: "User",
-                    includeClearsForMissing
-                );
-            }
-            return total;
         }
 
         private static int QueueDiff(
@@ -151,10 +158,17 @@ namespace PolicyPlusPlus.Services
                         catch { }
                     }
 
+                    // After heuristic mapping: if replace mode and imported is NotConfigured while current configured, queue Clear.
                     if (
                         includeClearsForMissing
                         && newState == PolicyState.NotConfigured
-                        && currentState != PolicyState.NotConfigured
+                        && (
+                            HasPolicyFootprint(current, policy)
+                            || PolicyPlusCore.Core.ConfiguredPolicyTracker.WasEverConfigured(
+                                policy.UniqueID,
+                                scope
+                            )
+                        )
                     )
                     {
                         if (
@@ -178,7 +192,6 @@ namespace PolicyPlusPlus.Services
                                     Details = "Clear",
                                     DetailsFull = "Clear",
                                     DesiredState = PolicyState.NotConfigured,
-                                    Options = null,
                                 }
                             );
                             queued++;
@@ -188,6 +201,32 @@ namespace PolicyPlusPlus.Services
 
                     if (newState == PolicyState.NotConfigured)
                         continue; // merge mode or replace with both sides NotConfigured
+
+                    // Heuristic: list policies may appear NotConfigured in currentState if only list prefix values exist (no root value); treat footprint as Enabled to suppress false diffs.
+                    if (
+                        currentState == PolicyState.NotConfigured
+                        && newState == PolicyState.Enabled
+                    )
+                    {
+                        try
+                        {
+                            if (
+                                policy.RawPolicy?.Elements != null
+                                && policy.RawPolicy.Elements.Any(e =>
+                                    string.Equals(
+                                        e.ElementType,
+                                        "list",
+                                        StringComparison.OrdinalIgnoreCase
+                                    )
+                                )
+                            )
+                            {
+                                if (HasPolicyFootprint(current, policy))
+                                    currentState = PolicyState.Enabled;
+                            }
+                        }
+                        catch { }
+                    }
 
                     Dictionary<string, object>? newOpts = null;
                     Dictionary<string, object>? curOpts = null;
@@ -259,6 +298,81 @@ namespace PolicyPlusPlus.Services
                                 + " msg="
                                 + ex.Message
                         );
+                    }
+                }
+            }
+
+            // Final sweep: ensure any configured policies missing from import are cleared when includeClearsForMissing is true.
+            if (includeClearsForMissing)
+            {
+                foreach (var policy in bundle.Policies.Values)
+                {
+                    try
+                    {
+                        var section = policy.RawPolicy?.Section ?? AdmxPolicySection.Machine;
+                        if (
+                            section == AdmxPolicySection.Machine
+                            && !scope.Equals("Computer", StringComparison.OrdinalIgnoreCase)
+                        )
+                            continue;
+                        if (
+                            section == AdmxPolicySection.User
+                            && !scope.Equals("User", StringComparison.OrdinalIgnoreCase)
+                        )
+                            continue;
+                        bool alreadyQueued = PendingChangesService.Instance.Pending.Any(p =>
+                            string.Equals(
+                                p.PolicyId,
+                                policy.UniqueID,
+                                StringComparison.OrdinalIgnoreCase
+                            ) && string.Equals(p.Scope, scope, StringComparison.OrdinalIgnoreCase)
+                        );
+                        if (alreadyQueued)
+                            continue;
+                        var curState = PolicyProcessing.GetPolicyState(current, policy);
+                        bool hadFootprint =
+                            curState != PolicyState.NotConfigured
+                            || HasPolicyFootprint(current, policy)
+                            || PolicyPlusCore.Core.ConfiguredPolicyTracker.WasEverConfigured(
+                                policy.UniqueID,
+                                scope
+                            );
+                        if (!hadFootprint)
+                            continue;
+                        var importedState = PolicyProcessing.GetPolicyState(importedView, policy);
+                        if (importedState != PolicyState.NotConfigured)
+                            continue;
+                        PendingChangesService.Instance.Add(
+                            new PendingChange
+                            {
+                                PolicyId = policy.UniqueID,
+                                PolicyName = policy.DisplayName ?? policy.UniqueID,
+                                Scope = scope,
+                                Action = "Clear",
+                                Details = "Clear",
+                                DetailsFull = "Clear",
+                                DesiredState = PolicyState.NotConfigured,
+                            }
+                        );
+                        queued++;
+                    }
+                    catch (Exception ex)
+                    {
+                        policyErrors++;
+                        if (policyErrors <= 5)
+                        {
+                            Logging.Log.Warn(
+                                "RegImportDiff",
+                                "FinalSweep failure scope="
+                                    + scope
+                                    + " id="
+                                    + policy.UniqueID
+                                    + " type="
+                                    + ex.GetType().Name
+                                    + " msg="
+                                    + ex.Message
+                            );
+                        }
                     }
                 }
             }
@@ -488,10 +602,11 @@ namespace PolicyPlusPlus.Services
                 return s.Trim();
             if (v is Array arr)
             {
-                var clone = new object?[arr.Length];
+                // Preserve original ordering for multi-text arrays so that reordering is treated as a meaningful diff.
+                var ordered = new object?[arr.Length];
                 for (int i = 0; i < arr.Length; i++)
-                    clone[i] = NormalizeOpt(arr.GetValue(i));
-                return clone;
+                    ordered[i] = NormalizeOpt(arr.GetValue(i));
+                return ordered;
             }
             if (v is List<string> ls)
                 return ls.Select(e => (object?)NormalizeOpt(e)).ToArray();
@@ -509,6 +624,50 @@ namespace PolicyPlusPlus.Services
                 return kvs.ToArray();
             }
             return v;
+        }
+
+        // Heuristic: determine if a policy left any registry footprint (value present OR list prefix remnants) even if GetPolicyState evaluates NotConfigured (e.g., Disabled-as-deletion case).
+        private static bool HasPolicyFootprint(IPolicySource src, PolicyPlusPolicy policy)
+        {
+            try
+            {
+                var raw = policy.RawPolicy;
+                if (raw == null)
+                    return false;
+                // Root value present
+                if (
+                    !string.IsNullOrEmpty(raw.RegistryKey)
+                    && !string.IsNullOrEmpty(raw.RegistryValue)
+                )
+                {
+                    if (src.ContainsValue(raw.RegistryKey, raw.RegistryValue))
+                        return true;
+                }
+                if (raw.Elements != null)
+                {
+                    foreach (var el in raw.Elements)
+                    {
+                        string key = string.IsNullOrEmpty(el.RegistryKey)
+                            ? raw.RegistryKey
+                            : el.RegistryKey;
+                        if (string.IsNullOrEmpty(key))
+                            continue;
+                        if (el.ElementType == "list")
+                        {
+                            var names = src.GetValueNames(key);
+                            if (names.Count > 0)
+                                return true;
+                        }
+                        else if (!string.IsNullOrEmpty(el.RegistryValue))
+                        {
+                            if (src.ContainsValue(key, el.RegistryValue))
+                                return true;
+                        }
+                    }
+                }
+            }
+            catch { }
+            return false;
         }
     }
 }
