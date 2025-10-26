@@ -29,7 +29,12 @@
     >
       <StackPanel>
         <!-- Header row -->
-        <Grid Height="40" Background="{ThemeResource LayerFillColorDefaultBrush}">
+        <Grid
+          Height="40"
+          Background="{ThemeResource LayerFillColorDefaultBrush}"
+          x:Name="HeaderRow"
+          AutomationProperties.Name="Quick edit column headers"
+        >
           <Grid.ColumnDefinitions>
             <ColumnDefinition
               Width="{Binding Columns.Name, ElementName=RootControl}"
@@ -63,7 +68,13 @@
             <!-- right spacer -->
             <ColumnDefinition Width="{StaticResource QuickEdit.RightSpacerWidth}" />
           </Grid.ColumnDefinitions>
-          <TextBlock Grid.Column="0" Text="Name" VerticalAlignment="Center" Margin="6,0" />
+          <TextBlock
+            Grid.Column="0"
+            Text="Name"
+            VerticalAlignment="Center"
+            Margin="6,0"
+            AutomationProperties.Name="Policy name column header"
+          />
           <Thumb
             Grid.Column="1"
             Tag="Name"
@@ -71,7 +82,13 @@
             Background="Transparent"
             Opacity="0.001"
           />
-          <TextBlock Grid.Column="2" Text="ID" VerticalAlignment="Center" Margin="6,0" />
+          <TextBlock
+            Grid.Column="2"
+            Text="ID"
+            VerticalAlignment="Center"
+            Margin="6,0"
+            AutomationProperties.Name="Policy ID column header"
+          />
           <Thumb
             Grid.Column="3"
             Tag="Id"
@@ -79,7 +96,13 @@
             Background="Transparent"
             Opacity="0.001"
           />
-          <TextBlock Grid.Column="4" Text="User State" VerticalAlignment="Center" Margin="6,0" />
+          <TextBlock
+            Grid.Column="4"
+            Text="User State"
+            VerticalAlignment="Center"
+            Margin="6,0"
+            AutomationProperties.Name="User state column header"
+          />
           <Thumb
             Grid.Column="5"
             Tag="UserState"
@@ -87,7 +110,13 @@
             Background="Transparent"
             Opacity="0.001"
           />
-          <TextBlock Grid.Column="6" Text="User Options" VerticalAlignment="Center" Margin="6,0" />
+          <TextBlock
+            Grid.Column="6"
+            Text="User Options"
+            VerticalAlignment="Center"
+            Margin="6,0"
+            AutomationProperties.Name="User options column header"
+          />
           <Thumb
             Grid.Column="7"
             Tag="UserOptions"
@@ -100,6 +129,7 @@
             Text="Computer State"
             VerticalAlignment="Center"
             Margin="6,0"
+            AutomationProperties.Name="Computer state column header"
           />
           <Thumb
             Grid.Column="9"
@@ -113,6 +143,7 @@
             Text="Computer Options"
             VerticalAlignment="Center"
             Margin="6,0"
+            AutomationProperties.Name="Computer options column header"
           />
         </Grid>
         <!-- Body -->
@@ -131,7 +162,11 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:QuickEditRow">
-                <Grid MinHeight="42" Padding="0,2,0,2">
+                <Grid
+                  MinHeight="42"
+                  Padding="0,2,0,2"
+                  AutomationProperties.Name="Quick edit policy row"
+                >
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition
                       Width="{Binding Columns.Name, ElementName=RootControl}"
@@ -172,6 +207,7 @@
                     VerticalAlignment="Center"
                     Margin="4,0"
                     IsTabStop="False"
+                    AutomationProperties.Name="Policy display name"
                   />
                   <TextBlock
                     Grid.Column="2"
@@ -180,6 +216,7 @@
                     VerticalAlignment="Center"
                     Margin="4,0"
                     IsTabStop="False"
+                    AutomationProperties.Name="Policy ID"
                   />
                   <!-- User State (centered) -->
                   <Border
@@ -196,6 +233,7 @@
                         Tag="UserStateCombo"
                         Width="150"
                         SelectedIndex="{Binding UserState, Mode=TwoWay, Converter={StaticResource StateIndex}}"
+                        AutomationProperties.Name="User policy state"
                       >
                         <ComboBoxItem Content="Not Configured" />
                         <ComboBoxItem Content="Enabled" />
@@ -231,6 +269,7 @@
                             Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}"
                             SelectedIndex="{x:Bind UserEnumIndex, Mode=TwoWay}"
                             ItemsSource="{x:Bind Choices}"
+                            AutomationProperties.Name="{x:Bind DisplayName}"
                           />
                           <CheckBox
                             Tag="UserOption"
@@ -300,6 +339,7 @@
                         Tag="ComputerStateCombo"
                         Width="150"
                         SelectedIndex="{Binding ComputerState, Mode=TwoWay, Converter={StaticResource StateIndex}}"
+                        AutomationProperties.Name="Computer policy state"
                       >
                         <ComboBoxItem Content="Not Configured" />
                         <ComboBoxItem Content="Enabled" />
@@ -335,6 +375,7 @@
                             Visibility="{x:Bind IsEnum, Converter={StaticResource BoolToVisibility}}"
                             SelectedIndex="{x:Bind ComputerEnumIndex, Mode=TwoWay}"
                             ItemsSource="{x:Bind Choices}"
+                            AutomationProperties.Name="{x:Bind DisplayName}"
                           />
                           <CheckBox
                             Tag="ComputerOption"
