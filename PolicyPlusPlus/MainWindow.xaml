@@ -399,11 +399,18 @@
             >
               <FontIcon Glyph="{g:GlyphHex Code=E72A}" FontSize="12" />
             </Button>
-            <TextBlock Text="Applies to:" VerticalAlignment="Center" Margin="6,0,0,0" />
+            <TextBlock
+              x:Name="AppliesToLabel"
+              Text="Applies to:"
+              VerticalAlignment="Center"
+              Margin="6,0,0,0"
+            />
             <ComboBox
               x:Name="AppliesToSelector"
               Width="140"
               SelectionChanged="AppliesToSelector_SelectionChanged"
+              AutomationProperties.LabeledBy="{Binding ElementName=AppliesToLabel}"
+              AutomationProperties.AutomationId="AppliesToSelector"
             >
               <ComboBoxItem Content="Both" IsSelected="True" />
               <ComboBoxItem Content="Computer" />
@@ -477,11 +484,14 @@
               VerticalAlignment="Center"
               ToolTipService.ToolTip="AND search (spaces = AND)"
               IsChecked="{Binding UseAndMode, Source={StaticResource SearchOptionsVM}, Mode=TwoWay}"
+              AutomationProperties.Name="AND search toggle"
             />
             <Button
               x:Name="SearchOptionsBtn"
               Style="{StaticResource NavIconButtonStyle}"
               ToolTipService.ToolTip="Search options"
+              AutomationProperties.Name="Search options"
+              AutomationProperties.AutomationId="SearchOptionsButton"
             >
               <FontIcon Glyph="{g:GlyphHex Code=E713}" FontSize="12" />
               <Button.Flyout>
