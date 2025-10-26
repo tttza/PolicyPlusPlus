@@ -619,6 +619,8 @@
             ResizeBehavior="PreviousAndNext"
             Width="8"
             HorizontalAlignment="Stretch"
+            AutomationProperties.Name="Category pane resize grip"
+            AutomationProperties.LocalizedControlType="split bar"
             PointerReleased="CategorySplitter_PointerReleased"
           />
           <!-- Policy list and details -->
@@ -1045,6 +1047,8 @@
               ResizeBehavior="PreviousAndNext"
               Height="8"
               HorizontalAlignment="Stretch"
+              AutomationProperties.Name="Details pane resize grip"
+              AutomationProperties.LocalizedControlType="split bar"
               PointerReleased="DetailsSplitter_PointerReleased"
             />
             <Border
