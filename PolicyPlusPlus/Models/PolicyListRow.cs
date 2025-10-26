@@ -117,7 +117,6 @@ namespace PolicyPlusPlus.Models
                 {
                     _userGlyph = value;
                     OnPropertyChanged(nameof(UserGlyph));
-                    UpdateAutomationNames();
                 }
             }
         }
@@ -131,7 +130,6 @@ namespace PolicyPlusPlus.Models
                 {
                     _computerGlyph = value;
                     OnPropertyChanged(nameof(ComputerGlyph));
-                    UpdateAutomationNames();
                 }
             }
         }
@@ -566,8 +564,6 @@ namespace PolicyPlusPlus.Models
 
                 UserPending = anyUserPending;
                 ComputerPending = anyCompPending;
-
-                UpdateAutomationNames();
             }
             else if (Policy != null)
             {
@@ -648,107 +644,6 @@ namespace PolicyPlusPlus.Models
 
                 UserPending = userPend;
                 ComputerPending = compPend;
-
-                UpdateAutomationNames();
-            }
-        }
-
-        // Accessible automation name properties for icon columns.
-        private string _bookmarkAutomationName = string.Empty;
-        public string BookmarkAutomationName
-        {
-            get => _bookmarkAutomationName;
-            private set
-            {
-                if (_bookmarkAutomationName != value)
-                {
-                    _bookmarkAutomationName = value;
-                    OnPropertyChanged(nameof(BookmarkAutomationName));
-                }
-            }
-        }
-        private string _userAutomationName = string.Empty;
-        public string UserAutomationName
-        {
-            get => _userAutomationName;
-            private set
-            {
-                if (_userAutomationName != value)
-                {
-                    _userAutomationName = value;
-                    OnPropertyChanged(nameof(UserAutomationName));
-                }
-            }
-        }
-        private string _computerAutomationName = string.Empty;
-        public string ComputerAutomationName
-        {
-            get => _computerAutomationName;
-            private set
-            {
-                if (_computerAutomationName != value)
-                {
-                    _computerAutomationName = value;
-                    OnPropertyChanged(nameof(ComputerAutomationName));
-                }
-            }
-        }
-
-        private void UpdateAutomationNames()
-        {
-            // Bookmark name only for policy rows.
-            if (IsCategory)
-            {
-                BookmarkAutomationName = string.Empty; // category rows have no bookmark toggle.
-            }
-            else
-            {
-                if (IsBookmarked)
-                    BookmarkAutomationName = "Bookmarked policy. Activate to remove bookmark.";
-                else
-                    BookmarkAutomationName = "Not bookmarked. Activate to add bookmark.";
-            }
-
-            // User state automation name.
-            if (UserConfigured)
-            {
-                if (UserEnabled)
-                    UserAutomationName = UserPending
-                        ? "User setting: Enabled (Pending)"
-                        : "User setting: Enabled";
-                else if (UserDisabled)
-                    UserAutomationName = UserPending
-                        ? "User setting: Disabled (Pending)"
-                        : "User setting: Disabled";
-                else
-                    UserAutomationName = UserPending
-                        ? "User setting: Configured (Pending)"
-                        : "User setting: Configured";
-            }
-            else
-            {
-                UserAutomationName = "User setting: Not configured";
-            }
-
-            // Computer state automation name.
-            if (ComputerConfigured)
-            {
-                if (ComputerEnabled)
-                    ComputerAutomationName = ComputerPending
-                        ? "Computer setting: Enabled (Pending)"
-                        : "Computer setting: Enabled";
-                else if (ComputerDisabled)
-                    ComputerAutomationName = ComputerPending
-                        ? "Computer setting: Disabled (Pending)"
-                        : "Computer setting: Disabled";
-                else
-                    ComputerAutomationName = ComputerPending
-                        ? "Computer setting: Configured (Pending)"
-                        : "Computer setting: Configured";
-            }
-            else
-            {
-                ComputerAutomationName = "Computer setting: Not configured";
             }
         }
     }
