@@ -470,6 +470,7 @@
                 Background="Transparent"
                 Visibility="Collapsed"
                 ToolTipService.ToolTip="Clear search"
+                AutomationProperties.Name="Clear search"
                 Tapped="SearchClearBtn_Tapped"
               >
                 <FontIcon
@@ -991,6 +992,7 @@
                     Visibility="Collapsed"
                     Click="HintDisableConfiguredOnly_Click"
                     HorizontalAlignment="Center"
+                    AutomationProperties.Name="Disable 'Configured only' filter"
                   >
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <!-- MultiSelect glyph -->
@@ -1006,6 +1008,7 @@
                     Visibility="Collapsed"
                     Click="HintDisableBookmarksOnly_Click"
                     HorizontalAlignment="Center"
+                    AutomationProperties.Name="Disable 'Bookmarks only' filter"
                   >
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <!-- FavoriteStar glyph -->
@@ -1034,6 +1037,7 @@
                     Visibility="Collapsed"
                     Click="HintClearAllFilters_Click"
                     HorizontalAlignment="Center"
+                    AutomationProperties.Name="Disable all filters"
                   >
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <!-- Use 'Clear' like glyph (E894 = Clear) -->
@@ -1179,6 +1183,7 @@
         Visibility="Collapsed"
         Grid.RowSpan="3"
         Canvas.ZIndex="10"
+        AutomationProperties.Name="Busy overlay"
       >
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
           <controls:ProgressRing IsActive="True" Width="48" Height="48" />
