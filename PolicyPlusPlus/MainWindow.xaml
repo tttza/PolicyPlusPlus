@@ -653,6 +653,14 @@
                         <Setter Property="Padding" Value="0" />
                         <Setter Property="HorizontalContentAlignment" Value="Center" />
                         <Setter Property="VerticalContentAlignment" Value="Center" />
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="bookmark indicator"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding BookmarkAutomationName}"
+                        />
                       </Style>
                     </datagrid:DataGridTemplateColumn.CellStyle>
                     <datagrid:DataGridTemplateColumn.CellTemplate>
@@ -672,6 +680,7 @@
                             DoubleTapped="BookmarkToggle_DoubleTapped"
                             Tag="{Binding Policy}"
                             ToolTipService.ToolTip="Toggle bookmark"
+                            AutomationProperties.Name="{Binding BookmarkAutomationName}"
                           >
                             <FontIcon
                               x:Name="BookmarkGlyph"
@@ -694,12 +703,29 @@
                     Width="SizeToCells"
                     CanUserSort="False"
                   >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Center" />
+                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="category folder icon"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding CategoryName}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <FontIcon
                           Glyph="{g:GlyphHex Code=E8B7}"
                           Opacity="0.8"
                           Visibility="{Binding IsCategory, Converter={StaticResource BoolToVisibilityConverter}}"
+                          AutomationProperties.Name="Folder category"
+                          AutomationProperties.LocalizedControlType="category folder"
                         />
                       </DataTemplate>
                     </datagrid:DataGridTemplateColumn.CellTemplate>
@@ -711,6 +737,21 @@
                     Width="SizeToCells"
                     CanUserSort="False"
                   >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Center" />
+                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="user policy state icon"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding UserAutomationName}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <Grid Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -718,12 +759,16 @@
                             Glyph="{g:GlyphHex Code=E77B}"
                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                             Opacity="0.9"
+                            AutomationProperties.Name="User scope icon"
+                            AutomationProperties.LocalizedControlType="user scope"
                           />
                           <FontIcon
                             Glyph="{Binding UserGlyph}"
                             Foreground="{Binding UserBrush}"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
+                            AutomationProperties.Name="{Binding UserAutomationName}"
+                            AutomationProperties.LocalizedControlType="user policy state"
                           />
                           <!-- Pending asterisk overlay -->
                           <TextBlock
@@ -747,6 +792,21 @@
                     Width="SizeToCells"
                     CanUserSort="False"
                   >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Center" />
+                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="computer policy state icon"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding ComputerAutomationName}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <Grid Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -754,12 +814,16 @@
                             Glyph="{g:GlyphHex Code=E211}"
                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                             Opacity="0.9"
+                            AutomationProperties.Name="Computer scope icon"
+                            AutomationProperties.LocalizedControlType="computer scope"
                           />
                           <FontIcon
                             Glyph="{Binding ComputerGlyph}"
                             Foreground="{Binding ComputerBrush}"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
+                            AutomationProperties.Name="{Binding ComputerAutomationName}"
+                            AutomationProperties.LocalizedControlType="computer policy state"
                           />
                           <!-- Pending asterisk overlay -->
                           <TextBlock
