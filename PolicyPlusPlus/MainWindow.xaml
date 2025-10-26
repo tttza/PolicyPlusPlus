@@ -586,6 +586,7 @@
             <Button
               x:Name="ClearCategoryFilterButton"
               AutomationProperties.AutomationId="ClearCategoryFilterButton"
+              AutomationProperties.Name="Clear category filter"
               Margin="0,0,0,4"
               Click="ClearCategoryFilter_Click"
               HorizontalAlignment="Stretch"
@@ -1020,6 +1021,7 @@
                     Visibility="Collapsed"
                     Click="ClearCategoryFilter_Click"
                     HorizontalAlignment="Center"
+                    AutomationProperties.Name="Clear category filter"
                   >
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <!-- GroupList glyph -->
