@@ -385,6 +385,7 @@
               x:Name="BtnBack"
               Click="BtnBack_Click"
               IsEnabled="False"
+              AutomationProperties.Name="Back"
               ToolTipService.ToolTip="Back (Alt+Left / Mouse Back)"
               Style="{StaticResource NavIconButtonStyle}"
             >
@@ -394,6 +395,7 @@
               x:Name="BtnForward"
               Click="BtnForward_Click"
               IsEnabled="False"
+              AutomationProperties.Name="Forward"
               ToolTipService.ToolTip="Forward (Alt+Right / Mouse Forward)"
               Style="{StaticResource NavIconButtonStyle}"
             >
