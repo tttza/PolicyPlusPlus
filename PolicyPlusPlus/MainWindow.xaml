@@ -74,6 +74,7 @@
         <converters:PolicyIconAccessibleNameConverter x:Key="PolicyIconAccessibleNameConverter" />
         <models:ColumnWidths x:Key="ColumnWidthsModel" />
         <SolidColorBrush x:Key="AltRowBrush" Color="#0F000000" />
+        <converters:NullOrWhitespaceToFallbackConverter x:Key="NullOrWhitespaceToFallbackConverter" />
         <Style x:Key="NavIconButtonStyle" TargetType="Button">
           <Setter Property="Width" Value="28" />
           <Setter Property="Height" Value="28" />
@@ -840,59 +841,215 @@
                       </DataTemplate>
                     </datagrid:DataGridTemplateColumn.CellTemplate>
                   </datagrid:DataGridTemplateColumn>
-                  <datagrid:DataGridTextColumn
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColName"
                     Header="Name"
-                    Binding="{Binding DisplayName}"
                     Width="3*"
                     MinWidth="260"
-                  />
-                  <datagrid:DataGridTextColumn
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding DisplayName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding DisplayName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          AutomationProperties.Name="{Binding DisplayName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColSecondName"
                     Header="2nd Language Name"
-                    Binding="{Binding SecondName}"
                     Width="2*"
                     MinWidth="200"
                     Visibility="Collapsed"
-                  />
-                  <datagrid:DataGridTextColumn
-                    x:Name="ColId"
-                    Header="ID"
-                    Binding="{Binding ShortId}"
-                    Width="2*"
-                  />
-                  <datagrid:DataGridTextColumn
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding SecondName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding SecondName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          AutomationProperties.Name="{Binding SecondName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn x:Name="ColId" Header="ID" Width="2*">
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding ShortId, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding ShortId, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          AutomationProperties.Name="{Binding ShortId, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColCategory"
                     Header="Parent Category"
-                    Binding="{Binding CategoryName}"
                     Width="2*"
-                  />
-                  <datagrid:DataGridTextColumn
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding CategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding CategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          AutomationProperties.Name="{Binding CategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColTopCategory"
                     Header="Top Category"
-                    Binding="{Binding TopCategoryName}"
                     Width="2*"
                     Visibility="Collapsed"
-                  />
-                  <datagrid:DataGridTextColumn
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding TopCategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding TopCategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          AutomationProperties.Name="{Binding TopCategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColCategoryPath"
                     Header="Category Path"
-                    Binding="{Binding CategoryFullPath}"
                     Width="3*"
                     Visibility="Collapsed"
-                  />
-                  <datagrid:DataGridTextColumn
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding CategoryFullPath, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding CategoryFullPath, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          AutomationProperties.Name="{Binding CategoryFullPath, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColApplies"
                     Header="Applies to"
-                    Binding="{Binding AppliesText}"
                     Width="*"
-                  />
-                  <datagrid:DataGridTextColumn
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding AppliesText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding AppliesText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          AutomationProperties.Name="{Binding AppliesText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColSupported"
                     Header="Supported on"
-                    Binding="{Binding SupportedText}"
                     Width="2*"
-                  />
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding SupportedText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding SupportedText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          AutomationProperties.Name="{Binding SupportedText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
                 </datagrid:DataGrid.Columns>
                 <datagrid:DataGrid.RowStyle>
                   <Style TargetType="datagrid:DataGridRow">
