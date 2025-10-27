@@ -861,8 +861,9 @@
                     </datagrid:DataGridTemplateColumn.CellStyle>
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
+                        <!-- Display text no longer shows fallback -->
                         <TextBlock
-                          Text="{Binding DisplayName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          Text="{Binding DisplayName}"
                           AutomationProperties.Name="{Binding DisplayName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -890,7 +891,7 @@
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <TextBlock
-                          Text="{Binding SecondName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          Text="{Binding SecondName}"
                           AutomationProperties.Name="{Binding SecondName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -912,7 +913,7 @@
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <TextBlock
-                          Text="{Binding ShortId, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          Text="{Binding ShortId}"
                           AutomationProperties.Name="{Binding ShortId, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -938,7 +939,7 @@
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <TextBlock
-                          Text="{Binding CategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          Text="{Binding CategoryName}"
                           AutomationProperties.Name="{Binding CategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -965,7 +966,7 @@
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <TextBlock
-                          Text="{Binding TopCategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          Text="{Binding TopCategoryName}"
                           AutomationProperties.Name="{Binding TopCategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -992,7 +993,7 @@
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <TextBlock
-                          Text="{Binding CategoryFullPath, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          Text="{Binding CategoryFullPath}"
                           AutomationProperties.Name="{Binding CategoryFullPath, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -1018,7 +1019,7 @@
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <TextBlock
-                          Text="{Binding AppliesText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          Text="{Binding AppliesText}"
                           AutomationProperties.Name="{Binding AppliesText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -1044,7 +1045,7 @@
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <TextBlock
-                          Text="{Binding SupportedText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                          Text="{Binding SupportedText}"
                           AutomationProperties.Name="{Binding SupportedText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
