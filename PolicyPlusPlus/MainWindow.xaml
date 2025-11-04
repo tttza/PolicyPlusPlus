@@ -1238,36 +1238,55 @@
                     FontWeight="SemiBold"
                     IsTextSelectionEnabled="True"
                     TextWrapping="Wrap"
+                    IsTabStop="False"
+                    TabIndex="0"
+                    AutomationProperties.Name="Policy title"
                   />
                   <RichTextBlock
                     x:Name="DetailId"
                     Opacity="0.8"
                     IsTextSelectionEnabled="True"
                     TextWrapping="Wrap"
+                    IsTabStop="False"
+                    TabIndex="1"
+                    AutomationProperties.Name="Policy identifier"
                   />
                   <RichTextBlock
                     x:Name="DetailCategory"
                     Opacity="0.8"
                     IsTextSelectionEnabled="True"
                     TextWrapping="Wrap"
+                    IsTabStop="False"
+                    TabIndex="2"
+                    AutomationProperties.Name="Category path"
                   />
                   <RichTextBlock
                     x:Name="DetailApplies"
                     Opacity="0.8"
                     IsTextSelectionEnabled="True"
                     TextWrapping="Wrap"
+                    IsTabStop="False"
+                    TabIndex="3"
+                    AutomationProperties.Name="Applies to scope"
                   />
                   <RichTextBlock
                     x:Name="DetailSupported"
                     Opacity="0.8"
                     IsTextSelectionEnabled="True"
                     TextWrapping="Wrap"
+                    IsTabStop="False"
+                    TabIndex="4"
+                    AutomationProperties.Name="Supported on"
                   />
                 </StackPanel>
                 <ScrollViewer
                   Grid.Row="1"
                   x:Name="DetailExplainScroll"
                   VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled"
+                  IsTabStop="False"
+                  TabIndex="5"
+                  AutomationProperties.Name="Policy explanation"
                 >
                   <RichTextBlock
                     x:Name="DetailExplain"
@@ -1281,6 +1300,7 @@
                   VerticalAlignment="Center"
                   Spacing="8"
                   Opacity="0.8"
+                  Grid.RowSpan="2"
                 >
                   <FontIcon Glyph="{g:GlyphHex Code=E946}" FontSize="32" />
                   <TextBlock Text="Select a policy to view details here" TextAlignment="Center" />

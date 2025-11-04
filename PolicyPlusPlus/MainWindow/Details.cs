@@ -11,16 +11,21 @@ namespace PolicyPlusPlus
     {
         // Only details content update helpers live here (visibility handled in Preferences.cs existing implementation).
 
-        private static void SetRtbText(RichTextBlock? rtb, string? text)
+        private void SetRtbText(RichTextBlock? rtb, string? text)
         {
             try
             {
                 if (rtb == null)
                     return;
                 rtb.Blocks.Clear();
+                var value = text ?? string.Empty;
                 var p = new Paragraph();
-                p.Inlines.Add(new Run { Text = text ?? string.Empty });
+                p.Inlines.Add(new Run { Text = value });
                 rtb.Blocks.Add(p);
+                bool hasContent = !string.IsNullOrWhiteSpace(value);
+                rtb.IsTabStop = hasContent;
+                if (rtb == DetailExplain && DetailExplainScroll != null)
+                    DetailExplainScroll.IsTabStop = hasContent;
             }
             catch { }
         }

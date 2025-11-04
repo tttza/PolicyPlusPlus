@@ -584,66 +584,100 @@ namespace PolicyPlusPlus
                     );
                 }
 
-                // When Tab is pressed in the search box, move focus to the policy list
-                // and select its first item so users can immediately navigate with arrow keys.
+                // Allow Tab to move through controls for accessibility. Provide Ctrl+Enter shortcut
+                // as the explicit way to jump from the search box to the policy list.
                 if (e.Key is VirtualKey.Tab)
                 {
-                    // If Shift is held, let default reverse-tab behavior occur.
-                    bool shiftDown = false;
-                    try
+                    // Preserve Ctrl+Tab as an explicit shortcut for users who relied on the old behavior.
+                    if (
+                        !IsModifierPressed(VirtualKey.Shift)
+                        && IsModifierPressed(
+                            VirtualKey.Control,
+                            VirtualKey.LeftControl,
+                            VirtualKey.RightControl
+                        )
+                    )
                     {
-                        var state = InputKeyboardSource.GetKeyStateForCurrentThread(
-                            VirtualKey.Shift
-                        );
-                        shiftDown =
-                            (state & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
+                        if (FocusPolicyListFromSearch("Ctrl+Tab"))
+                            e.Handled = true;
                     }
-                    catch
-                    {
-                        // Best-effort; if API unavailable, treat as no-shift.
-                        shiftDown = false;
-                    }
-                    if (!shiftDown)
-                    {
-                        try
-                        {
-                            if (SearchBox != null)
-                                SearchBox.IsSuggestionListOpen = false;
-                        }
-                        catch { }
+                    return;
+                }
 
-                        if (PolicyList != null)
-                        {
-                            object? first = null;
-                            if (PolicyList.ItemsSource is System.Collections.IEnumerable seq)
-                            {
-                                foreach (var it in seq)
-                                {
-                                    first = it;
-                                    break;
-                                }
-                            }
-                            if (first != null)
-                            {
-                                PolicyList.SelectedItem = first;
-                            }
-                            // Move focus to the list regardless of whether it's empty.
-                            PolicyList.Focus(FocusState.Keyboard);
-                        }
-
+                if (
+                    e.Key is VirtualKey.Enter
+                    && IsModifierPressed(
+                        VirtualKey.Control,
+                        VirtualKey.LeftControl,
+                        VirtualKey.RightControl
+                    )
+                )
+                {
+                    if (FocusPolicyListFromSearch("Ctrl+Enter"))
                         e.Handled = true;
-                        Log.Debug(
-                            "MainSearch",
-                            $"Tab moves focus to list cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
-                        );
-                        return;
-                    }
+                    return;
                 }
             }
             catch (Exception ex)
             {
                 Log.Warn("MainSearch", "SearchBox_KeyDown failed", ex);
             }
+        }
+
+        private bool FocusPolicyListFromSearch(string source)
+        {
+            try
+            {
+                try
+                {
+                    if (SearchBox != null)
+                        SearchBox.IsSuggestionListOpen = false;
+                }
+                catch { }
+
+                if (PolicyList == null)
+                    return false;
+
+                object? first = null;
+                if (PolicyList.ItemsSource is System.Collections.IEnumerable seq)
+                {
+                    foreach (var item in seq)
+                    {
+                        first = item;
+                        break;
+                    }
+                }
+
+                if (first != null)
+                    PolicyList.SelectedItem = first;
+
+                PolicyList.Focus(FocusState.Keyboard);
+                Log.Debug(
+                    "MainSearch",
+                    $"FocusPolicyList via {source} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                );
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("MainSearch", $"FocusPolicyList via {source} failed", ex);
+                return false;
+            }
+        }
+
+        private static bool IsModifierPressed(params VirtualKey[] keys)
+        {
+            foreach (var key in keys)
+            {
+                try
+                {
+                    var state = InputKeyboardSource.GetKeyStateForCurrentThread(key);
+                    if ((state & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down)
+                        return true;
+                }
+                catch { }
+            }
+            return false;
         }
 
         private void SearchBox_KeyUp(object sender, KeyRoutedEventArgs e)
