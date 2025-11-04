@@ -564,6 +564,11 @@ namespace PolicyPlusPlus
                 }
                 catch { }
             }
+            else if (e.Key == VirtualKey.Escape)
+            {
+                if (FocusSearchBoxForRefinement("ListEscape"))
+                    e.Handled = true;
+            }
         }
 
         private void PolicyList_SelectionChanged(object sender, SelectionChangedEventArgs e)

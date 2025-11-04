@@ -57,6 +57,8 @@ namespace PolicyPlusPlus
             StringComparer.OrdinalIgnoreCase
         );
         private bool _useAndModeFlag = false; // AND mode flag
+        private bool _focusListAfterSearch;
+        private bool _restoreSearchFocusIfNoResults;
 
         private SearchOptionsViewModel? SearchOptionsVM =>
             (ScaleHost?.Resources?["SearchOptionsVM"] as SearchOptionsViewModel)
@@ -289,6 +291,8 @@ namespace PolicyPlusPlus
                 _navTyping = false;
                 if (SearchBox != null)
                     SearchBox.Text = string.Empty;
+                _focusListAfterSearch = false;
+                _restoreSearchFocusIfNoResults = false;
                 Log.Debug(
                     "MainSearch",
                     $"ClearButton tapped -> empty query cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
@@ -526,6 +530,8 @@ namespace PolicyPlusPlus
                         UpdateNavButtons();
                     }
                     catch { }
+                    _focusListAfterSearch = false;
+                    _restoreSearchFocusIfNoResults = false;
                     Log.Debug(
                         "MainSearch",
                         $"TextChanged empty -> filter only cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
@@ -536,6 +542,7 @@ namespace PolicyPlusPlus
                 if (reason is AutoSuggestionBoxTextChangeReason.SuggestionChosen)
                 {
                     _navTyping = false;
+                    PreparePostSearchFocus();
                     Log.Debug(
                         "MainSearch",
                         $"TextChanged commit suggestion q='{q}' cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
@@ -552,6 +559,8 @@ namespace PolicyPlusPlus
                 else if (reason is AutoSuggestionBoxTextChangeReason.UserInput)
                 {
                     _navTyping = true;
+                    _focusListAfterSearch = false;
+                    _restoreSearchFocusIfNoResults = false;
                     Log.Trace(
                         "MainSearch",
                         $"TextChanged user input qLen={q.Length} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
@@ -628,6 +637,8 @@ namespace PolicyPlusPlus
         {
             try
             {
+                _focusListAfterSearch = false;
+                _restoreSearchFocusIfNoResults = false;
                 try
                 {
                     if (SearchBox != null)
@@ -649,7 +660,10 @@ namespace PolicyPlusPlus
                 }
 
                 if (first != null)
-                    PolicyList.SelectedItem = first;
+                {
+                    if (PolicyList.SelectedItem == null)
+                        PolicyList.SelectedItem = first;
+                }
 
                 PolicyList.Focus(FocusState.Keyboard);
                 Log.Debug(
@@ -663,6 +677,98 @@ namespace PolicyPlusPlus
                 Log.Warn("MainSearch", $"FocusPolicyList via {source} failed", ex);
                 return false;
             }
+        }
+
+        private void PreparePostSearchFocus()
+        {
+            _focusListAfterSearch = true;
+            _restoreSearchFocusIfNoResults = true;
+        }
+
+        private bool FocusSearchBoxForRefinement(string source)
+        {
+            try
+            {
+                var box = GetSearchBox();
+                if (box == null)
+                    return false;
+                _suppressInitialSearchBoxFocus = false;
+                bool focused = box.Focus(FocusState.Keyboard);
+                if (focused)
+                {
+                    Log.Debug(
+                        "MainSearch",
+                        $"FocusSearchBox via {source} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                    );
+                }
+                return focused;
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("MainSearch", $"FocusSearchBox via {source} failed", ex);
+                return false;
+            }
+        }
+
+        private void HandlePostSearchFocusAfterBind()
+        {
+            if (!_focusListAfterSearch && !_restoreSearchFocusIfNoResults)
+                return;
+
+            bool hasResults = _visiblePolicies != null && _visiblePolicies.Count > 0;
+
+            if (_focusListAfterSearch)
+            {
+                bool expectFallback = _restoreSearchFocusIfNoResults;
+                _focusListAfterSearch = false;
+                if (hasResults)
+                {
+                    _restoreSearchFocusIfNoResults = false;
+                    _ = DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        try
+                        {
+                            await System.Threading.Tasks.Task.Delay(16);
+                        }
+                        catch { }
+                        if (!FocusPolicyListFromSearch("AutoSearchCommit") && expectFallback)
+                            FocusSearchBoxForRefinement("AutoFallback");
+                    });
+                }
+                else if (expectFallback)
+                {
+                    _restoreSearchFocusIfNoResults = false;
+                    ScheduleSearchFocus("AutoNoResults");
+                }
+                else
+                {
+                    _restoreSearchFocusIfNoResults = false;
+                }
+                return;
+            }
+
+            if (_restoreSearchFocusIfNoResults && !hasResults)
+            {
+                _restoreSearchFocusIfNoResults = false;
+                ScheduleSearchFocus("AutoNoResults");
+            }
+            else if (_restoreSearchFocusIfNoResults)
+            {
+                _restoreSearchFocusIfNoResults = false;
+            }
+        }
+
+        private void ScheduleSearchFocus(string source)
+        {
+            _ = DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    await System.Threading.Tasks.Task.Delay(16);
+                }
+                catch { }
+                FocusSearchBoxForRefinement(source);
+            });
         }
 
         private static bool IsModifierPressed(params VirtualKey[] keys)
@@ -741,6 +847,7 @@ namespace PolicyPlusPlus
                         "MainSearch",
                         $"QuerySubmitted commit qLen={commitText.Length} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
                     );
+                    PreparePostSearchFocus();
                     RunAsyncSearchAndBind(commitText);
                     MaybePushCurrentState();
                     try

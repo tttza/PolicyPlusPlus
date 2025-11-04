@@ -742,6 +742,7 @@ namespace PolicyPlusPlus
                 UpdateEmptyHint(qNow);
             }
             catch { }
+            HandlePostSearchFocusAfterBind();
         }
 
         private List<PolicyPlusPolicy> MatchPolicies(
