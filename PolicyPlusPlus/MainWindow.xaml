@@ -12,6 +12,7 @@
   xmlns:models="using:PolicyPlusPlus.Models"
   xmlns:viewModels="using:PolicyPlusPlus.ViewModels"
   xmlns:g="using:PolicyPlusPlus.Markup"
+  xmlns:utils="using:PolicyPlusPlus.Utils"
   mc:Ignorable="d"
   Title="Policy++"
 >
@@ -70,8 +71,10 @@
         <converters:CategoryVisibilityConverter x:Key="CategoryVisibilityConverter" />
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <converters:NotBoolToVisibilityConverter x:Key="NotBoolToVisibilityConverter" />
+        <converters:PolicyIconAccessibleNameConverter x:Key="PolicyIconAccessibleNameConverter" />
         <models:ColumnWidths x:Key="ColumnWidthsModel" />
         <SolidColorBrush x:Key="AltRowBrush" Color="#0F000000" />
+        <converters:NullOrWhitespaceToFallbackConverter x:Key="NullOrWhitespaceToFallbackConverter" />
         <Style x:Key="NavIconButtonStyle" TargetType="Button">
           <Setter Property="Width" Value="28" />
           <Setter Property="Height" Value="28" />
@@ -383,6 +386,7 @@
               x:Name="BtnBack"
               Click="BtnBack_Click"
               IsEnabled="False"
+              AutomationProperties.Name="Back"
               ToolTipService.ToolTip="Back (Alt+Left / Mouse Back)"
               Style="{StaticResource NavIconButtonStyle}"
             >
@@ -392,16 +396,24 @@
               x:Name="BtnForward"
               Click="BtnForward_Click"
               IsEnabled="False"
+              AutomationProperties.Name="Forward"
               ToolTipService.ToolTip="Forward (Alt+Right / Mouse Forward)"
               Style="{StaticResource NavIconButtonStyle}"
             >
               <FontIcon Glyph="{g:GlyphHex Code=E72A}" FontSize="12" />
             </Button>
-            <TextBlock Text="Applies to:" VerticalAlignment="Center" Margin="6,0,0,0" />
+            <TextBlock
+              x:Name="AppliesToLabel"
+              Text="Applies to:"
+              VerticalAlignment="Center"
+              Margin="6,0,0,0"
+            />
             <ComboBox
               x:Name="AppliesToSelector"
               Width="140"
               SelectionChanged="AppliesToSelector_SelectionChanged"
+              AutomationProperties.LabeledBy="{Binding ElementName=AppliesToLabel}"
+              AutomationProperties.AutomationId="AppliesToSelector"
             >
               <ComboBoxItem Content="Both" IsSelected="True" />
               <ComboBoxItem Content="Computer" />
@@ -459,6 +471,7 @@
                 Background="Transparent"
                 Visibility="Collapsed"
                 ToolTipService.ToolTip="Clear search"
+                AutomationProperties.Name="Clear search"
                 Tapped="SearchClearBtn_Tapped"
               >
                 <FontIcon
@@ -475,11 +488,14 @@
               VerticalAlignment="Center"
               ToolTipService.ToolTip="AND search (spaces = AND)"
               IsChecked="{Binding UseAndMode, Source={StaticResource SearchOptionsVM}, Mode=TwoWay}"
+              AutomationProperties.Name="AND search toggle"
             />
             <Button
               x:Name="SearchOptionsBtn"
               Style="{StaticResource NavIconButtonStyle}"
               ToolTipService.ToolTip="Search options"
+              AutomationProperties.Name="Search options"
+              AutomationProperties.AutomationId="SearchOptionsButton"
             >
               <FontIcon Glyph="{g:GlyphHex Code=E713}" FontSize="12" />
               <Button.Flyout>
@@ -572,6 +588,7 @@
             <Button
               x:Name="ClearCategoryFilterButton"
               AutomationProperties.AutomationId="ClearCategoryFilterButton"
+              AutomationProperties.Name="Clear category filter"
               Margin="0,0,0,4"
               Click="ClearCategoryFilter_Click"
               HorizontalAlignment="Stretch"
@@ -607,6 +624,8 @@
             ResizeBehavior="PreviousAndNext"
             Width="8"
             HorizontalAlignment="Stretch"
+            AutomationProperties.Name="Category pane resize grip"
+            AutomationProperties.LocalizedControlType="split bar"
             PointerReleased="CategorySplitter_PointerReleased"
           />
           <!-- Policy list and details -->
@@ -653,6 +672,11 @@
                         <Setter Property="Padding" Value="0" />
                         <Setter Property="HorizontalContentAlignment" Value="Center" />
                         <Setter Property="VerticalContentAlignment" Value="Center" />
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="bookmark indicator"
+                        />
+                        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
                       </Style>
                     </datagrid:DataGridTemplateColumn.CellStyle>
                     <datagrid:DataGridTemplateColumn.CellTemplate>
@@ -672,6 +696,9 @@
                             DoubleTapped="BookmarkToggle_DoubleTapped"
                             Tag="{Binding Policy}"
                             ToolTipService.ToolTip="Toggle bookmark"
+                            AutomationProperties.Name="{Binding Converter={StaticResource PolicyIconAccessibleNameConverter}, ConverterParameter=Bookmark}"
+                            AutomationProperties.HelpText="Activate to toggle bookmark"
+                            AutomationProperties.LocalizedControlType="bookmark toggle"
                           >
                             <FontIcon
                               x:Name="BookmarkGlyph"
@@ -694,12 +721,24 @@
                     Width="SizeToCells"
                     CanUserSort="False"
                   >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="category folder icon"
+                        />
+                        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
                         <FontIcon
                           Glyph="{g:GlyphHex Code=E8B7}"
                           Opacity="0.8"
                           Visibility="{Binding IsCategory, Converter={StaticResource BoolToVisibilityConverter}}"
+                          AutomationProperties.Name="{Binding Converter={StaticResource PolicyIconAccessibleNameConverter}, ConverterParameter=CategoryIcon}"
+                          AutomationProperties.LocalizedControlType="category folder icon"
+                          AutomationProperties.AccessibilityView="Content"
                         />
                       </DataTemplate>
                     </datagrid:DataGridTemplateColumn.CellTemplate>
@@ -711,9 +750,22 @@
                     Width="SizeToCells"
                     CanUserSort="False"
                   >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="user policy state icon"
+                        />
+                        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
-                        <Grid Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid
+                          Visibility="{Binding UserConfigured, Converter={StaticResource BoolToVisibilityConverter}}"
+                          AutomationProperties.Name="{Binding Converter={StaticResource PolicyIconAccessibleNameConverter}, ConverterParameter=UserState}"
+                          AutomationProperties.LocalizedControlType="user policy state icon"
+                        >
                           <FontIcon
                             Glyph="{g:GlyphHex Code=E77B}"
                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
@@ -747,9 +799,22 @@
                     Width="SizeToCells"
                     CanUserSort="False"
                   >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="computer policy state icon"
+                        />
+                        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
                     <datagrid:DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
-                        <Grid Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid
+                          Visibility="{Binding ComputerConfigured, Converter={StaticResource BoolToVisibilityConverter}}"
+                          AutomationProperties.Name="{Binding Converter={StaticResource PolicyIconAccessibleNameConverter}, ConverterParameter=ComputerState}"
+                          AutomationProperties.LocalizedControlType="computer policy state icon"
+                        >
                           <FontIcon
                             Glyph="{g:GlyphHex Code=E211}"
                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
@@ -776,59 +841,216 @@
                       </DataTemplate>
                     </datagrid:DataGridTemplateColumn.CellTemplate>
                   </datagrid:DataGridTemplateColumn>
-                  <datagrid:DataGridTextColumn
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColName"
                     Header="Name"
-                    Binding="{Binding DisplayName}"
                     Width="3*"
                     MinWidth="260"
-                  />
-                  <datagrid:DataGridTextColumn
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding DisplayName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <!-- Display text no longer shows fallback -->
+                        <TextBlock
+                          Text="{Binding DisplayName}"
+                          AutomationProperties.Name="{Binding DisplayName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColSecondName"
                     Header="2nd Language Name"
-                    Binding="{Binding SecondName}"
                     Width="2*"
                     MinWidth="200"
                     Visibility="Collapsed"
-                  />
-                  <datagrid:DataGridTextColumn
-                    x:Name="ColId"
-                    Header="ID"
-                    Binding="{Binding ShortId}"
-                    Width="2*"
-                  />
-                  <datagrid:DataGridTextColumn
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding SecondName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding SecondName}"
+                          AutomationProperties.Name="{Binding SecondName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn x:Name="ColId" Header="ID" Width="2*">
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding ShortId, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding ShortId}"
+                          AutomationProperties.Name="{Binding ShortId, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColCategory"
                     Header="Parent Category"
-                    Binding="{Binding CategoryName}"
                     Width="2*"
-                  />
-                  <datagrid:DataGridTextColumn
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding CategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding CategoryName}"
+                          AutomationProperties.Name="{Binding CategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColTopCategory"
                     Header="Top Category"
-                    Binding="{Binding TopCategoryName}"
                     Width="2*"
                     Visibility="Collapsed"
-                  />
-                  <datagrid:DataGridTextColumn
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding TopCategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding TopCategoryName}"
+                          AutomationProperties.Name="{Binding TopCategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColCategoryPath"
                     Header="Category Path"
-                    Binding="{Binding CategoryFullPath}"
                     Width="3*"
                     Visibility="Collapsed"
-                  />
-                  <datagrid:DataGridTextColumn
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding CategoryFullPath, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding CategoryFullPath}"
+                          AutomationProperties.Name="{Binding CategoryFullPath, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColApplies"
                     Header="Applies to"
-                    Binding="{Binding AppliesText}"
                     Width="*"
-                  />
-                  <datagrid:DataGridTextColumn
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding AppliesText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding AppliesText}"
+                          AutomationProperties.Name="{Binding AppliesText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
+                  <datagrid:DataGridTemplateColumn
                     x:Name="ColSupported"
                     Header="Supported on"
-                    Binding="{Binding SupportedText}"
                     Width="2*"
-                  />
+                  >
+                    <datagrid:DataGridTemplateColumn.CellStyle>
+                      <Style TargetType="datagrid:DataGridCell">
+                        <Setter
+                          Property="AutomationProperties.LocalizedControlType"
+                          Value="text cell"
+                        />
+                        <Setter
+                          Property="AutomationProperties.Name"
+                          Value="{Binding SupportedText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </Style>
+                    </datagrid:DataGridTemplateColumn.CellStyle>
+                    <datagrid:DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock
+                          Text="{Binding SupportedText}"
+                          AutomationProperties.Name="{Binding SupportedText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
+                        />
+                      </DataTemplate>
+                    </datagrid:DataGridTemplateColumn.CellTemplate>
+                  </datagrid:DataGridTemplateColumn>
                 </datagrid:DataGrid.Columns>
                 <datagrid:DataGrid.RowStyle>
                   <Style TargetType="datagrid:DataGridRow">
@@ -928,6 +1150,7 @@
                     Visibility="Collapsed"
                     Click="HintDisableConfiguredOnly_Click"
                     HorizontalAlignment="Center"
+                    AutomationProperties.Name="Disable 'Configured only' filter"
                   >
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <!-- MultiSelect glyph -->
@@ -943,6 +1166,7 @@
                     Visibility="Collapsed"
                     Click="HintDisableBookmarksOnly_Click"
                     HorizontalAlignment="Center"
+                    AutomationProperties.Name="Disable 'Bookmarks only' filter"
                   >
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <!-- FavoriteStar glyph -->
@@ -958,6 +1182,7 @@
                     Visibility="Collapsed"
                     Click="ClearCategoryFilter_Click"
                     HorizontalAlignment="Center"
+                    AutomationProperties.Name="Clear category filter"
                   >
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <!-- GroupList glyph -->
@@ -970,6 +1195,7 @@
                     Visibility="Collapsed"
                     Click="HintClearAllFilters_Click"
                     HorizontalAlignment="Center"
+                    AutomationProperties.Name="Disable all filters"
                   >
                     <StackPanel Orientation="Horizontal" Spacing="6">
                       <!-- Use 'Clear' like glyph (E894 = Clear) -->
@@ -987,6 +1213,8 @@
               ResizeBehavior="PreviousAndNext"
               Height="8"
               HorizontalAlignment="Stretch"
+              AutomationProperties.Name="Details pane resize grip"
+              AutomationProperties.LocalizedControlType="split bar"
               PointerReleased="DetailsSplitter_PointerReleased"
             />
             <Border
@@ -1010,36 +1238,55 @@
                     FontWeight="SemiBold"
                     IsTextSelectionEnabled="True"
                     TextWrapping="Wrap"
+                    IsTabStop="False"
+                    TabIndex="0"
+                    AutomationProperties.Name="Policy title"
                   />
                   <RichTextBlock
                     x:Name="DetailId"
                     Opacity="0.8"
                     IsTextSelectionEnabled="True"
                     TextWrapping="Wrap"
+                    IsTabStop="False"
+                    TabIndex="1"
+                    AutomationProperties.Name="Policy identifier"
                   />
                   <RichTextBlock
                     x:Name="DetailCategory"
                     Opacity="0.8"
                     IsTextSelectionEnabled="True"
                     TextWrapping="Wrap"
+                    IsTabStop="False"
+                    TabIndex="2"
+                    AutomationProperties.Name="Category path"
                   />
                   <RichTextBlock
                     x:Name="DetailApplies"
                     Opacity="0.8"
                     IsTextSelectionEnabled="True"
                     TextWrapping="Wrap"
+                    IsTabStop="False"
+                    TabIndex="3"
+                    AutomationProperties.Name="Applies to scope"
                   />
                   <RichTextBlock
                     x:Name="DetailSupported"
                     Opacity="0.8"
                     IsTextSelectionEnabled="True"
                     TextWrapping="Wrap"
+                    IsTabStop="False"
+                    TabIndex="4"
+                    AutomationProperties.Name="Supported on"
                   />
                 </StackPanel>
                 <ScrollViewer
                   Grid.Row="1"
                   x:Name="DetailExplainScroll"
                   VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled"
+                  IsTabStop="False"
+                  TabIndex="5"
+                  AutomationProperties.Name="Policy explanation"
                 >
                   <RichTextBlock
                     x:Name="DetailExplain"
@@ -1053,6 +1300,7 @@
                   VerticalAlignment="Center"
                   Spacing="8"
                   Opacity="0.8"
+                  Grid.RowSpan="2"
                 >
                   <FontIcon Glyph="{g:GlyphHex Code=E946}" FontSize="32" />
                   <TextBlock Text="Select a policy to view details here" TextAlignment="Center" />
@@ -1113,6 +1361,7 @@
         Visibility="Collapsed"
         Grid.RowSpan="3"
         Canvas.ZIndex="10"
+        AutomationProperties.Name="Busy overlay"
       >
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
           <controls:ProgressRing IsActive="True" Width="48" Height="48" />

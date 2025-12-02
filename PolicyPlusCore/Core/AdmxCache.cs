@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -20,6 +21,21 @@ public sealed class AdmxCache : IAdmxCache
     private readonly AdmxCacheStore _store;
     private string? _sourceRoot;
     private volatile bool _fileUsageSchemaEnsured;
+
+    private static void TraceFileUsageWarning(string message, Exception ex)
+    {
+        var formatted = $"[AdmxCache] WARN {message}: {ex.GetType().Name}: {ex.Message}";
+        try
+        {
+            Debug.WriteLine(formatted);
+        }
+        catch { }
+        try
+        {
+            Console.Error.WriteLine(formatted);
+        }
+        catch { }
+    }
 
     public AdmxCache()
     {
@@ -161,10 +177,13 @@ public sealed class AdmxCache : IAdmxCache
         bool didGlobalRebuild = false;
 
         int i = 0;
+        // Pre-enumerate ADMX files once; reused for each culture to avoid repeated directory scans.
+        List<string> preEnumeratedAdmxFiles = EnumerateAdmxFilesFiltered(root).ToList();
         foreach (var cul in cultureList.Select(NormalizeCultureName))
         {
             using var _traceCulture = AdmxCacheTrace.Scope("ScanAndUpdateAsync.Culture:" + cul);
             bool allowGlobalRebuild = needGlobalRebuild && (i == 0);
+            string? currentSig = null; // Will hold computed signature (reused after apply instead of recomputing).
 
             // No fallback persistence: if culture dir missing or empty, purge previous rows and skip.
             try
@@ -192,7 +211,7 @@ public sealed class AdmxCache : IAdmxCache
                 {
                     string sigKey = "sig_" + cul;
                     var prior = await GetMetaAsync(sigKey, ct).ConfigureAwait(false);
-                    var currentSig = await ComputeSourceSignatureAsync(root, cul, ct)
+                    currentSig = await ComputeSourceSignatureAsync(root, cul, ct)
                         .ConfigureAwait(false);
                     if (
                         !string.IsNullOrEmpty(prior)
@@ -213,13 +232,29 @@ public sealed class AdmxCache : IAdmxCache
                 SqliteConnection? usageConn = null;
                 try
                 {
-                    foreach (var admx in EnumerateAdmxFilesFiltered(root))
+                    foreach (var admx in preEnumeratedAdmxFiles)
                     {
                         try
                         {
                             _ = bundle.LoadFile(admx, cul);
                             usageConn ??= await OpenFileUsageConnectionAsync(ct)
                                 .ConfigureAwait(false);
+                            // Batch FileUsage updates: begin transaction on first use.
+                            System.Data.Common.DbTransaction? usageTx = null;
+                            if (
+                                usageConn is SqliteConnection uc
+                                && uc.State == System.Data.ConnectionState.Open
+                            )
+                            {
+                                try
+                                {
+                                    usageTx ??= uc.BeginTransaction();
+                                }
+                                catch
+                                {
+                                    usageTx = null;
+                                }
+                            }
                             await UpsertFileUsageAsync(usageConn, admx, 0, ct)
                                 .ConfigureAwait(false);
                             try
@@ -232,6 +267,14 @@ public sealed class AdmxCache : IAdmxCache
                                 }
                             }
                             catch { }
+                            try
+                            {
+                                usageTx?.Commit();
+                            }
+                            catch (Exception ex)
+                            {
+                                TraceFileUsageWarning("FileUsage transaction commit failed", ex);
+                            }
                         }
                         catch { }
                     }
@@ -254,7 +297,7 @@ public sealed class AdmxCache : IAdmxCache
                     SqliteConnection? usageConn = null;
                     try
                     {
-                        foreach (var admx in EnumerateAdmxFilesFiltered(root))
+                        foreach (var admx in preEnumeratedAdmxFiles)
                         {
                             try
                             {
@@ -293,12 +336,13 @@ public sealed class AdmxCache : IAdmxCache
                     "DiffAndApply:" + cul + (allowGlobalRebuild ? "(global)" : "")
                 );
                 await DiffAndApplyAsync(bundle!, cul, allowGlobalRebuild, ct).ConfigureAwait(false);
-                // Store new source signature.
+                // Store new source signature (reuse computed value when available).
                 try
                 {
-                    var sig = await ComputeSourceSignatureAsync(root, cul, ct)
-                        .ConfigureAwait(false);
-                    await SetMetaAsync("sig_" + cul, sig, ct).ConfigureAwait(false);
+                    if (currentSig is null)
+                        currentSig = await ComputeSourceSignatureAsync(root, cul, ct)
+                            .ConfigureAwait(false);
+                    await SetMetaAsync("sig_" + cul, currentSig, ct).ConfigureAwait(false);
                 }
                 catch { }
             }

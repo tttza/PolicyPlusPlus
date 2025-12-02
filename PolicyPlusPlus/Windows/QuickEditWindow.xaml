@@ -26,14 +26,26 @@
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
       <!-- Header -->
-      <StackPanel Orientation="Horizontal" Spacing="16">
-        <TextBlock Text="Quick Edit" FontSize="20" FontWeight="SemiBold" />
-        <TextBlock x:Name="_headerCount" Opacity="0.7" VerticalAlignment="Center" />
+      <StackPanel x:Name="HeaderPanel" Orientation="Horizontal" Spacing="16">
+        <TextBlock
+          x:Name="TitleText"
+          Text="Quick Edit"
+          FontSize="20"
+          FontWeight="SemiBold"
+          AutomationProperties.Name="Quick Edit window title"
+        />
+        <TextBlock
+          x:Name="_headerCount"
+          Opacity="0.7"
+          VerticalAlignment="Center"
+          AutomationProperties.Name="Selected policies count"
+        />
         <TextBlock
           x:Name="_unsavedText"
           Opacity="0.8"
           VerticalAlignment="Center"
           Margin="12,0,0,0"
+          AutomationProperties.Name="Unsaved changes indicator"
         />
       </StackPanel>
       <!-- Grid -->
@@ -46,13 +58,19 @@
           <ColumnDefinition Width="Auto" />
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <TextBlock x:Name="_statusText" VerticalAlignment="Center" Opacity="0.75" />
+        <TextBlock
+          x:Name="_statusText"
+          VerticalAlignment="Center"
+          Opacity="0.75"
+          AutomationProperties.Name="Status"
+        />
         <Button
           x:Name="_saveButton"
           Grid.Column="1"
           Content="Save"
           Margin="0,0,8,0"
           IsEnabled="False"
+          AutomationProperties.Name="Save changes"
         />
         <Button
           x:Name="_saveCloseButton"
@@ -60,14 +78,38 @@
           Content="Save &amp; Close"
           Margin="0,0,8,0"
           IsEnabled="False"
+          AutomationProperties.Name="Save changes and close"
         />
-        <Button x:Name="_closeButton" Grid.Column="3" Content="Close" />
+        <Button
+          x:Name="_closeButton"
+          Grid.Column="3"
+          Content="Close"
+          AutomationProperties.Name="Close window"
+        />
       </Grid>
       <!-- Saving overlay -->
-      <Grid x:Name="_savingOverlay" Background="#80000000" Visibility="Collapsed" Grid.RowSpan="3">
+      <Grid
+        x:Name="_savingOverlay"
+        Background="#80000000"
+        Visibility="Collapsed"
+        Grid.RowSpan="3"
+        AutomationProperties.Name="Saving overlay"
+      >
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-          <ProgressRing IsActive="True" Width="48" Height="48" />
-          <TextBlock Text="Saving..." Foreground="White" HorizontalAlignment="Center" />
+          <ProgressRing
+            x:Name="SavingProgressRing"
+            IsActive="True"
+            Width="48"
+            Height="48"
+            AutomationProperties.Name="Saving in progress"
+          />
+          <TextBlock
+            x:Name="SavingText"
+            Text="Saving..."
+            Foreground="White"
+            HorizontalAlignment="Center"
+            AutomationProperties.Name="Saving status"
+          />
         </StackPanel>
       </Grid>
     </Grid>

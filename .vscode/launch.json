@@ -1,12 +1,27 @@
 {
     "version": "0.2.0",
     "configurations": [
+
         {
             // WinUI 3 app (Debug-Unpackaged, x64). Builds with RID so the .exe is under win-x64.
-            "name": "PolicyPlusPlus (WinUI 3, Debug-Unpackaged, x64)",
+            "name": "PolicyPlusPlus (Debug-Unpackaged, x64)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "dotnet build PolicyPlusPlus (Debug, win-x64)",
+            // Match TargetFramework in csproj (net8.0-windows10.0.26100.0)
+            "program": "${workspaceFolder}/PolicyPlusPlus/bin/x64/Debug-Unpackaged/net8.0-windows10.0.26100.0/win-x64/PolicyPlusPlus.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/PolicyPlusPlus",
+            // For WinUI apps, no console window is needed
+            "console": "internalConsole",
+            "stopAtEntry": false,
+            "justMyCode": true
+        },
+        {
+            // WinUI 3 app (Debug-Unpackaged, x64, no build). Builds with RID so the .exe is under win-x64.
+            "name": "PolicyPlusPlus (Debug-Unpackaged, x64, nobuild)",
+            "type": "coreclr",
+            "request": "launch",
             // Match TargetFramework in csproj (net8.0-windows10.0.26100.0)
             "program": "${workspaceFolder}/PolicyPlusPlus/bin/x64/Debug-Unpackaged/net8.0-windows10.0.26100.0/win-x64/PolicyPlusPlus.exe",
             "args": [],

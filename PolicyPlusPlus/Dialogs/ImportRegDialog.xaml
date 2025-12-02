@@ -11,6 +11,7 @@
   AllowDrop="True"
   DragOver="Dialog_DragOver"
   Drop="Dialog_Drop"
+  AutomationProperties.Name="Import .reg dialog"
 >
   <StackPanel Spacing="12">
     <StackPanel Spacing="2">
@@ -22,13 +23,19 @@
         Width="360"
         PlaceholderText="Select a .reg file..."
         IsReadOnly="True"
+        AutomationProperties.Name="Registry file path"
       />
-      <Button Content="Browse..." Click="Browse_Click" />
+      <Button
+        Content="Browse..."
+        Click="Browse_Click"
+        AutomationProperties.Name="Browse registry file"
+      />
     </StackPanel>
     <ToggleSwitch
       x:Name="OnlyPoliciesSwitch"
       Header="Keep only policy-related keys (recommended)"
       IsOn="True"
+      AutomationProperties.Name="Keep only policy-related keys"
     />
     <StackPanel Spacing="4">
       <TextBlock Text="Import mode" />
@@ -38,8 +45,14 @@
           Content="Merge"
           IsChecked="True"
           GroupName="ImportMode"
+          AutomationProperties.Name="Merge mode"
         />
-        <RadioButton x:Name="ReplaceModeRadio" Content="Replace" GroupName="ImportMode" />
+        <RadioButton
+          x:Name="ReplaceModeRadio"
+          Content="Replace"
+          GroupName="ImportMode"
+          AutomationProperties.Name="Replace mode"
+        />
       </StackPanel>
       <TextBlock Text="Merge: keep existing pending changes and add differences. Replace: discard all existing pending changes and policy settings before queuing imported policies." />
     </StackPanel>
@@ -51,6 +64,7 @@
       IsReadOnly="True"
       ScrollViewer.VerticalScrollBarVisibility="Auto"
       ScrollViewer.VerticalScrollMode="Enabled"
+      AutomationProperties.Name="Imported registry preview"
     />
   </StackPanel>
 </ContentDialog>

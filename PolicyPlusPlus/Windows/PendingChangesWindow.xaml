@@ -66,8 +66,18 @@
       <!-- header and filters -->
       <Grid Grid.Row="0" Margin="0,0,0,8">
         <StackPanel Orientation="Vertical" Spacing="2">
-          <TextBlock Text="Pending changes" FontSize="18" FontWeight="SemiBold" />
-          <TextBlock x:Name="SummaryText" Opacity="0.85" />
+          <TextBlock
+            x:Name="WindowTitleText"
+            Text="Pending changes"
+            FontSize="18"
+            FontWeight="SemiBold"
+            AutomationProperties.Name="Pending and history changes window title"
+          />
+          <TextBlock
+            x:Name="SummaryText"
+            Opacity="0.85"
+            AutomationProperties.Name="Summary of pending and history items"
+          />
         </StackPanel>
       </Grid>
       <controls:TabView
@@ -80,7 +90,12 @@
         SelectedIndex="0"
         SelectionChanged="MainTabs_SelectionChanged"
       >
-        <controls:TabViewItem x:Name="PendingTab" Header="Pending" IsClosable="False">
+        <controls:TabViewItem
+          x:Name="PendingTab"
+          Header="Pending"
+          IsClosable="False"
+          AutomationProperties.Name="Pending changes tab"
+        >
           <Grid Padding="4">
             <Grid.RowDefinitions>
               <RowDefinition Height="Auto" />
@@ -88,21 +103,31 @@
             </Grid.RowDefinitions>
             <!-- Pending-specific search and clear controls moved inside the Pending tab -->
             <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-              <TextBlock Text="Scope:" VerticalAlignment="Center" />
+              <TextBlock
+                Text="Scope:"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="Scope filter label"
+              />
               <ComboBox
                 x:Name="ScopeFilter"
                 Width="120"
                 SelectionChanged="ScopeFilter_SelectionChanged"
+                AutomationProperties.Name="Pending scope filter"
               >
                 <ComboBoxItem Content="Both" IsSelected="True" />
                 <ComboBoxItem Content="Computer" />
                 <ComboBoxItem Content="User" />
               </ComboBox>
-              <TextBlock Text="Type:" VerticalAlignment="Center" />
+              <TextBlock
+                Text="Type:"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="Type filter label"
+              />
               <ComboBox
                 x:Name="OperationFilter"
                 Width="140"
                 SelectionChanged="OperationFilter_SelectionChanged"
+                AutomationProperties.Name="Pending action type filter"
               >
                 <ComboBoxItem Content="All" IsSelected="True" />
                 <ComboBoxItem Content="Enable" />
@@ -115,6 +140,7 @@
                 QueryIcon="Find"
                 PlaceholderText="Search pending items"
                 TextChanged="SearchBox_TextChanged"
+                AutomationProperties.Name="Pending search box"
               />
               <!-- Clear filters button removed -->
             </StackPanel>
@@ -129,6 +155,7 @@
               ScrollViewer.HorizontalScrollBarVisibility="Auto"
               ScrollViewer.HorizontalScrollMode="Auto"
               DoubleTapped="PendingList_DoubleTapped"
+              AutomationProperties.Name="Pending changes list"
             >
               <toolkit:DataGrid.Columns>
                 <toolkit:DataGridTextColumn
@@ -177,31 +204,59 @@
             </toolkit:DataGrid>
           </Grid>
         </controls:TabViewItem>
-        <controls:TabViewItem x:Name="HistoryTab" Header="History" IsClosable="False">
+        <controls:TabViewItem
+          x:Name="HistoryTab"
+          Header="History"
+          IsClosable="False"
+          AutomationProperties.Name="History tab"
+        >
           <Grid Padding="4">
             <Grid.RowDefinitions>
               <RowDefinition Height="Auto" />
               <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
-              <TextBlock Text="Scope:" VerticalAlignment="Center" />
-              <ComboBox x:Name="HistoryScope" Width="120" SelectionChanged="HistoryFilter_Changed">
+              <TextBlock
+                Text="Scope:"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="History scope filter label"
+              />
+              <ComboBox
+                x:Name="HistoryScope"
+                Width="120"
+                SelectionChanged="HistoryFilter_Changed"
+                AutomationProperties.Name="History scope filter"
+              >
                 <ComboBoxItem Content="Both" IsSelected="True" />
                 <ComboBoxItem Content="Computer" />
                 <ComboBoxItem Content="User" />
               </ComboBox>
-              <TextBlock Text="Type:" VerticalAlignment="Center" />
-              <ComboBox x:Name="HistoryType" Width="140" SelectionChanged="HistoryFilter_Changed">
+              <TextBlock
+                Text="Type:"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="History type filter label"
+              />
+              <ComboBox
+                x:Name="HistoryType"
+                Width="140"
+                SelectionChanged="HistoryFilter_Changed"
+                AutomationProperties.Name="History action type filter"
+              >
                 <ComboBoxItem Content="All" IsSelected="True" />
                 <ComboBoxItem Content="Applied" />
                 <ComboBoxItem Content="Discarded" />
                 <ComboBoxItem Content="Reapplied" />
               </ComboBox>
-              <TextBlock Text="Time:" VerticalAlignment="Center" />
+              <TextBlock
+                Text="Time:"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="History time range filter label"
+              />
               <ComboBox
                 x:Name="HistoryTimeRange"
                 Width="140"
                 SelectionChanged="HistoryFilter_Changed"
+                AutomationProperties.Name="History time range filter"
               >
                 <ComboBoxItem Content="All" IsSelected="True" />
                 <ComboBoxItem Content="Today" />
@@ -214,6 +269,7 @@
                 QueryIcon="Find"
                 PlaceholderText="Search history"
                 TextChanged="HistorySearch_TextChanged"
+                AutomationProperties.Name="History search box"
               />
               <!-- Clear history filters button removed -->
             </StackPanel>
@@ -228,6 +284,7 @@
               ScrollViewer.HorizontalScrollBarVisibility="Auto"
               ScrollViewer.HorizontalScrollMode="Auto"
               DoubleTapped="HistoryList_DoubleTapped"
+              AutomationProperties.Name="History changes list"
             >
               <toolkit:DataGrid.Columns>
                 <toolkit:DataGridTextColumn
@@ -275,32 +332,58 @@
             Content="Save selected"
             Style="{StaticResource PrimaryButtonStyle}"
             Click="BtnApplySelected_Click"
+            AutomationProperties.Name="Save selected pending changes"
           />
           <Button
             x:Name="BtnDiscardSelected"
             Content="Discard selected"
             Click="BtnDiscardSelected_Click"
+            AutomationProperties.Name="Discard selected pending changes"
           />
         </StackPanel>
-        <Button x:Name="BtnApplyAll" Grid.Column="1" Content="Save all" Click="BtnSaveAll_Click" />
+        <Button
+          x:Name="BtnApplyAll"
+          Grid.Column="1"
+          Content="Save all"
+          Click="BtnSaveAll_Click"
+          AutomationProperties.Name="Save all pending changes"
+        />
         <Button
           x:Name="BtnDiscardAll"
           Grid.Column="2"
           Content="Discard all"
           Click="BtnDiscardAll_Click"
+          AutomationProperties.Name="Discard all pending changes"
         />
         <Button
           x:Name="BtnReapplySelected"
           Grid.Column="3"
           Content="Reapply &amp; Save selected"
           Click="BtnReapplySelected_Click"
+          AutomationProperties.Name="Reapply and save selected history items"
         />
-        <Button x:Name="BtnClose" Grid.Column="4" Content="Close" />
+        <Button
+          x:Name="BtnClose"
+          Grid.Column="4"
+          Content="Close"
+          AutomationProperties.Name="Close pending changes window"
+        />
       </Grid>
-      <Grid x:Name="SavingOverlay" Background="#80000000" Visibility="Collapsed" Canvas.ZIndex="99">
+      <Grid
+        x:Name="SavingOverlay"
+        Background="#80000000"
+        Visibility="Collapsed"
+        Canvas.ZIndex="99"
+        AutomationProperties.Name="Saving overlay"
+      >
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
-          <controls:ProgressRing IsActive="True" Width="48" Height="48" />
-          <TextBlock Text="Saving..." />
+          <controls:ProgressRing
+            IsActive="True"
+            Width="48"
+            Height="48"
+            AutomationProperties.Name="Saving in progress"
+          />
+          <TextBlock Text="Saving..." AutomationProperties.Name="Saving status text" />
         </StackPanel>
       </Grid>
     </Grid>

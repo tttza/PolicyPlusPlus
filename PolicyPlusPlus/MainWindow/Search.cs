@@ -57,6 +57,8 @@ namespace PolicyPlusPlus
             StringComparer.OrdinalIgnoreCase
         );
         private bool _useAndModeFlag = false; // AND mode flag
+        private bool _focusListAfterSearch;
+        private bool _restoreSearchFocusIfNoResults;
 
         private SearchOptionsViewModel? SearchOptionsVM =>
             (ScaleHost?.Resources?["SearchOptionsVM"] as SearchOptionsViewModel)
@@ -289,6 +291,8 @@ namespace PolicyPlusPlus
                 _navTyping = false;
                 if (SearchBox != null)
                     SearchBox.Text = string.Empty;
+                _focusListAfterSearch = false;
+                _restoreSearchFocusIfNoResults = false;
                 Log.Debug(
                     "MainSearch",
                     $"ClearButton tapped -> empty query cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
@@ -526,6 +530,8 @@ namespace PolicyPlusPlus
                         UpdateNavButtons();
                     }
                     catch { }
+                    _focusListAfterSearch = false;
+                    _restoreSearchFocusIfNoResults = false;
                     Log.Debug(
                         "MainSearch",
                         $"TextChanged empty -> filter only cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
@@ -536,6 +542,7 @@ namespace PolicyPlusPlus
                 if (reason is AutoSuggestionBoxTextChangeReason.SuggestionChosen)
                 {
                     _navTyping = false;
+                    PreparePostSearchFocus();
                     Log.Debug(
                         "MainSearch",
                         $"TextChanged commit suggestion q='{q}' cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
@@ -552,6 +559,8 @@ namespace PolicyPlusPlus
                 else if (reason is AutoSuggestionBoxTextChangeReason.UserInput)
                 {
                     _navTyping = true;
+                    _focusListAfterSearch = false;
+                    _restoreSearchFocusIfNoResults = false;
                     Log.Trace(
                         "MainSearch",
                         $"TextChanged user input qLen={q.Length} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
@@ -584,66 +593,203 @@ namespace PolicyPlusPlus
                     );
                 }
 
-                // When Tab is pressed in the search box, move focus to the policy list
-                // and select its first item so users can immediately navigate with arrow keys.
+                // Allow Tab to move through controls for accessibility. Provide Ctrl+Enter shortcut
+                // as the explicit way to jump from the search box to the policy list.
                 if (e.Key is VirtualKey.Tab)
                 {
-                    // If Shift is held, let default reverse-tab behavior occur.
-                    bool shiftDown = false;
-                    try
+                    // Preserve Ctrl+Tab as an explicit shortcut for users who relied on the old behavior.
+                    if (
+                        !IsModifierPressed(VirtualKey.Shift)
+                        && IsModifierPressed(
+                            VirtualKey.Control,
+                            VirtualKey.LeftControl,
+                            VirtualKey.RightControl
+                        )
+                    )
                     {
-                        var state = InputKeyboardSource.GetKeyStateForCurrentThread(
-                            VirtualKey.Shift
-                        );
-                        shiftDown =
-                            (state & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
+                        if (FocusPolicyListFromSearch("Ctrl+Tab"))
+                            e.Handled = true;
                     }
-                    catch
-                    {
-                        // Best-effort; if API unavailable, treat as no-shift.
-                        shiftDown = false;
-                    }
-                    if (!shiftDown)
-                    {
-                        try
-                        {
-                            if (SearchBox != null)
-                                SearchBox.IsSuggestionListOpen = false;
-                        }
-                        catch { }
+                    return;
+                }
 
-                        if (PolicyList != null)
-                        {
-                            object? first = null;
-                            if (PolicyList.ItemsSource is System.Collections.IEnumerable seq)
-                            {
-                                foreach (var it in seq)
-                                {
-                                    first = it;
-                                    break;
-                                }
-                            }
-                            if (first != null)
-                            {
-                                PolicyList.SelectedItem = first;
-                            }
-                            // Move focus to the list regardless of whether it's empty.
-                            PolicyList.Focus(FocusState.Keyboard);
-                        }
-
+                if (
+                    e.Key is VirtualKey.Enter
+                    && IsModifierPressed(
+                        VirtualKey.Control,
+                        VirtualKey.LeftControl,
+                        VirtualKey.RightControl
+                    )
+                )
+                {
+                    if (FocusPolicyListFromSearch("Ctrl+Enter"))
                         e.Handled = true;
-                        Log.Debug(
-                            "MainSearch",
-                            $"Tab moves focus to list cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
-                        );
-                        return;
-                    }
+                    return;
                 }
             }
             catch (Exception ex)
             {
                 Log.Warn("MainSearch", "SearchBox_KeyDown failed", ex);
             }
+        }
+
+        private bool FocusPolicyListFromSearch(string source)
+        {
+            try
+            {
+                _focusListAfterSearch = false;
+                _restoreSearchFocusIfNoResults = false;
+                try
+                {
+                    if (SearchBox != null)
+                        SearchBox.IsSuggestionListOpen = false;
+                }
+                catch { }
+
+                if (PolicyList == null)
+                    return false;
+
+                object? first = null;
+                if (PolicyList.ItemsSource is System.Collections.IEnumerable seq)
+                {
+                    foreach (var item in seq)
+                    {
+                        first = item;
+                        break;
+                    }
+                }
+
+                if (first != null && PolicyList.SelectedItem == null)
+                    PolicyList.SelectedItem = first;
+
+                PolicyList.Focus(FocusState.Keyboard);
+                Log.Debug(
+                    "MainSearch",
+                    $"FocusPolicyList via {source} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                );
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("MainSearch", $"FocusPolicyList via {source} failed", ex);
+                return false;
+            }
+        }
+
+        private void PreparePostSearchFocus()
+        {
+            _focusListAfterSearch = true;
+            _restoreSearchFocusIfNoResults = true;
+        }
+
+        private bool FocusSearchBoxForRefinement(string source)
+        {
+            try
+            {
+                var box = GetSearchBox();
+                if (box == null)
+                    return false;
+                _suppressInitialSearchBoxFocus = false;
+                bool focused = box.Focus(FocusState.Keyboard);
+                if (focused)
+                {
+                    Log.Debug(
+                        "MainSearch",
+                        $"FocusSearchBox via {source} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
+                    );
+                }
+                return focused;
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("MainSearch", $"FocusSearchBox via {source} failed", ex);
+                return false;
+            }
+        }
+
+        private void HandlePostSearchFocusAfterBind()
+        {
+            if (!_focusListAfterSearch && !_restoreSearchFocusIfNoResults)
+                return;
+
+            bool hasResults = _visiblePolicies != null && _visiblePolicies.Count > 0;
+
+            if (_focusListAfterSearch)
+            {
+                bool expectFallback = _restoreSearchFocusIfNoResults;
+                _focusListAfterSearch = false;
+                if (hasResults)
+                {
+                    _restoreSearchFocusIfNoResults = false;
+                    _ = DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        try
+                        {
+                            await System.Threading.Tasks.Task.Delay(16);
+                        }
+                        catch { }
+                        if (!FocusPolicyListFromSearch("AutoSearchCommit") && expectFallback)
+                            FocusSearchBoxForRefinement("AutoFallback");
+                    });
+                }
+                else if (expectFallback)
+                {
+                    _restoreSearchFocusIfNoResults = false;
+                    ScheduleSearchFocus("AutoNoResults");
+                }
+                else
+                {
+                    _restoreSearchFocusIfNoResults = false;
+                }
+                return;
+            }
+
+            if (_restoreSearchFocusIfNoResults && !hasResults)
+            {
+                _restoreSearchFocusIfNoResults = false;
+                ScheduleSearchFocus("AutoNoResults");
+            }
+            else if (_restoreSearchFocusIfNoResults)
+            {
+                _restoreSearchFocusIfNoResults = false;
+            }
+        }
+
+        private void ScheduleSearchFocus(string source)
+        {
+            _ = DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    await System.Threading.Tasks.Task.Delay(16);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn("MainSearch", "ScheduleSearchFocus delay failed", ex);
+                }
+                FocusSearchBoxForRefinement(source);
+            });
+        }
+
+        private static bool IsModifierPressed(params VirtualKey[] keys)
+        {
+            foreach (var key in keys)
+            {
+                try
+                {
+                    var state = InputKeyboardSource.GetKeyStateForCurrentThread(key);
+                    if ((state & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down)
+                        return true;
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "MainSearch",
+                        $"IsModifierPressed probe failed for key={key}: {ex.GetType().Name}"
+                    );
+                }
+            }
+            return false;
         }
 
         private void SearchBox_KeyUp(object sender, KeyRoutedEventArgs e)
@@ -707,6 +853,7 @@ namespace PolicyPlusPlus
                         "MainSearch",
                         $"QuerySubmitted commit qLen={commitText.Length} cache={(IsAdmxCacheEnabled() ? "on" : "off")}"
                     );
+                    PreparePostSearchFocus();
                     RunAsyncSearchAndBind(commitText);
                     MaybePushCurrentState();
                     try
