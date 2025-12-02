@@ -15,12 +15,26 @@ public abstract class SettingsServiceTestBase : IDisposable
     protected SettingsServiceTestBase()
     {
         Monitor.Enter(SettingsLock, ref _lockTaken);
-        _baseDir = Path.Combine(
-            Path.GetTempPath(),
-            "PPSettingsTests_" + Guid.NewGuid().ToString("N")
-        );
-        Directory.CreateDirectory(_baseDir);
-        SettingsService.Instance.InitializeForTests(_baseDir);
+        try
+        {
+            var baseDir = Path.Combine(
+                Path.GetTempPath(),
+                "PPSettingsTests_" + Guid.NewGuid().ToString("N")
+            );
+            Directory.CreateDirectory(baseDir);
+            SettingsService.Instance.InitializeForTests(baseDir);
+            _baseDir = baseDir;
+        }
+        catch
+        {
+            if (_lockTaken)
+            {
+                // Release lock to avoid deadlocks in subsequent tests when initialization fails.
+                Monitor.Exit(SettingsLock);
+                _lockTaken = false;
+            }
+            throw;
+        }
     }
 
     public void Dispose()

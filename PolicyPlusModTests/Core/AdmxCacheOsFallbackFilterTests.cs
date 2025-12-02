@@ -52,10 +52,12 @@ public class AdmxCacheOsFallbackFilterTests
             );
             Assert.NotNull(hits);
 
-            foreach (var h in hits)
+            foreach (
+                var h in hits.Where(h =>
+                    h.Culture.Equals("fr-FR", StringComparison.OrdinalIgnoreCase)
+                )
+            )
             {
-                if (!h.Culture.Equals("fr-FR", StringComparison.OrdinalIgnoreCase))
-                    continue;
                 var uid = h.UniqueId;
                 var parts = uid.Split(':');
                 if (parts.Length != 2)
