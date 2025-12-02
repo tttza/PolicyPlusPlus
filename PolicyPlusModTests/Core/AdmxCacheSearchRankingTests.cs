@@ -10,8 +10,11 @@ using Xunit;
 namespace PolicyPlusModTests.Core;
 
 // Focused ranking/precision tests for recent AdmxCache search enhancements.
+[Collection("AdmxCache.Isolated")]
 public class AdmxCacheSearchRankingTests
 {
+    private const string RankingAdmxFileName = "SearchRanking.admx";
+
     private static string CreateSyntheticAdmxRoot()
     {
         var root = Path.Combine(
@@ -47,7 +50,7 @@ public class AdmxCacheSearchRankingTests
     <policy name=""DescriptionOnlyTelemetry"" class=""Machine"" displayName=""$(string.DescriptionOnlyTelemetry)"" explainText=""$(string.DescriptionOnlyTelemetry_Explain)"" key=""Software\\Policies\\Test"" valueName=""DescriptionOnlyTelemetry"" category=""TestCat"" />
   </policies>
 </policyDefinitions>";
-        File.WriteAllText(Path.Combine(root, "SearchRanking.admx"), admx, Encoding.UTF8);
+        File.WriteAllText(Path.Combine(root, RankingAdmxFileName), admx, Encoding.UTF8);
 
         // Helper to build ADML string tables.
         static string BuildAdml(Dictionary<string, string> strings)
@@ -132,12 +135,20 @@ public class AdmxCacheSearchRankingTests
 
     private static async Task<IAdmxCache> BuildCacheAsync(string root, params string[] cultures)
     {
-        Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_ONLY_FILES", null);
-        IAdmxCache cache = new AdmxCache();
-        await cache.InitializeAsync();
-        cache.SetSourceRoot(root);
-        await cache.ScanAndUpdateAsync(cultures);
-        return cache;
+        var priorOnlyFiles = Environment.GetEnvironmentVariable("POLICYPLUS_CACHE_ONLY_FILES");
+        Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_ONLY_FILES", RankingAdmxFileName);
+        try
+        {
+            IAdmxCache cache = new AdmxCache();
+            await cache.InitializeAsync();
+            cache.SetSourceRoot(root);
+            await cache.ScanAndUpdateAsync(cultures);
+            return cache;
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_ONLY_FILES", priorOnlyFiles);
+        }
     }
 
     [Fact]

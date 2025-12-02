@@ -138,6 +138,8 @@ public class AdmxCacheFallbackFilterTests
         {
             // Restore environment variable and cleanup
             Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_DIR", prev);
+            // Release pooled handles so the temp cache directory can be deleted on Windows.
+            AdmxCacheRuntime.ReleaseSqliteHandles();
             try
             {
                 Directory.Delete(tmp, recursive: true);

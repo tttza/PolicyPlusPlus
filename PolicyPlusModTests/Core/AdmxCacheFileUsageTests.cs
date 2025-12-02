@@ -82,76 +82,86 @@ public class AdmxCacheFileUsageTests : IClassFixture<IsolatedCacheFixture>
 
     private static string GetDbPath(string cacheDir) => Path.Combine(cacheDir, "admxcache.sqlite");
 
+    private static IDisposable OverrideEnv(string name, string? value)
+    {
+        var prior = Environment.GetEnvironmentVariable(name);
+        Environment.SetEnvironmentVariable(name, value);
+        return new EnvReverter(name, prior);
+    }
+
     [Fact]
     public async Task FileUsage_IsRecorded_ForAdmxAndAdml()
     {
         var (root, cacheDir) = CreateAdmxSet();
-        // Override cache dir per test to avoid cross-test interference.
-        Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_DIR", cacheDir);
-        var dbPath = GetDbPath(cacheDir);
-        var cacheImpl = new AdmxCache();
-        await cacheImpl.InitializeAsync();
-        cacheImpl.SetSourceRoot(root);
-        await cacheImpl.ScanAndUpdateAsync(new[] { "en-US" });
+        using (OverrideEnv("POLICYPLUS_CACHE_DIR", cacheDir))
+        {
+            var dbPath = GetDbPath(cacheDir);
+            var cacheImpl = new AdmxCache();
+            await cacheImpl.InitializeAsync();
+            cacheImpl.SetSourceRoot(root);
+            await cacheImpl.ScanAndUpdateAsync(new[] { "en-US" });
 
-        using var conn = new SqliteConnection("Data Source=" + dbPath);
-        await conn.OpenAsync();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT COUNT(*) FROM FileUsage";
-        var obj = await cmd.ExecuteScalarAsync();
-        var count = Convert.ToInt32(obj);
-        Assert.True(count >= 2, "Expected at least ADMX + ADML usage rows");
+            using var conn = new SqliteConnection("Data Source=" + dbPath);
+            await conn.OpenAsync();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT COUNT(*) FROM FileUsage";
+            var obj = await cmd.ExecuteScalarAsync();
+            var count = Convert.ToInt32(obj);
+            Assert.True(count >= 2, "Expected at least ADMX + ADML usage rows");
+        }
     }
 
     [Fact]
     public async Task Purge_Removes_StaleEntries()
     {
         var (root, cacheDir) = CreateAdmxSet();
-        Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_DIR", cacheDir);
-        var dbPath = GetDbPath(cacheDir);
-        var cacheImpl = new AdmxCache();
-        await cacheImpl.InitializeAsync();
-        cacheImpl.SetSourceRoot(root);
-        await cacheImpl.ScanAndUpdateAsync(new[] { "en-US" });
-        // Force age of entries; retry a few times in case of transient lock contention.
-        var oldEpoch = DateTimeOffset.UtcNow.AddDays(-61).ToUnixTimeSeconds();
-        for (int attempt = 0; attempt < 3; attempt++)
+        using (OverrideEnv("POLICYPLUS_CACHE_DIR", cacheDir))
         {
-            using (var conn = new SqliteConnection("Data Source=" + dbPath))
+            var dbPath = GetDbPath(cacheDir);
+            var cacheImpl = new AdmxCache();
+            await cacheImpl.InitializeAsync();
+            cacheImpl.SetSourceRoot(root);
+            await cacheImpl.ScanAndUpdateAsync(new[] { "en-US" });
+            // Force age of entries; retry a few times in case of transient lock contention.
+            var oldEpoch = DateTimeOffset.UtcNow.AddDays(-61).ToUnixTimeSeconds();
+            for (int attempt = 0; attempt < 3; attempt++)
             {
-                await conn.OpenAsync();
-                using var up = conn.CreateCommand();
-                up.CommandText = $"UPDATE FileUsage SET last_access_utc = {oldEpoch}";
-                try
+                using (var conn = new SqliteConnection("Data Source=" + dbPath))
                 {
-                    up.ExecuteNonQuery();
+                    await conn.OpenAsync();
+                    using var up = conn.CreateCommand();
+                    up.CommandText = $"UPDATE FileUsage SET last_access_utc = {oldEpoch}";
+                    try
+                    {
+                        up.ExecuteNonQuery();
+                    }
+                    catch { }
+                    using var verify = conn.CreateCommand();
+                    verify.CommandText = "SELECT MIN(last_access_utc) FROM FileUsage";
+                    var raw = await verify.ExecuteScalarAsync();
+                    if (raw == null || raw == DBNull.Value)
+                    {
+                        // Table not yet populated; retry.
+                    }
+                    else
+                    {
+                        var minVal = Convert.ToInt64(raw);
+                        if (minVal <= oldEpoch)
+                            break;
+                    }
                 }
-                catch { }
-                using var verify = conn.CreateCommand();
-                verify.CommandText = "SELECT MIN(last_access_utc) FROM FileUsage";
-                var raw = await verify.ExecuteScalarAsync();
-                if (raw == null || raw == DBNull.Value)
-                {
-                    // Table not yet populated; retry.
-                }
-                else
-                {
-                    var minVal = Convert.ToInt64(raw);
-                    if (minVal <= oldEpoch)
-                        break;
-                }
+                await Task.Delay(150);
             }
-            await Task.Delay(150);
-        }
-        var removed = await cacheImpl.PurgeStaleCacheEntriesAsync(TimeSpan.FromDays(30));
-        Assert.True(removed >= 2, $"Expected removal >=2, got {removed}");
-        using (var conn2 = new SqliteConnection("Data Source=" + dbPath))
-        {
-            await conn2.OpenAsync();
-            using var c2 = conn2.CreateCommand();
-            c2.CommandText = "SELECT COUNT(*) FROM FileUsage";
-            var left = Convert.ToInt32(await c2.ExecuteScalarAsync());
-            Assert.Equal(0, left);
+            var removed = await cacheImpl.PurgeStaleCacheEntriesAsync(TimeSpan.FromDays(30));
+            Assert.True(removed >= 2, $"Expected removal >=2, got {removed}");
+            using (var conn2 = new SqliteConnection("Data Source=" + dbPath))
+            {
+                await conn2.OpenAsync();
+                using var c2 = conn2.CreateCommand();
+                c2.CommandText = "SELECT COUNT(*) FROM FileUsage";
+                var left = Convert.ToInt32(await c2.ExecuteScalarAsync());
+                Assert.Equal(0, left);
+            }
         }
     }
 
@@ -159,34 +169,50 @@ public class AdmxCacheFileUsageTests : IClassFixture<IsolatedCacheFixture>
     public async Task Subsequent_Scan_Updates_LastAccess()
     {
         var (root, cacheDir) = CreateAdmxSet();
-        Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_DIR", cacheDir);
-        var dbPath = GetDbPath(cacheDir);
-        var cacheImpl = new AdmxCache();
-        await cacheImpl.InitializeAsync();
-        cacheImpl.SetSourceRoot(root);
-        await cacheImpl.ScanAndUpdateAsync(new[] { "en-US" });
-        long firstMax;
-        using (var conn = new SqliteConnection("Data Source=" + dbPath))
+        using (OverrideEnv("POLICYPLUS_CACHE_DIR", cacheDir))
         {
-            await conn.OpenAsync();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT MAX(last_access_utc) FROM FileUsage";
-            var obj = await cmd.ExecuteScalarAsync();
-            firstMax = (obj == null || obj == DBNull.Value) ? 0 : Convert.ToInt64(obj);
+            var dbPath = GetDbPath(cacheDir);
+            var cacheImpl = new AdmxCache();
+            await cacheImpl.InitializeAsync();
+            cacheImpl.SetSourceRoot(root);
+            await cacheImpl.ScanAndUpdateAsync(new[] { "en-US" });
+            long firstMax;
+            using (var conn = new SqliteConnection("Data Source=" + dbPath))
+            {
+                await conn.OpenAsync();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT MAX(last_access_utc) FROM FileUsage";
+                var obj = await cmd.ExecuteScalarAsync();
+                firstMax = (obj == null || obj == DBNull.Value) ? 0 : Convert.ToInt64(obj);
+            }
+            await Task.Delay(1500);
+            await cacheImpl.ScanAndUpdateAsync(new[] { "en-US" });
+            using (var conn2 = new SqliteConnection("Data Source=" + dbPath))
+            {
+                await conn2.OpenAsync();
+                using var cmd2 = conn2.CreateCommand();
+                cmd2.CommandText = "SELECT MAX(last_access_utc) FROM FileUsage";
+                var obj2 = await cmd2.ExecuteScalarAsync();
+                var secondMax = (obj2 == null || obj2 == DBNull.Value) ? 0 : Convert.ToInt64(obj2);
+                Assert.True(
+                    secondMax >= firstMax,
+                    $"Expected secondMax >= firstMax (first={firstMax}, second={secondMax})"
+                );
+            }
         }
-        await Task.Delay(1500);
-        await cacheImpl.ScanAndUpdateAsync(new[] { "en-US" });
-        using (var conn2 = new SqliteConnection("Data Source=" + dbPath))
+    }
+
+    private sealed class EnvReverter : IDisposable
+    {
+        private readonly string _name;
+        private readonly string? _prior;
+
+        public EnvReverter(string name, string? prior)
         {
-            await conn2.OpenAsync();
-            using var cmd2 = conn2.CreateCommand();
-            cmd2.CommandText = "SELECT MAX(last_access_utc) FROM FileUsage";
-            var obj2 = await cmd2.ExecuteScalarAsync();
-            var secondMax = (obj2 == null || obj2 == DBNull.Value) ? 0 : Convert.ToInt64(obj2);
-            Assert.True(
-                secondMax >= firstMax,
-                $"Expected secondMax >= firstMax (first={firstMax}, second={secondMax})"
-            );
+            _name = name;
+            _prior = prior;
         }
+
+        public void Dispose() => Environment.SetEnvironmentVariable(_name, _prior);
     }
 }

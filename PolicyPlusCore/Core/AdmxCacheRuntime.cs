@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Threading;
 using Microsoft.Data.Sqlite;
 
@@ -37,6 +38,34 @@ public static class AdmxCacheRuntime
         }
         catch { }
         string name = @"Local\PolicyPlusPlus.AdmxCache.Writer";
+        TimeSpan effectiveTimeout = timeout;
+        try
+        {
+            var timeoutOverride = Environment.GetEnvironmentVariable(
+                "POLICYPLUS_CACHE_WRITER_TIMEOUT_MS"
+            );
+            if (
+                !string.IsNullOrWhiteSpace(timeoutOverride)
+                && int.TryParse(
+                    timeoutOverride,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var timeoutMs
+                )
+            )
+            {
+                if (timeoutMs <= 0)
+                {
+                    effectiveTimeout = TimeSpan.Zero;
+                }
+                else
+                {
+                    var clamped = Math.Min(timeoutMs, 60000);
+                    effectiveTimeout = TimeSpan.FromMilliseconds(clamped);
+                }
+            }
+        }
+        catch { }
         try
         {
             var overrideName = Environment.GetEnvironmentVariable(
@@ -55,7 +84,7 @@ public static class AdmxCacheRuntime
             bool acquired;
             try
             {
-                acquired = m.WaitOne(timeout);
+                acquired = m.WaitOne(effectiveTimeout);
             }
             catch (AbandonedMutexException)
             {
