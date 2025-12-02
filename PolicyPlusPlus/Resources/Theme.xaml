@@ -69,6 +69,7 @@
                 x:Name="ContentPresenter"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
+                Margin="{TemplateBinding Padding}"
               />
             </Border>
             <VisualStateManager.VisualStateGroups>
@@ -142,6 +143,7 @@
                 x:Name="ContentPresenter"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
+                Margin="{TemplateBinding Padding}"
               />
             </Border>
             <VisualStateManager.VisualStateGroups>
