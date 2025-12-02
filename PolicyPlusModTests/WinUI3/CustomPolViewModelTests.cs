@@ -1,10 +1,11 @@
+using PolicyPlusModTests.TestHelpers;
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.ViewModels;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
 {
-    public class CustomPolViewModelTests
+    public class CustomPolViewModelTests : SettingsServiceTestBase
     {
         [Fact]
         public void SinglePathEnable_CompletesFlexibleSwitchPreconditions()

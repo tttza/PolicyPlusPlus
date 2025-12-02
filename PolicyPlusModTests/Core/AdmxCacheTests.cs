@@ -16,21 +16,20 @@ public class AdmxCacheTests
     [Fact]
     public async Task InitializeAndScan_Works()
     {
-        IAdmxCache cache = new AdmxCache();
-        await cache.InitializeAsync();
-        // Use the small deterministic test ADMX asset set instead of the full OS PolicyDefinitions to keep this test fast.
-        try
+        await AdmxCacheTestEnvironment.RunWithScopedCacheAsync(async () =>
         {
-            var testRoot = AdmxTestHelper.ResolveAdmxAssetsPath();
-            cache.SetSourceRoot(testRoot);
-        }
-        catch
-        { /* If test assets cannot be resolved fall back to default root; still validate no crash */
-        }
-        await cache.ScanAndUpdateAsync();
-        var culture = System.Globalization.CultureInfo.CurrentUICulture.Name;
-        var hits = await cache.SearchAsync("Dummy", culture, 10);
-        // On machines without dummy assets in %windir%, hit count may be zero; ensure no crash
-        Assert.NotNull(hits);
+            IAdmxCache cache = new AdmxCache();
+            await cache.InitializeAsync();
+            try
+            {
+                var testRoot = AdmxTestHelper.ResolveAdmxAssetsPath();
+                cache.SetSourceRoot(testRoot);
+            }
+            catch { }
+            await cache.ScanAndUpdateAsync();
+            var culture = System.Globalization.CultureInfo.CurrentUICulture.Name;
+            var hits = await cache.SearchAsync("Dummy", culture, 10);
+            Assert.NotNull(hits);
+        });
     }
 }

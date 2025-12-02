@@ -1,12 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
+using PolicyPlusModTests.TestHelpers;
 using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3
 {
-    public class SettingsRoundTripTests
+    public class SettingsRoundTripTests : SettingsServiceTestBase
     {
         private string CreateTempDir()
         {
