@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
@@ -34,6 +35,21 @@ namespace PolicyPlusPlus.Utils
 
         [DllImport("user32.dll", ExactSpelling = true)]
         private static extern uint GetDpiForWindow(IntPtr hWnd);
+
+        private enum DWMWINDOWATTRIBUTE : uint
+        {
+            SYSTEMBACKDROP_TYPE = 38,
+            USE_IMMERSIVE_DARK_MODE = 20,
+            USE_IMMERSIVE_DARK_MODE_BEFORE_20H1 = 19,
+        }
+
+        [DllImport("dwmapi.dll", ExactSpelling = true)]
+        private static extern int DwmSetWindowAttribute(
+            IntPtr hwnd,
+            DWMWINDOWATTRIBUTE dwAttribute,
+            ref int pvAttribute,
+            int cbAttribute
+        );
 
         public static void BringToFront(Window window)
         {
@@ -194,6 +210,92 @@ namespace PolicyPlusPlus.Utils
                 appWindow.ResizeClient(new SizeInt32(desiredClientPixelWidth, currentClientHeight));
             }
             catch { }
+        }
+
+        public static void ApplyImmersiveDarkMode(Window window, bool enable)
+        {
+            try
+            {
+                var hwnd = WindowNative.GetWindowHandle(window);
+                if (hwnd == IntPtr.Zero)
+                    return;
+
+                int useDark = enable ? 1 : 0;
+                const int attributeSize = sizeof(int);
+                var attr = DWMWINDOWATTRIBUTE.USE_IMMERSIVE_DARK_MODE;
+                int hr = DwmSetWindowAttribute(hwnd, attr, ref useDark, attributeSize);
+                if (hr != 0)
+                {
+                    var legacy = DWMWINDOWATTRIBUTE.USE_IMMERSIVE_DARK_MODE_BEFORE_20H1;
+                    _ = DwmSetWindowAttribute(hwnd, legacy, ref useDark, attributeSize);
+                }
+            }
+            catch { }
+        }
+
+        public static void ActivateAndBringToFront(Window window)
+        {
+            if (window == null)
+                return;
+
+            void ActivateNow()
+            {
+                try
+                {
+                    window.Activate();
+                }
+                catch { }
+
+                try
+                {
+                    BringToFront(window);
+                }
+                catch { }
+
+                try
+                {
+                    var timer = window.DispatcherQueue?.CreateTimer();
+                    if (timer == null)
+                        return;
+                    timer.Interval = TimeSpan.FromMilliseconds(180);
+                    timer.IsRepeating = false;
+                    void OnTick(DispatcherQueueTimer sender, object args)
+                    {
+                        sender.Tick -= OnTick;
+                        try
+                        {
+                            BringToFront(window);
+                            window.Activate();
+                        }
+                        catch { }
+                    }
+                    timer.Tick += OnTick;
+                    timer.Start();
+                }
+                catch { }
+            }
+
+            try
+            {
+                if (window.Content is FrameworkElement root && !root.IsLoaded)
+                {
+                    RoutedEventHandler? handler = null;
+                    handler = (s, e) =>
+                    {
+                        root.Loaded -= handler;
+                        ActivateNow();
+                    };
+                    root.Loaded += handler;
+                }
+                else
+                {
+                    ActivateNow();
+                }
+            }
+            catch
+            {
+                ActivateNow();
+            }
         }
     }
 

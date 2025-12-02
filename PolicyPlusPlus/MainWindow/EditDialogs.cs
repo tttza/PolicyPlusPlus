@@ -82,8 +82,7 @@ namespace PolicyPlusPlus
                 _userComments
             );
             win.Saved += (s, e) => MarkDirty();
-            win.Activate();
-            WindowHelpers.BringToFront(win);
+            WindowHelpers.ActivateAndBringToFront(win);
 
             if (ensureFront)
             {
@@ -148,8 +147,7 @@ namespace PolicyPlusPlus
                 _userComments
             );
             win.Saved += (s, e) => MarkDirty();
-            win.Activate();
-            WindowHelpers.BringToFront(win);
+            WindowHelpers.ActivateAndBringToFront(win);
             if (ensureFront)
             {
                 await Task.Delay(150);

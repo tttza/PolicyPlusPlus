@@ -5,11 +5,15 @@
   xmlns:win="using:PolicyPlusPlus.Windows"
   Title="Quick Edit"
 >
+  <Window.SystemBackdrop>
+    <MicaBackdrop />
+  </Window.SystemBackdrop>
   <!-- Consistent scaling structure: ScaleHost (host) -> RootShell (scaled content) -->
-  <Grid x:Name="ScaleHost" Tag="AllowAutoSize">
+  <Grid x:Name="ScaleHost" Tag="AllowAutoSize" Background="{ThemeResource WindowBackground}">
     <Grid
       x:Name="RootShell"
       Padding="12"
+      Background="{ThemeResource WindowBackground}"
       VerticalAlignment="Top"
       KeyboardAcceleratorPlacementMode="Hidden"
     >

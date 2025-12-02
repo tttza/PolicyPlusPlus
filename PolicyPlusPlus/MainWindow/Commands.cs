@@ -497,12 +497,7 @@ namespace PolicyPlusPlus
                 var ctx = PolicySourceAccessor.Acquire();
                 var win = new Windows.QuickEditWindow();
                 win.Initialize(_bundle, ctx.Comp, ctx.User, policies);
-                win.Activate();
-                try
-                {
-                    Utils.WindowHelpers.BringToFront(win);
-                }
-                catch { }
+                WindowHelpers.ActivateAndBringToFront(win);
             }
             catch { }
         }

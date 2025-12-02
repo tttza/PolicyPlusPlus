@@ -150,8 +150,10 @@ namespace PolicyPlusPlus.Windows
         {
             try
             {
+                var theme = App.GetEffectiveTheme(this);
                 if (Content is FrameworkElement fe)
-                    fe.RequestedTheme = App.CurrentTheme;
+                    fe.RequestedTheme = theme;
+                WindowHelpers.ApplyImmersiveDarkMode(this, theme == ElementTheme.Dark);
                 var inputBg = (Brush)Application.Current.Resources["ControlFillColorDefaultBrush"];
                 var inputStroke = (Brush)
                     Application.Current.Resources["ControlStrokeColorDefaultBrush"];

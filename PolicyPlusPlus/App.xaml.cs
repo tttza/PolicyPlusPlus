@@ -9,6 +9,7 @@ using PolicyPlusPlus.Logging;
 using PolicyPlusPlus.Services;
 using PolicyPlusPlus.Utils;
 using PolicyPlusPlus.Windows;
+using Windows.UI.ViewManagement;
 
 namespace PolicyPlusPlus
 {
@@ -56,6 +57,7 @@ namespace PolicyPlusPlus
 
         public static ElementTheme CurrentTheme { get; private set; } = ElementTheme.Default;
         public static event EventHandler? ThemeChanged;
+        private static UISettings? _uiSettings;
 
         public static double CurrentScale { get; private set; } = 1.0;
         public static event EventHandler? ScaleChanged;
@@ -338,8 +340,52 @@ namespace PolicyPlusPlus
 
         private static void ApplyThemeTo(Window w)
         {
+            var effectiveTheme = GetEffectiveTheme(w);
             if (w.Content is FrameworkElement fe)
-                fe.RequestedTheme = CurrentTheme;
+                fe.RequestedTheme = effectiveTheme;
+            WindowHelpers.ApplyImmersiveDarkMode(w, effectiveTheme == ElementTheme.Dark);
+        }
+
+        internal static ElementTheme GetEffectiveTheme(Window? context = null)
+        {
+            if (CurrentTheme == ElementTheme.Dark || CurrentTheme == ElementTheme.Light)
+                return CurrentTheme;
+
+            try
+            {
+                var probe = context ?? Window;
+                if (probe?.Content is FrameworkElement root)
+                {
+                    var actual = root.ActualTheme;
+                    if (actual == ElementTheme.Dark || actual == ElementTheme.Light)
+                        return actual;
+                    var requested = root.RequestedTheme;
+                    if (requested == ElementTheme.Dark || requested == ElementTheme.Light)
+                        return requested;
+                }
+            }
+            catch { }
+
+            try
+            {
+                var requested = Current?.RequestedTheme;
+                if (requested == ApplicationTheme.Dark)
+                    return ElementTheme.Dark;
+                if (requested == ApplicationTheme.Light)
+                    return ElementTheme.Light;
+            }
+            catch { }
+
+            try
+            {
+                _uiSettings ??= new UISettings();
+                var color = _uiSettings.GetColorValue(UIColorType.Background);
+                double luminance = (0.299 * color.R) + (0.587 * color.G) + (0.114 * color.B);
+                return luminance < 128 ? ElementTheme.Dark : ElementTheme.Light;
+            }
+            catch { }
+
+            return ElementTheme.Dark;
         }
 
         public static void RegisterWindow(Window w)
@@ -376,21 +422,7 @@ namespace PolicyPlusPlus
             {
                 try
                 {
-                    WindowHelpers.BringToFront(win);
-                    win.Activate();
-                    var timer = win.DispatcherQueue.CreateTimer();
-                    timer.Interval = TimeSpan.FromMilliseconds(180);
-                    timer.IsRepeating = false;
-                    timer.Tick += (s, e) =>
-                    {
-                        try
-                        {
-                            WindowHelpers.BringToFront(win);
-                            win.Activate();
-                        }
-                        catch { }
-                    };
-                    timer.Start();
+                    WindowHelpers.ActivateAndBringToFront(win);
                 }
                 catch { }
                 return true;

@@ -131,8 +131,9 @@ namespace PolicyPlusPlus.Windows
             {
                 if (RootShell == null)
                     return;
-                var theme = App.CurrentTheme;
+                var theme = App.GetEffectiveTheme(this);
                 RootShell.RequestedTheme = theme;
+                WindowHelpers.ApplyImmersiveDarkMode(this, theme == ElementTheme.Dark);
                 if (
                     Application.Current.Resources.TryGetValue("WindowBackground", out var bg)
                     && bg is Brush b
