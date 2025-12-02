@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -20,6 +21,21 @@ public sealed class AdmxCache : IAdmxCache
     private readonly AdmxCacheStore _store;
     private string? _sourceRoot;
     private volatile bool _fileUsageSchemaEnsured;
+
+    private static void TraceFileUsageWarning(string message, Exception ex)
+    {
+        var formatted = $"[AdmxCache] WARN {message}: {ex.GetType().Name}: {ex.Message}";
+        try
+        {
+            Debug.WriteLine(formatted);
+        }
+        catch { }
+        try
+        {
+            Console.Error.WriteLine(formatted);
+        }
+        catch { }
+    }
 
     public AdmxCache()
     {
@@ -255,7 +271,10 @@ public sealed class AdmxCache : IAdmxCache
                             {
                                 usageTx?.Commit();
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                TraceFileUsageWarning("FileUsage transaction commit failed", ex);
+                            }
                         }
                         catch { }
                     }

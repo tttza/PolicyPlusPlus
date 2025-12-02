@@ -14,7 +14,7 @@ namespace PolicyPlusPlus.Converters
             if (value is null)
                 return fallback;
             // Non-string objects: use ToString(), treating empty result as fallback.
-            var text = value.ToString();
+            var text = value.ToString() ?? string.Empty;
             return string.IsNullOrWhiteSpace(text) ? fallback : text;
         }
 

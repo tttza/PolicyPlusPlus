@@ -564,10 +564,9 @@ namespace PolicyPlusPlus
                 }
                 catch { }
             }
-            else if (e.Key == VirtualKey.Escape)
+            else if (e.Key == VirtualKey.Escape && FocusSearchBoxForRefinement("ListEscape"))
             {
-                if (FocusSearchBoxForRefinement("ListEscape"))
-                    e.Handled = true;
+                e.Handled = true;
             }
         }
 

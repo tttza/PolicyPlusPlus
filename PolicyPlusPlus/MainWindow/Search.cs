@@ -659,11 +659,8 @@ namespace PolicyPlusPlus
                     }
                 }
 
-                if (first != null)
-                {
-                    if (PolicyList.SelectedItem == null)
-                        PolicyList.SelectedItem = first;
-                }
+                if (first != null && PolicyList.SelectedItem == null)
+                    PolicyList.SelectedItem = first;
 
                 PolicyList.Focus(FocusState.Keyboard);
                 Log.Debug(
@@ -766,7 +763,10 @@ namespace PolicyPlusPlus
                 {
                     await System.Threading.Tasks.Task.Delay(16);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Warn("MainSearch", "ScheduleSearchFocus delay failed", ex);
+                }
                 FocusSearchBoxForRefinement(source);
             });
         }
@@ -781,7 +781,13 @@ namespace PolicyPlusPlus
                     if ((state & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down)
                         return true;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Debug(
+                        "MainSearch",
+                        $"IsModifierPressed probe failed for key={key}: {ex.GetType().Name}"
+                    );
+                }
             }
             return false;
         }
