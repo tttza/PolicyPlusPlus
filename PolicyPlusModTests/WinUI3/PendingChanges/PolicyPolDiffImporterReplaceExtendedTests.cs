@@ -4,13 +4,15 @@ using System.Linq;
 using PolicyPlusCore.Admx;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
+using PolicyPlusModTests.TestHelpers;
 using PolicyPlusModTests.Testing;
 using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.PendingChanges
 {
-    public class PolicyPolDiffImporterReplaceExtendedTests
+    [Collection("PolicySourceManagerSerial")]
+    public class PolicyPolDiffImporterReplaceExtendedTests : PendingIsolationTestBase
     {
         private sealed class InMemoryPolicySource : IPolicySource
         {
@@ -73,9 +75,7 @@ namespace PolicyPlusModTests.WinUI3.PendingChanges
 
         public PolicyPolDiffImporterReplaceExtendedTests()
         {
-            PendingChangesService.EnableTestIsolation();
-            PendingChangesService.ResetAmbientForTest();
-            PolicyPlusCore.Core.ConfiguredPolicyTracker.Reset();
+            ConfiguredPolicyTracker.Reset();
         }
 
         [Fact(DisplayName = "Replace: Empty .reg queues Clear for all configured policies")]

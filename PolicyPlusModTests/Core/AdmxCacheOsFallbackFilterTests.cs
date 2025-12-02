@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using PolicyPlusCore.Core;
+using PolicyPlusModTests.TestHelpers;
 using Xunit;
 
 namespace PolicyPlusModTests.Core;
@@ -29,43 +30,50 @@ public class AdmxCacheOsFallbackFilterTests
     [Fact]
     public async Task OsFallbackCulture_Suppressed_When_PrimaryPresent()
     {
-        var root = FindAdmxRoot();
-        IAdmxCache cache = new AdmxCache();
-        await cache.InitializeAsync();
-        cache.SetSourceRoot(root);
-
-        // Scan: load primary en-US first, then fr-FR as an OS-level fallback (second disabled scenario).
-        await cache.ScanAndUpdateAsync(new[] { "en-US", "fr-FR" });
-
-        // Search culture order: primary en-US, OS fallback fr-FR, duplicate primary placeholder.
-        // Duplicate primary as placeholder so fr-FR is treated as fallback (not second).
-        var ordered = new[] { "en-US", "en-US", "fr-FR", "en-US" };
-
-        // Search using token from the French DisplayName: "Activer".
-        var hits = await cache.SearchAsync(
-            "Activer",
-            ordered,
-            SearchFields.Name | SearchFields.Id | SearchFields.Registry | SearchFields.Description,
-            50
-        );
-        Assert.NotNull(hits);
-
-        // Allow hits only if the policy truly lacks a primary en-US row (edge case in test assets).
-        foreach (var h in hits)
+        await AdmxCacheTestEnvironment.RunWithScopedCacheAsync(async () =>
         {
-            if (!h.Culture.Equals("fr-FR", StringComparison.OrdinalIgnoreCase))
-                continue;
-            var uid = h.UniqueId;
-            var parts = uid.Split(':');
-            if (parts.Length != 2)
-                continue;
-            // Probe primary by exact ID token (policy_name) using Id field only.
-            var idHits = await cache.SearchAsync(parts[1], new[] { "en-US" }, SearchFields.Id, 10);
-            bool primaryExists = idHits.Any(x => x.UniqueId == uid && x.Culture == "en-US");
-            Assert.False(
-                primaryExists,
-                "Fallback culture fr-FR surfaced despite existing primary row for policy " + uid
+            var root = FindAdmxRoot();
+            IAdmxCache cache = new AdmxCache();
+            await cache.InitializeAsync();
+            cache.SetSourceRoot(root);
+
+            await cache.ScanAndUpdateAsync(new[] { "en-US", "fr-FR" });
+
+            var ordered = new[] { "en-US", "en-US", "fr-FR", "en-US" };
+
+            var hits = await cache.SearchAsync(
+                "Activer",
+                ordered,
+                SearchFields.Name
+                    | SearchFields.Id
+                    | SearchFields.Registry
+                    | SearchFields.Description,
+                50
             );
-        }
+            Assert.NotNull(hits);
+
+            foreach (
+                var h in hits.Where(h =>
+                    h.Culture.Equals("fr-FR", StringComparison.OrdinalIgnoreCase)
+                )
+            )
+            {
+                var uid = h.UniqueId;
+                var parts = uid.Split(':');
+                if (parts.Length != 2)
+                    continue;
+                var idHits = await cache.SearchAsync(
+                    parts[1],
+                    new[] { "en-US" },
+                    SearchFields.Id,
+                    10
+                );
+                bool primaryExists = idHits.Any(x => x.UniqueId == uid && x.Culture == "en-US");
+                Assert.False(
+                    primaryExists,
+                    "Fallback culture fr-FR surfaced despite existing primary row for policy " + uid
+                );
+            }
+        });
     }
 }

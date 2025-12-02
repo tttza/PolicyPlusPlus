@@ -10,6 +10,7 @@ using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.CustomPol
 {
+    [Collection("PolicySourceManagerSerial")]
     public class CustomPolInitialEditTests
     {
         [Fact]

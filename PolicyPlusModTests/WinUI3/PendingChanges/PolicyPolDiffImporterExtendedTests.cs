@@ -4,13 +4,15 @@ using System.Linq;
 using PolicyPlusCore.Admx;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
+using PolicyPlusModTests.TestHelpers;
 using PolicyPlusModTests.Testing;
 using PolicyPlusPlus.Services;
 using Xunit;
 
 namespace PolicyPlusModTests.WinUI3.PendingChanges
 {
-    public class PolicyPolDiffImporterExtendedTests
+    [Collection("PolicySourceManagerSerial")]
+    public class PolicyPolDiffImporterExtendedTests : PendingIsolationTestBase
     {
         private sealed class InMemoryPolicySource : IPolicySource
         {

@@ -95,6 +95,7 @@ dotnet test PolicyPlusPlus.sln -c Debug-Unpackaged
 - Parser tests: minimal synthetic ADMX/ADML fixtures; assert structural shape.
 - Pending changes: verify queue apply/discard/reapply retains element values (lists, enums, numeric, multi-line text).
 - Regression tests required before altering policy evaluation semantics.
+- Tests that touch shared singletons (`PolicySourceManager`, `PendingChangesService`, `SettingsService`, `AdmxCache`) must join the dedicated xUnit collection (`PolicySourceManagerSerial`) or inherit the matching isolation base (`PendingIsolationTestBase`, `SettingsServiceTestBase`, `AdmxCache.Isolated`) so parallel execution cannot corrupt global state.
 
 UI test re-run policy (time saver):
 - UI tests assume unit tests are passing. Always run unit tests first; if unit tests are failing, do not run UI tests.

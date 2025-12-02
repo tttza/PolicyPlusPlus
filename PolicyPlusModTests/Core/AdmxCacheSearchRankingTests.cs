@@ -5,13 +5,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using PolicyPlusCore.Core;
+using PolicyPlusModTests.TestHelpers;
 using Xunit;
 
 namespace PolicyPlusModTests.Core;
 
 // Focused ranking/precision tests for recent AdmxCache search enhancements.
+[Collection("AdmxCache.Isolated")]
 public class AdmxCacheSearchRankingTests
 {
+    private const string RankingAdmxFileName = "SearchRanking.admx";
+
     private static string CreateSyntheticAdmxRoot()
     {
         var root = Path.Combine(
@@ -47,7 +51,7 @@ public class AdmxCacheSearchRankingTests
     <policy name=""DescriptionOnlyTelemetry"" class=""Machine"" displayName=""$(string.DescriptionOnlyTelemetry)"" explainText=""$(string.DescriptionOnlyTelemetry_Explain)"" key=""Software\\Policies\\Test"" valueName=""DescriptionOnlyTelemetry"" category=""TestCat"" />
   </policies>
 </policyDefinitions>";
-        File.WriteAllText(Path.Combine(root, "SearchRanking.admx"), admx, Encoding.UTF8);
+        File.WriteAllText(Path.Combine(root, RankingAdmxFileName), admx, Encoding.UTF8);
 
         // Helper to build ADML string tables.
         static string BuildAdml(Dictionary<string, string> strings)
@@ -132,7 +136,6 @@ public class AdmxCacheSearchRankingTests
 
     private static async Task<IAdmxCache> BuildCacheAsync(string root, params string[] cultures)
     {
-        Environment.SetEnvironmentVariable("POLICYPLUS_CACHE_ONLY_FILES", null);
         IAdmxCache cache = new AdmxCache();
         await cache.InitializeAsync();
         cache.SetSourceRoot(root);
@@ -140,11 +143,31 @@ public class AdmxCacheSearchRankingTests
         return cache;
     }
 
+    private static Task WithRankingCacheAsync(Func<string, Task> body) =>
+        AdmxCacheTestEnvironment.RunWithScopedCacheAsync(
+            async () =>
+            {
+                var root = CreateSyntheticAdmxRoot();
+                try
+                {
+                    await body(root).ConfigureAwait(false);
+                }
+                finally
+                {
+                    try
+                    {
+                        Directory.Delete(root, true);
+                    }
+                    catch { }
+                }
+            },
+            RankingAdmxFileName
+        );
+
     [Fact]
     public async Task CamelCase_Id_Query_Prioritizes_UniqueId()
     {
-        var root = CreateSyntheticAdmxRoot();
-        try
+        await WithRankingCacheAsync(async root =>
         {
             var cache = await BuildCacheAsync(root, "en-US");
             var hits = await cache.SearchAsync(
@@ -160,22 +183,13 @@ public class AdmxCacheSearchRankingTests
                 hits[0].UniqueId,
                 StringComparison.OrdinalIgnoreCase
             );
-        }
-        finally
-        {
-            try
-            {
-                Directory.Delete(root, true);
-            }
-            catch { }
-        }
+        });
     }
 
     [Fact]
     public async Task Phrase_Search_Ranks_Phrase_Match_First()
     {
-        var root = CreateSyntheticAdmxRoot();
-        try
+        await WithRankingCacheAsync(async root =>
         {
             var cache = await BuildCacheAsync(root, "en-US");
             var hits = await cache.SearchAsync(
@@ -190,22 +204,13 @@ public class AdmxCacheSearchRankingTests
                 hits[0].DisplayName.ToLowerInvariant(),
                 new[] { "virtual extension handling" }
             );
-        }
-        finally
-        {
-            try
-            {
-                Directory.Delete(root, true);
-            }
-            catch { }
-        }
+        });
     }
 
     [Fact]
     public async Task Long_Single_Token_Filters_Noise_From_Split_Tokens()
     {
-        var root = CreateSyntheticAdmxRoot();
-        try
+        await WithRankingCacheAsync(async root =>
         {
             var cache = await BuildCacheAsync(root, "en-US");
             var hits = await cache.SearchAsync(
@@ -217,22 +222,13 @@ public class AdmxCacheSearchRankingTests
             Assert.NotNull(hits);
             Assert.True(hits.Count > 0);
             Assert.Equal("Test.Policies:SuperLongKeyAlpha", hits[0].UniqueId);
-        }
-        finally
-        {
-            try
-            {
-                Directory.Delete(root, true);
-            }
-            catch { }
-        }
+        });
     }
 
     [Fact]
     public async Task Cjk_Short_Token_Treated_As_Precise()
     {
-        var root = CreateSyntheticAdmxRoot();
-        try
+        await WithRankingCacheAsync(async root =>
         {
             var cache = await BuildCacheAsync(root, "ja-JP");
             var hits = await cache.SearchAsync(
@@ -244,22 +240,13 @@ public class AdmxCacheSearchRankingTests
             Assert.NotNull(hits);
             Assert.True(hits.Count > 0);
             Assert.Equal("Test.Policies:CjkPolicy1", hits[0].UniqueId);
-        }
-        finally
-        {
-            try
-            {
-                Directory.Delete(root, true);
-            }
-            catch { }
-        }
+        });
     }
 
     [Fact]
     public async Task Description_Only_Match_Ranks_Below_Name_Match_For_Same_Token()
     {
-        var root = CreateSyntheticAdmxRoot();
-        try
+        await WithRankingCacheAsync(async root =>
         {
             var cache = await BuildCacheAsync(root, "en-US");
             var hits = await cache.SearchAsync(
@@ -281,14 +268,6 @@ public class AdmxCacheSearchRankingTests
                     idxName < idxDescOnly,
                     "Name match should rank above description-only match"
                 );
-        }
-        finally
-        {
-            try
-            {
-                Directory.Delete(root, true);
-            }
-            catch { }
-        }
+        });
     }
 }
