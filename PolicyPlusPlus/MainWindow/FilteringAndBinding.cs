@@ -32,6 +32,7 @@ namespace PolicyPlusPlus
             RootElement?.FindName("SearchSpinner") as Microsoft.UI.Xaml.Controls.ProgressRing;
 
         private const int LargeResultThreshold = 200;
+        private const int AndModeCandidateProbeLimit = 800;
         private const int SearchInitialDelayMs = 120;
         private const int PartialExpandDelayMs = 260;
         private readonly NGramTextIndex _descIndex = new(2);
@@ -466,6 +467,13 @@ namespace PolicyPlusPlus
             }
         }
 
+        private static string NormalizeQueryInput(string? query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return string.Empty;
+            return query.Trim();
+        }
+
         private void ApplyFiltersAndBind(string query = "", PolicyPlusCategory? category = null)
         {
             if (PolicyList == null || PolicyCount == null)
@@ -474,7 +482,13 @@ namespace PolicyPlusPlus
                 _selectedCategory = category;
             PreserveScrollPosition();
             UpdateSearchPlaceholder();
-            var decision = EvaluateDecision(query);
+            var normalizedQuery = NormalizeQueryInput(query);
+            if (!string.IsNullOrEmpty(normalizedQuery))
+            {
+                RebindConsideringAsync(normalizedQuery);
+                return;
+            }
+            var decision = EvaluateDecision(normalizedQuery);
             IEnumerable<PolicyPlusPolicy> seq = BaseSequenceForFilters(
                 decision.IncludeSubcategoryPolicies
             );
@@ -482,10 +496,6 @@ namespace PolicyPlusPlus
             seq = ApplyBookmarkFilterIfNeeded(seq);
             var srcCtx = PolicySourceAccessor.Acquire();
             seq = ApplyConfiguredFilterIfNeeded(seq, srcCtx.Comp, srcCtx.User);
-            if (!string.IsNullOrWhiteSpace(query))
-            {
-                seq = MatchPolicies(query, seq, out _);
-            }
             BindSequenceEnhanced(seq, decision);
             RestorePositionOrSelection();
             if (ViewNavigationService.Instance.Current == null)
@@ -774,31 +784,7 @@ namespace PolicyPlusPlus
                         // but we can still get candidates for each token when available.
                     }
 
-                    // Intersect text candidates for each token to minimize scan
-                    HashSet<string>? intersectAnd = null;
-                    foreach (var t in tokens)
-                    {
-                        var cand = GetTextCandidates(t);
-                        if (cand == null || cand.Count == 0)
-                            continue;
-                        if (intersectAnd == null)
-                            intersectAnd = new HashSet<string>(
-                                cand,
-                                StringComparer.OrdinalIgnoreCase
-                            );
-                        else
-                            intersectAnd.IntersectWith(cand);
-                        if (intersectAnd.Count == 0)
-                            break;
-                    }
-
-                    var scanSetAnd =
-                        (intersectAnd != null && intersectAnd.Count > 0)
-                            ? new HashSet<string>(
-                                intersectAnd.Where(allowedSet.Contains),
-                                StringComparer.OrdinalIgnoreCase
-                            )
-                            : allowedSet;
+                    var scanSetAnd = BuildAndModeCandidateSet(tokens, allowedSet, out _);
 
                     var matchedAnd = new List<PolicyPlusPolicy>();
                     bool smallSubsetAnd =
@@ -883,6 +869,104 @@ namespace PolicyPlusPlus
                 $"MatchPolicies ms={swMatch.ElapsedMilliseconds} qLen={query.Length} matched={matched.Count}"
             );
             return matched;
+        }
+
+        private HashSet<string> BuildAndModeCandidateSet(
+            string[] tokens,
+            HashSet<string> allowedSet,
+            out bool usedIntersection
+        )
+        {
+            usedIntersection = false;
+            HashSet<string>? intersectAnd = null;
+            foreach (var t in tokens)
+            {
+                var cand = GetTextCandidates(t);
+                if (cand == null || cand.Count == 0)
+                    continue;
+                if (intersectAnd == null)
+                {
+                    intersectAnd = new HashSet<string>(cand, StringComparer.OrdinalIgnoreCase);
+                }
+                else
+                {
+                    intersectAnd.IntersectWith(cand);
+                }
+                if (intersectAnd.Count == 0)
+                    break;
+            }
+
+            if (intersectAnd != null && intersectAnd.Count > 0)
+            {
+                usedIntersection = true;
+                var filtered = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var id in intersectAnd)
+                {
+                    if (allowedSet.Contains(id))
+                        filtered.Add(id);
+                }
+                return filtered;
+            }
+
+            return allowedSet;
+        }
+
+        private bool TryDetectAndModeCacheGap(
+            string query,
+            HashSet<string> allowedSet,
+            IReadOnlyCollection<PolicyPlusPolicy> cacheMatches,
+            int cacheSearchLimit,
+            List<PolicyPlusPolicy> baseSeqSnapshot,
+            out List<PolicyPlusPolicy>? fallbackMatches,
+            out HashSet<string>? fallbackAllowed
+        )
+        {
+            fallbackMatches = null;
+            fallbackAllowed = null;
+            if (!_useAndModeFlag || cacheMatches.Count == 0)
+                return false;
+            if (cacheMatches.Count >= cacheSearchLimit)
+                return false; // cache already clipped to limit; differences are expected
+            if (allowedSet.Count == 0)
+                return false;
+
+            var qLower = SearchText.Normalize(query);
+            var tokens = qLower.Split(
+                new[] { ' ' },
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+            );
+            if (tokens.Length <= 1)
+                return false;
+
+            bool usedIntersection;
+            var candidateSet = BuildAndModeCandidateSet(tokens, allowedSet, out usedIntersection);
+            if (candidateSet.Count == 0)
+                return false;
+            if (!usedIntersection && candidateSet.Count > AndModeCandidateProbeLimit)
+                return false; // would require scanning nearly entire allowed set
+            if (candidateSet.Count > AndModeCandidateProbeLimit)
+                return false; // avoid probing extremely large intersections
+
+            var cacheSet = new HashSet<string>(
+                cacheMatches.Select(p => p.UniqueID),
+                StringComparer.OrdinalIgnoreCase
+            );
+            bool missing = false;
+            foreach (var id in candidateSet)
+            {
+                if (string.IsNullOrEmpty(id))
+                    continue;
+                if (!cacheSet.Contains(id))
+                {
+                    missing = true;
+                    break;
+                }
+            }
+            if (!missing)
+                return false;
+
+            fallbackMatches = MatchPolicies(query, baseSeqSnapshot, out fallbackAllowed);
+            return true;
         }
 
         private void ScheduleFullResultBind(
@@ -1130,8 +1214,8 @@ namespace PolicyPlusPlus
                     user
                 );
                 var swCompute = System.Diagnostics.Stopwatch.StartNew();
-                List<PolicyPlusPolicy> matches;
-                List<string> suggestions;
+                List<PolicyPlusPolicy> matches = new();
+                List<string> suggestions = new();
                 try
                 {
                     // Try cache-backed search first (if enabled)
@@ -1139,8 +1223,9 @@ namespace PolicyPlusPlus
                     baseSeq = ApplyBookmarkFilterIfNeeded(baseSeq);
                     // Apply configured-only after bookmarks to capture delta metrics.
                     baseSeq = ApplyConfiguredFilterIfNeeded(baseSeq, comp, user);
+                    var baseList = baseSeq as List<PolicyPlusPolicy> ?? baseSeq.ToList();
                     var allowedSet = new HashSet<string>(
-                        baseSeq.Select(p => p.UniqueID),
+                        baseList.Select(p => p.UniqueID),
                         StringComparer.OrdinalIgnoreCase
                     );
 
@@ -1154,6 +1239,7 @@ namespace PolicyPlusPlus
                     bool cacheSucceeded = false;
                     // Prepare search field flags outside try so diagnostics after catch can access.
                     var searchFields = SearchFields.None; // will be populated inside try
+                    int cacheSearchLimit = _limitUnfilteredTo1000 ? 1000 : 5000;
                     try
                     {
                         cacheAttempted = true;
@@ -1179,7 +1265,6 @@ namespace PolicyPlusPlus
                         );
 
                         IReadOnlyList<PolicyPlusCore.Core.PolicyHit>? hits = null;
-                        int cacheSearchLimit = _limitUnfilteredTo1000 ? 1000 : 5000;
                         if (_searchInName)
                             searchFields |= SearchFields.Name;
                         if (_searchInId)
@@ -1259,6 +1344,26 @@ namespace PolicyPlusPlus
                             "MainSearch",
                             $"cache-hit mode={(andMode ? "AND" : "OR")} qLen={q.Length} hitCount={cacheMatches.Count}"
                         );
+                        if (
+                            andMode
+                            && TryDetectAndModeCacheGap(
+                                q,
+                                allowedSet,
+                                cacheMatches,
+                                cacheSearchLimit,
+                                baseList,
+                                out var fallbackMatches,
+                                out var fallbackAllowed
+                            )
+                        )
+                        {
+                            Log.Debug(
+                                "MainSearch",
+                                "cache-hit mismatch detected, falling back to memory AND search"
+                            );
+                            cacheMatches = fallbackMatches ?? cacheMatches;
+                            cacheSuggestions = BuildSuggestions(q, fallbackAllowed ?? allowedSet);
+                        }
                         matches = cacheMatches;
                         suggestions =
                             cacheSuggestions.Count > 0
@@ -1393,7 +1498,7 @@ namespace PolicyPlusPlus
                         }
                         else
                         {
-                            matches = MatchPolicies(q, baseSeq, out var allowed2);
+                            matches = MatchPolicies(q, baseList, out var allowed2);
                             suggestions = BuildSuggestions(q, allowed2);
                         }
                     }

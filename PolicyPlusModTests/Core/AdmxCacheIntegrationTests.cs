@@ -265,6 +265,45 @@ public class AdmxCacheIntegrationTests
     }
 
     [Fact]
+    public async Task AndMode_MultiToken_Query_Finds_DummyPolicy()
+    {
+        const string scenario = nameof(AndMode_MultiToken_Query_Finds_DummyPolicy);
+        await WithLimitedAdmxAsync(
+            scenario,
+            async () =>
+            {
+                var admxRoot = FindAdmxRoot();
+                IAdmxCache cache = new AdmxCache();
+                await InitializeCacheAsync(scenario, "cache", cache);
+                cache.SetSourceRoot(admxRoot);
+
+                await ScanCacheAsync(scenario, "en-US", cache, "en-US");
+
+                var hits = await cache
+                    .SearchAsync(
+                        "dummy  feature",
+                        new[] { "en-US" },
+                        SearchFields.Name | SearchFields.Description,
+                        andMode: true,
+                        limit: 25,
+                        CancellationToken.None
+                    )
+                    .ConfigureAwait(false);
+
+                Assert.Contains(
+                    hits,
+                    h =>
+                        string.Equals(
+                            h.UniqueId,
+                            "PolicyPlus.Dummy:DummyPolicy",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                );
+            }
+        );
+    }
+
+    [Fact]
     public async Task Changing_SecondLanguage_At_Runtime_Reindexes_Without_Freeze()
     {
         const string scenario = nameof(Changing_SecondLanguage_At_Runtime_Reindexes_Without_Freeze);
