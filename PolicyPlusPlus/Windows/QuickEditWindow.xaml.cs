@@ -40,14 +40,6 @@ namespace PolicyPlusPlus.Windows
         public QuickEditWindow()
         {
             InitializeComponent();
-            try
-            {
-                SystemBackdrop = new MicaBackdrop();
-            }
-            catch (Exception ex)
-            {
-                Log.Debug("QuickEdit", "MicaBackdrop not applied: " + ex.Message);
-            }
             // Initial size will be further refined by ApplyAutoSize. Width here approximates
             // the model: sum of columns + 5 separators (QuickEdit.SeparatorWidth) + right spacer + padding/slack.
             ChildWindowCommon.Initialize(this, 1388, 520, ApplyCurrentTheme);
@@ -286,8 +278,7 @@ namespace PolicyPlusPlus.Windows
             {
                 try
                 {
-                    existing.Activate();
-                    WindowHelpers.BringToFront(existing);
+                    WindowHelpers.ActivateAndBringToFront(existing);
                 }
                 catch (Exception ex)
                 {
@@ -433,15 +424,7 @@ namespace PolicyPlusPlus.Windows
                 _editWindows.Remove(policyId);
             };
             _editWindows[policyId] = win;
-            win.Activate();
-            try
-            {
-                WindowHelpers.BringToFront(win);
-            }
-            catch (Exception ex)
-            {
-                Log.Debug("QuickEdit", "BringToFront failed: " + ex.Message);
-            }
+            WindowHelpers.ActivateAndBringToFront(win);
         }
 
         private void Columns_PropertyChanged(object? s, PropertyChangedEventArgs e) =>
@@ -753,8 +736,41 @@ namespace PolicyPlusPlus.Windows
             {
                 if (RootShell == null)
                     return;
-                var theme = App.CurrentTheme;
+                var theme = App.GetEffectiveTheme(this);
                 RootShell.RequestedTheme = theme;
+                WindowHelpers.ApplyImmersiveDarkMode(this, theme == ElementTheme.Dark);
+
+                void RestoreOpacity()
+                {
+                    if (RootShell.Opacity >= 1)
+                        return;
+                    RootShell.Opacity = 1;
+                }
+
+                if (theme == ElementTheme.Dark)
+                {
+                    if (RootShell.Opacity != 0)
+                        RootShell.Opacity = 0;
+                    if (RootShell.IsLoaded)
+                    {
+                        RootShell.DispatcherQueue.TryEnqueue(RestoreOpacity);
+                    }
+                    else
+                    {
+                        RoutedEventHandler? loadedHandler = null;
+                        loadedHandler = (s, e) =>
+                        {
+                            RootShell.Loaded -= loadedHandler;
+                            RootShell.DispatcherQueue.TryEnqueue(RestoreOpacity);
+                        };
+                        RootShell.Loaded += loadedHandler;
+                    }
+                }
+                else
+                {
+                    RestoreOpacity();
+                }
+
                 Brush? bg = null;
                 if (theme == ElementTheme.Light)
                     bg = new SolidColorBrush(Microsoft.UI.Colors.White);

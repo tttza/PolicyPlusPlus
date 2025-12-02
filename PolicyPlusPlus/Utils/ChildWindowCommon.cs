@@ -1,5 +1,6 @@
 using System;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using PolicyPlusPlus.Logging; // logging
 
 namespace PolicyPlusPlus.Utils
@@ -14,6 +15,21 @@ namespace PolicyPlusPlus.Utils
         {
             if (window == null)
                 return;
+            SystemBackdrop? deferredBackdrop = null;
+            bool restoreBackdrop = false;
+            try
+            {
+                if (window.SystemBackdrop is MicaBackdrop mica)
+                {
+                    deferredBackdrop = mica;
+                    restoreBackdrop = true;
+                    window.SystemBackdrop = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("ChildWindow", "Mica deferral failed: " + ex.Message);
+            }
             try
             {
                 applyTheme?.Invoke();
@@ -21,6 +37,125 @@ namespace PolicyPlusPlus.Utils
             catch (Exception ex)
             {
                 Log.Warn("ChildWindow", "applyTheme invoke failed", ex);
+            }
+            try
+            {
+                if (window.Content is FrameworkElement root)
+                {
+                    var effectiveTheme = App.GetEffectiveTheme(window);
+                    if (effectiveTheme == ElementTheme.Dark)
+                    {
+                        var initialOpacity = root.Opacity;
+                        if (initialOpacity > 0)
+                        {
+                            root.Opacity = 0;
+                            void RestoreOpacity(object? sender, RoutedEventArgs e)
+                            {
+                                root.Loaded -= RestoreOpacity;
+                                try
+                                {
+                                    root.DispatcherQueue.TryEnqueue(() =>
+                                    {
+                                        try
+                                        {
+                                            if (restoreBackdrop && deferredBackdrop != null)
+                                                window.SystemBackdrop = deferredBackdrop;
+                                        }
+                                        catch (Exception backdropEx)
+                                        {
+                                            Log.Debug(
+                                                "ChildWindow",
+                                                "Mica restore failed: " + backdropEx.Message
+                                            );
+                                        }
+                                        root.Opacity = initialOpacity;
+                                    });
+                                }
+                                catch
+                                {
+                                    root.Opacity = initialOpacity;
+                                }
+                            }
+                            root.Loaded += RestoreOpacity;
+                        }
+                        else if (restoreBackdrop && deferredBackdrop != null)
+                        {
+                            // Light theme still needs backdrop reapply but no fade
+                            void RestoreBackdrop(object? sender, RoutedEventArgs e)
+                            {
+                                root.Loaded -= RestoreBackdrop;
+                                try
+                                {
+                                    root.DispatcherQueue.TryEnqueue(() =>
+                                    {
+                                        try
+                                        {
+                                            window.SystemBackdrop = deferredBackdrop;
+                                        }
+                                        catch (Exception backdropEx)
+                                        {
+                                            Log.Debug(
+                                                "ChildWindow",
+                                                "Mica restore (light) failed: " + backdropEx.Message
+                                            );
+                                        }
+                                    });
+                                }
+                                catch (Exception dsEx)
+                                {
+                                    Log.Debug(
+                                        "ChildWindow",
+                                        "Dispatcher restore failed: " + dsEx.Message
+                                    );
+                                }
+                            }
+                            root.Loaded += RestoreBackdrop;
+                        }
+                    }
+                    else if (restoreBackdrop && deferredBackdrop != null)
+                    {
+                        // Non-dark theme but still temporarily removed backdrop
+                        try
+                        {
+                            root.DispatcherQueue.TryEnqueue(() =>
+                            {
+                                try
+                                {
+                                    window.SystemBackdrop = deferredBackdrop;
+                                }
+                                catch (Exception backdropEx)
+                                {
+                                    Log.Debug(
+                                        "ChildWindow",
+                                        "Mica restore default failed: " + backdropEx.Message
+                                    );
+                                }
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Debug(
+                                "ChildWindow",
+                                "Immediate backdrop restore failed: " + ex.Message
+                            );
+                        }
+                    }
+                }
+                else if (restoreBackdrop && deferredBackdrop != null)
+                {
+                    try
+                    {
+                        window.SystemBackdrop = deferredBackdrop;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Debug("ChildWindow", "Mica restore (no content) failed: " + ex.Message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("ChildWindow", "initial opacity guard failed", ex);
             }
             try
             {

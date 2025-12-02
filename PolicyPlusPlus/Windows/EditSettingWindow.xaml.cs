@@ -525,8 +525,10 @@ namespace PolicyPlusPlus.Windows
         {
             try
             {
+                var effectiveTheme = App.GetEffectiveTheme(this);
                 if (Content is FrameworkElement fe)
-                    fe.RequestedTheme = App.CurrentTheme;
+                    fe.RequestedTheme = effectiveTheme;
+                WindowHelpers.ApplyImmersiveDarkMode(this, effectiveTheme == ElementTheme.Dark);
                 var textBg = Application.Current.Resources["TextControlBackground"] as Brush;
                 var textFg = Application.Current.Resources["TextFillColorPrimaryBrush"] as Brush;
                 CommentBox.Background = textBg;
@@ -631,24 +633,6 @@ namespace PolicyPlusPlus.Windows
             ApplyPendingOverlayFromQueue();
             StateRadio_Checked(this, null!);
             RaiseLiveChanged();
-
-            WindowHelpers.BringToFront(this);
-            var tmr = this.DispatcherQueue.CreateTimer();
-            tmr.Interval = TimeSpan.FromMilliseconds(180);
-            tmr.IsRepeating = false;
-            tmr.Tick += (s, e) =>
-            {
-                try
-                {
-                    WindowHelpers.BringToFront(this);
-                    Activate();
-                }
-                catch (Exception ex)
-                {
-                    Log.Debug("EditSetting", "Activate timer bring-to-front failed: " + ex.Message);
-                }
-            };
-            tmr.Start();
             App.RegisterEditWindow(_policy.UniqueID, this);
         }
 
