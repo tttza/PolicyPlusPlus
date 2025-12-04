@@ -899,12 +899,8 @@ namespace PolicyPlusPlus
             if (intersectAnd != null && intersectAnd.Count > 0)
             {
                 usedIntersection = true;
-                var filtered = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var id in intersectAnd)
-                {
-                    if (allowedSet.Contains(id))
-                        filtered.Add(id);
-                }
+                var filtered = new HashSet<string>(intersectAnd, StringComparer.OrdinalIgnoreCase);
+                filtered.IntersectWith(allowedSet);
                 return filtered;
             }
 
