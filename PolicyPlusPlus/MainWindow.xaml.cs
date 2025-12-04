@@ -1774,10 +1774,11 @@ namespace PolicyPlusPlus
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(q))
+                var normalized = NormalizeQueryInput(q);
+                if (string.IsNullOrEmpty(normalized))
                     RunAsyncFilterAndBind(showBaselineOnEmpty);
                 else
-                    RunAsyncSearchAndBind(q);
+                    RunAsyncSearchAndBind(normalized);
             }
             catch { }
         }
