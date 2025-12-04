@@ -272,7 +272,36 @@ namespace PolicyPlusPlus
                     if (!altDown && !ctrlDown)
                     {
                         // Do not steal keys while a text input control already has focus (including inside SearchBox)
-                        var focused = FocusManager.GetFocusedElement() as DependencyObject;
+                        // Use XamlRoot-aware focus retrieval; plain GetFocusedElement() can be null in WinUI 3 desktop.
+                        DependencyObject? focused = null;
+                        try
+                        {
+                            var xr = this.Content is FrameworkElement fe ? fe.XamlRoot : null;
+                            focused =
+                                (
+                                    xr != null
+                                        ? FocusManager.GetFocusedElement(xr)
+                                        : FocusManager.GetFocusedElement()
+                                ) as DependencyObject;
+                        }
+                        catch (Exception ex)
+                        {
+                            // Use debug instead because this is not an fatal error.
+                            Logging.Log.Debug(
+                                "MainWindow",
+                                "GetFocusedElement failed: " + ex.Message
+                            );
+                        }
+                        if (focused == null)
+                        {
+                            // Fallback to event source if FocusManager did not return a focused element.
+                            focused = e.OriginalSource as DependencyObject;
+                            // Use debug instead because this is not an fatal error.
+                            Logging.Log.Debug(
+                                "MainWindow",
+                                "Focused element null; using OriginalSource fallback"
+                            );
+                        }
                         bool inSearchBox = SearchBox != null && IsWithin(focused, SearchBox);
                         bool focusedIsTextInput =
                             focused is TextBox || focused is RichEditBox || focused is PasswordBox;
@@ -284,7 +313,11 @@ namespace PolicyPlusPlus
                                 _suppressInitialSearchBoxFocus = false; // user started typing; allow search focus
                                 SearchBox.Focus(FocusState.Keyboard);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                // Use warn because this is unexpected.
+                                Logging.Log.Warn("MainWindow", "SearchBox.Focus failed", ex);
+                            }
                             try
                             {
                                 var innerTb = FindDescendantByName(SearchBox, "TextBox") as TextBox;
@@ -294,8 +327,23 @@ namespace PolicyPlusPlus
                                     innerTb.SelectionStart = len;
                                     innerTb.SelectionLength = 0;
                                 }
+                                else
+                                {
+                                    // Use debug instead because this is not an fatal error.
+                                    Logging.Log.Debug(
+                                        "MainWindow",
+                                        "inner TextBox not found in SearchBox"
+                                    );
+                                }
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                // Use debug instead because this is not an fatal error.
+                                Logging.Log.Debug(
+                                    "MainWindow",
+                                    "SearchBox caret move failed: " + ex.Message
+                                );
+                            }
                             // Do not mark handled: let this key press flow into the now-focused search box so the first character appears once.
                             return;
                         }
