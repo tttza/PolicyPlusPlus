@@ -907,7 +907,7 @@ namespace PolicyPlusPlus
             return allowedSet;
         }
 
-        private bool TryDetectAndModeCacheGap(
+        private bool HasAndModeCacheGap(
             string query,
             HashSet<string> allowedSet,
             IReadOnlyCollection<PolicyPlusPolicy> cacheMatches,
@@ -1342,7 +1342,7 @@ namespace PolicyPlusPlus
                         );
                         if (
                             andMode
-                            && TryDetectAndModeCacheGap(
+                            && HasAndModeCacheGap(
                                 q,
                                 allowedSet,
                                 cacheMatches,
