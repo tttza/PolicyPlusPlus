@@ -286,7 +286,6 @@ namespace PolicyPlusPlus
                         }
                         catch (Exception ex)
                         {
-                            // Use debug instead because this is not a fatal error.
                             Logging.Log.Debug(
                                 "MainWindow",
                                 "GetFocusedElement failed: " + ex.Message
@@ -296,7 +295,6 @@ namespace PolicyPlusPlus
                         {
                             // Fallback to event source if FocusManager did not return a focused element.
                             focused = e.OriginalSource as DependencyObject;
-                            // Use debug instead because this is not a fatal error.
                             Logging.Log.Debug(
                                 "MainWindow",
                                 "Focused element null; using OriginalSource fallback"
@@ -315,7 +313,6 @@ namespace PolicyPlusPlus
                             }
                             catch (Exception ex)
                             {
-                                // Use warn because this is unexpected.
                                 Logging.Log.Warn("MainWindow", "SearchBox.Focus failed", ex);
                             }
                             try
@@ -329,7 +326,6 @@ namespace PolicyPlusPlus
                                 }
                                 else
                                 {
-                                    // Use debug instead because this is not a fatal error.
                                     Logging.Log.Debug(
                                         "MainWindow",
                                         "inner TextBox not found in SearchBox"
@@ -338,7 +334,6 @@ namespace PolicyPlusPlus
                             }
                             catch (Exception ex)
                             {
-                                // Use debug instead because this is not a fatal error.
                                 Logging.Log.Debug(
                                     "MainWindow",
                                     "SearchBox caret move failed: " + ex.Message
