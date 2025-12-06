@@ -243,7 +243,12 @@ namespace PolicyPlusPlus.Services
         private static ElevationResult ClassifyResponse(bool ok, string? err)
         {
             if (ok)
-                return ElevationResult.Success;
+            {
+                // Keep warning text even on Ok=true so UI can surface "saved but refresh failed/DC unreachable" cases.
+                if (string.IsNullOrEmpty(err))
+                    return ElevationResult.Success;
+                return new ElevationResult(true, ElevationErrorCode.None, err);
+            }
             if (string.IsNullOrEmpty(err))
                 return ElevationResult.FromError(ElevationErrorCode.Unknown, null);
             var lower = err.ToLowerInvariant();
