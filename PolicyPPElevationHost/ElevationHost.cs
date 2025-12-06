@@ -29,8 +29,52 @@ namespace PolicyPPElevationHost
         )]
         private static extern bool RefreshPolicyEx(bool IsMachine, uint Options);
 
+        [DllImport("netapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern int NetGetJoinInformation(
+            string? server,
+            out IntPtr domain,
+            out NetSetupJoinStatus status
+        );
+
+        [DllImport("netapi32.dll", SetLastError = true)]
+        private static extern int NetApiBufferFree(IntPtr buffer);
+
+        [DllImport("netapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern int DsGetDcNameW(
+            string? computerName,
+            string? domainName,
+            IntPtr domainGuid,
+            string? siteName,
+            int flags,
+            out IntPtr info
+        );
+
         private const uint RP_FORCE = 0x1;
+        private const int DS_DIRECTORY_SERVICE_PREFERRED = 0x20;
+        private const int DS_RETURN_DNS_NAME = unchecked((int)0x40000000);
         private static volatile bool s_logEnabled = false;
+
+        private enum NetSetupJoinStatus
+        {
+            NetSetupUnknownStatus = 0,
+            NetSetupUnjoined = 1,
+            NetSetupWorkgroupName = 2,
+            NetSetupDomainName = 3,
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct DomainControllerInfo
+        {
+            public IntPtr DomainControllerName;
+            public IntPtr DomainControllerAddress;
+            public uint DomainControllerAddressType;
+            public Guid DomainGuid;
+            public IntPtr DomainName;
+            public IntPtr DnsForestName;
+            public uint Flags;
+            public IntPtr DcSiteName;
+            public IntPtr ClientSiteName;
+        }
 
         // Minimum severity to log when logging is enabled. Parsed from --log-* flags.
         private enum HostLogLevel
@@ -410,6 +454,60 @@ namespace PolicyPPElevationHost
 
             Log("Host exiting.", HostLogLevel.Info);
             return 0;
+        }
+
+        private static string? GetDomainReachabilityError()
+        {
+            IntPtr domainPtr = IntPtr.Zero;
+            try
+            {
+                var status = NetSetupJoinStatus.NetSetupUnknownStatus;
+                int res = NetGetJoinInformation(null, out domainPtr, out status);
+                if (res != 0)
+                {
+                    Log("NetGetJoinInformation failed: " + res, HostLogLevel.Debug);
+                    return null;
+                }
+
+                // Skip DC reachability checks when the machine is not domain-joined (workgroup/AAD join).
+                if (status != NetSetupJoinStatus.NetSetupDomainName)
+                    return null;
+
+                string domain = Marshal.PtrToStringUni(domainPtr) ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(domain))
+                    return null;
+
+                IntPtr dcInfo = IntPtr.Zero;
+                try
+                {
+                    int flags = DS_DIRECTORY_SERVICE_PREFERRED | DS_RETURN_DNS_NAME;
+                    int dcRes = DsGetDcNameW(null, domain, IntPtr.Zero, null, flags, out dcInfo);
+                    if (dcRes != 0)
+                    {
+                        Log(
+                            "DsGetDcNameW domain=" + domain + " failed: " + dcRes,
+                            HostLogLevel.Warn
+                        );
+                        return "domain controller not reachable (DsGetDcName=" + dcRes + ")";
+                    }
+                }
+                finally
+                {
+                    if (dcInfo != IntPtr.Zero)
+                        NetApiBufferFree(dcInfo);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("GetDomainReachabilityError failed: " + ex.Message, HostLogLevel.Debug);
+            }
+            finally
+            {
+                if (domainPtr != IntPtr.Zero)
+                    NetApiBufferFree(domainPtr);
+            }
+
+            return null;
         }
 
         private static bool IsPolBytes(byte[] bytes) =>
