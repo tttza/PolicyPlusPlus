@@ -361,6 +361,7 @@ namespace PolicyPlusCore.IO
                     // Figure out whether this edition can handle Group Policy application by itself
                     if (SystemInfo.HasGroupPolicyInfrastructure())
                     {
+                        // Core path intentionally skips DC reachability checks; user-facing warnings are handled in the elevation host path.
                         bool refreshed = PInvoke.RefreshPolicyEx(!User, 0U);
                         if (!refreshed)
                         {
