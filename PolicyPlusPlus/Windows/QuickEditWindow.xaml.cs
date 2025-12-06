@@ -671,9 +671,26 @@ namespace PolicyPlusPlus.Windows
                 if (ok)
                 {
                     PendingChangesService.Instance.Applied(relevant.ToArray());
-                    SetStatus(
-                        relevant.Count == 1 ? "Saved 1 change." : $"Saved {relevant.Count} changes."
-                    );
+                    if (!string.IsNullOrEmpty(error))
+                    {
+                        var msg =
+                            relevant.Count == 1
+                                ? "Saved 1 change, but refresh failed. (" + error + ")"
+                                : $"Saved {relevant.Count} changes, but refresh failed. ("
+                                    + error
+                                    + ")";
+                        SetStatus(msg);
+                        if (App.Window is MainWindow mw)
+                            mw.ShowInfo(msg, InfoBarSeverity.Warning);
+                    }
+                    else
+                    {
+                        SetStatus(
+                            relevant.Count == 1
+                                ? "Saved 1 change."
+                                : $"Saved {relevant.Count} changes."
+                        );
+                    }
                     try
                     {
                         mgr.Refresh();
