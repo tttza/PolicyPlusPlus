@@ -21,7 +21,12 @@ namespace PolicyPPElevationHost
 
     internal static class ElevationHost
     {
-        [DllImport("userenv.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
+        [DllImport(
+            "userenv.dll",
+            ExactSpelling = true,
+            CharSet = CharSet.Unicode,
+            SetLastError = true
+        )]
         private static extern bool RefreshPolicyEx(bool IsMachine, uint Options);
 
         private const uint RP_FORCE = 0x1;
@@ -265,26 +270,33 @@ namespace PolicyPPElevationHost
                             bool refresh =
                                 root.TryGetProperty("refresh", out var r) && r.GetBoolean();
                             var (ok, error) = WriteLocalGpo(machineBytes, userBytes);
-                            var resp = new HostResponse { Ok = ok, Error = error };
-                            writer.WriteLine(JsonSerializer.Serialize(resp));
-
+                            string? refreshError = null;
                             if (ok && refresh)
                             {
-                                Task.Run(async () =>
+                                try
                                 {
-                                    try
+                                    bool machineOk = RefreshPolicyEx(true, RP_FORCE);
+                                    if (!machineOk)
                                     {
-                                        RefreshPolicyEx(true, RP_FORCE);
-                                        Log("RefreshPolicyEx(machine, FORCE) invoked");
+                                        int err = Marshal.GetLastWin32Error();
+                                        refreshError =
+                                            "machine policy refresh failed (error=0x"
+                                            + err.ToString("X")
+                                            + ")";
+                                        Log(
+                                            "RefreshPolicyEx(machine) failed: 0x"
+                                                + err.ToString("X"),
+                                            HostLogLevel.Warn
+                                        );
                                     }
-                                    catch (Exception ex)
+                                    else
                                     {
-                                        Log("RefreshPolicyEx(machine) failed: " + ex.Message);
+                                        Log("RefreshPolicyEx(machine, FORCE) invoked");
                                     }
 
                                     try
                                     {
-                                        await Task.Delay(100).ConfigureAwait(false);
+                                        Thread.Sleep(100);
                                     }
                                     catch (Exception exDelay)
                                     {
@@ -295,17 +307,45 @@ namespace PolicyPPElevationHost
                                         );
                                     }
 
-                                    try
+                                    bool userOk = RefreshPolicyEx(false, RP_FORCE);
+                                    if (!userOk)
                                     {
-                                        RefreshPolicyEx(false, RP_FORCE);
+                                        int err = Marshal.GetLastWin32Error();
+                                        var suffix =
+                                            "user policy refresh failed (error=0x"
+                                            + err.ToString("X")
+                                            + ")";
+                                        refreshError = string.IsNullOrEmpty(refreshError)
+                                            ? suffix
+                                            : (refreshError + "; " + suffix);
+                                        Log(
+                                            "RefreshPolicyEx(user) failed: 0x" + err.ToString("X"),
+                                            HostLogLevel.Warn
+                                        );
+                                    }
+                                    else
+                                    {
                                         Log("RefreshPolicyEx(user, FORCE) invoked");
                                     }
-                                    catch (Exception ex)
-                                    {
-                                        Log("RefreshPolicyEx(user) failed: " + ex.Message);
-                                    }
-                                });
+                                }
+                                catch (Exception ex)
+                                {
+                                    refreshError = string.IsNullOrEmpty(refreshError)
+                                        ? ("policy refresh failed: " + ex.Message)
+                                        : (refreshError + "; " + ex.Message);
+                                    Log("RefreshPolicyEx failed: " + ex.Message);
+                                }
+
+                                if (string.IsNullOrEmpty(refreshError))
+                                {
+                                    var dcIssue = GetDomainReachabilityError();
+                                    if (!string.IsNullOrEmpty(dcIssue))
+                                        refreshError = dcIssue;
+                                }
                             }
+
+                            var resp = new HostResponse { Ok = ok, Error = error ?? refreshError };
+                            writer.WriteLine(JsonSerializer.Serialize(resp));
                         }
                         else if (
                             string.Equals(op, "open-regedit", StringComparison.OrdinalIgnoreCase)
