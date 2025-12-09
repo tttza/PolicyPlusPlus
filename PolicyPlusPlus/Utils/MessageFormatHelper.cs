@@ -13,11 +13,14 @@ namespace PolicyPlusPlus.Utils
         /// <returns>A consistently formatted message string.</returns>
         public static string FormatRefreshFailureMessage(int changeCount, string error)
         {
+            if (changeCount < 0)
+                changeCount = 0;
+            var errorMsg = string.IsNullOrEmpty(error) ? "Unknown error" : error;
             var baseMessage =
                 changeCount == 1
                     ? "Saved 1 change, but refresh failed."
                     : $"Saved {changeCount} changes, but refresh failed.";
-            return $"{baseMessage} ({error})";
+            return $"{baseMessage} ({errorMsg})";
         }
 
         /// <summary>
@@ -27,7 +30,8 @@ namespace PolicyPlusPlus.Utils
         /// <returns>A consistently formatted message string.</returns>
         public static string FormatReapplyRefreshFailureMessage(string error)
         {
-            return $"Reapplied, but refresh failed. ({error})";
+            var errorMsg = string.IsNullOrEmpty(error) ? "Unknown error" : error;
+            return $"Reapplied, but refresh failed. ({errorMsg})";
         }
     }
 }
