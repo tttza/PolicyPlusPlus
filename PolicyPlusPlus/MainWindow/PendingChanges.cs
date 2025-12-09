@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using PolicyPlusPlus.Logging; // logging
 using PolicyPlusPlus.Services;
+using PolicyPlusPlus.Utils;
 
 namespace PolicyPlusPlus
 {
@@ -59,7 +60,7 @@ namespace PolicyPlusPlus
                         if (!string.IsNullOrEmpty(err))
                         {
                             ShowInfo(
-                                "Policies saved, but refresh failed (" + err + ")",
+                                MessageFormatHelper.FormatRefreshFailureMessage(pending.Length, err),
                                 Microsoft.UI.Xaml.Controls.InfoBarSeverity.Warning
                             );
                         }

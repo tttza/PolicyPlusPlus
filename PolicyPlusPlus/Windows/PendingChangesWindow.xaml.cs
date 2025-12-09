@@ -626,15 +626,10 @@ namespace PolicyPlusPlus.Windows
                     ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
                     if (!string.IsNullOrEmpty(error))
                     {
-                        var msg =
-                            (
-                                appliedList.Count == 1
-                                    ? "1 change saved, but refresh failed."
-                                    : $"{appliedList.Count} changes saved, but refresh failed."
-                            )
-                            + " ("
-                            + error
-                            + ")";
+                        var msg = MessageFormatHelper.FormatRefreshFailureMessage(
+                            appliedList.Count,
+                            error
+                        );
                         ShowLocalInfo(msg, InfoBarSeverity.Warning);
                         if (App.Window is MainWindow mw)
                             mw.ShowInfo(msg, InfoBarSeverity.Warning);
@@ -772,7 +767,7 @@ namespace PolicyPlusPlus.Windows
                     ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
                     if (!string.IsNullOrEmpty(error))
                     {
-                        var msg = "Reapplied, but refresh failed. (" + error + ")";
+                        var msg = MessageFormatHelper.FormatReapplyRefreshFailureMessage(error);
                         ShowLocalInfo(msg, InfoBarSeverity.Warning);
                         if (App.Window is MainWindow mw)
                             mw.ShowInfo(msg, InfoBarSeverity.Warning);

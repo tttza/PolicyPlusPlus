@@ -673,12 +673,10 @@ namespace PolicyPlusPlus.Windows
                     PendingChangesService.Instance.Applied(relevant.ToArray());
                     if (!string.IsNullOrEmpty(error))
                     {
-                        var msg =
-                            relevant.Count == 1
-                                ? "Saved 1 change, but refresh failed. (" + error + ")"
-                                : $"Saved {relevant.Count} changes, but refresh failed. ("
-                                    + error
-                                    + ")";
+                        var msg = MessageFormatHelper.FormatRefreshFailureMessage(
+                            relevant.Count,
+                            error
+                        );
                         SetStatus(msg);
                         if (App.Window is MainWindow mw)
                             mw.ShowInfo(msg, InfoBarSeverity.Warning);
