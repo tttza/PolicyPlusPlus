@@ -46,7 +46,11 @@ namespace PolicyPlusPlus.Services
             {
                 LocalizedTextService.ClearCache();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // Log at Debug level if cache invalidation fails, per logging guidance.
+                Log.Debug(LogArea, "Failed to clear localized text cache", ex);
+            }
         }
 
         // Ensures the core cache is initialized; if a previous init failed or was canceled, reattempt.
