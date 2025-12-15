@@ -15,6 +15,11 @@ namespace PolicyPlusPlus.Services
             AdmlFile?
         > _cache = new();
 
+        public static void ClearCache()
+        {
+            _cache.Clear();
+        }
+
         private static AdmlFile? LoadAdml(string admxPath, string lang)
         {
             if (string.IsNullOrWhiteSpace(admxPath) || string.IsNullOrWhiteSpace(lang))
