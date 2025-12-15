@@ -201,6 +201,14 @@ namespace PolicyPlusPlus
             catch { }
             try
             {
+                EventHub.PolicySourcesRefreshed += OnPolicySourcesRefreshed;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Init", "Failed to subscribe to PolicySourcesRefreshed event", ex);
+            }
+            try
+            {
                 Closed += (s, e) =>
                 {
                     try
@@ -221,6 +229,15 @@ namespace PolicyPlusPlus
                         EventHub.AdmxCacheRebuildCompleted -= null; // no-op safeguard
                     }
                     catch { }
+                    try
+                    {
+                        EventHub.PolicySourcesRefreshed -= OnPolicySourcesRefreshed;
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log exception during event handler detachment for diagnostics.
+                        Log.Warn("MainWindow", "Exception detaching PolicySourcesRefreshed handler: " + ex);
+                    }
                 };
             }
             catch { }
@@ -1043,6 +1060,59 @@ namespace PolicyPlusPlus
                 }
             }
             catch { }
+        }
+
+        private string GetPreferredAdmxPath()
+        {
+            try
+            {
+                var settings = SettingsService.Instance.LoadSettings();
+                string defaultPath = Environment.ExpandEnvironmentVariables(
+                    @"%WINDIR%\\PolicyDefinitions"
+                );
+                string candidate = settings.AdmxSourcePath ?? defaultPath;
+                return Directory.Exists(candidate) ? candidate : defaultPath;
+            }
+            catch
+            {
+                return Environment.ExpandEnvironmentVariables(@"%WINDIR%\\PolicyDefinitions");
+            }
+        }
+
+        private void OnPolicySourcesRefreshed(IReadOnlyCollection<string>? ids)
+        {
+            try
+            {
+                if (ids != null && ids.Count > 0)
+                {
+                    var copy = ids.ToList();
+                    DispatcherQueue.TryEnqueue(() => UpdateVisibleRowsForPolicyIds(copy));
+                    return;
+                }
+
+                string path = GetPreferredAdmxPath();
+                if (!Directory.Exists(path))
+                    return;
+
+                DispatcherQueue.TryEnqueue(async () =>
+                {
+                    try
+                    {
+                        await LoadAdmxFolderAsync(path);
+                        if (_configuredOnly)
+                            _forceComputeStatesOnce = true;
+                        RebindConsideringAsync(SearchBox?.Text ?? string.Empty);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warn("Main", "ADMX reload failed after refresh event: " + ex.Message);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("Main", "OnPolicySourcesRefreshed failed: " + ex.Message);
+            }
         }
 
         private void PersistHistory()

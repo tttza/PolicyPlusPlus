@@ -40,6 +40,19 @@ namespace PolicyPlusPlus.Services
 
         private const string LogArea = "AdmxCacheHost";
 
+        private static void InvalidateLocalizedTextCache()
+        {
+            try
+            {
+                LocalizedTextService.ClearCache();
+            }
+            catch (Exception ex)
+            {
+                // Log at Debug level if cache invalidation fails, per logging guidance.
+                Log.Debug(LogArea, "Failed to clear localized text cache", ex);
+            }
+        }
+
         // Ensures the core cache is initialized; if a previous init failed or was canceled, reattempt.
         private async Task EnsureInitializedAsync()
         {
@@ -213,6 +226,7 @@ namespace PolicyPlusPlus.Services
                                     ordered2.Add(c);
                             _culturesForScan = ordered2;
                             await _cache.ScanAndUpdateAsync(_culturesForScan).ConfigureAwait(false);
+                            InvalidateLocalizedTextCache();
                             try
                             {
                                 EventHub.PublishPolicySourcesRefreshed(null);
@@ -303,6 +317,7 @@ namespace PolicyPlusPlus.Services
                             if (langs == null || langs.Count == 0)
                                 langs = new[] { CultureInfo.CurrentUICulture.Name };
                             await _cache.ScanAndUpdateAsync(langs).ConfigureAwait(false);
+                            InvalidateLocalizedTextCache();
                             try
                             {
                                 EventHub.PublishPolicySourcesRefreshed(null);
@@ -383,6 +398,7 @@ namespace PolicyPlusPlus.Services
                             if (langs == null || langs.Count == 0)
                                 langs = new[] { CultureInfo.CurrentUICulture.Name };
                             await _cache.ScanAndUpdateAsync(langs).ConfigureAwait(false);
+                            InvalidateLocalizedTextCache();
                             try
                             {
                                 EventHub.PublishPolicySourcesRefreshed(null);
@@ -483,6 +499,7 @@ namespace PolicyPlusPlus.Services
                         Log.Debug(LogArea, "Publish start(initial) failed: " + ex.Message);
                     }
                     await _cache.ScanAndUpdateAsync(_culturesForScan).ConfigureAwait(false);
+                    InvalidateLocalizedTextCache();
                     try
                     {
                         EventHub.PublishAdmxCacheRebuildCompleted("initial");
@@ -572,6 +589,7 @@ namespace PolicyPlusPlus.Services
                                     langs = new[] { CultureInfo.CurrentUICulture.Name };
                                 }
                                 await _cache.ScanAndUpdateAsync(langs).ConfigureAwait(false);
+                                InvalidateLocalizedTextCache();
                                 try
                                 {
                                     EventHub.PublishPolicySourcesRefreshed(null);
@@ -763,6 +781,7 @@ namespace PolicyPlusPlus.Services
                     langs = new[] { CultureInfo.CurrentUICulture.Name };
                 }
                 await _cache.ScanAndUpdateAsync(langs).ConfigureAwait(false);
+                InvalidateLocalizedTextCache();
                 try
                 {
                     EventHub.PublishPolicySourcesRefreshed(null);
