@@ -56,7 +56,17 @@ namespace PolicyPlusPlus
                         RefreshVisibleRows();
                         UpdateUnsavedIndicator();
                         ApplyFiltersAndBind(SearchBox?.Text ?? string.Empty);
-                        ShowInfo("Saved.", Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success);
+                        if (!string.IsNullOrEmpty(err))
+                        {
+                            ShowInfo(
+                                "Policies saved, but refresh failed (" + err + ")",
+                                Microsoft.UI.Xaml.Controls.InfoBarSeverity.Warning
+                            );
+                        }
+                        else
+                        {
+                            ShowInfo("Saved.", Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success);
+                        }
                         try
                         {
                             Saved?.Invoke(this, EventArgs.Empty);

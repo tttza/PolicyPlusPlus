@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Security.Principal; // elevation check
 using Microsoft.Win32;
 using PolicyPlusCore.Helpers;
@@ -360,7 +361,13 @@ namespace PolicyPlusCore.IO
                     // Figure out whether this edition can handle Group Policy application by itself
                     if (SystemInfo.HasGroupPolicyInfrastructure())
                     {
-                        PInvoke.RefreshPolicyEx(!User, 0U);
+                        // Core path intentionally skips DC reachability checks; user-facing warnings are handled in the elevation host path.
+                        bool refreshed = PInvoke.RefreshPolicyEx(!User, 0U);
+                        if (!refreshed)
+                        {
+                            int err = Marshal.GetLastWin32Error();
+                            return $"saved to disk but policy refresh failed (error=0x{err:X})";
+                        }
                         return "saved to disk and invoked policy refresh";
                     }
                     else
@@ -401,7 +408,12 @@ namespace PolicyPlusCore.IO
                 {
                     ((PolFile)SourceObject).Save(MainSourcePath);
                     UpdateGptIni();
-                    PInvoke.RefreshPolicyEx(false, 0U);
+                    bool refreshed = PInvoke.RefreshPolicyEx(false, 0U);
+                    if (!refreshed)
+                    {
+                        int err = Marshal.GetLastWin32Error();
+                        return $"saved to disk but policy refresh failed (error=0x{err:X})";
+                    }
                     return "saved to disk and invoked policy refresh";
                 }
             }

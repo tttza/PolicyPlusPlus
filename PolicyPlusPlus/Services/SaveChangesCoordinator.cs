@@ -100,9 +100,17 @@ namespace PolicyPlusPlus.Services
                     }
                     var res = await callTask.ConfigureAwait(false);
                     if (!res.Ok)
+                    {
                         Log.Error("Save", $"{corr} elevation error: {res.Error} code={res.Code}");
+                    }
+                    else if (!string.IsNullOrEmpty(res.Error))
+                    {
+                        Log.Warn("Save", $"{corr} success with refresh warning: {res.Error}");
+                    }
                     else
+                    {
                         Log.Info("Save", $"{corr} success count={changeList.Count}");
+                    }
                     Log.Debug(
                         "Save",
                         $"{corr} elevation elapsedMs={elevateSw.ElapsedMilliseconds}"

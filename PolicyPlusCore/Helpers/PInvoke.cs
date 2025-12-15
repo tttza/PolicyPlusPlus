@@ -7,7 +7,7 @@ namespace PolicyPlusCore.Helpers
         [DllImport("user32.dll")]
         public static extern bool ShowScrollBar(nint Handle, int Scrollbar, bool Show);
 
-        [DllImport("userenv.dll")]
+        [DllImport("userenv.dll", SetLastError = true)]
         public static extern bool RefreshPolicyEx(bool IsMachine, uint Options);
 
         [DllImport("advapi32.dll", CharSet = CharSet.Unicode)]

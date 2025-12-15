@@ -21,11 +21,46 @@ namespace PolicyPPElevationHost
 
     internal static class ElevationHost
     {
-        [DllImport("userenv.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
+        [DllImport(
+            "userenv.dll",
+            ExactSpelling = true,
+            CharSet = CharSet.Unicode,
+            SetLastError = true
+        )]
         private static extern bool RefreshPolicyEx(bool IsMachine, uint Options);
 
+        [DllImport("netapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern int NetGetJoinInformation(
+            string? server,
+            out IntPtr domain,
+            out NetSetupJoinStatus status
+        );
+
+        [DllImport("netapi32.dll", SetLastError = true)]
+        private static extern int NetApiBufferFree(IntPtr buffer);
+
+        [DllImport("netapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern int DsGetDcNameW(
+            string? computerName,
+            string? domainName,
+            IntPtr domainGuid,
+            string? siteName,
+            int flags,
+            out IntPtr info
+        );
+
         private const uint RP_FORCE = 0x1;
+        private const int DS_DIRECTORY_SERVICE_PREFERRED = 0x20;
+        private const int DS_RETURN_DNS_NAME = unchecked((int)0x40000000);
         private static volatile bool s_logEnabled = false;
+
+        private enum NetSetupJoinStatus
+        {
+            NetSetupUnknownStatus = 0,
+            NetSetupUnjoined = 1,
+            NetSetupWorkgroupName = 2,
+            NetSetupDomainName = 3,
+        }
 
         // Minimum severity to log when logging is enabled. Parsed from --log-* flags.
         private enum HostLogLevel
@@ -265,26 +300,33 @@ namespace PolicyPPElevationHost
                             bool refresh =
                                 root.TryGetProperty("refresh", out var r) && r.GetBoolean();
                             var (ok, error) = WriteLocalGpo(machineBytes, userBytes);
-                            var resp = new HostResponse { Ok = ok, Error = error };
-                            writer.WriteLine(JsonSerializer.Serialize(resp));
-
+                            string? refreshError = null;
                             if (ok && refresh)
                             {
-                                Task.Run(async () =>
+                                try
                                 {
-                                    try
+                                    bool machineOk = RefreshPolicyEx(true, RP_FORCE);
+                                    if (!machineOk)
                                     {
-                                        RefreshPolicyEx(true, RP_FORCE);
-                                        Log("RefreshPolicyEx(machine, FORCE) invoked");
+                                        int err = Marshal.GetLastWin32Error();
+                                        refreshError =
+                                            "machine policy refresh failed (error=0x"
+                                            + err.ToString("X")
+                                            + ")";
+                                        Log(
+                                            "RefreshPolicyEx(machine) failed: 0x"
+                                                + err.ToString("X"),
+                                            HostLogLevel.Warn
+                                        );
                                     }
-                                    catch (Exception ex)
+                                    else
                                     {
-                                        Log("RefreshPolicyEx(machine) failed: " + ex.Message);
+                                        Log("RefreshPolicyEx(machine, FORCE) invoked");
                                     }
 
                                     try
                                     {
-                                        await Task.Delay(100).ConfigureAwait(false);
+                                        Thread.Sleep(100);
                                     }
                                     catch (Exception exDelay)
                                     {
@@ -295,17 +337,45 @@ namespace PolicyPPElevationHost
                                         );
                                     }
 
-                                    try
+                                    bool userOk = RefreshPolicyEx(false, RP_FORCE);
+                                    if (!userOk)
                                     {
-                                        RefreshPolicyEx(false, RP_FORCE);
+                                        int err = Marshal.GetLastWin32Error();
+                                        var suffix =
+                                            "user policy refresh failed (error=0x"
+                                            + err.ToString("X")
+                                            + ")";
+                                        refreshError = string.IsNullOrEmpty(refreshError)
+                                            ? suffix
+                                            : (refreshError + "; " + suffix);
+                                        Log(
+                                            "RefreshPolicyEx(user) failed: 0x" + err.ToString("X"),
+                                            HostLogLevel.Warn
+                                        );
+                                    }
+                                    else
+                                    {
                                         Log("RefreshPolicyEx(user, FORCE) invoked");
                                     }
-                                    catch (Exception ex)
-                                    {
-                                        Log("RefreshPolicyEx(user) failed: " + ex.Message);
-                                    }
-                                });
+                                }
+                                catch (Exception ex)
+                                {
+                                    refreshError = string.IsNullOrEmpty(refreshError)
+                                        ? ("policy refresh failed: " + ex.Message)
+                                        : (refreshError + "; " + ex.Message);
+                                    Log("RefreshPolicyEx failed: " + ex.Message);
+                                }
+
+                                if (string.IsNullOrEmpty(refreshError))
+                                {
+                                    var dcIssue = GetDomainReachabilityError();
+                                    if (!string.IsNullOrEmpty(dcIssue))
+                                        refreshError = dcIssue;
+                                }
                             }
+
+                            var resp = new HostResponse { Ok = ok, Error = error ?? refreshError };
+                            writer.WriteLine(JsonSerializer.Serialize(resp));
                         }
                         else if (
                             string.Equals(op, "open-regedit", StringComparison.OrdinalIgnoreCase)
@@ -370,6 +440,60 @@ namespace PolicyPPElevationHost
 
             Log("Host exiting.", HostLogLevel.Info);
             return 0;
+        }
+
+        private static string? GetDomainReachabilityError()
+        {
+            IntPtr domainPtr = IntPtr.Zero;
+            try
+            {
+                var status = NetSetupJoinStatus.NetSetupUnknownStatus;
+                int res = NetGetJoinInformation(null, out domainPtr, out status);
+                if (res != 0)
+                {
+                    Log("NetGetJoinInformation failed: " + res, HostLogLevel.Debug);
+                    return null;
+                }
+
+                // Skip DC reachability checks when the machine is not domain-joined (workgroup/AAD joined).
+                if (status != NetSetupJoinStatus.NetSetupDomainName)
+                    return null;
+
+                string domain = Marshal.PtrToStringUni(domainPtr) ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(domain))
+                    return null;
+
+                IntPtr dcInfo = IntPtr.Zero;
+                try
+                {
+                    int flags = DS_DIRECTORY_SERVICE_PREFERRED | DS_RETURN_DNS_NAME;
+                    int dcRes = DsGetDcNameW(null, domain, IntPtr.Zero, null, flags, out dcInfo);
+                    if (dcRes != 0)
+                    {
+                        Log(
+                            "DsGetDcNameW domain=" + domain + " failed: " + dcRes,
+                            HostLogLevel.Warn
+                        );
+                        return "domain controller not reachable (DsGetDcName=" + dcRes + ")";
+                    }
+                }
+                finally
+                {
+                    if (dcInfo != IntPtr.Zero)
+                        NetApiBufferFree(dcInfo);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("GetDomainReachabilityError failed: " + ex.Message, HostLogLevel.Debug);
+            }
+            finally
+            {
+                if (domainPtr != IntPtr.Zero)
+                    NetApiBufferFree(domainPtr);
+            }
+
+            return null;
         }
 
         private static bool IsPolBytes(byte[] bytes) =>

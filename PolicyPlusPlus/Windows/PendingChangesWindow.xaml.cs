@@ -624,7 +624,25 @@ namespace PolicyPlusPlus.Windows
                     }
                     RefreshViews();
                     ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
-                    NotifyApplied(appliedList.Count);
+                    if (!string.IsNullOrEmpty(error))
+                    {
+                        var msg =
+                            (
+                                appliedList.Count == 1
+                                    ? "1 change saved, but refresh failed."
+                                    : $"{appliedList.Count} changes saved, but refresh failed."
+                            )
+                            + " ("
+                            + error
+                            + ")";
+                        ShowLocalInfo(msg, InfoBarSeverity.Warning);
+                        if (App.Window is MainWindow mw)
+                            mw.ShowInfo(msg, InfoBarSeverity.Warning);
+                    }
+                    else
+                    {
+                        NotifyApplied(appliedList.Count);
+                    }
                     try
                     {
                         var affected = appliedList
@@ -752,7 +770,17 @@ namespace PolicyPlusPlus.Windows
                     }
                     RefreshViews();
                     ChangesAppliedOrDiscarded?.Invoke(this, EventArgs.Empty);
-                    ShowLocalInfo("Reapplied.");
+                    if (!string.IsNullOrEmpty(error))
+                    {
+                        var msg = "Reapplied, but refresh failed. (" + error + ")";
+                        ShowLocalInfo(msg, InfoBarSeverity.Warning);
+                        if (App.Window is MainWindow mw)
+                            mw.ShowInfo(msg, InfoBarSeverity.Warning);
+                    }
+                    else
+                    {
+                        ShowLocalInfo("Reapplied.");
+                    }
                 }
                 else
                     ShowLocalInfo(
