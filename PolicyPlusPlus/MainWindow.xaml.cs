@@ -203,7 +203,10 @@ namespace PolicyPlusPlus
             {
                 EventHub.PolicySourcesRefreshed += OnPolicySourcesRefreshed;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log.Error("Init", "Failed to subscribe to PolicySourcesRefreshed event", ex);
+            }
             try
             {
                 Closed += (s, e) =>
