@@ -340,10 +340,13 @@ namespace PolicyPlusPlus
 
         private static void ApplyThemeTo(Window w)
         {
-            var effectiveTheme = GetEffectiveTheme(w);
+            var desiredTheme =
+                CurrentTheme == ElementTheme.Default ? ElementTheme.Default : CurrentTheme;
             if (w.Content is FrameworkElement fe)
-                fe.RequestedTheme = effectiveTheme;
-            WindowHelpers.ApplyImmersiveDarkMode(w, effectiveTheme == ElementTheme.Dark);
+                fe.RequestedTheme = desiredTheme;
+            var immersiveTheme =
+                desiredTheme == ElementTheme.Default ? GetEffectiveTheme(w) : desiredTheme;
+            WindowHelpers.ApplyImmersiveDarkMode(w, immersiveTheme == ElementTheme.Dark);
         }
 
         internal static ElementTheme GetEffectiveTheme(Window? context = null)

@@ -95,6 +95,7 @@ namespace PolicyPlusPlus
         private bool _initialized; // guard to run initialization once
         private AppSettings? _settingsCache; // cached settings snapshot
         private bool _forceComputeStatesOnce; // triggers one-time forced policy state computation on next bind
+        private bool _themeChangeHooked;
 
         public MainWindow()
         {
@@ -122,6 +123,12 @@ namespace PolicyPlusPlus
             catch { }
             HookPendingQueue();
             TryInitCustomTitleBar();
+            try
+            {
+                App.ThemeChanged += App_ThemeChanged;
+                _themeChangeHooked = true;
+            }
+            catch { }
             RootGrid.Loaded += (s, e) =>
             {
                 try
@@ -236,8 +243,20 @@ namespace PolicyPlusPlus
                     catch (Exception ex)
                     {
                         // Log exception during event handler detachment for diagnostics.
-                        Log.Warn("MainWindow", "Exception detaching PolicySourcesRefreshed handler: " + ex);
+                        Log.Warn(
+                            "MainWindow",
+                            "Exception detaching PolicySourcesRefreshed handler: " + ex
+                        );
                     }
+                    try
+                    {
+                        if (_themeChangeHooked)
+                        {
+                            App.ThemeChanged -= App_ThemeChanged;
+                            _themeChangeHooked = false;
+                        }
+                    }
+                    catch { }
                 };
             }
             catch { }
@@ -635,6 +654,7 @@ namespace PolicyPlusPlus
                     appWindow.TitleBar.ButtonBackgroundColor = transparent;
                     appWindow.TitleBar.ButtonInactiveBackgroundColor = transparent;
                     UpdateTitleBarMargin(appWindow);
+                    ApplyTitleBarTheme(appWindow.TitleBar);
                 }
                 if (Content is FrameworkElement fe)
                 {
@@ -643,6 +663,68 @@ namespace PolicyPlusPlus
                 }
             }
             catch { }
+        }
+
+        private void ApplyTitleBarTheme(AppWindowTitleBar? titleBar = null)
+        {
+            try
+            {
+                var tb = titleBar ?? this.AppWindow?.TitleBar;
+                if (tb == null)
+                    return;
+                var transparent = global::Windows.UI.Color.FromArgb(0, 0, 0, 0);
+                tb.ButtonBackgroundColor = transparent;
+                tb.ButtonInactiveBackgroundColor = transparent;
+                var theme = App.GetEffectiveTheme(this);
+                if (theme == ElementTheme.Dark)
+                {
+                    var fg = global::Windows.UI.Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
+                    var inactiveFg = global::Windows.UI.Color.FromArgb(0x99, 0xFF, 0xFF, 0xFF);
+                    tb.ButtonForegroundColor = fg;
+                    tb.ButtonInactiveForegroundColor = inactiveFg;
+                    tb.ButtonHoverForegroundColor = fg;
+                    tb.ButtonPressedForegroundColor = fg;
+                    tb.ButtonHoverBackgroundColor = global::Windows.UI.Color.FromArgb(
+                        0x33,
+                        0xFF,
+                        0xFF,
+                        0xFF
+                    );
+                    tb.ButtonPressedBackgroundColor = global::Windows.UI.Color.FromArgb(
+                        0x55,
+                        0xFF,
+                        0xFF,
+                        0xFF
+                    );
+                }
+                else
+                {
+                    var fg = global::Windows.UI.Color.FromArgb(0xFF, 0x15, 0x15, 0x15);
+                    var inactiveFg = global::Windows.UI.Color.FromArgb(0x99, 0x15, 0x15, 0x15);
+                    tb.ButtonForegroundColor = fg;
+                    tb.ButtonInactiveForegroundColor = inactiveFg;
+                    tb.ButtonHoverForegroundColor = fg;
+                    tb.ButtonPressedForegroundColor = fg;
+                    tb.ButtonHoverBackgroundColor = global::Windows.UI.Color.FromArgb(
+                        0x26,
+                        0x00,
+                        0x00,
+                        0x00
+                    );
+                    tb.ButtonPressedBackgroundColor = global::Windows.UI.Color.FromArgb(
+                        0x3D,
+                        0x00,
+                        0x00,
+                        0x00
+                    );
+                }
+            }
+            catch { }
+        }
+
+        private void App_ThemeChanged(object? sender, EventArgs e)
+        {
+            ApplyTitleBarTheme();
         }
 
         private void UpdateTitleBarMargin(AppWindow appWindow)
