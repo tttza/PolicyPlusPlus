@@ -17,6 +17,14 @@ namespace PolicyPlusPlus
 {
     public sealed partial class MainWindow
     {
+        private static readonly DependencyProperty TrimmedToolTipCallbackTokenProperty =
+            DependencyProperty.RegisterAttached(
+                "TrimmedToolTipCallbackToken",
+                typeof(long),
+                typeof(MainWindow),
+                new PropertyMetadata(0L)
+            );
+
         private void SaveAccelerator_Invoked(
             KeyboardAccelerator sender,
             KeyboardAcceleratorInvokedEventArgs args
@@ -570,6 +578,50 @@ namespace PolicyPlusPlus
             try
             {
                 UpdateDetailsFromSelection();
+            }
+            catch { }
+        }
+
+        private void CellTextBlock_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is TextBlock tb)
+                {
+                    AttachTrimmedToolTipHandlers(tb);
+                    UpdateTrimmedToolTip(tb);
+                }
+            }
+            catch { }
+        }
+
+        private void AttachTrimmedToolTipHandlers(TextBlock tb)
+        {
+            long token = (long)tb.GetValue(TrimmedToolTipCallbackTokenProperty);
+            if (token == 0)
+            {
+                token = tb.RegisterPropertyChangedCallback(
+                    TextBlock.IsTextTrimmedProperty,
+                    CellTextBlock_IsTextTrimmedChanged
+                );
+                tb.SetValue(TrimmedToolTipCallbackTokenProperty, token);
+            }
+        }
+
+        private static void CellTextBlock_IsTextTrimmedChanged(
+            DependencyObject sender,
+            DependencyProperty dp
+        )
+        {
+            if (sender is TextBlock tb)
+                UpdateTrimmedToolTip(tb);
+        }
+
+        private static void UpdateTrimmedToolTip(TextBlock tb)
+        {
+            try
+            {
+                ToolTipService.SetToolTip(tb, tb.IsTextTrimmed ? tb.Text : null);
             }
             catch { }
         }
