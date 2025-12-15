@@ -868,6 +868,7 @@
                           TextTrimming="CharacterEllipsis"
                           TextWrapping="NoWrap"
                           Margin="8,0,8,0"
+                          Loaded="CellTextBlock_Loaded"
                           AutomationProperties.Name="{Binding DisplayName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -900,6 +901,7 @@
                           TextTrimming="CharacterEllipsis"
                           TextWrapping="NoWrap"
                           Margin="8,0,8,0"
+                          Loaded="CellTextBlock_Loaded"
                           AutomationProperties.Name="{Binding SecondName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -926,6 +928,7 @@
                           TextTrimming="CharacterEllipsis"
                           TextWrapping="NoWrap"
                           Margin="8,0,8,0"
+                          Loaded="CellTextBlock_Loaded"
                           AutomationProperties.Name="{Binding ShortId, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -956,6 +959,7 @@
                           TextTrimming="CharacterEllipsis"
                           TextWrapping="NoWrap"
                           Margin="8,0,8,0"
+                          Loaded="CellTextBlock_Loaded"
                           AutomationProperties.Name="{Binding CategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -987,6 +991,7 @@
                           TextTrimming="CharacterEllipsis"
                           TextWrapping="NoWrap"
                           Margin="8,0,8,0"
+                          Loaded="CellTextBlock_Loaded"
                           AutomationProperties.Name="{Binding TopCategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -1018,6 +1023,7 @@
                           TextTrimming="CharacterEllipsis"
                           TextWrapping="NoWrap"
                           Margin="8,0,8,0"
+                          Loaded="CellTextBlock_Loaded"
                           AutomationProperties.Name="{Binding CategoryFullPath, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -1048,6 +1054,7 @@
                           TextTrimming="CharacterEllipsis"
                           TextWrapping="NoWrap"
                           Margin="8,0,8,0"
+                          Loaded="CellTextBlock_Loaded"
                           AutomationProperties.Name="{Binding AppliesText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -1078,6 +1085,7 @@
                           TextTrimming="CharacterEllipsis"
                           TextWrapping="NoWrap"
                           Margin="8,0,8,0"
+                          Loaded="CellTextBlock_Loaded"
                           AutomationProperties.Name="{Binding SupportedText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
