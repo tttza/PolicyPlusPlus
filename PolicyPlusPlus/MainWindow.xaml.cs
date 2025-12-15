@@ -233,7 +233,11 @@ namespace PolicyPlusPlus
                     {
                         EventHub.PolicySourcesRefreshed -= OnPolicySourcesRefreshed;
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        // Log exception during event handler detachment for diagnostics.
+                        Log.Warn("MainWindow", "Exception detaching PolicySourcesRefreshed handler: " + ex);
+                    }
                 };
             }
             catch { }
