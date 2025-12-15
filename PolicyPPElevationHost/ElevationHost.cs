@@ -62,20 +62,6 @@ namespace PolicyPPElevationHost
             NetSetupDomainName = 3,
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        private struct DomainControllerInfo
-        {
-            public IntPtr DomainControllerName;
-            public IntPtr DomainControllerAddress;
-            public uint DomainControllerAddressType;
-            public Guid DomainGuid;
-            public IntPtr DomainName;
-            public IntPtr DnsForestName;
-            public uint Flags;
-            public IntPtr DcSiteName;
-            public IntPtr ClientSiteName;
-        }
-
         // Minimum severity to log when logging is enabled. Parsed from --log-* flags.
         private enum HostLogLevel
         {
@@ -469,7 +455,7 @@ namespace PolicyPPElevationHost
                     return null;
                 }
 
-                // Skip DC reachability checks when the machine is not domain-joined (workgroup/AAD join).
+                // Skip DC reachability checks when the machine is not domain-joined (workgroup/AAD joined).
                 if (status != NetSetupJoinStatus.NetSetupDomainName)
                     return null;
 
