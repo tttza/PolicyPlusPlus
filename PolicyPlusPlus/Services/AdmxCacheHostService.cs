@@ -49,7 +49,7 @@ namespace PolicyPlusPlus.Services
             catch (Exception ex)
             {
                 // Log at Debug level if cache invalidation fails, per logging guidance.
-                Log.Debug(LogArea, "Failed to clear localized text cache", ex);
+                Log.Debug(LogArea, "Failed to clear localized text cache: " + ex.Message);
             }
         }
 
