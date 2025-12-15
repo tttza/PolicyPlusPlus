@@ -455,7 +455,7 @@ namespace PolicyPPElevationHost
                     return null;
                 }
 
-                // Skip DC reachability checks when the machine is not domain-joined (workgroup/AAD join).
+                // Skip DC reachability checks when the machine is not domain-joined (workgroup/AAD joined).
                 if (status != NetSetupJoinStatus.NetSetupDomainName)
                     return null;
 
