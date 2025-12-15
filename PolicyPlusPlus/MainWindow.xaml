@@ -864,6 +864,10 @@
                         <!-- Display text no longer shows fallback -->
                         <TextBlock
                           Text="{Binding DisplayName}"
+                          VerticalAlignment="Center"
+                          TextTrimming="CharacterEllipsis"
+                          TextWrapping="NoWrap"
+                          Margin="8,0,8,0"
                           AutomationProperties.Name="{Binding DisplayName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -892,6 +896,10 @@
                       <DataTemplate>
                         <TextBlock
                           Text="{Binding SecondName}"
+                          VerticalAlignment="Center"
+                          TextTrimming="CharacterEllipsis"
+                          TextWrapping="NoWrap"
+                          Margin="8,0,8,0"
                           AutomationProperties.Name="{Binding SecondName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -914,6 +922,10 @@
                       <DataTemplate>
                         <TextBlock
                           Text="{Binding ShortId}"
+                          VerticalAlignment="Center"
+                          TextTrimming="CharacterEllipsis"
+                          TextWrapping="NoWrap"
+                          Margin="8,0,8,0"
                           AutomationProperties.Name="{Binding ShortId, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -940,6 +952,10 @@
                       <DataTemplate>
                         <TextBlock
                           Text="{Binding CategoryName}"
+                          VerticalAlignment="Center"
+                          TextTrimming="CharacterEllipsis"
+                          TextWrapping="NoWrap"
+                          Margin="8,0,8,0"
                           AutomationProperties.Name="{Binding CategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -967,6 +983,10 @@
                       <DataTemplate>
                         <TextBlock
                           Text="{Binding TopCategoryName}"
+                          VerticalAlignment="Center"
+                          TextTrimming="CharacterEllipsis"
+                          TextWrapping="NoWrap"
+                          Margin="8,0,8,0"
                           AutomationProperties.Name="{Binding TopCategoryName, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -994,6 +1014,10 @@
                       <DataTemplate>
                         <TextBlock
                           Text="{Binding CategoryFullPath}"
+                          VerticalAlignment="Center"
+                          TextTrimming="CharacterEllipsis"
+                          TextWrapping="NoWrap"
+                          Margin="8,0,8,0"
                           AutomationProperties.Name="{Binding CategoryFullPath, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -1020,6 +1044,10 @@
                       <DataTemplate>
                         <TextBlock
                           Text="{Binding AppliesText}"
+                          VerticalAlignment="Center"
+                          TextTrimming="CharacterEllipsis"
+                          TextWrapping="NoWrap"
+                          Margin="8,0,8,0"
                           AutomationProperties.Name="{Binding AppliesText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
@@ -1046,6 +1074,10 @@
                       <DataTemplate>
                         <TextBlock
                           Text="{Binding SupportedText}"
+                          VerticalAlignment="Center"
+                          TextTrimming="CharacterEllipsis"
+                          TextWrapping="NoWrap"
+                          Margin="8,0,8,0"
                           AutomationProperties.Name="{Binding SupportedText, Converter={StaticResource NullOrWhitespaceToFallbackConverter}, ConverterParameter=(no value)}"
                         />
                       </DataTemplate>
