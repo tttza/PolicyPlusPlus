@@ -6,7 +6,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using PolicyPlusCore.Admx;
 using PolicyPlusCore.Core;
 using PolicyPlusCore.IO;
@@ -154,25 +153,6 @@ namespace PolicyPlusPlus.Windows
                 if (Content is FrameworkElement fe)
                     fe.RequestedTheme = theme;
                 WindowHelpers.ApplyImmersiveDarkMode(this, theme == ElementTheme.Dark);
-                var inputBg = (Brush)Application.Current.Resources["ControlFillColorDefaultBrush"];
-                var inputStroke = (Brush)
-                    Application.Current.Resources["ControlStrokeColorDefaultBrush"];
-                var inputFg = (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"];
-                NameBox.Background = inputBg;
-                NameBox.BorderBrush = inputStroke;
-                NameBox.Foreground = inputFg;
-                IdBox.Background = inputBg;
-                IdBox.BorderBrush = inputStroke;
-                IdBox.Foreground = inputFg;
-                DefinedInBox.Background = inputBg;
-                DefinedInBox.BorderBrush = inputStroke;
-                DefinedInBox.Foreground = inputFg;
-                PathBox.Background = inputBg;
-                PathBox.BorderBrush = inputStroke;
-                PathBox.Foreground = inputFg;
-                RegBox.Background = inputBg;
-                RegBox.BorderBrush = inputStroke;
-                RegBox.Foreground = inputFg;
             }
             catch (Exception ex)
             {

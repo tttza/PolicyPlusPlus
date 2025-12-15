@@ -40,7 +40,15 @@
       </Grid.KeyboardAccelerators>
       <!-- Name -->
       <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" VerticalAlignment="Center" />
-      <TextBox Grid.Row="0" Grid.Column="1" x:Name="NameBox" IsReadOnly="True" />
+      <TextBox
+        Grid.Row="0"
+        Grid.Column="1"
+        x:Name="NameBox"
+        IsReadOnly="True"
+        Background="{ThemeResource ControlFillColorDefaultBrush}"
+        BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+      />
       <Button
         x:Name="CopyNameBtn"
         Grid.Row="0"
@@ -54,7 +62,15 @@
       </Button>
       <!-- Unique ID -->
       <TextBlock Grid.Row="1" Grid.Column="0" Text="Unique ID" VerticalAlignment="Center" />
-      <TextBox x:Name="IdBox" Grid.Row="1" Grid.Column="1" IsReadOnly="True" />
+      <TextBox
+        x:Name="IdBox"
+        Grid.Row="1"
+        Grid.Column="1"
+        IsReadOnly="True"
+        Background="{ThemeResource ControlFillColorDefaultBrush}"
+        BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+      />
       <Button
         x:Name="CopyIdBtn"
         Grid.Row="1"
@@ -68,7 +84,15 @@
       </Button>
       <!-- Defined in -->
       <TextBlock Grid.Row="2" Grid.Column="0" Text="Defined in" VerticalAlignment="Center" />
-      <TextBox x:Name="DefinedInBox" Grid.Row="2" Grid.Column="1" IsReadOnly="True" />
+      <TextBox
+        x:Name="DefinedInBox"
+        Grid.Row="2"
+        Grid.Column="1"
+        IsReadOnly="True"
+        Background="{ThemeResource ControlFillColorDefaultBrush}"
+        BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+      />
       <Button
         x:Name="CopyDefinedInBtn"
         Grid.Row="2"
@@ -93,6 +117,9 @@
           AcceptsReturn="True"
           TextWrapping="NoWrap"
           FontFamily="ms-appx:///Assets/Fonts/PolicyPlusMono.CompositeFont#PolicyPlus Mono"
+          Background="{ThemeResource ControlFillColorDefaultBrush}"
+          BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+          Foreground="{ThemeResource TextFillColorPrimaryBrush}"
         />
       </ScrollViewer>
       <StackPanel
@@ -144,6 +171,9 @@
           AcceptsReturn="True"
           TextWrapping="NoWrap"
           FontFamily="ms-appx:///Assets/Fonts/PolicyPlusMono.CompositeFont#PolicyPlus Mono"
+          Background="{ThemeResource ControlFillColorDefaultBrush}"
+          BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+          Foreground="{ThemeResource TextFillColorPrimaryBrush}"
         />
       </ScrollViewer>
       <StackPanel
