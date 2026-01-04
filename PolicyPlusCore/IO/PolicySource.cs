@@ -331,10 +331,9 @@ namespace PolicyPlusCore.IO
                     Writer.Write(c);
                 Writer.Write((short)0);
             }
-            ;
             Writer.Write(0x67655250U);
             Writer.Write(1);
-            foreach (var kv in Entries)
+            foreach (var kv in EnumerateEntriesSpecialFirstPerKey())
             {
                 Writer.Write('[');
                 var pathparts = CasePreservation[kv.Key]
@@ -460,7 +459,7 @@ namespace PolicyPlusCore.IO
             if (OldVersion is null)
                 OldVersion = new PolFile();
             var oldEntries = OldVersion.Entries.Keys.Where(k => !k.Contains(@"\\**")).ToList();
-            foreach (var kv in Entries)
+            foreach (var kv in EnumerateEntriesSpecialFirstPerKey())
             {
                 var parts = kv.Key.Split(new[] { "\\\\" }, 2, StringSplitOptions.None);
                 var casedParts = CasePreservation[kv.Key]
@@ -824,11 +823,8 @@ namespace PolicyPlusCore.IO
                 try
                 {
                     RootKey.DeleteValue(Value, false);
-                    using (var regKey = RootKey)
-                    {
-                        if (regKey.SubKeyCount == 0 & regKey.ValueCount == 0)
-                            isEmpty = true;
-                    }
+                    if (RootKey.SubKeyCount == 0 & RootKey.ValueCount == 0)
+                        isEmpty = true;
                 }
                 catch { }
             }
