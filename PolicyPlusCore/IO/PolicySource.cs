@@ -193,6 +193,66 @@ namespace PolicyPlusCore.IO
             return false;
         }
 
+        private IEnumerable<KeyValuePair<string, PolEntryData>> EnumerateEntriesSpecialFirstPerKey()
+        {
+            // Entries are sorted by "<key>\\<value>" (lower-cased). All entries for the same key are contiguous.
+            // To avoid cases like valueName="*" sorting before "**delvals." (which would clear the key after writing '*'),
+            // emit special entries (value names starting with "**") before normal entries within each key.
+            List<KeyValuePair<string, PolEntryData>>? bufferedNormalEntries = null;
+            var bufferedSpecialEntries = new List<KeyValuePair<string, PolEntryData>>();
+            string? currentRegistryKeyLower = null;
+
+            IEnumerable<KeyValuePair<string, PolEntryData>> FlushBufferedEntries()
+            {
+                try
+                {
+                    foreach (var entry in bufferedSpecialEntries)
+                        yield return entry;
+                    if (bufferedNormalEntries != null)
+                    {
+                        foreach (var entry in bufferedNormalEntries)
+                            yield return entry;
+                    }
+                }
+                finally
+                {
+                    bufferedSpecialEntries.Clear();
+                    bufferedNormalEntries = null;
+                }
+            }
+
+            foreach (var kv in Entries)
+            {
+                SplitDictKey(kv.Key, out var keyLower, out var valueLower);
+                // Key boundary detection: entries for a single key are contiguous in the sorted dictionary.
+                bool isKeyBoundary =
+                    currentRegistryKeyLower != null
+                    && !string.Equals(currentRegistryKeyLower, keyLower, StringComparison.Ordinal);
+                if (isKeyBoundary)
+                {
+                    // Flush the previous key: special entries first (e.g. "**delvals.") so the key is cleared
+                    // before writing normal values like "*", avoiding self-clearing output ordering.
+                    foreach (var entry in FlushBufferedEntries())
+                        yield return entry;
+                }
+                currentRegistryKeyLower = keyLower;
+
+                // Bucket by entry type so we can emit special "**..." entries before normal values.
+                if (valueLower.StartsWith("**", StringComparison.Ordinal))
+                {
+                    bufferedSpecialEntries.Add(kv);
+                }
+                else
+                {
+                    bufferedNormalEntries ??= new List<KeyValuePair<string, PolEntryData>>();
+                    bufferedNormalEntries.Add(kv);
+                }
+            }
+
+            foreach (var entry in FlushBufferedEntries())
+                yield return entry;
+        }
+
         private string GetDictKey(string Key, string Value)
         {
             string origCase = Key + @"\\" + Value;
@@ -271,10 +331,9 @@ namespace PolicyPlusCore.IO
                     Writer.Write(c);
                 Writer.Write((short)0);
             }
-            ;
             Writer.Write(0x67655250U);
             Writer.Write(1);
-            foreach (var kv in Entries)
+            foreach (var kv in EnumerateEntriesSpecialFirstPerKey())
             {
                 Writer.Write('[');
                 var pathparts = CasePreservation[kv.Key]
@@ -400,7 +459,7 @@ namespace PolicyPlusCore.IO
             if (OldVersion is null)
                 OldVersion = new PolFile();
             var oldEntries = OldVersion.Entries.Keys.Where(k => !k.Contains(@"\\**")).ToList();
-            foreach (var kv in Entries)
+            foreach (var kv in EnumerateEntriesSpecialFirstPerKey())
             {
                 var parts = kv.Key.Split(new[] { "\\\\" }, 2, StringSplitOptions.None);
                 var casedParts = CasePreservation[kv.Key]
@@ -764,11 +823,8 @@ namespace PolicyPlusCore.IO
                 try
                 {
                     RootKey.DeleteValue(Value, false);
-                    using (var regKey = RootKey)
-                    {
-                        if (regKey.SubKeyCount == 0 & regKey.ValueCount == 0)
-                            isEmpty = true;
-                    }
+                    if (RootKey.SubKeyCount == 0 & RootKey.ValueCount == 0)
+                        isEmpty = true;
                 }
                 catch { }
             }
