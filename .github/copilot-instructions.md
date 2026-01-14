@@ -2,6 +2,18 @@
 
 (Authoritative quick brief. Keep user-facing answers in the user's language; code comments in English only.)
 
+## Refactor Work (Specs in Docs)
+
+When working on the ongoing refactor (starting from `PolicyPlusCore/Core`), treat the following documents as the primary source of truth and keep them up to date:
+
+- `Docs/Architecture/Refactor/README.md`
+- `Docs/Architecture/Refactor/TestPlan.md` (spec-first; behavior preservation contract)
+- `Docs/Architecture/Refactor/Overview.md`
+- `Docs/Architecture/Refactor/ChangeLog.md`
+- `Docs/Architecture/Refactor/ADR/*` (decisions and rationale)
+
+Default stance for refactor tasks: add/adjust tests per `TestPlan.md` before moving code, keep public APIs stable, and do incremental, reversible changes (facades/adapters).
+
 ## 1. What This App Does
 PolicyPlusMod loads Administrative Template (ADMX/ADML) definitions, lets users search / view / edit Windows Group Policy (registry-based) settings, and export/import them (REG / semantic policy). The modern WinUI 3 UI (`PolicyPlusPlus`) is the only UI. Core logic resides in `PolicyPlusCore` and stays UI-agnostic. An elevation host (`PolicyPPElevationHost`) handles privileged operations.
 
