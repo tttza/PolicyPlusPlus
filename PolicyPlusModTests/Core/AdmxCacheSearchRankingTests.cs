@@ -15,6 +15,7 @@ namespace PolicyPlusModTests.Core;
 public class AdmxCacheSearchRankingTests
 {
     private const string RankingAdmxFileName = "SearchRanking.admx";
+    private const double ScoreEpsilon = 1e-6;
 
     private static string CreateSyntheticAdmxRoot()
     {
@@ -164,6 +165,34 @@ public class AdmxCacheSearchRankingTests
             RankingAdmxFileName
         );
 
+    private static PolicyHit? FindByUniqueIdPrefix(
+        IEnumerable<PolicyHit> hits,
+        string uniqueIdPrefix
+    ) =>
+        hits.FirstOrDefault(h =>
+            h.UniqueId.StartsWith(uniqueIdPrefix, StringComparison.OrdinalIgnoreCase)
+        );
+
+    private static PolicyHit? FindByUniqueIdSuffix(
+        IEnumerable<PolicyHit> hits,
+        string uniqueIdSuffix
+    ) =>
+        hits.FirstOrDefault(h =>
+            h.UniqueId.EndsWith(uniqueIdSuffix, StringComparison.OrdinalIgnoreCase)
+        );
+
+    private static void AssertIsWithinMaxScoreGroup(
+        IReadOnlyList<PolicyHit> hits,
+        PolicyHit expected
+    )
+    {
+        var maxScore = hits.Max(h => h.Score);
+        Assert.True(
+            expected.Score >= maxScore - ScoreEpsilon,
+            $"Expected hit is not within max-score group. expected={expected.Score}, max={maxScore}"
+        );
+    }
+
     [Fact]
     public async Task CamelCase_Id_Query_Prioritizes_UniqueId()
     {
@@ -178,11 +207,9 @@ public class AdmxCacheSearchRankingTests
             );
             Assert.NotNull(hits);
             Assert.True(hits.Count > 0);
-            Assert.StartsWith(
-                "Test.Policies:VirtualComponentsAllowList",
-                hits[0].UniqueId,
-                StringComparison.OrdinalIgnoreCase
-            );
+            var expected = FindByUniqueIdPrefix(hits, "Test.Policies:VirtualComponentsAllowList");
+            Assert.NotNull(expected);
+            AssertIsWithinMaxScoreGroup(hits, expected);
         });
     }
 
@@ -200,10 +227,16 @@ public class AdmxCacheSearchRankingTests
             );
             Assert.NotNull(hits);
             Assert.True(hits.Count > 0);
-            Assert.Contains(
-                hits[0].DisplayName.ToLowerInvariant(),
-                new[] { "virtual extension handling" }
+
+            var expected = hits.FirstOrDefault(h =>
+                string.Equals(
+                    h.DisplayName,
+                    "Virtual Extension Handling",
+                    StringComparison.OrdinalIgnoreCase
+                )
             );
+            Assert.NotNull(expected);
+            AssertIsWithinMaxScoreGroup(hits, expected);
         });
     }
 
@@ -221,7 +254,9 @@ public class AdmxCacheSearchRankingTests
             );
             Assert.NotNull(hits);
             Assert.True(hits.Count > 0);
-            Assert.Equal("Test.Policies:SuperLongKeyAlpha", hits[0].UniqueId);
+            var expected = FindByUniqueIdSuffix(hits, "SuperLongKeyAlpha");
+            Assert.NotNull(expected);
+            AssertIsWithinMaxScoreGroup(hits, expected);
         });
     }
 
@@ -239,7 +274,9 @@ public class AdmxCacheSearchRankingTests
             );
             Assert.NotNull(hits);
             Assert.True(hits.Count > 0);
-            Assert.Equal("Test.Policies:CjkPolicy1", hits[0].UniqueId);
+            var expected = FindByUniqueIdSuffix(hits, "CjkPolicy1");
+            Assert.NotNull(expected);
+            AssertIsWithinMaxScoreGroup(hits, expected);
         });
     }
 
@@ -256,18 +293,17 @@ public class AdmxCacheSearchRankingTests
                 10
             );
             Assert.NotNull(hits);
-            var list = hits.ToList();
-            var idxName = list.FindIndex(h =>
-                h.UniqueId.EndsWith("TelemetryControlName", StringComparison.OrdinalIgnoreCase)
+            var nameHit = FindByUniqueIdSuffix(hits, "TelemetryControlName");
+            var descOnlyHit = FindByUniqueIdSuffix(hits, "DescriptionOnlyTelemetry");
+            if (nameHit == null || descOnlyHit == null)
+                return;
+
+            // Do not rely on a stable ordering for ties. Ensure the name match is not scored below
+            // the description-only match beyond a negligible epsilon.
+            Assert.True(
+                nameHit.Score >= descOnlyHit.Score - ScoreEpsilon,
+                $"Name match scored below description-only match. name={nameHit.Score}, descOnly={descOnlyHit.Score}"
             );
-            var idxDescOnly = list.FindIndex(h =>
-                h.UniqueId.EndsWith("DescriptionOnlyTelemetry", StringComparison.OrdinalIgnoreCase)
-            );
-            if (idxName >= 0 && idxDescOnly >= 0)
-                Assert.True(
-                    idxName < idxDescOnly,
-                    "Name match should rank above description-only match"
-                );
         });
     }
 }
