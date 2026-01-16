@@ -162,8 +162,6 @@ public sealed partial class AdmxCache : IAdmxCache
         return string.Join("/", stack);
     }
 
-    // Upsert moved to AdmxCachePolicyUpsertService (ADR 0004).
-
     public Task<IReadOnlyList<PolicyHit>> SearchAsync(
         string query,
         string culture,
