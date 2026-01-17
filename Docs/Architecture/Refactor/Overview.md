@@ -89,9 +89,10 @@ We can adopt this incrementally while keeping existing files and namespaces stab
   - (optional) public facades and use cases; coordinates Domain + Infrastructure
 
 - `Core/Policies/`
-  - `PolicyEvaluator.cs` — evaluation and evidence scoring (pure logic)
-  - `PolicyRegistryWalker.cs` — walking/reading policy-related registry representation
-  - `PolicyApplier.cs` — apply/derive registry mutations for a policy state
+  - `PolicyStateEvaluator.cs` — ✅ state evaluation and evidence scoring (pure logic, ADR 0013 phase 1 complete)
+  - `PolicyStateApplier.cs` — ✅ apply/derive registry mutations for a policy state (ADR 0013 phase 2 complete)
+  - `PolicyRegistryWalker.cs` — walking/reading policy-related registry representation (ADR 0013 phase 3, pending)
+  - `PolicyOptionReader.cs` — element value reading/interpretation (ADR 0013 phase 3, pending)
   - `PolicySaveService.cs` — orchestration behind the current save pipeline facade
 
 This is not a hard rule; we can adjust as we discover better boundaries.

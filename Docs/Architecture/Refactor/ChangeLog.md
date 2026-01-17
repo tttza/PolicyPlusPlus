@@ -11,6 +11,37 @@ Format:
 
 ## Unreleased
 
+- ADR 0013 complete: PolicyProcessing facade extraction (phase 3b/3c)
+  - Scope: Extract `WalkPolicyRegistry`/`ForgetPolicy` → PolicyRegistryWalker, `IsPolicySupported` → PolicySupportChecker
+  - Notes: PolicyProcessing.cs reduced from 1,511 to 182 lines. Now pure delegation facade + public types (PolicyState, RegistryKeyValuePair). DeduplicatePolicies remains (bundle-related, deferred).
+  - Test coverage: Existing tests cover all extracted methods
+
+- ADR 0013 implemented: PolicyProcessing facade extraction (phase 3a)
+  - Scope: Extract `GetPolicyOptionStates` element reading logic from PolicyPlusCore/Core/PolicyProcessing.cs into PolicyPlusCore/Core/Policies/PolicyOptionReader.cs
+  - Notes: Structure-only; preserves element-type handling (decimal, boolean, text, list, enum, multiText), list prefix enumeration, and registry read semantics. Uses PolicyStateEvaluator.ValuePresent/ValueListPresent for enum matching.
+  - Test coverage: Existing PolicyProcessing tests cover GetPolicyOptionStates via facade delegation
+
+- ADR 0013 implemented: PolicyProcessing facade extraction (phase 2)
+  - Scope: Extract `SetPolicyState` application logic from PolicyPlusCore/Core/PolicyProcessing.cs into PolicyPlusCore/Core/Policies/PolicyStateApplier.cs
+  - Notes: Structure-only; preserves element-type handling (decimal, boolean, text, list, enum, multiText), ConfiguredPolicyTracker integration, and registry write semantics.
+  - Test coverage: PolicyPlusModTests full suite (315 tests pass)
+
+- ADR 0013 implemented: PolicyProcessing facade extraction (phase 1)
+  - Scope: Extract `GetPolicyState` evaluation logic from PolicyPlusCore/Core/PolicyProcessing.cs into PolicyPlusCore/Core/Policies/PolicyStateEvaluator.cs
+  - Notes: Structure-only; preserves evidence scoring, explicit match priority, and element-type handling. CachedPolicySource moved to internal service.
+  - Test coverage: PolicyPlusModTests full suite (315 tests pass)
+  - Characterization tests (23 tests in PolicyStateEvaluatorCharacterizationTests.cs):
+    - ✅ Explicit match priority (On/Off/Mixed scenarios)
+    - ✅ Evidence tie behavior (Off wins on equal evidence)
+    - ✅ Boolean OffValue weight (0.1 multiplier)
+    - ✅ Null/empty/whitespace handling
+    - ✅ List element evidence (ClearKey + values)
+    - ✅ Element evidence count conditions
+    - ✅ ValueList explicit match (Root/Boolean OnValueList/OffValueList)
+    - ✅ ValueList evidence scoring (Root/Boolean OnValueList/OffValueList with 0.1 weight)
+    - ✅ Enum with ValueList (requires both Value and ValueList match)
+    - ✅ ValueList custom DefaultRegistryKey and entry RegistryKey
+
 - ADR 0012 accepted: target folder layering (Core / Application / Infrastructure)
   - Scope: Clarify dependency direction and target locations for infrastructure-heavy code
   - Notes: No code moves required; legacy paths remain valid during incremental migration
