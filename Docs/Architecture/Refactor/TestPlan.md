@@ -101,6 +101,41 @@ Use integration tests when behavior depends on:
   - Multi-line text policy
 - Applying state produces stable registry mutation set.
 
+#### PolicyStateEvaluator Characterization Coverage (ADR 0013)
+
+Current coverage analysis (23 tests, ~95% code paths):
+
+| Code Path | Covered | Test |
+|-----------|---------|------|
+| Root OnValue explicit match | ✅ | ExplicitMatch_OnValuePresent_ReturnsEnabled |
+| Root OffValue explicit match | ✅ | ExplicitMatch_OffValuePresent_ReturnsDisabled |
+| Root On+Off priority | ✅ | ExplicitMatch_BothOnAndOffPresent_OnTakesPriority |
+| Boolean OnValue explicit | ✅ | ExplicitMatch_BooleanOnValue_ReturnsEnabled |
+| Boolean OffValue explicit | ✅ | ExplicitMatch_BooleanOffValue_ReturnsDisabled |
+| Boolean On+Off priority | ✅ | ExplicitMatch_BooleanBothOnAndOff_OnTakesPriority |
+| Enum explicit match | ✅ | ExplicitMatch_EnumValue_ReturnsEnabled |
+| List ClearKey explicit | ✅ | ExplicitMatch_ListClearKeyPresent_ReturnsEnabled |
+| Root OnValueList explicit | ✅ | ExplicitMatch_RootOnValueList_ReturnsEnabled |
+| Root OffValueList explicit | ✅ | ExplicitMatch_RootOffValueList_ReturnsDisabled |
+| Boolean OnValueList explicit | ✅ | ExplicitMatch_BooleanOnValueList_ReturnsEnabled |
+| Boolean OffValueList explicit | ✅ | ExplicitMatch_BooleanOffValueList_ReturnsDisabled |
+| Enum with ValueList | ✅ | ExplicitMatch_EnumWithValueList_RequiresBothMatch |
+| OnValue evidence | ✅ | Evidence_OnValueOnly_ReturnsEnabled |
+| OffValue evidence | ✅ | Evidence_OffValueOnly_ReturnsDisabled |
+| Boolean OnValue evidence | ✅ | Evidence_BooleanOnValue_ReturnsEnabled |
+| Boolean OffValue weight | ✅ | Evidence_BooleanOffValue_Weight0_1 |
+| On/Off evidence tie | ✅ | Evidence_EqualEvidence_OffWins |
+| Element evidence count | ✅ | Evidence_MultipleElementsPresent_CountsAllEvidence |
+| OnValueList evidence | ✅ | Evidence_RootOnValueList_ContributesToEnabled |
+| OffValueList evidence | ✅ | Evidence_RootOffValueList_ContributesToDisabled |
+| Boolean OnValueList evidence | ✅ | Evidence_BooleanOnValueList_ContributesToEnabled |
+| Boolean OffValueList weight | ✅ | Evidence_BooleanOffValueList_Uses0_1Weight |
+| List ClearKey evidence | ✅ | Evidence_ListClearKeyPresent_ReturnsEnabled |
+| Null/empty handling | ✅ | NullOrEmpty_*, MixedEmptyAndValid_* |
+| No evidence → Unknown | ✅ | Evidence_ListClearKeyAndValuesPresent_ReturnsUnknown |
+| ValueList DefaultRegistryKey | ✅ | ValueList_CustomDefaultRegistryKey_UsesSpecifiedKey |
+| ValueList entry RegistryKey | ✅ | ValueList_EntryCustomRegistryKey_OverridesDefault |
+
 ### PolicySavePipeline
 
 - Given a set of policy changes, apply produces stable serialization output.
